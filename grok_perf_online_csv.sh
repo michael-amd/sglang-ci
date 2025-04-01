@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# perf_online_csv.sh
+# grok_perf_online_csv.sh
 #
 # This script benchmarks online serving performance for GROK1.
 #
@@ -68,7 +68,7 @@ if [ -z "$INSIDE_CONTAINER" ]; then
         
         echo "Re-invoking the script inside container ${CONTAINER_NAME}..."
         # Execute this script inside the container; pass INSIDE_CONTAINER=1 and LATEST_TAG.
-        docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="$LATEST_TAG" "$CONTAINER_NAME" bash /mnt/raid/michael/sgl_benchmark_ci/perf_online_csv.sh
+        docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="$LATEST_TAG" "$CONTAINER_NAME" bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_online_csv.sh
         exit 0
     fi
 fi
@@ -112,6 +112,7 @@ launch_server() {
           --tp 8 --quantization fp8 --trust-remote-code \
           --attention-backend aiter > "$SERVER_LOG" 2>&1 &
     elif [ "$backend" == "aiter_decode" ]; then
+        # Updated model path for aiter_decode
         RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
         python3 -m sglang.launch_server \
           --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
@@ -361,3 +362,6 @@ compute_ratio() {
 
 echo "CSV summary saved to ${OUTPUT_CSV}"
 echo "All done! Client logs and CSV summary are saved in ${folder}."
+
+# Reminder: If you encounter memory capacity errors, please ensure that
+# any other processes occupying GPU memory are terminated or cleaned up.
