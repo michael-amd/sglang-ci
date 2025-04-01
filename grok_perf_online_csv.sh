@@ -114,7 +114,7 @@ launch_server() {
     elif [ "$backend" == "aiter_decode" ]; then
         RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
         python3 -m sglang.launch_server \
-          --model /mnt/raid/models/amd--grok-1-W4A8KV8/ \
+          --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
           --tokenizer-path Xenova/grok-1-tokenizer \
           --tp 8 --quantization fp8 --trust-remote-code \
           --attention-backend aiter_decode > "$SERVER_LOG" 2>&1 &
