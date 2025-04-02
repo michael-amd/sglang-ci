@@ -30,6 +30,9 @@
  
 # Set DOCKER_NAME variable
 DOCKER_NAME="rocm/sgl-dev:20250331rc"
+
+# Set NODE variable
+NODE="dell300x-pla-t10-23"
  
 # ---------------------------
 # 0. Container Management (if applicable)
@@ -262,12 +265,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), dell300x-pla-t10-17"
+  printf "MI300x-aiter (prefill+decode), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_e2e_aiter[$rate]}"
   done
   echo ""
-  printf "MI300x-aiter_decode (decode only), dell300x-pla-t10-17"
+  printf "MI300x-aiter_decode (decode only), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_e2e_decode[$rate]}"
   done
@@ -298,12 +301,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), dell300x-pla-t10-17"
+  printf "MI300x-aiter (prefill+decode), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_ttft_aiter[$rate]}"
   done
   echo ""
-  printf "MI300x-aiter_decode (decode only), dell300x-pla-t10-17"
+  printf "MI300x-aiter_decode (decode only), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_ttft_decode[$rate]}"
   done
@@ -334,12 +337,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), dell300x-pla-t10-17"
+  printf "MI300x-aiter (prefill+decode), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_itl_aiter[$rate]}"
   done
   echo ""
-  printf "MI300x-aiter_decode (decode only), dell300x-pla-t10-17"
+  printf "MI300x-aiter_decode (decode only), $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_itl_decode[$rate]}"
   done
