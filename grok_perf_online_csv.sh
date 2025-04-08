@@ -103,15 +103,12 @@ OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECO
 # New: GSM8K Accuracy Test as Cold Start (Warm Up Run)
 # ---------------------------
 run_client_gsm8k() {
+    # Use an absolute path to the bench_sglang.py file from the sglang repository.
     CMD="python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5"
     LOGFILE="${folder}/sglang_client_log_grok1_gsm8k.log"
-    echo "Executing: $CMD" | tee -a "$LOGFILE"
+    echo "Executing GSM8K test: $CMD" | tee -a "$LOGFILE"
     eval "$CMD" 2>&1 | tee -a "$LOGFILE"
 }
-
-# Optionally run the GSM8K warm-up test before starting the benchmarks.
-echo "Running GSM8K accuracy test as a cold start warm-up..."
-run_client_gsm8k
 
 # ---------------------------
 # 2. Functions to Launch and Shutdown Server per Mode
@@ -129,7 +126,6 @@ launch_server() {
           --tp 8 --quantization fp8 --trust-remote-code \
           --attention-backend aiter --enable-torch-compile --torch-compile-max-bs 4 > "$SERVER_LOG" 2>&1 &
     elif [ "$backend" == "aiter_decode" ]; then
-        # Updated model path for aiter_decode
         RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
         python3 -m sglang.launch_server \
           --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
@@ -224,11 +220,15 @@ get_best_metrics() {
 # ---------------------------
 echo "Starting benchmarks for mode 'aiter' (prefill+decode)..."
 launch_server "aiter"
+# Call GSM8K warm-up for this model config before running the rest of the benchmarks.
+run_client_gsm8k
 run_client_benchmark "aiter"
 shutdown_server
 
 echo "Starting benchmarks for mode 'aiter_decode' (decode only)..."
 launch_server "aiter_decode"
+# Call GSM8K warm-up for this model config before running the rest of the benchmarks.
+run_client_gsm8k
 run_client_benchmark "decode"
 shutdown_server
 
