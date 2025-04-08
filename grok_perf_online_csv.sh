@@ -98,7 +98,21 @@ else
     echo "Folder ${folder} already exists. Checking for missing logs in subsequent runs."
 fi
 OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online.csv"
- 
+
+# ---------------------------
+# New: GSM8K Accuracy Test as Cold Start (Warm Up Run)
+# ---------------------------
+run_client_gsm8k() {
+    CMD="python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5"
+    LOGFILE="${folder}/sglang_client_log_grok1_gsm8k.log"
+    echo "Executing: $CMD" | tee -a "$LOGFILE"
+    eval "$CMD" 2>&1 | tee -a "$LOGFILE"
+}
+
+# Optionally run the GSM8K warm-up test before starting the benchmarks.
+echo "Running GSM8K accuracy test as a cold start warm-up..."
+run_client_gsm8k
+
 # ---------------------------
 # 2. Functions to Launch and Shutdown Server per Mode
 # ---------------------------
@@ -113,7 +127,7 @@ launch_server() {
           --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
           --tokenizer-path Xenova/grok-1-tokenizer \
           --tp 8 --quantization fp8 --trust-remote-code \
-          --attention-backend aiter > "$SERVER_LOG" 2>&1 &
+          --attention-backend aiter --enable-torch-compile --torch-compile-max-bs 4 > "$SERVER_LOG" 2>&1 &
     elif [ "$backend" == "aiter_decode" ]; then
         # Updated model path for aiter_decode
         RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
@@ -121,7 +135,7 @@ launch_server() {
           --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
           --tokenizer-path Xenova/grok-1-tokenizer \
           --tp 8 --quantization fp8 --trust-remote-code \
-          --attention-backend aiter_decode > "$SERVER_LOG" 2>&1 &
+          --attention-backend aiter_decode --enable-torch-compile --torch-compile-max-bs 4 > "$SERVER_LOG" 2>&1 &
     fi
     SERVER_PID=$!
     echo "Server launched (PID = $SERVER_PID) with backend ${backend}. Waiting for readiness..."
