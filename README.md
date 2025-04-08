@@ -1,4 +1,4 @@
-# SGL Benchmark CI Repository
+# SGLang Benchmark CI
 
 This repository contains a collection of benchmarking scripts designed for SGL performance testing of GROK models. The benchmarks are split into two main modes: **offline** and **online**. Each mode is implemented in separate scripts, which can be run independently to evaluate different configurations, input lengths, and performance metrics.
 
