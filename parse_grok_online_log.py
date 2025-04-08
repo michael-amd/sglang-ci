@@ -8,7 +8,7 @@ from collections import defaultdict
 
 # --------- Configuration ---------
 # Set date, image name, and node values:
-DATE = "20250401"
+DATE = "20250402"
 IMAGE_NAME = "20250331rc"
 NODE = "dell300x-pla-t10-23"
 
@@ -23,14 +23,13 @@ req_rates = ["1", "2", "4", "8", "16"]
 inf_col = "N/A"
 
 # Hard-coded H100 reference arrays for each metric (online mode)
-# (These values can be adjusted as needed.)
 H100_E2E = ["13209", "13874", "16613", "44918", "85049", ""]
 H100_TTFT = ["99.1", "102.0", "113.4", "170.7", "520.9", ""]
 H100_ITL = ["23.0", "24.4", "25.9", "63.9", "108.6", ""]
 
 # Row labels for the two modes (using the NODE variable)
 label_aiter = f"MI300x-aiter (prefill+decode), {NODE}"
-label_aiter_decode = f"MI300x-aiter_decode (decode only), {NODE}"
+label_decode = f"MI300x-decode (decode only), {NODE}"  # Updated decode label
 
 # --------- Helper functions ---------
 def parse_metrics_from_file(filepath):
@@ -76,7 +75,7 @@ def parse_metrics_from_file(filepath):
 
 def get_best_metrics_for_mode(mode):
     """
-    For a given mode (either "aiter" or "aiter_decode"), find all log files,
+    For a given mode (either "aiter" or "decode"), find all log files,
     group them by request rate (extracted from filename), and choose the one
     with the minimum Median E2E Latency for each request rate.
     Returns a dict mapping request rate (string) -> (e2e, ttft, itl) (as floats or None)
@@ -88,7 +87,7 @@ def get_best_metrics_for_mode(mode):
     groups = defaultdict(list)
     for filepath in files:
         basename = os.path.basename(filepath)
-        # Example filename: sglang_client_log_grok1_aiter_16_run1_20250321_011929.log
+        # Example filename: sglang_client_log_grok1_decode_1_run1_20250401_231818.log
         m = re.search(r"sglang_client_log_grok1_" + re.escape(mode) + r"_(\d+)_run", basename)
         if m:
             rate = m.group(1)
@@ -142,7 +141,7 @@ if os.path.exists(config_path):
 
 # Get best metrics for both modes
 best_aiter = get_best_metrics_for_mode("aiter")
-best_decode = get_best_metrics_for_mode("aiter_decode")
+best_decode = get_best_metrics_for_mode("decode")  # Updated to search for decode mode logs
 
 # Now, build CSV content lines (as list of strings)
 lines = []
@@ -175,7 +174,7 @@ def build_section(section_title, h100_ref, label_aiter, label_decode):
                 aiter_values.append(format_metric(m[2]))
     aiter_line = f"{label_aiter}\t" + "\t".join(aiter_values) + "\t"
     sec_lines.append(aiter_line)
-    # Row for aiter_decode
+    # Row for decode mode
     decode_values = []
     for r in req_rates:
         m = best_decode.get(r)
@@ -190,7 +189,7 @@ def build_section(section_title, h100_ref, label_aiter, label_decode):
                 decode_values.append(format_metric(m[2]))
     decode_line = f"{label_decode}\t" + "\t".join(decode_values) + "\t"
     sec_lines.append(decode_line)
-    # Ratio rows for each mode: compute ratio row as: H100/MI300x-aiter and H100/MI300x-aiter_decode.
+    # Ratio rows for each mode: compute ratio row as: H100/MI300x-aiter and H100/MI300x-decode.
     ratio_aiter = []
     for idx, r in enumerate(req_rates):
         m_val = best_aiter.get(r)
@@ -218,18 +217,18 @@ def build_section(section_title, h100_ref, label_aiter, label_decode):
                 ratio_decode.append(compute_ratio(h100_ref[idx], m_val[1]))
             elif section_title.startswith("Median ITL"):
                 ratio_decode.append(compute_ratio(h100_ref[idx], m_val[2]))
-    ratio_line_decode = f"H100/MI300x-aiter_decode\t" + "\t".join(ratio_decode)
+    ratio_line_decode = f"H100/MI300x-decode\t" + "\t".join(ratio_decode)
     sec_lines.append(ratio_line_decode)
     
     return sec_lines
 
 # Build sections using the updated labels
 section_e2e = build_section("Median E2E Latency (ms, lower better)", H100_E2E[:5], 
-                            label_aiter, label_aiter_decode)
+                             label_aiter, label_decode)
 section_ttft = build_section("Median TTFT (ms, lower better)", H100_TTFT[:5], 
-                             label_aiter, label_aiter_decode)
+                             label_aiter, label_decode)
 section_itl = build_section("Median ITL (ms, lower better)", H100_ITL[:5], 
-                            label_aiter, label_aiter_decode)
+                             label_aiter, label_decode)
 
 # Append sections to lines (with blank lines between)
 lines.extend(section_e2e)
