@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# grok_perf_offline_csv.sh
+# grok_perf_offline_csv_dummy.sh
 #
 # This script runs the offline benchmark command for TP=8 and multiple batch sizes.
 #
