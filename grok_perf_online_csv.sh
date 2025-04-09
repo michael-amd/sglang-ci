@@ -33,6 +33,9 @@ DOCKER_NAME="rocm/sgl-dev:20250331rc"
 
 # Set NODE variable
 NODE="dell300x-pla-t10-23"
+
+# Set threshold for GSM8K accuracy (average over 3 runs)
+THRESHOLD=0.81
  
 # ---------------------------
 # 0. Container Management (if applicable)
@@ -98,16 +101,48 @@ else
     echo "Folder ${folder} already exists. Checking for missing logs in subsequent runs."
 fi
 OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online.csv"
-
+ 
 # ---------------------------
 # New: GSM8K Accuracy Test as Cold Start (Warm Up Run)
 # ---------------------------
+# This function runs the GSM8K test multiple times, computes the average accuracy,
+# and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
+# It now accepts a mode parameter ("aiter" or "decode") to split the log file accordingly.
 run_client_gsm8k() {
-    # Use an absolute path to the bench_sglang.py file from the sglang repository.
-    CMD="python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5"
-    LOGFILE="${folder}/sglang_client_log_grok1_gsm8k.log"
-    echo "Executing GSM8K test: $CMD" | tee -a "$LOGFILE"
-    eval "$CMD" 2>&1 | tee -a "$LOGFILE"
+    local mode="$1"   # mode: either "aiter" or "decode"
+    local total_accuracy=0
+    local runs=5
+    local count=0
+    local run_accuracy=0
+    local output
+    # Set log file name based on mode.
+    local gsm8k_log="${folder}/sglang_client_log_grok1_gsm8k_${mode}.log"
+    
+    # Run the test 'runs' times
+    for i in $(seq 1 $runs); do
+         echo "Executing GSM8K test Run $i for mode ${mode}..." | tee -a "$gsm8k_log"
+         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 2>&1)
+         echo "$output" | tee -a "$gsm8k_log"
+         # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
+         run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\s*\K[\d.]+' | head -n1)
+         if [ -z "$run_accuracy" ]; then
+            echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$gsm8k_log"
+            run_accuracy=0
+         fi
+         echo "Run $i: Accuracy: $run_accuracy" | tee -a "$gsm8k_log"
+         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+         count=$((count+1))
+    done
+    local avg_accuracy
+    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
+    echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
+    if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
+         echo "Average accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
+         return 0
+    else
+         echo "Average accuracy ($avg_accuracy) is below threshold ($THRESHOLD) for mode ${mode}. Skipping this mode." | tee -a "$gsm8k_log"
+         return 1
+    fi
 }
 
 # ---------------------------
@@ -220,16 +255,20 @@ get_best_metrics() {
 # ---------------------------
 echo "Starting benchmarks for mode 'aiter' (prefill+decode)..."
 launch_server "aiter"
-# Call GSM8K warm-up for this model config before running the rest of the benchmarks.
-run_client_gsm8k
-run_client_benchmark "aiter"
+if run_client_gsm8k "aiter"; then
+    run_client_benchmark "aiter"
+else
+    echo "Skipping benchmarks for mode 'aiter' due to low GSM8K accuracy."
+fi
 shutdown_server
 
 echo "Starting benchmarks for mode 'aiter_decode' (decode only)..."
 launch_server "aiter_decode"
-# Call GSM8K warm-up for this model config before running the rest of the benchmarks.
-run_client_gsm8k
-run_client_benchmark "decode"
+if run_client_gsm8k "decode"; then
+    run_client_benchmark "decode"
+else
+    echo "Skipping benchmarks for mode 'aiter_decode' due to low GSM8K accuracy."
+fi
 shutdown_server
 
 # ---------------------------
