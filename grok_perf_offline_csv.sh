@@ -2,67 +2,78 @@
 # ------------------------------------------------------------------------------
 # grok_perf_offline_csv.sh
 #
-# This script runs the offline benchmark command for TP=8 and multiple batch sizes.
-#
-# It:
-#   1. Container Management:
-#         - If not inside a container (INSIDE_CONTAINER not set):
-#             • Checks if the docker command is available.
-#             • Otherwise, extracts REPO and LATEST_TAG from docker_image.
-#             • Builds container name as "michael_${REPO}_${LATEST_TAG}".
-#             • If a container with that name exists, starts it if not running.
-#             • Otherwise, pulls the image and starts a new container.
-#             • Re-invokes this script inside the container using docker exec,
-#               passing INSIDE_CONTAINER=1 and LATEST_TAG.
-#
-#   2. Once inside the container (INSIDE_CONTAINER is set):
-#         - Changes directory to /mnt/raid/michael/sgl_benchmark_ci/.
-#         - Creates (or reuses) a run folder named:
-#               {current_date}_{LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline
-#         - Runs the offline benchmark workflow.
-#
+# Offline Grok-1 benchmark.  Supports --docker_image=<image[:tag]> override.
 # ------------------------------------------------------------------------------
  
-# Docker image variable with default value.
-docker_image="rocm/sgl-dev:20250331rc"
+###############################################################################
+# Parse CLI options – only --docker_image / --docker-image is supported.
+###############################################################################
+docker_image_default="rocm/sgl-dev:20250331rc"   # fall-back
+docker_image=""
+
+for arg in "$@"; do
+  case $arg in
+    --docker_image=*|--docker-image=*)
+      docker_image="${arg#*=}"
+      shift
+      ;;
+  esac
+done
+
+# If not provided, also allow a positional 1st argument for backward-compat.
+docker_image="${docker_image:-${1:-$docker_image_default}}"
 
 # ---------------------------
 # 0. Container Management (if applicable)
 # ---------------------------
-if [ -z "$INSIDE_CONTAINER" ]; then
-    if ! command -v docker > /dev/null 2>&1; then
-        echo "Docker command not found. Assuming script is running inside container. Proceeding..."
-        INSIDE_CONTAINER=1
+if [ -z "${INSIDE_CONTAINER:-}" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "[csv] Docker not found — already inside container."
+    INSIDE_CONTAINER=1
+  else
+    # ---- 0.1 Normalise image name (auto-prefix "rocm/")
+    if [[ "$docker_image" != */* ]]; then
+      FULL_IMAGE="rocm/${docker_image}"
     else
-        # Extract REPO and LATEST_TAG from docker_image.
-        IMAGE_WITH_TAG=${docker_image#*/}  # e.g., "sgl-dev:20250318rc"
-        REPO=${IMAGE_WITH_TAG%%:*}           # e.g., "sgl-dev"
-        LATEST_TAG=${IMAGE_WITH_TAG#*:}       # e.g., "20250318rc"
-        
-        # Build container name.
-        CONTAINER_NAME="michael_${REPO}_${LATEST_TAG}"
-        
-        # Check if a container with that name exists (even if stopped).
-        existing_container=$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format "{{.Names}}")
-        if [ -n "$existing_container" ]; then
-            # Container exists; check if it is running.
-            running_container=$(docker ps --filter "name=^/${CONTAINER_NAME}$" --format "{{.Names}}")
-            if [ -z "$running_container" ]; then
-                echo "Container ${CONTAINER_NAME} exists but is not running. Starting it..."
-                docker start "$CONTAINER_NAME"
-            else
-                echo "Container ${CONTAINER_NAME} is already running."
-            fi
-        else
-            echo "Container ${CONTAINER_NAME} does not exist. Pulling image ${docker_image} and starting a new container..."
-            docker pull "$docker_image"
-            docker run -d --name "$CONTAINER_NAME" "$docker_image" tail -f /dev/null
-        fi
-        
-        echo "Re-invoking the script inside container ${CONTAINER_NAME}..."
-        docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="$LATEST_TAG" "$CONTAINER_NAME" bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_offline_csv.sh
-        exit 0
+      FULL_IMAGE="$docker_image"
     fi
+
+    IMAGE_WITH_TAG="${FULL_IMAGE##*/}"          # sgl-dev:20250331rc
+    REPO="${IMAGE_WITH_TAG%%:*}"                # sgl-dev
+    LATEST_TAG="${IMAGE_WITH_TAG#*:}"           # 20250331rc
+    CONTAINER_NAME="${REPO}_${LATEST_TAG}"
+
+    echo "[csv] Target container : ${CONTAINER_NAME}"
+    echo "[csv] Docker image     : ${FULL_IMAGE}"
+
+    # ---- 0.2 Ensure container exists & running
+    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+      if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        echo "[csv] Container already running."
+      else
+        echo "[csv] Starting existing container ..."
+        docker start "${CONTAINER_NAME}"
+      fi
+    else
+      echo "[csv] Pulling image and creating container ..."
+      docker pull "${FULL_IMAGE}"
+      docker run -d --name "${CONTAINER_NAME}" \
+        --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+        --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+        -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
+        -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
+    fi
+
+    # ---- 0.3 Re-invoke this script inside the container
+    echo "[csv] Re-invoking inside ${CONTAINER_NAME} ..."
+    docker exec \
+      -e INSIDE_CONTAINER=1 \
+      -e LATEST_TAG="${LATEST_TAG}" \
+      "${CONTAINER_NAME}" \
+      bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_offline_csv.sh \
+           --docker_image="${FULL_IMAGE}"
+    exit 0
+  fi
 fi
 
 # ---------------------------
@@ -77,12 +88,8 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 current_date=$(date +%Y%m%d)
-folder="${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline"
+folder="${current_date}_${LATEST_TAG}_GROK1_MOE-I4F8_offline"
 mkdir -p "$folder"
-
-# Write config.json with docker image name from the variable.
-echo "{\"docker\": \"${docker_image}\"}" > "${folder}/config.json"
-echo "Wrote config.json to ${folder}/config.json"
 
 # ---------------------------
 # Offline Benchmark Configuration and Execution
@@ -100,29 +107,54 @@ TP_VALUES=(8)
 BATCH_SIZES=(1 2 4 8 16 32 64 128 256)
 
 # Write CSV header with ordering:
-echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${current_date}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline.csv"
+echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${current_date}_GROK1_MOE-I4F8_offline.csv"
 
 # Loop over batch sizes (TP fixed to 8)
 for tp in "${TP_VALUES[@]}"; do
   for bs in "${BATCH_SIZES[@]}"; do
     echo "Running TP=${tp}, batch_size=${bs} ..."
-    
-    # Run the benchmark command and capture output.
-    out=$(
-      CK_MOE=1 USE_INT4_WEIGHT=1 MOE_PADDING=0 \
-      python3 -m sglang.bench_one_batch \
-        --model "${MODEL}" \
-        --tokenizer-path "${TOKENIZER}" \
-        --tp "${tp}" \
-        --batch-size "${bs}" \
-        --input "${ILEN}" \
-        --output "${OLEN}" \
-        --attention-backend aiter \
-        --sampling-backend pytorch \
-        --quantization fp8 \
-        --trust-remote-code \
-        --cuda-graph-max-bs 1024 2>&1
-    )
+
+    ## NEW: file to keep full stdout/stderr
+    log_file="${folder}/tp${tp}_bs${bs}.log"
+
+    # -----------------------------------------------------------------------
+    # Select command variant depending on whether tag ends with 'rc'
+    # -----------------------------------------------------------------------
+    if [[ "$LATEST_TAG" == *rc* ]]; then
+      # ---- RC image (original AITer backend) ----
+      out=$(
+        CK_MOE=1 USE_INT4_WEIGHT=1 MOE_PADDING=0 \
+        python3 -m sglang.bench_one_batch \
+          --model "${MODEL}" \
+          --tokenizer-path "${TOKENIZER}" \
+          --tp "${tp}" \
+          --batch-size "${bs}" \
+          --input "${ILEN}" \
+          --output "${OLEN}" \
+          --attention-backend aiter \
+          --sampling-backend pytorch \
+          --quantization fp8 \
+          --trust-remote-code \
+          --cuda-graph-max-bs 1024 2>&1 | tee "${log_file}"
+      )
+    else
+      # ---- Non-RC image (Triton backend + updated env vars) ----
+      out=$(
+        SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 MOE_PADDING=0 \
+        python3 -m sglang.bench_one_batch \
+          --model "${MODEL}" \
+          --tokenizer-path "${TOKENIZER}" \
+          --tp "${tp}" \
+          --batch-size "${bs}" \
+          --input "${ILEN}" \
+          --output "${OLEN}" \
+          --attention-backend triton \
+          --sampling-backend pytorch \
+          --quantization fp8 \
+          --trust-remote-code \
+          --cuda-graph-max-bs 1024 2>&1 | tee "${log_file}"
+      )
+    fi
     
     # Isolate the section after "Benchmark ..." (assumes final block of output).
     last_section=$(echo "$out" | awk '/Benchmark/ {flag=1; next} flag')
@@ -138,15 +170,15 @@ for tp in "${TP_VALUES[@]}"; do
     e2e_throughput=$(echo "$last_section" | grep -oP 'Total\. latency:.*throughput:\s*\K[\d.]+' | tail -n 1)
     
     # Append CSV row:
-    echo "${tp},${bs},${ILEN},${OLEN},${prefill_latency},${decode_median_latency},${total_latency},${prefill_throughput},${decode_median_throughput},${e2e_throughput}" >> "${folder}/${current_date}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline.csv"
+    echo "${tp},${bs},${ILEN},${OLEN},${prefill_latency},${decode_median_latency},${total_latency},${prefill_throughput},${decode_median_throughput},${e2e_throughput}" >> "${folder}/${current_date}_GROK1_MOE-I4F8_offline.csv"
     
     # If a result file (result.jsonl) is produced, rename it.
     if [ -f result.jsonl ]; then
-      dest_json="${folder}/${current_date}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline.jsonl"
+      dest_json="${folder}/${current_date}_GROK1_MOE-I4F8_offline.jsonl"
       mv result.jsonl "$dest_json"
       echo "Saved JSON result to ${dest_json}"
     fi
   done
 done
 
-echo "All done! Results saved to ${folder}/${current_date}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline.csv and JSON result stored as ${folder}/${current_date}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_offline.jsonl (if produced)."
+echo "All done! Results saved to ${folder}/${current_date}_GROK1_MOE-I4F8_offline.csv and JSON result stored as ${folder}/${current_date}_GROK1_MOE-I4F8_offline.jsonl (if produced)."
