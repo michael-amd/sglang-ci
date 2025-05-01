@@ -50,8 +50,8 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - An optional `result.jsonl` file with detailed result data.
 - **Usage:**  
   ```bash
-  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429rc   # release-candidate image
-  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429     # nightly/prod image
+  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250331rc   # release-candidate image
+  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429     # nightly image
   ```
 
 
@@ -101,28 +101,33 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Purpose:** Benchmarks the online serving performance, capturing both server startup and response latencies.
 - **Workflow:**
   1. **Container Management:**  
-     - Detects whether the script is running inside a container.
+     - Detects whether the script is running inside a container.  
      - If executed outside a container and Docker is available, the script manages the container lifecycle: checks for an existing container, starts one if necessary, or pulls a new image and then re-invokes itself inside the container.
   2. **Run Folder Setup:**  
-     - Creates a folder with the current date and LATEST_TAG.
-     - Writes a `config.json` file containing the Docker image details.
-  3. **Server Launch & Client Benchmark:**
-     - Launches a server using two modes (e.g., `aiter` and `aiter_decode` for prefill+decode and decode-only modes).
-     - Runs client benchmarks with multiple request rates.
-     - Captures logs and parses metrics for median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
+     - Creates a folder named  
+       `YYYYMMDD_<TAG>_GROK1_MOE-I4F8_online`.  
+  3. **Server Launch & Client Benchmark:**  
+     - **Image selection:** pass `--docker_image=<image[:tag]>`.  
+       - If the tag **ends with `rc`**, the script keeps the original **AITer** back-ends (`aiter` and `aiter_decode`).  
+       - Otherwise it launches a single **Triton** back-end with environment variables `SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 MOE_PADDING=0`.  
+     - Runs client benchmarks at multiple request rates.  
+     - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
   4. **Results Aggregation:**  
-     - Aggregates metrics comparing the measured performance with reference H100 values.
+     - Aggregates metrics and compares them with reference H100 values.  
      - Generates a CSV summary including metric ratios.
-- **Output:**
-  - A run folder (named with the current date and Docker tag) that contains:
-    - Server logs.
-    - Client logs.
-    - A CSV summary of online benchmark metrics.
-    - A `config.json` file.
-- **Usage:**
+- **Output:**  
+  A run folder containing:  
+  - Server logs  
+  - Client logs  
+  - A CSV summary of online benchmark metrics  
+- **Usage:**  
   ```bash
-  bash grok_perf_online_csv.sh
-  ```  
+  # RC build (keeps AITer pipelines)
+  bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
+
+  # Nightly build (Triton backend)
+  bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
+  ```
 
 ---
 
