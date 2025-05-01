@@ -32,9 +32,9 @@ else
   FULL_IMAGE="$docker_image"
 fi
 
-IMAGE_WITH_TAG="${FULL_IMAGE##*/}"        # sgl-dev:20250429rc
+IMAGE_WITH_TAG="${FULL_IMAGE##*/}"        # sgl-dev:20250429
 REPO="${IMAGE_WITH_TAG%%:*}"              # sgl-dev
-LATEST_TAG="${IMAGE_WITH_TAG#*:}"         # 20250429rc
+LATEST_TAG="${IMAGE_WITH_TAG#*:}"         # 20250429
 
 ###############################################################################
 # 1. Container management (only if not already inside)
@@ -73,9 +73,9 @@ cd /mnt/raid/michael/sgl_benchmark_ci/ || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
 current_date=$(date +%Y%m%d)
-folder="${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online"
+folder="${current_date}_${LATEST_TAG}_GROK1_MOE-I4F8_online"
 mkdir -p "$folder"
-OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online.csv"
+OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_MOE-I4F8_online.csv"
 
 NODE="dell300x-pla-t10-23"
 THRESHOLD=0.8
@@ -96,11 +96,7 @@ launch_server() {
   else
     # --- Nightly / prod image → Triton path ---
     env_prefix="SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 MOE_PADDING=0"
-    if [ "$mode" == "aiter" ]; then
-      attn_backend="triton"
-    else
-      attn_backend="triton_decode"
-    fi
+    attn_backend="triton"
     extra_flags=""
   fi
 
