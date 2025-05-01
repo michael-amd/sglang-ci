@@ -3,6 +3,10 @@
 # grok_perf_offline_csv.sh
 #
 # Offline Grok-1 benchmark.  Supports --docker_image=<image[:tag]> override.
+#
+# USAGE:
+#   bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250331rc
+#   bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429 
 # ------------------------------------------------------------------------------
  
 ###############################################################################
