@@ -3,6 +3,10 @@
 # grok_perf_online_csv.sh
 #   Online-serving benchmark for GROK-1.
 #   Now accepts --docker_image=<image[:tag]> like the offline script.
+#
+# USAGE:
+#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
+#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
