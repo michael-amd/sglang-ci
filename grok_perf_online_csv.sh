@@ -76,10 +76,9 @@ fi
 cd /mnt/raid/michael/sgl_benchmark_ci/ || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
-current_date=$(date +%Y%m%d)
-folder="${current_date}_${LATEST_TAG}_GROK1_MOE-I4F8_online"
+folder="online/${LATEST_TAG}_GROK1_MOE-I4F8_online"
 mkdir -p "$folder"
-OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_MOE-I4F8_online.csv"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_online.csv"
 
 NODE="dell300x-pla-t10-23"
 THRESHOLD=0.8
