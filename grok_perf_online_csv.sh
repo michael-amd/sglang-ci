@@ -1,110 +1,128 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 # grok_perf_online_csv.sh
+#   Online-serving benchmark for GROK-1.
+#   Now accepts --docker_image=<image[:tag]> like the offline script.
 #
-# This script benchmarks online serving performance for GROK1.
-#
-# It now supports being executed from outside a container by managing container
-# startup and then re-invoking itself inside.
-#
-# Workflow:
-#   1. If not inside a container (INSIDE_CONTAINER not set):
-#         - Check if the docker command is available.
-#             • If not available, assume we are inside the container and skip container management.
-#         - Otherwise, extract REPO and LATEST_TAG from DOCKER_NAME.
-#         - Build container name as "michael_${REPO}_${LATEST_TAG}".
-#         - If a container with that name exists:
-#               • Start it if not already running.
-#         - Otherwise:
-#               • Pull the image and start a new container.
-#         - Run this script inside the container using docker exec,
-#           passing INSIDE_CONTAINER=1 and LATEST_TAG.
-#
-#   2. Once inside the container (INSIDE_CONTAINER is set):
-#         - Change directory to /mnt/raid/michael/sgl_benchmark_ci/.
-#         - Create (or reuse) a run folder named:
-#               {current_date}_{LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online
-#         - Run the online benchmark workflow.
-#
+# USAGE:
+#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
+#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
 # ------------------------------------------------------------------------------
- 
-# Set DOCKER_NAME variable
-DOCKER_NAME="rocm/sgl-dev:20250331rc"
 
-# Set NODE variable
-NODE="dell300x-pla-t10-23"
+set -euo pipefail
 
-# Set threshold for GSM8K accuracy (average over 3 runs)
-THRESHOLD=0.81
- 
-# ---------------------------
-# 0. Container Management (if applicable)
-# ---------------------------
-if [ -z "$INSIDE_CONTAINER" ]; then
-    # If docker command is not available, assume we're inside a container.
-    if ! command -v docker > /dev/null 2>&1; then
-        echo "Docker command not found. Assuming script is running inside container. Proceeding..."
-        INSIDE_CONTAINER=1
-    else
-        # Extract repository and LATEST_TAG from DOCKER_NAME.
-        IMAGE_WITH_TAG=${DOCKER_NAME#*/}      # yields "sgl-dev:20250331rc"
-        REPO=${IMAGE_WITH_TAG%%:*}             # yields "sgl-dev"
-        LATEST_TAG=${IMAGE_WITH_TAG#*:}         # yields "20250331rc"
-        
-        # Build container name.
-        CONTAINER_NAME="michael_${REPO}_${LATEST_TAG}"
-        
-        # Check if container exists (even if stopped)
-        existing_container=$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format "{{.Names}}")
-        if [ -n "$existing_container" ]; then
-            # If container exists, check if it is running.
-            running_container=$(docker ps --filter "name=^/${CONTAINER_NAME}$" --format "{{.Names}}")
-            if [ -z "$running_container" ]; then
-                echo "Container ${CONTAINER_NAME} exists but is not running. Starting it..."
-                docker start "$CONTAINER_NAME"
-            else
-                echo "Container ${CONTAINER_NAME} is already running."
-            fi
-        else
-            echo "Container ${CONTAINER_NAME} does not exist. Pulling image ${DOCKER_NAME} and starting a new container..."
-            docker pull "$DOCKER_NAME"
-            # Run container in detached mode with a dummy command to keep it alive.
-            docker run -d --name "$CONTAINER_NAME" "$DOCKER_NAME" tail -f /dev/null
-        fi
-        
-        echo "Re-invoking the script inside container ${CONTAINER_NAME}..."
-        # Execute this script inside the container; pass INSIDE_CONTAINER=1 and LATEST_TAG.
-        docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="$LATEST_TAG" "$CONTAINER_NAME" bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_online_csv.sh
-        exit 0
-    fi
-fi
+###############################################################################
+# 0. Parse CLI flag  --docker_image=
+###############################################################################
+default_image="rocm/sgl-dev:20250331rc"
+docker_image=""
 
-# ---------------------------
-# 1. Inside Container: Setup Run Folder
-# ---------------------------
-# We are now inside the container.
-cd /mnt/raid/michael/sgl_benchmark_ci/ || { echo "Cannot change to /mnt/raid/michael/sgl_benchmark_ci/ directory"; exit 1; }
+for arg in "$@"; do
+  case $arg in
+    --docker_image=*|--docker-image=*)
+      docker_image="${arg#*=}"
+      shift
+      ;;
+  esac
+done
+docker_image="${docker_image:-${1:-$default_image}}"
 
-# Ensure LATEST_TAG is defined (if not, extract from DOCKER_NAME)
-if [ -z "$LATEST_TAG" ]; then
-    IMAGE_WITH_TAG=${DOCKER_NAME#*/} 
-    LATEST_TAG=${IMAGE_WITH_TAG#*:}
-fi
-
-current_date=$(date +%Y%m%d)
-folder="${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online"
-if [ ! -d "$folder" ]; then
-    mkdir -p "$folder"
-    echo "{\"docker\": \"${DOCKER_NAME}\"}" > "${folder}/config.json"
-    echo "Created folder and wrote config.json to ${folder}/config.json"
+###############################################################################
+# 0-b. Normalise image (auto-add rocm/ prefix if absent)
+###############################################################################
+if [[ "$docker_image" != */* ]]; then
+  FULL_IMAGE="rocm/${docker_image}"
 else
-    echo "Folder ${folder} already exists. Checking for missing logs in subsequent runs."
+  FULL_IMAGE="$docker_image"
 fi
-OUTPUT_CSV="${folder}/${current_date}_${LATEST_TAG}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online.csv"
+
+IMAGE_WITH_TAG="${FULL_IMAGE##*/}"        # sgl-dev:20250429
+REPO="${IMAGE_WITH_TAG%%:*}"              # sgl-dev
+LATEST_TAG="${IMAGE_WITH_TAG#*:}"         # 20250429
+
+###############################################################################
+# 1. Container management (only if not already inside)
+###############################################################################
+if [ -z "${INSIDE_CONTAINER:-}" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    INSIDE_CONTAINER=1
+  else
+    CONTAINER_NAME="${REPO}_${LATEST_TAG}"
+    echo "[online] Using container  ${CONTAINER_NAME}"
+    echo "[online] Docker image    ${FULL_IMAGE}"
+
+    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+      docker start "${CONTAINER_NAME}" >/dev/null || true
+    else
+      docker pull "${FULL_IMAGE}"
+      docker run -d --name "${CONTAINER_NAME}" \
+        --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+        --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+        -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
+        -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
+    fi
+
+    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" \
+      "${CONTAINER_NAME}" \
+      bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_online_csv.sh \
+           --docker_image="${FULL_IMAGE}"
+    exit 0
+  fi
+fi
+
+###############################################################################
+# 2. Inside container → benchmark directory setup
+###############################################################################
+cd /mnt/raid/michael/sgl_benchmark_ci/ || {
+  echo "cannot cd to benchmark dir"; exit 1; }
+
+folder="online/${LATEST_TAG}_GROK1_MOE-I4F8_online"
+mkdir -p "$folder"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_online.csv"
+
+NODE="dell300x-pla-t10-23"
+THRESHOLD=0.8
+
+###############################################################################
+# 3. Helper: launch server (backend chosen by tag-type)
+###############################################################################
+launch_server() {
+  local mode=$1          # "aiter" or "aiter_decode" (decode-only)
+  SERVER_LOG="${folder}/server_output_${mode}.log"
+  rm -f "$SERVER_LOG"
+
+  if [[ "$LATEST_TAG" == *rc* ]]; then
+    # --- RC image → original AITer path ---
+    env_prefix="RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1"
+    attn_backend="${mode}"
+    extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
+  else
+    # --- Nightly / prod image → Triton path ---
+    env_prefix="SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    attn_backend="triton"
+    extra_flags=""
+  fi
+
+  echo "[online] Launching backend=${attn_backend}"
+  eval "${env_prefix} python3 -m sglang.launch_server \
+        --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
+        --tokenizer-path Xenova/grok-1-tokenizer \
+        --tp 8 --quantization fp8 --trust-remote-code \
+        --attention-backend ${attn_backend} ${extra_flags} \
+        > \"${SERVER_LOG}\" 2>&1 &"
+  SERVER_PID=$!
+
+  while ! grep -q "The server is fired up and ready to roll!" "$SERVER_LOG"; do
+    sleep 1
+  done
+  echo "[online] Server ready (PID ${SERVER_PID})"
+}
+
+shutdown_server() { kill "$SERVER_PID"; sleep 2; }
  
-# ---------------------------
-# New: GSM8K Accuracy Test as Cold Start (Warm Up Run)
-# ---------------------------
+###############################################################################
+# 4. GSM8K accuracy warm-up
+###############################################################################
 # This function runs the GSM8K test multiple times, computes the average accuracy,
 # and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
 # It now accepts a mode parameter ("aiter" or "decode") to split the log file accordingly.
@@ -146,47 +164,7 @@ run_client_gsm8k() {
 }
 
 # ---------------------------
-# 2. Functions to Launch and Shutdown Server per Mode
-# ---------------------------
-launch_server() {
-    local backend=$1
-    SERVER_LOG="${folder}/server_output_${backend}.log"
-    rm -f "$SERVER_LOG"
-    echo "Launching server with attention-backend ${backend}..."
-    if [ "$backend" == "aiter" ]; then
-        RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
-        python3 -m sglang.launch_server \
-          --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
-          --tokenizer-path Xenova/grok-1-tokenizer \
-          --tp 8 --quantization fp8 --trust-remote-code \
-          --attention-backend aiter --enable-torch-compile --torch-compile-max-bs 4 > "$SERVER_LOG" 2>&1 &
-    elif [ "$backend" == "aiter_decode" ]; then
-        RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1 \
-        python3 -m sglang.launch_server \
-          --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
-          --tokenizer-path Xenova/grok-1-tokenizer \
-          --tp 8 --quantization fp8 --trust-remote-code \
-          --attention-backend aiter_decode --enable-torch-compile --torch-compile-max-bs 4 > "$SERVER_LOG" 2>&1 &
-    fi
-    SERVER_PID=$!
-    echo "Server launched (PID = $SERVER_PID) with backend ${backend}. Waiting for readiness..."
-    while true; do
-        if grep -q "The server is fired up and ready to roll!" "$SERVER_LOG"; then
-            echo "Server with backend ${backend} is ready!"
-            break
-        fi
-        sleep 1
-    done
-}
-
-shutdown_server() {
-    echo "Shutting down server (PID = $SERVER_PID)..."
-    kill "$SERVER_PID"
-    sleep 2
-}
-
-# ---------------------------
-# 3. Embedded Client Benchmark Code (runs only missing logs)
+# 5. Client Benchmark (runs only missing logs)
 # ---------------------------
 run_client_benchmark() {
     local mode=$1
@@ -195,7 +173,9 @@ run_client_benchmark() {
     echo "Running client benchmark for mode ${mode}..."
     for RATE in "${REQUEST_RATES[@]}"; do
         for i in {1..3}; do
-            existing_log=$(ls "${folder}/sglang_client_log_grok1_${mode}_${RATE}_run${i}"_*.log 2>/dev/null)
+            # --------- change this line ----------
+            existing_log=$(ls "${folder}/sglang_client_log_grok1_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+            # --------------------------------------
             if [ -n "$existing_log" ]; then
                 echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
                 continue
@@ -203,9 +183,7 @@ run_client_benchmark() {
             LOGFILE="${folder}/sglang_client_log_grok1_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
             echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
             NUM_PROMPTS=$(( 300 * RATE ))
-            if [ "$NUM_PROMPTS" -gt 2400 ]; then
-                NUM_PROMPTS=2400
-            fi
+            [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
             CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer Xenova/grok-1-tokenizer --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online.jsonl"
             echo "Executing: $CMD" | tee -a "$LOGFILE"
             eval "$CMD" 2>&1 | tee -a "$LOGFILE"
@@ -214,7 +192,7 @@ run_client_benchmark() {
 }
 
 # ---------------------------
-# 4. Function to Select Best Metrics from Logs
+# 6. Function to Select Best Metrics from Logs
 # ---------------------------
 get_best_metrics() {
     local mode=$1
@@ -251,7 +229,7 @@ get_best_metrics() {
 }
 
 # ---------------------------
-# 5. Run Benchmarks for Each Mode
+# 7. Run Benchmarks for Each Mode
 # ---------------------------
 echo "Starting benchmarks for mode 'aiter' (prefill+decode)..."
 launch_server "aiter"
@@ -272,7 +250,7 @@ fi
 shutdown_server
 
 # ---------------------------
-# 6. Parse Logs and Generate CSV Summary (with Ratio Rows)
+# 8. Parse Logs and Generate CSV Summary (with Ratio Rows)
 # ---------------------------
 REQ_RATES=(1 2 4 8 16)
 H100_E2E=(13209 13874 16613 44918 85049)
