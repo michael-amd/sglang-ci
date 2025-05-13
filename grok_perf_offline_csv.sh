@@ -143,7 +143,7 @@ for tp in "${TP_VALUES[@]}"; do
     else
       # ---- Non-RC image (Triton backend + updated env vars) ----
       out=$(
-        SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 MOE_PADDING=0 \
+        SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
         python3 -m sglang.bench_one_batch \
           --model "${MODEL}" \
           --tokenizer-path "${TOKENIZER}" \
