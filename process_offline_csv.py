@@ -41,17 +41,17 @@ class BatchDataProcessor:
         current_date=datetime.today().date()
         # Generate list of dates for last 30 days excluding today, YYYYMMDD format
         # TBD: excluded today since cron job didn't collect any perf for today
-        self.data_prefixes=[(current_date - timedelta(days=i)).strftime('%Y%m%d') for i in range(1, 31)]
+        self.date_prefixes=[(current_date - timedelta(days=i)).strftime('%Y%m%d') for i in range(1, 31)]
 
     def read_and_process_file(self):
         """
-        Reads a CSV file, processes the batch size data, and returns the processed data for each batch size.
+        Reads a CSV file, processes the data for each batch size.
         """
         for folder_name in os.listdir(self.data_dir):
             folder_path = os.path.join(self.data_dir, folder_name)
             if os.path.isdir(folder_path):
                 for unique_date_prefix in self.date_prefixes:
-                    if folder_name.startswith(unique_date_prefix + "_") or folder_name.startswith(unique_date_prefix +"rc"+ "_"):
+                    if folder_name.startswith((unique_date_prefix + "_", unique_date_prefix + "rc" + "_")):
                         for file_name in os.listdir(folder_path):
                             if file_name.endswith('.csv'):
                                 date_str = file_name.split('_')[0]
@@ -91,7 +91,7 @@ class BatchDataProcessor:
             total_data = pd.concat(data_list, ignore_index=True)
     
             # Writing the full data for the current batch size to a CSV file
-            output_file = os.path.join(self.data_dir, f"{self.model_name}+'_'+{batch_size}.csv")
+            output_file = os.path.join(self.data_dir, f"{self.model_name}_{batch_size}.csv")
             total_data.to_csv(output_file, index=False)
 
             print(f"CSV created for {batch_size}: {output_file}")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     
     # Path to the parent directory containing dated folders
     # TBD: Modify this directory accordingly to where you have data and want to save data
-    data_dir = "/mnt/raid/shikpate/sgl_benchmark_ci/offline/GROK1/plots"
+    data_dir = "/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1"
 
     model_name="GROK1_MOE-I4F8"
     batch_proc = BatchDataProcessor(data_dir, model_name)
