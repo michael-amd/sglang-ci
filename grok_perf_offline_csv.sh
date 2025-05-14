@@ -91,7 +91,8 @@ if [ -z "$LATEST_TAG" ]; then
     LATEST_TAG=${IMAGE_WITH_TAG#*:}
 fi
 
-folder="offline/${LATEST_TAG}_GROK1_MOE-I4F8_offline"
+MODEL_NAME=GROK1
+folder="offline/${MODEL_NAME}/${LATEST_TAG}_GROK1_MOE-I4F8_offline"
 mkdir -p "$folder"
 
 # ---------------------------
