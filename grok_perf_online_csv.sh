@@ -76,9 +76,10 @@ fi
 cd /mnt/raid/michael/sgl_benchmark_ci/ || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
-folder="online/${LATEST_TAG}_GROK1_MOE-I4F8_online"
+MODEL_NAME=GROK1
+folder="online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online"
 mkdir -p "$folder"
-OUTPUT_CSV="${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_online.csv"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv"
 
 NODE="dell300x-pla-t10-23"
 THRESHOLD=0.8
@@ -109,6 +110,7 @@ launch_server() {
         --tokenizer-path Xenova/grok-1-tokenizer \
         --tp 8 --quantization fp8 --trust-remote-code \
         --attention-backend ${attn_backend} ${extra_flags} \
+        --mem-fraction-static 0.85 \
         > \"${SERVER_LOG}\" 2>&1 &"
   SERVER_PID=$!
 
@@ -134,7 +136,7 @@ run_client_gsm8k() {
     local run_accuracy=0
     local output
     # Set log file name based on mode.
-    local gsm8k_log="${folder}/sglang_client_log_grok1_gsm8k_${mode}.log"
+    local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${mode}.log"
     
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
@@ -174,13 +176,13 @@ run_client_benchmark() {
     for RATE in "${REQUEST_RATES[@]}"; do
         for i in {1..3}; do
             # --------- change this line ----------
-            existing_log=$(ls "${folder}/sglang_client_log_grok1_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+            existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
             # --------------------------------------
             if [ -n "$existing_log" ]; then
                 echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
                 continue
             fi
-            LOGFILE="${folder}/sglang_client_log_grok1_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
+            LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
             echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
             NUM_PROMPTS=$(( 300 * RATE ))
             [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
@@ -201,7 +203,7 @@ get_best_metrics() {
     local best_ttft=""
     local best_itl=""
     local best_file=""
-    for f in $(ls "${folder}/sglang_client_log_grok1_${mode}_${rate}_run"*".log" 2>/dev/null); do
+    for f in $(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log" 2>/dev/null); do
         local e2e=$(grep -oP 'Median E2E Latency \(ms\):\s*\K[\d.]+' "$f" | head -n1)
         if [ -z "$e2e" ]; then
             continue
@@ -283,7 +285,7 @@ compute_ratio() {
 }
 
 {
-  echo "Online mode - GROK1 (${DOCKER_NAME})"
+  echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})"
   echo ""
   echo "Median E2E Latency (ms, lower better)"
   printf "request rate"
