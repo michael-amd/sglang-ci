@@ -8,14 +8,16 @@ from collections import defaultdict
 
 # --------- Configuration ---------
 # Set date, image name, and node values:
-DATE = "20250402"
-IMAGE_NAME = "20250331rc"
+RUN_TAG = "20250511"  # Example: 20250511 (Update this for different runs)
 NODE = "dell300x-pla-t10-23"
 
 # Folder path (adjust if needed or take as a command-line argument)
-folder = f"./{DATE}_{IMAGE_NAME}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online"
+# New naming convention: <RUN_TAG>_GROK1_MOE-I4F8_online
+folder_base_name = f"{RUN_TAG}_GROK1_MOE-I4F8_online"
+folder = f"./online/{folder_base_name}" # Assumes script is run from sgl_benchmark_ci directory
+
 # Output CSV file name:
-output_csv = os.path.join(folder, f"{DATE}_{IMAGE_NAME}_GROK1_CK-MOE-I4F8-AITER-DECODE-ATTN_online_parsed.csv")
+output_csv = os.path.join(folder, f"{folder_base_name}_parsed.csv")
 
 # Request rates to consider (as strings)
 req_rates = ["1", "2", "4", "8", "16"]
