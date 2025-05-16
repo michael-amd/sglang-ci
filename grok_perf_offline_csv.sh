@@ -91,7 +91,8 @@ if [ -z "$LATEST_TAG" ]; then
     LATEST_TAG=${IMAGE_WITH_TAG#*:}
 fi
 
-folder="offline/${LATEST_TAG}_GROK1_MOE-I4F8_offline"
+MODEL_NAME=GROK1
+folder="offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline"
 mkdir -p "$folder"
 
 # ---------------------------
@@ -110,7 +111,7 @@ TP_VALUES=(8)
 BATCH_SIZES=(1 2 4 8 16 32 64 128 256)
 
 # Write CSV header with ordering:
-echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_offline.csv"
+echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.csv"
 
 # Loop over batch sizes (TP fixed to 8)
 for tp in "${TP_VALUES[@]}"; do
@@ -173,15 +174,15 @@ for tp in "${TP_VALUES[@]}"; do
     e2e_throughput=$(echo "$last_section" | grep -oP 'Total\. latency:.*throughput:\s*\K[\d.]+' | tail -n 1)
     
     # Append CSV row:
-    echo "${tp},${bs},${ILEN},${OLEN},${prefill_latency},${decode_median_latency},${total_latency},${prefill_throughput},${decode_median_throughput},${e2e_throughput}" >> "${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_offline.csv"
+    echo "${tp},${bs},${ILEN},${OLEN},${prefill_latency},${decode_median_latency},${total_latency},${prefill_throughput},${decode_median_throughput},${e2e_throughput}" >> "${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.csv"
     
     # If a result file (result.jsonl) is produced, rename it.
     if [ -f result.jsonl ]; then
-      dest_json="${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_offline.jsonl"
+      dest_json="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.jsonl"
       mv result.jsonl "$dest_json"
       echo "Saved JSON result to ${dest_json}"
     fi
   done
 done
 
-echo "All done! Results saved to ${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_offline.csv and JSON result stored as ${folder}/${LATEST_TAG}_GROK1_MOE-I4F8_offline.jsonl (if produced)."
+echo "All done! Results saved to ${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.csv and JSON result stored as ${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.jsonl (if produced)."
