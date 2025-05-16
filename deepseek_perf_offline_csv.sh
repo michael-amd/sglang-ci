@@ -31,7 +31,7 @@ fi
 ## 4.  Single-run benchmark -----------------------------------------------------
 echo "=== TP=${TP}, BS=${BS} ==="
 out=$(
-  RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=0 MOE_PADDING=0 \
+  RCCL_MSCCL_ENABLE=0 SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
   python3 -m sglang.bench_one_batch \
     --model "${MODEL}" \
     --tp "${TP}" \
