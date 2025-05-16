@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # deepseek_perf_offline_csv.sh
 #
-# Offline-throughput benchmark for DeepSeek-V3-0324 on TP=8 MI300x.
+# Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
