@@ -5,7 +5,7 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250331rc
+
 #   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250429
 # ------------------------------------------------------------------------------
 set -euo pipefail
@@ -13,7 +13,7 @@ set -euo pipefail
 ###############################################################################
 # 0. Parse CLI flag --docker_image=
 ###############################################################################
-docker_image_default="rocm/sgl-dev:20250331rc" # fall-back
+docker_image_default="rocm/sgl-dev:20250429" # fall-back
 docker_image=""
 
 for arg in "$@"; do
