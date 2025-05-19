@@ -13,7 +13,7 @@ set -euo pipefail
 ###############################################################################
 # 0. Parse CLI flag --docker_image=
 ###############################################################################
-docker_image_default="rocm/sgl-dev:20250429" # fall-back
+docker_image_default="rocm/sgl-dev:20250430" # fall-back
 docker_image=""
 
 for arg in "$@"; do
