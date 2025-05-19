@@ -6,7 +6,7 @@
 #
 # USAGE:
 
-#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250429
+#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250430
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
