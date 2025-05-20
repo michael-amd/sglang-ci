@@ -10,6 +10,26 @@
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
+# File to store background server PID
+SERVER_PID_FILE=$(mktemp)
+
+cleanup() {
+    echo "Cleaning up..."
+    if [ -f "$SERVER_PID_FILE" ] && [ -s "$SERVER_PID_FILE" ]; then
+        BG_PID=$(cat "$SERVER_PID_FILE")
+        # Check if process exists
+        if ps -p $BG_PID > /dev/null 2>&1; then
+            echo "Killing background SGLang server (PID: $BG_PID)..."
+            kill $BG_PID
+            wait $BG_PID 2>/dev/null || echo "Server process $BG_PID not found or already terminated."
+        else
+            echo "Background SGLang server (PID: $BG_PID) already stopped."
+        fi
+    fi
+    rm -f "$SERVER_PID_FILE"
+}
+trap cleanup EXIT SIGINT SIGTERM
+
 ###############################################################################
 # 0. Parse CLI flag --docker_image=
 ###############################################################################
@@ -96,9 +116,13 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 ## 1.  Model / tokenizer  -------------------------------------------------------
-MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"   # change to local path if mirrored
-MODEL_NAME="DeepSeek-V3-0324" # Used for folder naming, etc.
-HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324" # Actual Hugging Face model ID for download
+# MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"   # change to local path if mirrored
+# MODEL_NAME="DeepSeek-V3-0324" # Used for folder naming, etc.
+# HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324" # Actual Hugging Face model ID for download
+
+MODEL="/mnt/raid/models/DeepSeek-V3"   # change to local path if mirrored
+MODEL_NAME="DeepSeek-V3" # Used for folder naming, etc.
+HF_MODEL_ID="deepseek-ai/DeepSeek-V3" # Actual Hugging Face model ID for download
 
 # ---- Download model if not present (inside container) ----
 if [ -n "${INSIDE_CONTAINER}" ]; then # Only run download logic if inside the container
@@ -143,11 +167,116 @@ OLEN=32         # output tokens
 TP=8            # tensor-parallel degree
 BS=32           # batch size
 
+###############################################################################
+# 3. Define GSM8K Accuracy Threshold
+###############################################################################
+THRESHOLD=0.7 # Define the accuracy threshold for GSM8K. Adjust as needed.
+
 ## 3.  Run-folder bookkeeping ---------------------------------------------------
 folder="offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline"
 mkdir -p "$folder"
 OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline.csv"
 LOG_FILE="${folder}/tp${TP}_bs${BS}.log" # Define log file path
+GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
+WARMUP_SERVER_LOG_FILE="${folder}/sglang_warmup_server.log" # Define warm-up server log path
+
+###############################################################################
+# 4. GSM8K accuracy warm-up
+# This function runs the GSM8K test multiple times, computes the average accuracy,
+# and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
+# It now accepts a mode parameter ("aiter" or "decode") to split the log file accordingly.
+run_client_gsm8k() {
+    local mode="$1" # Assign the first argument to the mode variable
+    # The gsm8k_log variable is now defined globally as GSM8K_LOG_FILE
+    # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
+    
+    local total_accuracy=0
+    local runs=5
+    local count=0
+    local run_accuracy=0
+    local output
+    
+    # Run the test 'runs' times
+    for i in $(seq 1 $runs); do
+         echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
+         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host 127.0.0.1 2>&1)
+         echo "$output" | tee -a "$GSM8K_LOG_FILE"
+         # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
+         run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\\s*\\K[\\d.]+' | head -n1)
+         if [ -z "$run_accuracy" ]; then
+            echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
+            run_accuracy=0
+         fi
+         echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
+         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+         count=$((count+1))
+    done
+    local avg_accuracy
+    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
+    echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
+    if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
+         echo "Average accuracy meets threshold ($THRESHOLD)." | tee -a "$GSM8K_LOG_FILE"
+         return 0
+    else
+         echo "Average accuracy ($avg_accuracy) is below threshold ($THRESHOLD)." | tee -a "$GSM8K_LOG_FILE"
+         return 1
+    fi
+}
+
+###############################################################################
+# Call GSM8K warm-up before the main benchmark
+###############################################################################
+echo "Clearing previous GSM8K log..."
+> "$GSM8K_LOG_FILE" # Clear/truncate the log file
+
+echo "Starting SGLang server for GSM8K warm-up... (TorchInductor autotuning disabled)"
+# Start server in background. Use trust-remote-code like bench_one_batch.
+# Use --log-level warning to reduce noise, adjust if more verbosity is needed.
+# Disable Triton autotuning for TorchInductor for faster startup during warm-up.
+TORCHINDUCTOR_AUTOTUNE_ENABLE=0 python3 -m sglang.launch_server \
+    --model-path "${MODEL}" \
+    --tp-size "${TP}" \
+    --port 30000 \
+    --trust-remote-code > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
+echo $! > "$SERVER_PID_FILE"
+SERVER_PID=$(cat "$SERVER_PID_FILE")
+
+echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
+echo "Server logs are being written to: $WARMUP_SERVER_LOG_FILE"
+# Wait for server to be ready - poll get_model_info endpoint
+# Timeout after 900 seconds (15 minutes)
+if ! timeout 900s bash -c 'until curl -s -f http://127.0.0.1:30000/get_model_info > /dev/null 2>&1; do echo -n "."; sleep 5; done'; then
+    echo "" # Newline after dots
+    echo "SGLang server failed to start in time. Check $WARMUP_SERVER_LOG_FILE for details. Killing server (if any) and exiting."
+    # Cleanup trap will handle killing the server
+    exit 1
+fi
+echo "" # Newline after dots
+echo "SGLang server started successfully."
+
+echo "Starting GSM8K warm-up..."
+if run_client_gsm8k "aiter"; then
+    echo "GSM8K warm-up successful."
+else
+    echo "GSM8K warm-up failed or accuracy below threshold. Exiting."
+    # Cleanup trap will handle killing the server
+    exit 1
+fi
+# End GSM8K warm-up call
+
+# Ensure warm-up server is stopped before main benchmark
+# The trap will handle this on exit, but explicit kill here is also fine if script doesn't exit above.
+if [ -f "$SERVER_PID_FILE" ] && [ -s "$SERVER_PID_FILE" ]; then
+    BG_PID_TO_KILL=$(cat "$SERVER_PID_FILE")
+    if ps -p "$BG_PID_TO_KILL" > /dev/null 2>&1; then # Check if PID exists
+        echo "Stopping SGLang warm-up server (PID: $BG_PID_TO_KILL)..."
+        kill "$BG_PID_TO_KILL"
+        wait "$BG_PID_TO_KILL" 2>/dev/null || echo "Warm-up server PID $BG_PID_TO_KILL already stopped or not found."
+    else
+        echo "Warm-up server (PID: $BG_PID_TO_KILL) already stopped."
+    fi
+    > "$SERVER_PID_FILE" # Clear PID file as server is stopped
+fi
 
 
 # CSV header (only write if file is empty)
