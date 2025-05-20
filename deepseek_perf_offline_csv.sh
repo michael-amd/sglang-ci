@@ -199,7 +199,7 @@ run_client_gsm8k() {
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
-         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host 127.0.0.1 2>&1)
+         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host http://127.0.0.1 2>&1)
          echo "$output" | tee -a "$GSM8K_LOG_FILE"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
          run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\\s*\\K[\\d.]+' | head -n1)
