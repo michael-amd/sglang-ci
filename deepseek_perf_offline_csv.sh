@@ -116,13 +116,15 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 ## 1.  Model / tokenizer  -------------------------------------------------------
-# MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"   # change to local path if mirrored
-# MODEL_NAME="DeepSeek-V3-0324" # Used for folder naming, etc.
-# HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324" # Actual Hugging Face model ID for download
+# t10-23
+MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"   # change to local path if mirrored
+MODEL_NAME="DeepSeek-V3-0324" # Used for folder naming, etc.
+HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324" # Actual Hugging Face model ID for download
 
-MODEL="/mnt/raid/models/DeepSeek-V3"   # change to local path if mirrored
-MODEL_NAME="DeepSeek-V3" # Used for folder naming, etc.
-HF_MODEL_ID="deepseek-ai/DeepSeek-V3" # Actual Hugging Face model ID for download
+# t12-38
+# MODEL="/mnt/raid/models/DeepSeek-V3"   # change to local path if mirrored
+# MODEL_NAME="DeepSeek-V3" # Used for folder naming, etc.
+# HF_MODEL_ID="deepseek-ai/DeepSeek-V3" # Actual Hugging Face model ID for download
 
 # ---- Download model if not present (inside container) ----
 if [ -n "${INSIDE_CONTAINER}" ]; then # Only run download logic if inside the container
