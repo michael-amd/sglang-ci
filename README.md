@@ -82,7 +82,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - **Output Length:** Set to a small fixed value (OL = 10) for these tests.
 - **Metrics Captured:** Same as the other offline benchmarks (latency and throughput metrics).
 - **Output:**
-  - A folder named with the current date and “LONGCONTEXT” in the title.
+  - A folder named with the current date and "LONGCONTEXT" in the title.
   - A `config.json` file with the Docker image information.
   - A CSV file with benchmark results for long-context experiments.
   - An optional `result.jsonl` file with detailed results.
@@ -151,4 +151,15 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   Modify model paths, tokenizer paths, or benchmark parameters directly in the scripts if your configuration differs.
 - **Resource Management:**  
   Ensure that no other processes are consuming critical GPU resources to avoid memory capacity errors.
+
+---
+
+## Cron Schedule
+
+The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `crontab_rules.txt`.
+
+- **Offline Benchmark:** Runs daily at 7 PM PT.
+- **Online Benchmark:** Runs daily at 8 PM PT.
+
+To apply these rules, run: `crontab /mnt/raid/michael/sgl_benchmark_ci/crontab_rules.txt`
 
