@@ -193,7 +193,7 @@ run_client_gsm8k() {
     # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
     
     local total_accuracy=0
-    local runs=5
+    local runs=3
     local count=0
     local run_accuracy=0
     local output
