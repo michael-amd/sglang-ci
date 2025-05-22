@@ -204,7 +204,7 @@ run_client_gsm8k() {
          output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host http://127.0.0.1 2>&1)
          echo "$output" | tee -a "$GSM8K_LOG_FILE"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
-         run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\\s*\\K[\\d.]+' | head -n1)
+         run_accuracy=$(echo "$output" | tr '\r' '\n' | grep '^Accuracy: ' | head -n 1 | awk '{print $2}')
          if [ -z "$run_accuracy" ]; then
             echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
             run_accuracy=0
@@ -239,7 +239,9 @@ TORCHINDUCTOR_AUTOTUNE_ENABLE=0 python3 -m sglang.launch_server \
     --model-path "${MODEL}" \
     --tp-size "${TP}" \
     --port 30000 \
-    --trust-remote-code > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
+    --trust-remote-code \
+    --mem-fraction-static 0.7 \
+    --max-running-requests 1024 > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
 echo $! > "$SERVER_PID_FILE"
 SERVER_PID=$(cat "$SERVER_PID_FILE")
 
