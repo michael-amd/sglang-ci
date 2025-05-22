@@ -172,7 +172,7 @@ BS=32           # batch size
 ###############################################################################
 # 3. Define GSM8K Accuracy Threshold
 ###############################################################################
-THRESHOLD=0.7 # Define the accuracy threshold for GSM8K. Adjust as needed.
+THRESHOLD=0.93 # Define the accuracy threshold for GSM8K. Adjust as needed.
 
 ## 3.  Run-folder bookkeeping ---------------------------------------------------
 folder="offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline"
@@ -193,7 +193,7 @@ run_client_gsm8k() {
     # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
     
     local total_accuracy=0
-    local runs=3
+    local runs=5
     local count=0
     local run_accuracy=0
     local output
