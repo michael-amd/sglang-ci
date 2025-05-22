@@ -1,6 +1,6 @@
 # To apply these rules, run: crontab /mnt/raid/michael/sgl_benchmark_ci/crontab_rules.txt
 CRON_TZ=America/Los_Angeles
-# 11 AM PT - offline benchmark
+# 7 PM PT - offline benchmark
 0 19 * * * bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_nightly.sh >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/grok_nightly_offline_$(date +\%Y\%m\%d).log 2>&1
-# 12 PM PT (noon) - online serving benchmark
+# 8 PM PT - online serving benchmark
 0 20 * * * bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_nightly.sh --mode=online >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/grok_nightly_online_$(date +\%Y\%m\%d).log 2>&1 
