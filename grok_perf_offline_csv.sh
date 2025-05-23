@@ -108,7 +108,7 @@ OLEN=128
 
 # Only use TP=8; offline benchmarks vary over batch sizes.
 TP_VALUES=(8)
-BATCH_SIZES=(1 2 4 8 16 32 64)
+BATCH_SIZES=(1 2 4 8 16 32 64 128 256)
 
 # Write CSV header with ordering:
 echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.csv"
@@ -156,7 +156,8 @@ for tp in "${TP_VALUES[@]}"; do
           --sampling-backend pytorch \
           --quantization fp8 \
           --trust-remote-code \
-          --cuda-graph-max-bs 1024 2>&1 | tee "${log_file}"
+          --cuda-graph-max-bs 1024 \
+          --mem-fraction-static 0.8 2>&1 | tee "${log_file}"
       )
     fi
     
