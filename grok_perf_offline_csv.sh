@@ -157,7 +157,7 @@ for tp in "${TP_VALUES[@]}"; do
           --quantization fp8 \
           --trust-remote-code \
           --cuda-graph-max-bs 1024 \
-          --mem-fraction-static 0.8 2>&1 | tee "${log_file}"
+          --mem-fraction-static 0.85 2>&1 | tee "${log_file}"
       )
     fi
     
