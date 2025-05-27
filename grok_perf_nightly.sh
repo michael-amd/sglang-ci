@@ -78,4 +78,21 @@ docker exec \
   "${CONTAINER_NAME}" \
   bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
 
+###############################################################################
+# 4. Process CSV and Generate Plots (Offline Mode Only)
+###############################################################################
+if [ "$MODE" == "offline" ]; then
+  echo "[nightly] Processing offline CSV data..."
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    "${CONTAINER_NAME}" \
+    python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py
+
+  echo "[nightly] Generating offline plots..."
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    "${CONTAINER_NAME}" \
+    python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py
+fi
+
 echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
