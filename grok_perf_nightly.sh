@@ -82,17 +82,24 @@ docker exec \
 # 4. Process CSV and Generate Plots (Offline Mode Only)
 ###############################################################################
 if [ "$MODE" == "offline" ]; then
-  echo "[nightly] Processing offline CSV data..."
-  docker exec \
-    -e INSIDE_CONTAINER=1 \
-    "${CONTAINER_NAME}" \
-    python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py
+  # Construct the path to the log folder, similar to grok_perf_offline_csv.sh
+  MODEL_NAME="GROK1" # As defined in grok_perf_offline_csv.sh
+  BENCHMARK_OUTPUT_FOLDER="/mnt/raid/michael/sgl_benchmark_ci/offline/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_MOE-I4F8_offline"
 
-  echo "[nightly] Generating offline plots..."
+  PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_offline_csv.log"
+  GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_offline_plots.log"
+
+  echo "[nightly] Processing offline CSV data... Logs will be saved to ${PROCESS_CSV_LOG_FILE}"
   docker exec \
     -e INSIDE_CONTAINER=1 \
     "${CONTAINER_NAME}" \
-    python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py
+    bash -c "python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+
+  echo "[nightly] Generating offline plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    "${CONTAINER_NAME}" \
+    bash -c "python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
 fi
 
 echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
