@@ -144,8 +144,10 @@ for tp in "${TP_VALUES[@]}"; do
     else
       # ---- Non-RC image (Triton backend + updated env vars) ----
       mem_fraction_arg=""
-      if [[ "$bs" -eq 128 || "$bs" -eq 256 ]]; then
+      if [[ "$bs" -eq 128 ]]; then
         mem_fraction_arg=" --mem-fraction-static 0.85"
+      elif [[ "$bs" -eq 256 ]]; then
+        mem_fraction_arg=" --mem-fraction-static 0.8"
       fi
       out=$(
         SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
