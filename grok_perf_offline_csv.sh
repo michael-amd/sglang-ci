@@ -143,6 +143,10 @@ for tp in "${TP_VALUES[@]}"; do
       )
     else
       # ---- Non-RC image (Triton backend + updated env vars) ----
+      mem_fraction_arg=""
+      if [[ "$bs" -eq 128 || "$bs" -eq 256 ]]; then
+        mem_fraction_arg=" --mem-fraction-static 0.85"
+      fi
       out=$(
         SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
         python3 -m sglang.bench_one_batch \
@@ -156,8 +160,7 @@ for tp in "${TP_VALUES[@]}"; do
           --sampling-backend pytorch \
           --quantization fp8 \
           --trust-remote-code \
-          --cuda-graph-max-bs 1024 \
-          --mem-fraction-static 0.85 2>&1 | tee "${log_file}"
+          --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
       )
     fi
     
