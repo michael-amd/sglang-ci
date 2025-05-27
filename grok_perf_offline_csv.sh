@@ -108,7 +108,7 @@ OLEN=128
 
 # Only use TP=8; offline benchmarks vary over batch sizes.
 TP_VALUES=(8)
-BATCH_SIZES=(1 2 4 8 16 32 64)
+BATCH_SIZES=(1 2 4 8 16 32 64 128 256)
 
 # Write CSV header with ordering:
 echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline.csv"
@@ -143,6 +143,12 @@ for tp in "${TP_VALUES[@]}"; do
       )
     else
       # ---- Non-RC image (Triton backend + updated env vars) ----
+      mem_fraction_arg=""
+      if [[ "$bs" -eq 128 ]]; then
+        mem_fraction_arg=" --mem-fraction-static 0.85"
+      elif [[ "$bs" -eq 256 ]]; then
+        mem_fraction_arg=" --mem-fraction-static 0.8"
+      fi
       out=$(
         SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
         python3 -m sglang.bench_one_batch \
@@ -156,7 +162,7 @@ for tp in "${TP_VALUES[@]}"; do
           --sampling-backend pytorch \
           --quantization fp8 \
           --trust-remote-code \
-          --cuda-graph-max-bs 1024 2>&1 | tee "${log_file}"
+          --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
       )
     fi
     
