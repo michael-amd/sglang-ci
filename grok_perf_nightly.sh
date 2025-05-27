@@ -93,13 +93,13 @@ if [ "$MODE" == "offline" ]; then
   docker exec \
     -e INSIDE_CONTAINER=1 \
     "${CONTAINER_NAME}" \
-    bash -c "python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+    bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
 
   echo "[nightly] Generating offline plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
   docker exec \
     -e INSIDE_CONTAINER=1 \
     "${CONTAINER_NAME}" \
-    bash -c "python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+    bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
 fi
 
 echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
