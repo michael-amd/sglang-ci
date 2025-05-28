@@ -35,6 +35,8 @@ class BatchDataProcessor:
         """
         self.data_dir = data_dir
         self.model_name=model_name
+        self.ILEN = 1024
+        self.OLEN = 128
         # List to store the file names for the new CSV files
         # We are creating new CSV files for each batch_size, and associated data
         self.batch_size_files = {}
@@ -71,13 +73,15 @@ class BatchDataProcessor:
                                         # Drop rows where 'E2E_Latency(s)' is NaN (empty) in the batch_data
                                         batch_data = batch_data.dropna(subset=['E2E_Latency(s)'])
                                         # Add a date column in the batch_data
-                                        batch_data['date'] = date_str  # Add the date column
+                                        batch_data.loc[:, 'date'] = date_str  # Add the date column
+                                        batch_data.loc[:, 'ILEN'] = self.ILEN # Add ILEN column
+                                        batch_data.loc[:, 'OLEN'] = self.OLEN # Add OLEN column
             
                                         if batch_size not in self.batch_size_files:
                                             self.batch_size_files[batch_size] = []
 
                                         # Append the batch data for the current batch_size
-                                        self.batch_size_files[batch_size].append(batch_data[['date', 'batch_size', 'E2E_Latency(s)', 'E2E_Throughput(token/s)']])
+                                        self.batch_size_files[batch_size].append(batch_data[['date', 'batch_size', 'E2E_Latency(s)', 'E2E_Throughput(token/s)', 'ILEN', 'OLEN']])
                                 except Exception as e:
                                     print(f"Unable to open the file {file_path}: {e}")
 
