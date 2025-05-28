@@ -69,9 +69,12 @@ class OfflineGraphPlotter:
             model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
             
             df = self.read_csv(csv_path)
+            # Get ILEN and OLEN from the first row (assuming they are constant for the file)
+            ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
+            olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
 
             axes[i].plot(df['date'], df['E2E_Latency(s)'], marker='o', label=f'Batch Size {numeric_batch_size}')
-            axes[i].set_title(f"Latency vs Image name for Batch Size {numeric_batch_size} ({model_prefix})")
+            axes[i].set_title(f"Latency vs Image name for Batch Size {numeric_batch_size} (ILEN={ilen}, OLEN={olen}, {model_prefix})")
             axes[i].set_ylabel("E2E_Latency(s)")
             axes[i].grid(True)
             axes[i].legend()
@@ -100,9 +103,12 @@ class OfflineGraphPlotter:
             model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
             
             df = self.read_csv(csv_path)
+            # Get ILEN and OLEN from the first row
+            ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
+            olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
 
             axes[i].plot(df['date'], df['E2E_Throughput(token/s)'], marker='o', label=f'Batch Size {numeric_batch_size}')
-            axes[i].set_title(f"Throughput vs Image name for Batch Size {numeric_batch_size} ({model_prefix})")
+            axes[i].set_title(f"Throughput vs Image name for Batch Size {numeric_batch_size} (ILEN={ilen}, OLEN={olen}, {model_prefix})")
             axes[i].set_ylabel("E2E_Throughput(token/s)")
             axes[i].grid(True)
             axes[i].legend()
