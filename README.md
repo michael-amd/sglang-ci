@@ -12,6 +12,7 @@ This repository contains a collection of benchmarking scripts designed for SGL p
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
     - [grok_perf_offline_csv_dummy.sh](#grok_perf_offline_csv_dummysh)
     - [grok_perf_offline_csv_long_context.sh](#grok_perf_offline_csv_long_contextsh)
+    - [Viewing Offline Plots](#viewing-offline-plots)
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
 - [Requirements](#requirements)
@@ -54,7 +55,24 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429     # nightly image
   ```
 
+#### Viewing Offline Plots
 
+The `generate_offline_plots.py` script (invoked by `python3 generate_offline_plots.py` after `process_offline_csv.py` has run) generates PNG plot files in the `/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/plots` directory.
+
+To view these plots via a web browser, a simple HTTP server can be started using the provided `plots_server.sh` script.
+
+1.  **Ensure no other process is using port 8000.** If it is, stop that process first.
+2.  **Start the server:**
+    ```bash
+    bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
+    ```
+    This script runs `custom_http_server.py` which serves files from the `/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/plots` directory on port 8000. The directory listing page will be titled "GROK1 offline plots".
+
+3.  **Access the plots:**
+    Open a web browser and navigate to the server's address. If the server is running on a machine with IP address `10.194.129.138` (as an example), the URL would be:
+    `http://10.194.129.138:8000/`
+
+    You can then click on the individual `.png` files to view them.
 
 #### grok_perf_offline_csv_dummy.sh
 - **Purpose:** Benchmarks a small, dummy production GROK model using a minimal configuration.
