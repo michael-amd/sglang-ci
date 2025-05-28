@@ -60,7 +60,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     % (escaped_linkname, escaped_displayname))
         r.append('</ul>\n<hr>\n</body>\n</html>\n')
         # Use the same encoding for the response
-        encoded = '\\n'.join(r).encode(current_encoding, 'surrogateescape')
+        encoded = ''.join(r).encode(current_encoding, 'surrogateescape')
         
         import io
         f = io.BytesIO()
