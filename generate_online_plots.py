@@ -1,0 +1,127 @@
+###############################################################################
+#
+# MIT License
+#
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#################################################################################
+
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import datetime
+
+class OnlineGraphPlotter:
+    def __init__(self, summary_csv_path, plot_dir, model_name_in_plot):
+        self.summary_csv_path = summary_csv_path
+        self.plot_dir = plot_dir
+        self.model_name_in_plot = model_name_in_plot # e.g. "GROK1 MOE-I4F8 Online"
+        os.makedirs(self.plot_dir, exist_ok=True)
+        self.df = None
+
+    def read_summary_csv(self):
+        """
+        Reads the summary CSV file into a pandas DataFrame.
+        """
+        try:
+            self.df = pd.read_csv(self.summary_csv_path)
+            self.df['date'] = pd.to_datetime(self.df['date'], format='%Y%m%d')
+            self.df = self.df.sort_values('date')
+        except Exception as e:
+            print(f"Error reading or processing summary CSV {self.summary_csv_path}: {e}")
+            self.df = pd.DataFrame() # Ensure df is an empty DataFrame on error
+
+    def plot_metrics_vs_date(self):
+        """
+        Creates a plot with subplots for E2E Latency, TTFT, and ITL vs. Date.
+        Each subplot shows lines for different request_rate and mode combinations.
+        """
+        if self.df.empty:
+            print("No data available to plot.")
+            return
+
+        metrics_to_plot = [
+            ("E2E_Latency_ms", "E2E Latency (ms)"),
+            ("TTFT_ms", "TTFT (ms)"),
+            ("ITL_ms", "ITL (ms)")
+        ]
+
+        unique_modes = self.df['mode'].unique()
+        unique_request_rates = sorted(self.df['request_rate'].unique())
+
+        # Create a 2x2 subplot grid, using 3 of the 4 cells
+        fig, axes = plt.subplots(2, 2, figsize=(20, 12)) # Adjusted for potentially more lines
+        axes = axes.flatten() # Flatten to 1D array for easier iteration
+
+        for i, (metric_col, y_label) in enumerate(metrics_to_plot):
+            ax = axes[i]
+            for mode in unique_modes:
+                for rr in unique_request_rates:
+                    subset = self.df[(self.df['mode'] == mode) & (self.df['request_rate'] == rr)]
+                    if not subset.empty:
+                        ax.plot(subset['date'], subset[metric_col], marker='o', linestyle='-',
+                                label=f"{mode} RR={rr}")
+            
+            ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot}")
+            ax.set_xlabel("Date (Image Name)")
+            ax.set_ylabel(y_label)
+            ax.grid(True)
+            ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize='small') # Move legend outside
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+
+        # Remove the unused 4th subplot
+        if len(metrics_to_plot) < len(axes):
+             fig.delaxes(axes[-1])
+
+        plt.tight_layout(rect=[0, 0, 0.85, 1]) # Adjust layout to make space for legend
+        
+        current_date_str = datetime.now().strftime('%Y%m%d')
+        plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}_{current_date_str}.png"
+        output_file_path = os.path.join(self.plot_dir, plot_filename)
+        
+        try:
+            plt.savefig(output_file_path)
+            print(f"Plot saved to: {output_file_path}")
+        except Exception as e:
+            print(f"Error saving plot: {e}")
+        plt.close()
+
+    def generate_and_save_plots(self):
+        """
+        Main method to orchestrate reading data and generating plots.
+        """
+        self.read_summary_csv()
+        self.plot_metrics_vs_date()
+
+if __name__ == "__main__":
+    # Path to the aggregated summary CSV generated by process_online_csv.py
+    summary_csv_path = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1/GROK1_MOE-I4F8_online_summary.csv"
+    
+    # Directory where the plots will be saved
+    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1/plots"
+    
+    # Model name to be used in plot titles
+    model_name_in_plot = "GROK1 MOE-I4F8 Online"
+
+    plotter = OnlineGraphPlotter(summary_csv_path, plot_dir, model_name_in_plot)
+    plotter.generate_and_save_plots() 
