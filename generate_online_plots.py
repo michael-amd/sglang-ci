@@ -118,7 +118,7 @@ if __name__ == "__main__":
     summary_csv_path = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1/GROK1_MOE-I4F8_online_summary.csv"
     
     # Directory where the plots will be saved
-    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1/plots"
+    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online"
     
     # Model name to be used in plot titles
     model_name_in_plot = "GROK1 MOE-I4F8 Online"
