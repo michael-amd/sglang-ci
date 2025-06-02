@@ -142,7 +142,7 @@ class OfflineGraphPlotter:
 # Generate the plots, call main
 if __name__ == "__main__":
     batch_dir = "/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1"  # Dir where CSVs are located
-    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/plots"# Dir where plots will be saved
+    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline"# Centralized plot directory
 
     model_name="GROK1_MOE-I4F8_offline"
     plotter = OfflineGraphPlotter(batch_dir, plot_dir, model_name)
