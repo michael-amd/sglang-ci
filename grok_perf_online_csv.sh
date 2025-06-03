@@ -177,9 +177,11 @@ run_client_benchmark() {
         for i in {1..3}; do
             # --------- change this line ----------
             existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+            echo "[DEBUG] Checking for existing log pattern: ${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_*.log"
+            echo "[DEBUG] Found existing_log variable content: '${existing_log}'"
             # --------------------------------------
             if [ -n "$existing_log" ]; then
-                echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+                echo "Log for mode ${mode}, rate ${RATE}, run ${i} (matched by pattern, files: '${existing_log}') already exists. Skipping."
                 continue
             fi
             LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
