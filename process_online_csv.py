@@ -27,6 +27,7 @@
 import os
 import pandas as pd
 from datetime import datetime, timedelta
+import re # Import re for regular expressions
 
 class OnlineDataProcessor:
     def __init__(self, data_dir, output_model_name_prefix):
@@ -47,8 +48,41 @@ class OnlineDataProcessor:
         """
         Parses a single online benchmark summary CSV file.
         The CSV contains multiple tables for E2E Latency, TTFT, and ITL.
+        Also parses KV cache info from server log files in the same directory.
         """
         file_records = []
+        num_tokens = pd.NA
+        kv_size_gb = pd.NA
+        
+        # Get the directory containing the CSV file
+        csv_dir = os.path.dirname(file_path)
+        
+        # Look for server log files and parse KV cache info
+        server_logs = ['server_output_aiter.log', 'server_output_aiter_decode.log']
+        for log_file in server_logs:
+            log_path = os.path.join(csv_dir, log_file)
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, 'r') as f:
+                        for line in f:
+                            if "KV Cache is allocated." in line and "#tokens:" in line:
+                                match = re.search(r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB", line)
+                                if match:
+                                    try:
+                                        num_tokens = int(match.group(1))
+                                        k_size = float(match.group(2))
+                                        v_size = float(match.group(3))
+                                        kv_size_gb = k_size + v_size  # Total KV size is K + V
+                                        break # Found KV cache info
+                                    except ValueError:
+                                        print(f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}")
+                                else:
+                                    print(f"Warning: Found KV Cache allocation line but failed to parse details with regex: {line.strip()} in {log_path}")
+                    if not pd.isna(num_tokens):  # If we found the values, stop looking
+                        break
+                except Exception as e:
+                    print(f"Error reading server log {log_path}: {e}")
+        
         try:
             with open(file_path, 'r') as f:
                 lines = f.readlines()
@@ -140,6 +174,8 @@ class OnlineDataProcessor:
                 'E2E_Latency_ms': metrics_values.get("E2E_Latency_ms", pd.NA),
                 'TTFT_ms': metrics_values.get("TTFT_ms", pd.NA),
                 'ITL_ms': metrics_values.get("ITL_ms", pd.NA),
+                'num_tokens': num_tokens,      # Add parsed #tokens
+                'KV_size_GB': kv_size_gb       # Add parsed KV size
             }
             file_records.append(record)
             
