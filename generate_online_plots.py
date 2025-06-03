@@ -28,7 +28,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class OnlineGraphPlotter:
     def __init__(self, summary_csv_path, plot_dir, model_name_in_plot):
@@ -59,7 +59,8 @@ class OnlineGraphPlotter:
         """
         Creates a plot with subplots for E2E Latency, TTFT, ITL, #Tokens and KV Cache Usage vs. Date.
         Each subplot shows lines for different request_rate and mode combinations for performance metrics.
-        #Tokens is a line plot and KV Cache Usage is a bar plot, showing one value per date.
+        #Tokens is a line plot and KV Cache Usage is a bar plot, showing separate entries per mode for each date.
+        All available dates are shown on the x-axis for each plot.
         """
         if self.df.empty:
             print("No data available to plot.")
@@ -75,29 +76,42 @@ class OnlineGraphPlotter:
 
         unique_modes = self.df['mode'].unique()
         unique_request_rates = sorted(self.df['request_rate'].unique())
+        all_dates_overall = sorted(self.df['date'].unique())
 
-        # Create a 3x2 subplot grid
-        fig, axes = plt.subplots(3, 2, figsize=(20, 18)) # Adjusted for 5 plots
-        axes = axes.flatten() # Flatten to 1D array for easier iteration
+        fig, axes = plt.subplots(3, 2, figsize=(20, 18))
+        axes = axes.flatten()
 
         for i, (metric_col, y_label, plot_type) in enumerate(metrics_to_plot):
             ax = axes[i]
-            
+            plotted_dates_for_this_axis = set()
+
             if metric_col in ['num_tokens', 'KV_size_GB']:
-                # These metrics have one value per date.
-                # Group by date and take the first non-NA value.
-                # Drop rows where metric_col is NA before grouping and plotting
-                metric_data_per_date = self.df.dropna(subset=[metric_col]).groupby('date')[metric_col].first()
-                if not metric_data_per_date.empty:
-                    dates = metric_data_per_date.index
-                    values = metric_data_per_date.values
-                    if plot_type == "line":
-                        ax.plot(dates, values, marker='o', linestyle='-', label=y_label)
-                    elif plot_type == "bar":
-                        ax.bar(dates, values, label=y_label, width=0.9 * (dates[1]-dates[0]).days if len(dates) > 1 else 20) # Adjust bar width
-                    ax.legend(loc='best', fontsize='small')
-                else:
-                    print(f"No data for {metric_col} after dropping NA.")
+                n_modes = len(unique_modes)
+                # Define total width for the group of bars for a single date (e.g., 0.8 of a day interval)
+                date_group_width_days = 0.8 
+                individual_bar_width_days = date_group_width_days / n_modes if n_modes > 0 else date_group_width_days
+
+                for mode_idx, mode in enumerate(unique_modes):
+                    mode_metric_data = self.df[(self.df['mode'] == mode) & self.df[metric_col].notna()]
+                    if not mode_metric_data.empty:
+                        data_to_plot = mode_metric_data.groupby('date')[metric_col].first()
+                        if not data_to_plot.empty:
+                            dates = data_to_plot.index # pd.DatetimeIndex
+                            values = data_to_plot.values
+                            plotted_dates_for_this_axis.update(dates)
+
+                            if plot_type == "line":
+                                ax.plot(dates, values, marker='o', linestyle='-', label=f"{mode} - {y_label.split(' (')[0]}")
+                            elif plot_type == "bar":
+                                # Calculate offset for this mode's bars from the center of the date tick
+                                offset_days = (mode_idx - (n_modes - 1) / 2.0) * individual_bar_width_days
+                                # Apply offset to dates
+                                offset_dates = dates + pd.to_timedelta(offset_days, unit='D')
+                                
+                                ax.bar(offset_dates, values, 
+                                       label=f"{mode} - {y_label.split(' (')[0]}", 
+                                       width=individual_bar_width_days)
+                ax.legend(loc='best', fontsize='small')
             else:
                 # For E2E, TTFT, ITL, plot lines for each mode and request_rate
                 for mode in unique_modes:
@@ -106,21 +120,28 @@ class OnlineGraphPlotter:
                         if not subset.empty:
                             ax.plot(subset['date'], subset[metric_col], marker='o', linestyle='-',
                                     label=f"{mode} RR={rr}")
+                            plotted_dates_for_this_axis.update(subset['date'])
                 ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize='small')
 
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot}")
-            ax.set_xlabel("Date") # Simplified X-axis label
+            ax.set_xlabel("Date")
             ax.set_ylabel(y_label)
             ax.grid(True)
+
+            # Set x-axis ticks to show all plotted dates for this subplot
+            if plotted_dates_for_this_axis:
+                sorted_plotted_dates = sorted(list(plotted_dates_for_this_axis))
+                ax.set_xticks(sorted_plotted_dates)
+            
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
             plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
-        # Remove the unused subplot if any (e.g., if 5 plots in 3x2 grid)
+        # Remove the unused subplot if any
         if len(metrics_to_plot) < len(axes):
              for j in range(len(metrics_to_plot), len(axes)):
                  fig.delaxes(axes[j])
 
-        plt.tight_layout(rect=[0, 0, 0.90, 1]) # Adjust layout to make space for legend if it's outside
+        plt.tight_layout(rect=[0, 0, 0.90, 1])
         
         current_date_str = datetime.now().strftime('%Y%m%d')
         plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}_{current_date_str}.png"
