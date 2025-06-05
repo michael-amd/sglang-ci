@@ -84,60 +84,133 @@ class OnlineGraphPlotter:
 
         for i, (metric_col, y_label, plot_type) in enumerate(metrics_to_plot):
             ax = axes[i]
+            # Collect all dates that will have data plotted on this specific axis
             plotted_dates_for_this_axis = set()
+            # Temp storage for data to be plotted, as we need all dates first for categorical mapping
+            plot_data_collections = []
 
             if metric_col in ['num_tokens', 'KV_size_GB']:
-                n_modes = len(unique_modes)
-                # Define total width for the group of bars for a single date (e.g., 0.8 of a day interval)
-                date_group_width_days = 0.8 
-                individual_bar_width_days = date_group_width_days / n_modes if n_modes > 0 else date_group_width_days
-
                 for mode_idx, mode in enumerate(unique_modes):
                     mode_metric_data = self.df[(self.df['mode'] == mode) & self.df[metric_col].notna()]
                     if not mode_metric_data.empty:
                         data_to_plot = mode_metric_data.groupby('date')[metric_col].first()
                         if not data_to_plot.empty:
-                            dates = data_to_plot.index # pd.DatetimeIndex
-                            values = data_to_plot.values
-                            plotted_dates_for_this_axis.update(dates)
-
-                            if plot_type == "line":
-                                ax.plot(dates, values, marker='o', linestyle='-', label=f"{mode} - {y_label.split(' (')[0]}")
-                            elif plot_type == "bar":
-                                # Calculate offset for this mode's bars from the center of the date tick
-                                offset_days = (mode_idx - (n_modes - 1) / 2.0) * individual_bar_width_days
-                                # Apply offset to dates
-                                offset_dates = dates + pd.to_timedelta(offset_days, unit='D')
-                                
-                                ax.bar(offset_dates, values, 
-                                       label=f"{mode} - {y_label.split(' (')[0]}", 
-                                       width=individual_bar_width_days)
-                ax.legend(loc='best', fontsize='small')
+                            plotted_dates_for_this_axis.update(data_to_plot.index)
+                            # Add 'annotate': True for num_tokens to enable y-value annotations
+                            annotate_flag = True if metric_col == 'num_tokens' else False
+                            plot_data_collections.append({
+                                'type': plot_type, 
+                                'mode': mode, 
+                                'mode_idx': mode_idx, 
+                                'dates': data_to_plot.index, 
+                                'values': data_to_plot.values, 
+                                'label_suffix': y_label.split(' (')[0],
+                                'annotate': annotate_flag
+                            })
             else:
-                # For E2E, TTFT, ITL, plot lines for each mode and request_rate
                 for mode in unique_modes:
                     for rr in unique_request_rates:
                         subset = self.df[(self.df['mode'] == mode) & (self.df['request_rate'] == rr) & self.df[metric_col].notna()]
                         if not subset.empty:
-                            ax.plot(subset['date'], subset[metric_col], marker='o', linestyle='-',
-                                    label=f"{mode} RR={rr}")
                             plotted_dates_for_this_axis.update(subset['date'])
-                ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize='small')
+                            plot_data_collections.append({'type': 'line', 'mode': mode, 'rr': rr, 'dates': subset['date'], 'values': subset[metric_col], 'label_suffix': f"{mode} RR={rr}", 'annotate': True})
+            
+            if not plotted_dates_for_this_axis:
+                # Handle case where this subplot has no data, remove it or skip
+                ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
+                ax.set_xticks([])
+                ax.set_yticks([])
+                continue # Skip to next subplot
+
+            ordered_subplot_dates = sorted(list(plotted_dates_for_this_axis))
+            subplot_date_to_local_idx = {date_obj: k for k, date_obj in enumerate(ordered_subplot_dates)}
+
+            # Common settings for bar plots on categorical axis
+            n_modes_for_bar = len([pdc for pdc in plot_data_collections if pdc['type'] == 'bar']) # Count distinct groups if plotting multiple things as bars
+            # This assumes for num_tokens/KV_size_GB, n_modes refers to unique_modes if they are bars
+            # If only one type of bar (KV_size_GB), n_modes is len(unique_modes)
+            # For simplicity, assuming n_modes for bar plot spacing is based on unique_modes
+            group_width_categorical = 0.8 # Total width for a bar group at one date category
+            bar_width_categorical = group_width_categorical / len(unique_modes) if len(unique_modes) > 0 else group_width_categorical
+
+            for data_item in plot_data_collections:
+                x_indices = [subplot_date_to_local_idx[d] for d in data_item['dates']]
+                values = data_item['values']
+                label_text = f"{data_item['mode']} - {data_item['label_suffix']}" if metric_col in ['num_tokens', 'KV_size_GB'] else data_item['label_suffix']
+
+                if data_item['type'] == "line":
+                    ax.plot(x_indices, values, marker='o', linestyle='-', label=label_text)
+                elif data_item['type'] == "bar":
+                    # mode_idx is from the original loop when collecting num_tokens/KV_size_GB data
+                    mode_idx = data_item['mode_idx'] 
+                    offset_categorical = (mode_idx - (len(unique_modes) - 1) / 2.0) * bar_width_categorical
+                    final_x_bar_indices = [x_idx + offset_categorical for x_idx in x_indices]
+                    ax.bar(final_x_bar_indices, values, label=label_text, width=bar_width_categorical)
+
+            # Collect all annotations for overlap detection (only for line plots with annotations)
+            all_annotations = []
+            for data_item in plot_data_collections:
+                if data_item['type'] == "line" and data_item.get('annotate'):
+                    x_indices = [subplot_date_to_local_idx[d] for d in data_item['dates']]
+                    values = data_item['values']
+                    for k_idx, x_val_idx in enumerate(x_indices):
+                        y_val_actual = values.iloc[k_idx] if isinstance(values, pd.Series) else values[k_idx]
+                        all_annotations.append({
+                            'x': x_val_idx,
+                            'y': y_val_actual,
+                            'text': f'{y_val_actual:.1f}'
+                        })
+            
+            # Sort annotations by x, then by y (descending for y to prioritize higher values)
+            all_annotations.sort(key=lambda a: (a['x'], -a['y']))
+            
+            # Filter annotations to prevent overlap
+            # We consider annotations overlapping if they're at the same x position or very close
+            # and their y values are within a certain threshold
+            filtered_annotations = []
+            if all_annotations:
+                # Estimate y-axis range for overlap threshold calculation
+                y_values = [a['y'] for a in all_annotations]
+                y_range = max(y_values) - min(y_values) if len(y_values) > 1 else 1
+                y_overlap_threshold = y_range * 0.05  # 5% of y-range as threshold
+                x_overlap_threshold = 0.15  # x positions within 0.15 units considered overlapping
+                
+                for ann in all_annotations:
+                    # Check if this annotation would overlap with any already accepted annotation
+                    overlap_found = False
+                    for accepted in filtered_annotations:
+                        x_dist = abs(ann['x'] - accepted['x'])
+                        y_dist = abs(ann['y'] - accepted['y'])
+                        
+                        if x_dist <= x_overlap_threshold and y_dist <= y_overlap_threshold:
+                            overlap_found = True
+                            break
+                    
+                    if not overlap_found:
+                        filtered_annotations.append(ann)
+            
+            # Now add the filtered annotations to the plot
+            for ann in filtered_annotations:
+                ax.annotate(ann['text'],
+                            (ann['x'], ann['y']),
+                            textcoords="offset points", xytext=(0, 7),
+                            ha='center', fontsize='x-small')
+
+            if metric_col in ['num_tokens', 'KV_size_GB']:
+                 ax.legend(loc='best', fontsize='small')
+            else:
+                 ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize='small')
 
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot}")
             ax.set_xlabel("Date")
             ax.set_ylabel(y_label)
             ax.grid(True)
 
-            # Set x-axis ticks to show all plotted dates for this subplot
-            if plotted_dates_for_this_axis:
-                sorted_plotted_dates = sorted(list(plotted_dates_for_this_axis))
-                ax.set_xticks(sorted_plotted_dates)
+            ax.set_xticks(range(len(ordered_subplot_dates)))
+            ax.set_xticklabels([d.strftime('%Y-%m-%d') for d in ordered_subplot_dates], rotation=45, ha="right")
             
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-            plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+            # Removed: ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
 
-            # Add note specifically for the # Tokens plot
             if metric_col == "num_tokens":
                 explanation_text = 'Note: "# Tokens*" refers to the number of tokens for which the\nKey-Value (KV) Cache is allocated at server startup.'
                 # Position text to the right of the plot area. transform=ax.transAxes means (0,0) is bottom-left, (1,1) is top-right of axes.
