@@ -70,7 +70,8 @@ class OnlineGraphPlotter:
             ("E2E_Latency_ms", "E2E Latency (ms)", "line"),
             ("TTFT_ms", "TTFT (ms)", "line"),
             ("ITL_ms", "ITL (ms)", "line"),
-            ("num_tokens", "# Tokens", "line"),
+            # "# Tokens": number of tokens for which the Key-Value (KV) Cache is allocated when the server starts up.
+            ("num_tokens", "# Tokens*", "line"),
             ("KV_size_GB", "KV Cache Usage (GB)", "bar")
         ]
 
@@ -136,12 +137,25 @@ class OnlineGraphPlotter:
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
             plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
+            # Add note specifically for the # Tokens plot
+            if metric_col == "num_tokens":
+                explanation_text = 'Note: "# Tokens*" refers to the number of tokens for which the\nKey-Value (KV) Cache is allocated at server startup.'
+                # Position text to the right of the plot area. transform=ax.transAxes means (0,0) is bottom-left, (1,1) is top-right of axes.
+                ax.text(1.02, 0.5, explanation_text, transform=ax.transAxes, 
+                        ha='left', va='center', fontsize='small', color='gray',
+                        bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.5))
+
         # Remove the unused subplot if any
         if len(metrics_to_plot) < len(axes):
              for j in range(len(metrics_to_plot), len(axes)):
                  fig.delaxes(axes[j])
 
-        plt.tight_layout(rect=[0, 0, 0.90, 1])
+        # Adjust layout to make space for legends and potential side notes
+        # The right padding (0.90) might need to be smaller if the note is wide, e.g., 0.85
+        plt.tight_layout(rect=[0, 0, 0.88, 1]) # Adjusted right padding for side note
+
+        # Remove the general explanation text from the bottom of the figure
+        # fig.text(0.02, 0.01, explanation_text, ha='left', va='bottom', fontsize='small', color='gray')
         
         current_date_str = datetime.now().strftime('%Y%m%d')
         plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}_{current_date_str}.png"
