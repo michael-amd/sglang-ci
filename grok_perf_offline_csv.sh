@@ -5,8 +5,9 @@
 # Offline Grok-1 benchmark.  Supports --docker_image=<image[:tag]> override.
 #
 # USAGE:
-#   bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250331rc
-#   bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429 
+#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc
+#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250429
+#   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 # ------------------------------------------------------------------------------
  
 ###############################################################################
@@ -35,12 +36,8 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     echo "[csv] Docker not found — already inside container."
     INSIDE_CONTAINER=1
   else
-    # ---- 0.1 Normalise image name (auto-prefix "rocm/")
-    if [[ "$docker_image" != */* ]]; then
-      FULL_IMAGE="rocm/${docker_image}"
-    else
-      FULL_IMAGE="$docker_image"
-    fi
+    # ---- 0.1 Use the full image name as provided
+    FULL_IMAGE="$docker_image"
 
     IMAGE_WITH_TAG="${FULL_IMAGE##*/}"          # sgl-dev:20250331rc
     REPO="${IMAGE_WITH_TAG%%:*}"                # sgl-dev
