@@ -146,6 +146,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   # Nightly build (Triton backend)
   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
   ```
+  Note that the docker images mentioned above can be pulled from this docker hub: https://hub.docker.com/r/rocm/sgl-dev
 
 ---
 
