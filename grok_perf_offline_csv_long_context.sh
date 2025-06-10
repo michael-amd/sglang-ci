@@ -63,7 +63,7 @@ for tp in "${TP_VALUES[@]}"; do
       
       # Run the benchmark command and capture output.
       out=$(
-        RCCL_MSCCL_ENABLE=0 CK_MOE=1 MOE_PADDING=0 USE_INT4_WEIGHT=1 \
+        RCCL_MSCCL_ENABLE=0 SGLANG_AITER_MOE=1 SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
         python3 -m sglang.bench_one_batch \
           --model "${MODEL}" \
           --tokenizer-path "${TOKENIZER}" \
