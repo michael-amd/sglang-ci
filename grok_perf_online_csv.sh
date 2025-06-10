@@ -5,8 +5,9 @@
 #   Now accepts --docker_image=<image[:tag]> like the offline script.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
-#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429
+#   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
@@ -28,13 +29,9 @@ done
 docker_image="${docker_image:-${1:-$default_image}}"
 
 ###############################################################################
-# 0-b. Normalise image (auto-add rocm/ prefix if absent)
+# 0-b. Use the full image name as provided (no auto-prefixing)
 ###############################################################################
-if [[ "$docker_image" != */* ]]; then
-  FULL_IMAGE="rocm/${docker_image}"
-else
-  FULL_IMAGE="$docker_image"
-fi
+FULL_IMAGE="$docker_image"
 
 IMAGE_WITH_TAG="${FULL_IMAGE##*/}"        # sgl-dev:20250429
 REPO="${IMAGE_WITH_TAG%%:*}"              # sgl-dev
