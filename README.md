@@ -7,6 +7,7 @@ This repository contains a collection of benchmarking scripts designed for SGL p
 ## Table of Contents
 
 - [Overview](#overview)
+- [Supported Docker Images](#supported-docker-images)
 - [Benchmark Modes](#benchmark-modes)
   - [Offline Mode](#offline-mode)
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
@@ -23,6 +24,22 @@ This repository contains a collection of benchmarking scripts designed for SGL p
 ## Overview
 
 The SGL Benchmark CI repository is intended to evaluate the performance of GROK models on various configurations and use cases. The scripts provided in this repository capture critical metrics such as latency and throughput for both offline and online benchmarking. Results are output as CSV files for easy analysis and archival.
+
+---
+
+## Supported Docker Images
+
+The benchmark scripts support Docker images from multiple sources:
+
+1. **ROCm SGLang Development Images:** Available at https://hub.docker.com/r/rocm/sgl-dev
+   - Example: `rocm/sgl-dev:20250331rc` (release candidate)
+   - Example: `rocm/sgl-dev:20250429` (nightly build)
+
+2. **LMSYS SGLang Images:** Available at https://hub.docker.com/r/lmsysorg/sglang/tags
+   - Example: `lmsysorg/sglang:v0.4.6.post3-rocm630`
+   - Example: `lmsysorg/sglang:v0.4.7-rocm630`
+
+**Important:** You must provide the full Docker image name including the registry/organization prefix. The scripts no longer auto-prefix image names.
 
 ---
 
@@ -51,8 +68,13 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - An optional `result.jsonl` file with detailed result data.
 - **Usage:**  
   ```bash
-  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250331rc   # release-candidate image
-  bash grok_perf_offline_csv.sh --docker_image=sgl-dev:20250429     # nightly image
+  # Using ROCm SGLang development images
+  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc   # release-candidate image
+  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250429     # nightly image
+  
+  # Using LMSYS SGLang images
+  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
   ```
 
 #### Viewing Offline Plots
@@ -140,13 +162,14 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - A CSV summary of online benchmark metrics  
 - **Usage:**  
   ```bash
-  # RC build (keeps AITer pipelines)
-  bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
+  # Using ROCm SGLang development images
+  bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc    # RC build (keeps AITer pipelines)
+  bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429      # Nightly build (Triton backend)
 
-  # Nightly build (Triton backend)
-  bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
+  # Using LMSYS SGLang images
+  bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+  bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
   ```
-  Note that the docker images mentioned above can be pulled from this docker hub: https://hub.docker.com/r/rocm/sgl-dev
 
 ---
 
