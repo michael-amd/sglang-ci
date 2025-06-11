@@ -13,6 +13,7 @@ This repository contains a collection of benchmarking scripts designed for SGL p
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
     - [grok_perf_offline_csv_dummy.sh](#grok_perf_offline_csv_dummysh)
     - [grok_perf_offline_csv_long_context.sh](#grok_perf_offline_csv_long_contextsh)
+    - [deepseek_perf_offline_csv.sh](#deepseek_perf_offline_csvsh)
     - [Viewing Offline Plots](#viewing-offline-plots)
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
@@ -174,7 +175,30 @@ To view these plots via a web browser, a simple HTTP server can be started using
   bash grok_perf_offline_csv_long_context.sh
   ```  
 
----
+#### deepseek_perf_offline_csv.sh
+- **Purpose:** Benchmarks the DeepSeek V3 model with FP8 quantization.
+- **Configuration:**
+  - **TP:** Fixed at 8.
+  - **Batch Size:** Fixed at 32.
+  - **Input / Output Lengths:** Input length (IL) set to 128 and output length (OL) set to 32.
+  - **GSM8K Warm-up:** Performs GSM8K accuracy testing before benchmarking (threshold: 0.93).
+- **Metrics Captured:** 
+  - Same as grok_perf_offline_csv.sh (latency and throughput metrics)
+- **Output:**
+  - A folder named with the date and model configuration.
+  - A CSV file with benchmark results.
+  - Log files for server output and GSM8K testing.
+- **Usage:**  
+  ```bash
+  # Using ROCm SGLang development images
+  bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250430
+  
+  # Using LMSYS SGLang images
+  bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+  
+  # Using custom built images from source
+  bash deepseek_perf_offline_csv.sh --docker_image=my-sglang:custom-rocm630
+  ```
 
 ### Online Mode
 

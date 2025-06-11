@@ -5,8 +5,9 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-
-#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -49,13 +50,9 @@ done
 docker_image="${docker_image:-${1:-$docker_image_default}}"
 
 ###############################################################################
-# 0-b. Normalise image name and extract tag
+# 0-b. Use the full image name as provided (no auto-prefixing)
 ###############################################################################
-if [[ "$docker_image" != */* ]]; then # if no / is present, assume it's a rocm image
-  FULL_IMAGE="rocm/${docker_image}"
-else
-  FULL_IMAGE="$docker_image"
-fi
+FULL_IMAGE="$docker_image"
 
 IMAGE_WITH_TAG="${FULL_IMAGE##*/}" # e.g., sgl-dev:20250429
 LATEST_TAG="${IMAGE_WITH_TAG#*:}"   # e.g., 20250429
