@@ -78,7 +78,7 @@ The benchmark scripts support Docker images from multiple sources:
    bash grok_perf_online_csv.sh --docker_image=my-sglang:dev-abc1234-rocm630
    ```
 
-**Important:** You must provide the full Docker image name including the registry/organization prefix. The scripts no longer auto-prefix image names.
+**Important:** You must provide the full Docker image name including the registry/organization prefix.
 
 ---
 
