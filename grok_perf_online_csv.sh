@@ -96,7 +96,7 @@ launch_server() {
     extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
   else
     # --- Nightly / prod image → Triton path ---
-    env_prefix="SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     attn_backend="triton"
     extra_flags=""
   fi

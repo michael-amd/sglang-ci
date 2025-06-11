@@ -147,7 +147,7 @@ for tp in "${TP_VALUES[@]}"; do
         mem_fraction_arg=" --mem-fraction-static 0.8"
       fi
       out=$(
-        SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
+        SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
         python3 -m sglang.bench_one_batch \
           --model "${MODEL}" \
           --tokenizer-path "${TOKENIZER}" \
