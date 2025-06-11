@@ -216,7 +216,9 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   3. **Server Launch & Client Benchmark:**  
      - **Image selection:** pass `--docker_image=<image[:tag]>`.  
        - If the tag **ends with `rc`**, the script keeps the original **AITer** back-ends (`aiter` and `aiter_decode`).  
-       - Otherwise it launches a single **Triton** back-end with environment variables `SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`.  
+       - Otherwise it launches a single **Triton** back-end with environment variables:
+         - For SGLang v0.4.7+: `SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
+         - For SGLang v0.4.6 and earlier: `SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
      - Runs client benchmarks at multiple request rates.  
      - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
   4. **Results Aggregation:**  

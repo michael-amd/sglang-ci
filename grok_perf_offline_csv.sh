@@ -146,8 +146,24 @@ for tp in "${TP_VALUES[@]}"; do
       elif [[ "$bs" -eq 256 ]]; then
         mem_fraction_arg=" --mem-fraction-static 0.8"
       fi
+      
+      # Determine which environment variable to use based on version
+      # Extract version from image tag if it's an lmsysorg/sglang image
+      aiter_env_var="SGLANG_USE_AITER"
+      if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patch="${BASH_REMATCH[3]}"
+        # Use SGLANG_AITER_MOE for versions before v0.4.7
+        if [[ "$major" -eq 0 ]]; then
+          if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+            aiter_env_var="SGLANG_AITER_MOE"
+          fi
+        fi
+      fi
+      
       out=$(
-        SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
+        env ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
         python3 -m sglang.bench_one_batch \
           --model "${MODEL}" \
           --tokenizer-path "${TOKENIZER}" \
