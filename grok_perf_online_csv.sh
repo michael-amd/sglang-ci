@@ -96,7 +96,22 @@ launch_server() {
     extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
   else
     # --- Nightly / prod image → Triton path ---
-    env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    # Determine which environment variable to use based on version
+    # Extract version from image tag if it's an lmsysorg/sglang image
+    aiter_env_var="SGLANG_USE_AITER"
+    if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+      major="${BASH_REMATCH[1]}"
+      minor="${BASH_REMATCH[2]}"
+      patch="${BASH_REMATCH[3]}"
+      # Use SGLANG_AITER_MOE for versions before v0.4.7
+      if [[ "$major" -eq 0 ]]; then
+        if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+          aiter_env_var="SGLANG_AITER_MOE"
+        fi
+      fi
+    fi
+    
+    env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     attn_backend="triton"
     extra_flags=""
   fi
