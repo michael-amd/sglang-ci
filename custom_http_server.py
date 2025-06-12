@@ -6,7 +6,7 @@ from http import HTTPStatus
 import html
 
 DEFAULT_PORT = 8000
-SERVER_TITLE = "GROK1 offline plots" # Your custom title
+SERVER_TITLE = "SGL Benchmark Plots Server" # Updated title for centralized plots server
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def list_directory(self, path):
@@ -82,7 +82,8 @@ if __name__ == '__main__':
             print(f"Warning: Could not parse port '{sys.argv[1]}'. Using default port {DEFAULT_PORT}.", file=sys.stderr)
     
     # The handler will serve files from the CWD where this script is run from.
-    # The plots_server.sh script will cd into the correct directory first.
+    # The plots_server.sh script will cd into /mnt/raid/michael/sgl_benchmark_ci/plots_server/
+    # which contains organized plots in subdirectories like GROK1/offline/ and GROK1/online/
     Handler = CustomHTTPRequestHandler
     
     # Bind to 0.0.0.0 to make it accessible from other machines on the network

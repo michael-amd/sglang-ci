@@ -5,8 +5,9 @@
 #   Now accepts --docker_image=<image[:tag]> like the offline script.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250331rc
-#   bash grok_perf_online_csv.sh --docker_image=sgl-dev:20250429
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429
+#   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
@@ -28,13 +29,9 @@ done
 docker_image="${docker_image:-${1:-$default_image}}"
 
 ###############################################################################
-# 0-b. Normalise image (auto-add rocm/ prefix if absent)
+# 0-b. Use the full image name as provided (no auto-prefixing)
 ###############################################################################
-if [[ "$docker_image" != */* ]]; then
-  FULL_IMAGE="rocm/${docker_image}"
-else
-  FULL_IMAGE="$docker_image"
-fi
+FULL_IMAGE="$docker_image"
 
 IMAGE_WITH_TAG="${FULL_IMAGE##*/}"        # sgl-dev:20250429
 REPO="${IMAGE_WITH_TAG%%:*}"              # sgl-dev
@@ -99,7 +96,22 @@ launch_server() {
     extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
   else
     # --- Nightly / prod image → Triton path ---
-    env_prefix="SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    # Determine which environment variable to use based on version
+    # Extract version from image tag if it's an lmsysorg/sglang image
+    aiter_env_var="SGLANG_USE_AITER"
+    if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+      major="${BASH_REMATCH[1]}"
+      minor="${BASH_REMATCH[2]}"
+      patch="${BASH_REMATCH[3]}"
+      # Use SGLANG_AITER_MOE for versions before v0.4.7
+      if [[ "$major" -eq 0 ]]; then
+        if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+          aiter_env_var="SGLANG_AITER_MOE"
+        fi
+      fi
+    fi
+    
+    env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     attn_backend="triton"
     extra_flags=""
   fi
@@ -177,9 +189,11 @@ run_client_benchmark() {
         for i in {1..3}; do
             # --------- change this line ----------
             existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+            echo "[DEBUG] Checking for existing log pattern: ${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_*.log"
+            echo "[DEBUG] Found existing_log variable content: '${existing_log}'"
             # --------------------------------------
             if [ -n "$existing_log" ]; then
-                echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+                echo "Log for mode ${mode}, rate ${RATE}, run ${i} (matched by pattern, files: '${existing_log}') already exists. Skipping."
                 continue
             fi
             LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
