@@ -5,8 +5,9 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-
-#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -49,13 +50,9 @@ done
 docker_image="${docker_image:-${1:-$docker_image_default}}"
 
 ###############################################################################
-# 0-b. Normalise image name and extract tag
+# 0-b. Use the full image name as provided (no auto-prefixing)
 ###############################################################################
-if [[ "$docker_image" != */* ]]; then # if no / is present, assume it's a rocm image
-  FULL_IMAGE="rocm/${docker_image}"
-else
-  FULL_IMAGE="$docker_image"
-fi
+FULL_IMAGE="$docker_image"
 
 IMAGE_WITH_TAG="${FULL_IMAGE##*/}" # e.g., sgl-dev:20250429
 LATEST_TAG="${IMAGE_WITH_TAG#*:}"   # e.g., 20250429
@@ -290,8 +287,26 @@ fi
 
 ## 4.  Single-run benchmark -----------------------------------------------------
 echo "=== TP=${TP}, BS=${BS} ==="
+
+# Determine which environment variable to use based on version
+# Extract version from image tag if it's an lmsysorg/sglang image
+aiter_env_var="SGLANG_USE_AITER"
+if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
+  patch="${BASH_REMATCH[3]}"
+  # Use SGLANG_AITER_MOE for versions before v0.4.7
+  if [[ "$major" -eq 0 ]]; then
+    if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+      aiter_env_var="SGLANG_AITER_MOE"
+    fi
+  fi
+fi
+
+echo "[DEBUG] Using environment variable: ${aiter_env_var}"
+
 out=$(
-  RCCL_MSCCL_ENABLE=0 SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
+  env RCCL_MSCCL_ENABLE=0 ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
   python3 -m sglang.bench_one_batch \
     --model "${MODEL}" \
     --tp "${TP}" \

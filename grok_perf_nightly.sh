@@ -102,4 +102,28 @@ if [ "$MODE" == "offline" ]; then
     bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
 fi
 
+###############################################################################
+# 5. Process CSV and Generate Plots (Online Mode Only)
+###############################################################################
+if [ "$MODE" == "online" ]; then
+  # Construct the path to the log folder, similar to grok_perf_online_csv.sh
+  MODEL_NAME="GROK1" # As defined in grok_perf_online_csv.sh
+  BENCHMARK_OUTPUT_FOLDER="/mnt/raid/michael/sgl_benchmark_ci/online/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_MOE-I4F8_online"
+
+  PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_online_csv.log"
+  GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_online_plots.log"
+
+  echo "[nightly] Processing online CSV data... Logs will be saved to ${PROCESS_CSV_LOG_FILE}"
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    "${CONTAINER_NAME}" \
+    bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/process_online_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+
+  echo "[nightly] Generating online plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    "${CONTAINER_NAME}" \
+    bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/generate_online_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+fi
+
 echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
