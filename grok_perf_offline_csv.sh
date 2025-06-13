@@ -13,14 +13,36 @@
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc --mode=long_context
+#   bash grok_perf_offline_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
+#   bash grok_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
  
 ###############################################################################
-# Parse CLI options – --docker_image / --docker-image and --mode are supported.
+# Parse CLI options
 ###############################################################################
 docker_image_default="rocm/sgl-dev:20250331rc"   # fall-back
 docker_image=""
 mode="normal"  # default mode (normal, long_context, or dummy)
+
+# Default paths - can be overridden
+DEFAULT_MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
+DEFAULT_TOKENIZER="Xenova/grok-1-tokenizer"
+DEFAULT_DUMMY_MODEL="/mnt/raid/models/dummy_prod1/"
+DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
+DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
+
+# Initialize variables with defaults
+MODEL=""
+TOKENIZER=""
+DUMMY_MODEL=""
+WORK_DIR=""
+OUTPUT_DIR=""
+SCRIPT_PATH="$0"  # Get the script path from how it was called
+
+# Get absolute path of the script
+if [[ "$SCRIPT_PATH" != /* ]]; then
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+fi
 
 for arg in "$@"; do
   case $arg in
@@ -32,8 +54,48 @@ for arg in "$@"; do
       mode="${arg#*=}"
       shift
       ;;
+    --model=*)
+      MODEL="${arg#*=}"
+      shift
+      ;;
+    --tokenizer=*)
+      TOKENIZER="${arg#*=}"
+      shift
+      ;;
+    --dummy-model=*)
+      DUMMY_MODEL="${arg#*=}"
+      shift
+      ;;
+    --work-dir=*)
+      WORK_DIR="${arg#*=}"
+      shift
+      ;;
+    --output-dir=*)
+      OUTPUT_DIR="${arg#*=}"
+      shift
+      ;;
+    --help)
+      echo "Usage: $0 [OPTIONS]"
+      echo "Options:"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $docker_image_default)"
+      echo "  --mode=MODE            Mode: normal, long_context, or dummy (default: normal)"
+      echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
+      echo "  --dummy-model=PATH     Dummy model path for dummy mode (default: $DEFAULT_DUMMY_MODEL)"
+      echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
+      echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
+      echo "  --help                 Show this help message"
+      exit 0
+      ;;
   esac
 done
+
+# Set defaults if not provided
+MODEL="${MODEL:-$DEFAULT_MODEL}"
+TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+DUMMY_MODEL="${DUMMY_MODEL:-$DEFAULT_DUMMY_MODEL}"
+WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 
 # If not provided, also allow a positional 1st argument for backward-compat.
 docker_image="${docker_image:-${1:-$docker_image_default}}"
@@ -88,9 +150,14 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${LATEST_TAG}" \
       "${CONTAINER_NAME}" \
-      bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_offline_csv.sh \
+      bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \
-           --mode="${mode}"
+           --mode="${mode}" \
+           --model="${MODEL}" \
+           --tokenizer="${TOKENIZER}" \
+           --dummy-model="${DUMMY_MODEL}" \
+           --work-dir="${WORK_DIR}" \
+           --output-dir="${OUTPUT_DIR}"
     exit 0
   fi
 fi
@@ -98,7 +165,7 @@ fi
 # ---------------------------
 # 1. Inside Container: Setup Run Folder
 # ---------------------------
-cd /mnt/raid/michael/sgl_benchmark_ci/ || { echo "Cannot change to /mnt/raid/michael/sgl_benchmark_ci/ directory"; exit 1; }
+cd "${WORK_DIR}" || { echo "Cannot change to ${WORK_DIR} directory"; exit 1; }
 
 # If LATEST_TAG is not already defined, extract it from docker_image.
 if [ -z "$LATEST_TAG" ]; then
@@ -111,10 +178,6 @@ fi
 # ---------------------------
 MODEL_NAME=GROK1
 
-# Common configuration
-MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
-TOKENIZER="Xenova/grok-1-tokenizer"
-
 # Set mode suffix for folder/file names
 mode_suffix=""
 if [[ "$mode" != "normal" ]]; then
@@ -122,7 +185,7 @@ if [[ "$mode" != "normal" ]]; then
 fi
 
 # Base folder structure
-folder="offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline${mode_suffix}"
+folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline${mode_suffix}"
 
 if [[ "$mode" == "long_context" ]]; then
   # Long context mode configuration
@@ -131,8 +194,8 @@ if [[ "$mode" == "long_context" ]]; then
   TP_VALUES=(8)
   BATCH_SIZES=(1)
 elif [[ "$mode" == "dummy" ]]; then
-  # Dummy mode configuration
-  MODEL="/mnt/raid/models/dummy_prod1/"
+  # Dummy mode configuration - use the dummy model
+  MODEL="${DUMMY_MODEL}"
   INPUT_LENGTHS=(256)
   OLEN=4096
   TP_VALUES=(8)
