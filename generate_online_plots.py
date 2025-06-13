@@ -65,6 +65,7 @@ class OnlineGraphPlotter:
         if self.df.empty:
             print("No data available to plot.")
             return
+
         # Each tuple contains: (dataframe_column_name, y_axis_label, plot_type)
         metrics_to_plot = [
             ("E2E_Latency_ms", "E2E Latency (ms)", "line"),
