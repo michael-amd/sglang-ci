@@ -7,12 +7,11 @@
 #
 # USAGE:
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc
-#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250429
+#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250607
 #   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 #   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
-#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc --mode=long_context
 #   bash grok_perf_offline_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
@@ -20,7 +19,7 @@
 ###############################################################################
 # Parse CLI options
 ###############################################################################
-docker_image_default="rocm/sgl-dev:20250331rc"   # fall-back
+docker_image_default="lmsysorg/sglang:v0.4.7-rocm630"   # fall-back
 docker_image=""
 mode="normal"  # default mode (normal, long_context, or dummy)
 
@@ -256,22 +255,52 @@ for tp in "${TP_VALUES[@]}"; do
           )
         else
           # Non-RC image - use triton backend
-          out=$(
-            RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=0 MOE_PADDING=0 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --load-format dummy \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend triton \
-              --torch-compile-max-bs 4 \
-              --quantization fp8 \
-              --trust-remote-code \
-              --enable-torch-compile 2>&1 | tee "${log_file}"
-          )
+          # Check if this is a rocm/sgl-dev image and handle env vars accordingly
+          if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
+            # Determine which AITER variable to use based on date
+            aiter_env_var="SGLANG_AITER_MOE"
+            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+              tag_date="${BASH_REMATCH[1]}"
+              if [[ "$tag_date" -ge "20250606" ]]; then
+                aiter_env_var="SGLANG_USE_AITER"
+              fi
+            fi
+            
+            out=$(
+              RCCL_MSCCL_ENABLE=0 ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
+              python3 -m sglang.bench_one_batch \
+                --model "${MODEL}" \
+                --load-format dummy \
+                --tokenizer-path "${TOKENIZER}" \
+                --tp "${tp}" \
+                --batch-size "${bs}" \
+                --input "${ilen}" \
+                --output "${OLEN}" \
+                --attention-backend triton \
+                --torch-compile-max-bs 4 \
+                --quantization fp8 \
+                --trust-remote-code \
+                --enable-torch-compile 2>&1 | tee "${log_file}"
+            )
+          else
+            # Original behavior for other images
+            out=$(
+              RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=0 MOE_PADDING=0 \
+              python3 -m sglang.bench_one_batch \
+                --model "${MODEL}" \
+                --load-format dummy \
+                --tokenizer-path "${TOKENIZER}" \
+                --tp "${tp}" \
+                --batch-size "${bs}" \
+                --input "${ilen}" \
+                --output "${OLEN}" \
+                --attention-backend triton \
+                --torch-compile-max-bs 4 \
+                --quantization fp8 \
+                --trust-remote-code \
+                --enable-torch-compile 2>&1 | tee "${log_file}"
+            )
+          fi
         fi
       elif [[ "$mode" == "long_context" ]]; then
         # Long context mode command
@@ -293,19 +322,46 @@ for tp in "${TP_VALUES[@]}"; do
           )
         else
           # Non-RC image - use triton backend
-          out=$(
-            RCCL_MSCCL_ENABLE=0 CK_MOE=1 MOE_PADDING=0 USE_INT4_WEIGHT=1 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend triton \
-              --quantization fp8 \
-              --trust-remote-code 2>&1 | tee "${log_file}"
-          )
+          # Check if this is a rocm/sgl-dev image and handle env vars accordingly
+          if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
+            # Determine which AITER variable to use based on date
+            aiter_env_var="SGLANG_AITER_MOE"
+            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+              tag_date="${BASH_REMATCH[1]}"
+              if [[ "$tag_date" -ge "20250606" ]]; then
+                aiter_env_var="SGLANG_USE_AITER"
+              fi
+            fi
+            
+            out=$(
+              RCCL_MSCCL_ENABLE=0 ${aiter_env_var}=1 SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
+              python3 -m sglang.bench_one_batch \
+                --model "${MODEL}" \
+                --tokenizer-path "${TOKENIZER}" \
+                --tp "${tp}" \
+                --batch-size "${bs}" \
+                --input "${ilen}" \
+                --output "${OLEN}" \
+                --attention-backend triton \
+                --quantization fp8 \
+                --trust-remote-code 2>&1 | tee "${log_file}"
+            )
+          else
+            # Original behavior for other images
+            out=$(
+              RCCL_MSCCL_ENABLE=0 CK_MOE=1 MOE_PADDING=0 USE_INT4_WEIGHT=1 \
+              python3 -m sglang.bench_one_batch \
+                --model "${MODEL}" \
+                --tokenizer-path "${TOKENIZER}" \
+                --tp "${tp}" \
+                --batch-size "${bs}" \
+                --input "${ilen}" \
+                --output "${OLEN}" \
+                --attention-backend triton \
+                --quantization fp8 \
+                --trust-remote-code 2>&1 | tee "${log_file}"
+            )
+          fi
         fi
       elif [[ "$LATEST_TAG" == *rc* ]]; then
         # ---- RC image (original AITer backend) ----
@@ -333,36 +389,78 @@ for tp in "${TP_VALUES[@]}"; do
           mem_fraction_arg=" --mem-fraction-static 0.8"
         fi
         
-        # Determine which environment variable to use based on version
-        # Extract version from image tag if it's an lmsysorg/sglang image
-        aiter_env_var="SGLANG_USE_AITER"
-        if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+        # Determine which environment variables to use
+        if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
+          # For rocm/sgl-dev images, determine which AITER variable based on date
+          aiter_env_var="SGLANG_AITER_MOE"
+          if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+            tag_date="${BASH_REMATCH[1]}"
+            if [[ "$tag_date" -ge "20250606" ]]; then
+              aiter_env_var="SGLANG_USE_AITER"
+            fi
+          fi
+          
+          out=$(
+            env ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
+            python3 -m sglang.bench_one_batch \
+              --model "${MODEL}" \
+              --tokenizer-path "${TOKENIZER}" \
+              --tp "${tp}" \
+              --batch-size "${bs}" \
+              --input "${ilen}" \
+              --output "${OLEN}" \
+              --attention-backend triton \
+              --sampling-backend pytorch \
+              --quantization fp8 \
+              --trust-remote-code \
+              --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
+          )
+        elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+          # Original logic for lmsysorg/sglang images
           major="${BASH_REMATCH[1]}"
           minor="${BASH_REMATCH[2]}"
           patch="${BASH_REMATCH[3]}"
+          aiter_env_var="SGLANG_USE_AITER"
           # Use SGLANG_AITER_MOE for versions before v0.4.7
           if [[ "$major" -eq 0 ]]; then
             if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
+          
+          out=$(
+            env ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
+            python3 -m sglang.bench_one_batch \
+              --model "${MODEL}" \
+              --tokenizer-path "${TOKENIZER}" \
+              --tp "${tp}" \
+              --batch-size "${bs}" \
+              --input "${ilen}" \
+              --output "${OLEN}" \
+              --attention-backend triton \
+              --sampling-backend pytorch \
+              --quantization fp8 \
+              --trust-remote-code \
+              --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
+          )
+        else
+          # Default behavior for other images - use new env vars by default
+          out=$(
+            env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
+            python3 -m sglang.bench_one_batch \
+              --model "${MODEL}" \
+              --tokenizer-path "${TOKENIZER}" \
+              --tp "${tp}" \
+              --batch-size "${bs}" \
+              --input "${ilen}" \
+              --output "${OLEN}" \
+              --attention-backend triton \
+              --sampling-backend pytorch \
+              --quantization fp8 \
+              --trust-remote-code \
+              --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
+          )
         fi
-        
-        out=$(
-          env ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
-          python3 -m sglang.bench_one_batch \
-            --model "${MODEL}" \
-            --tokenizer-path "${TOKENIZER}" \
-            --tp "${tp}" \
-            --batch-size "${bs}" \
-            --input "${ilen}" \
-            --output "${OLEN}" \
-            --attention-backend triton \
-            --sampling-backend pytorch \
-            --quantization fp8 \
-            --trust-remote-code \
-            --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
-        )
       fi
       
       # Isolate the section after "Benchmark ..." (assumes final block of output).

@@ -8,6 +8,7 @@
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+#   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 #   bash grok_perf_online_csv.sh --gsm8k-script=/path/to/bench_sglang.py --node=node-name
@@ -18,7 +19,7 @@ set -euo pipefail
 ###############################################################################
 # 0. Parse CLI flags
 ###############################################################################
-default_image="rocm/sgl-dev:20250331rc"
+default_image="lmsysorg/sglang:v0.4.7-rocm630"
 docker_image=""
 
 # Default paths - can be overridden
@@ -178,23 +179,36 @@ launch_server() {
     attn_backend="${mode}"
     extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
   else
-    # --- Nightly / prod image → Triton path ---
-    # Determine which environment variable to use based on version
-    # Extract version from image tag if it's an lmsysorg/sglang image
-    aiter_env_var="SGLANG_USE_AITER"
-    if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+    # --- Non-RC image → Triton path ---
+    # Determine which environment variables to use based on image type
+    if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
+      # For rocm/sgl-dev images, determine which AITER variable based on date
+      aiter_env_var="SGLANG_AITER_MOE"
+      if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+        tag_date="${BASH_REMATCH[1]}"
+        if [[ "$tag_date" -ge "20250606" ]]; then
+          aiter_env_var="SGLANG_USE_AITER"
+        fi
+      fi
+      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+      # Original logic for lmsysorg/sglang images
       major="${BASH_REMATCH[1]}"
       minor="${BASH_REMATCH[2]}"
       patch="${BASH_REMATCH[3]}"
+      aiter_env_var="SGLANG_USE_AITER"
       # Use SGLANG_AITER_MOE for versions before v0.4.7
       if [[ "$major" -eq 0 ]]; then
         if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
           aiter_env_var="SGLANG_AITER_MOE"
         fi
       fi
+      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    else
+      # Default to new env vars for other images
+      env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     fi
     
-    env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     attn_backend="triton"
     extra_flags=""
   fi
