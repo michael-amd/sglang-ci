@@ -9,7 +9,7 @@
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250429
 #   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
-#   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7
+#   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc --mode=long_context
