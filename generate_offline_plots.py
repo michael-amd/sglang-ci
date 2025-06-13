@@ -42,16 +42,58 @@ class OfflineGraphPlotter:
         """
         Get all CSV files for the batches
         """
-        self.batch_files = [f for f in os.listdir(self.batch_dir) if f.endswith(".csv")]
-        self.batch_files = sorted(self.batch_files, key=lambda f: int(re.search(r'_(\d+)', f).group(1)))
+        try:
+            if not os.path.exists(self.batch_dir):
+                print(f"Error: Batch directory not found: {self.batch_dir}")
+                self.batch_files = []
+                return
+                
+            self.batch_files = [f for f in os.listdir(self.batch_dir) if f.endswith(".csv")]
+            if not self.batch_files:
+                print(f"Warning: No CSV files found in {self.batch_dir}")
+                return
+                
+            self.batch_files = sorted(self.batch_files, key=lambda f: int(re.search(r'_(\d+)', f).group(1)))
+        except AttributeError as e:
+            print(f"Error: CSV files do not match expected naming pattern (expecting _<number>): {e}")
+            self.batch_files = []
+        except Exception as e:
+            print(f"Error accessing batch directory {self.batch_dir}: {e}")
+            self.batch_files = []
 
     def read_csv(self, file_path):
         """
         Reads a CSV file into a pandas DataFrame
         """
-        df = pd.read_csv(file_path)
-        df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
-        return df.sort_values('date')
+        try:
+            if not os.path.exists(file_path):
+                print(f"Error: CSV file not found: {file_path}")
+                return pd.DataFrame()
+                
+            df = pd.read_csv(file_path)
+            
+            if df.empty:
+                print(f"Warning: CSV file is empty: {file_path}")
+                return df
+                
+            # Check for required columns
+            required_columns = ['date']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                print(f"Error: Missing required columns {missing_columns} in {file_path}")
+                return pd.DataFrame()
+                
+            df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
+            return df.sort_values('date')
+        except pd.errors.EmptyDataError:
+            print(f"Error: CSV file is empty or corrupted: {file_path}")
+            return pd.DataFrame()
+        except pd.errors.ParserError as e:
+            print(f"Error parsing CSV file {file_path}: {e}")
+            return pd.DataFrame()
+        except Exception as e:
+            print(f"Error reading CSV file {file_path}: {e}")
+            return pd.DataFrame()
 
     def plot_latency_vs_date(self, output_file):
         """
@@ -69,6 +111,14 @@ class OfflineGraphPlotter:
             model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
             
             df = self.read_csv(csv_path)
+            
+            # Skip if dataframe is empty
+            if df.empty:
+                axes[i].text(0.5, 0.5, f'No data available for Batch Size {numeric_batch_size}', 
+                           ha='center', va='center', transform=axes[i].transAxes)
+                axes[i].set_title(f"Latency vs Image name for Batch Size {numeric_batch_size} (No Data)")
+                continue
+                
             # Get ILEN and OLEN from the first row (assuming they are constant for the file)
             ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
             olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
@@ -82,9 +132,16 @@ class OfflineGraphPlotter:
         axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig(output_file)
-        plt.close()
-        print(f"Plot figure saved to: {output_file}")
+        
+        try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            plt.savefig(output_file)
+            print(f"Plot figure saved to: {output_file}")
+        except Exception as e:
+            print(f"Error saving plot to {output_file}: {e}")
+        finally:
+            plt.close()
 
     
     def plot_throughput_vs_date(self, output_file):
@@ -103,6 +160,14 @@ class OfflineGraphPlotter:
             model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
             
             df = self.read_csv(csv_path)
+            
+            # Skip if dataframe is empty
+            if df.empty:
+                axes[i].text(0.5, 0.5, f'No data available for Batch Size {numeric_batch_size}', 
+                           ha='center', va='center', transform=axes[i].transAxes)
+                axes[i].set_title(f"Throughput vs Image name for Batch Size {numeric_batch_size} (No Data)")
+                continue
+                
             # Get ILEN and OLEN from the first row
             ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
             olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
@@ -116,9 +181,16 @@ class OfflineGraphPlotter:
         axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig(output_file)
-        plt.close()
-        print(f"Plot figure saved to: {output_file}")
+        
+        try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            plt.savefig(output_file)
+            print(f"Plot figure saved to: {output_file}")
+        except Exception as e:
+            print(f"Error saving plot to {output_file}: {e}")
+        finally:
+            plt.close()
 
 
     def generate_and_save_plot(self):

@@ -185,7 +185,23 @@ class OnlineDataProcessor:
         """
         Iterates through dated folders, finds online CSVs, and processes them.
         """
-        for folder_name in os.listdir(self.data_dir):
+        try:
+            if not os.path.exists(self.data_dir):
+                print(f"Error: Data directory not found: {self.data_dir}")
+                return
+                
+            folder_list = os.listdir(self.data_dir)
+            if not folder_list:
+                print(f"Warning: No folders found in {self.data_dir}")
+                return
+        except PermissionError:
+            print(f"Error: Permission denied accessing directory {self.data_dir}")
+            return
+        except Exception as e:
+            print(f"Error accessing data directory {self.data_dir}: {e}")
+            return
+            
+        for folder_name in folder_list:
             folder_path = os.path.join(self.data_dir, folder_name)
             if os.path.isdir(folder_path):
                 # Folder name format: ${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online
@@ -194,7 +210,13 @@ class OnlineDataProcessor:
                 normalized_folder_date = folder_date_part.replace("rc", "")
 
                 if any(normalized_folder_date == dp for dp in self.date_prefixes):
-                    for file_name in os.listdir(folder_path):
+                    try:
+                        file_list = os.listdir(folder_path)
+                    except Exception as e:
+                        print(f"Error accessing folder {folder_path}: {e}")
+                        continue
+                        
+                    for file_name in file_list:
                         # CSV filename: ${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv
                         if file_name.endswith('_online.csv'): 
                             date_str_from_file = file_name.split('_')[0].replace("rc", "")
@@ -205,6 +227,10 @@ class OnlineDataProcessor:
                                 continue
 
                             file_path = os.path.join(folder_path, file_name)
+                            if not os.path.exists(file_path):
+                                print(f"Warning: File not found: {file_path}")
+                                continue
+                                
                             file_specific_records = self._parse_single_online_csv(file_path, date_str_from_file)
                             self.all_records.extend(file_specific_records)
     
@@ -216,19 +242,31 @@ class OnlineDataProcessor:
             print("No data processed. Skipping CSV generation.")
             return
 
-        summary_df = pd.DataFrame(self.all_records)
+        try:
+            summary_df = pd.DataFrame(self.all_records)
+        except Exception as e:
+            print(f"Error creating DataFrame from records: {e}")
+            return
         
         if summary_df.empty:
             print("No records to save after processing. Skipping CSV generation.")
             return
 
         # Sort by date, then mode, then request_rate for consistent output
-        summary_df = summary_df.sort_values(by=['date', 'mode', 'request_rate'])
+        try:
+            summary_df = summary_df.sort_values(by=['date', 'mode', 'request_rate'])
+        except KeyError as e:
+            print(f"Error: Missing expected columns for sorting: {e}")
+            # Try to save anyway without sorting
         
         output_file = os.path.join(self.data_dir, f"{self.output_model_name_prefix}_summary.csv")
         try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
             summary_df.to_csv(output_file, index=False)
             print(f"Online summary CSV saved to: {output_file}")
+        except PermissionError:
+            print(f"Error: Permission denied writing to {output_file}")
         except Exception as e:
             print(f"Error saving summary CSV to {output_file}: {e}")
 
