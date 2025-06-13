@@ -8,15 +8,42 @@
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+#   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
+#   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
+#   bash grok_perf_online_csv.sh --gsm8k-script=/path/to/bench_sglang.py --node=node-name
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
 
 ###############################################################################
-# 0. Parse CLI flag  --docker_image=
+# 0. Parse CLI flags
 ###############################################################################
 default_image="rocm/sgl-dev:20250331rc"
 docker_image=""
+
+# Default paths - can be overridden
+DEFAULT_MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
+DEFAULT_TOKENIZER="Xenova/grok-1-tokenizer"
+DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
+DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
+DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py"
+DEFAULT_NODE="dell300x-pla-t10-23"
+DEFAULT_THRESHOLD="0.8"
+
+# Initialize variables
+MODEL=""
+TOKENIZER=""
+WORK_DIR=""
+OUTPUT_DIR=""
+GSM8K_SCRIPT=""
+NODE=""
+THRESHOLD=""
+SCRIPT_PATH="$0"  # Get the script path from how it was called
+
+# Get absolute path of the script
+if [[ "$SCRIPT_PATH" != /* ]]; then
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+fi
 
 for arg in "$@"; do
   case $arg in
@@ -24,8 +51,60 @@ for arg in "$@"; do
       docker_image="${arg#*=}"
       shift
       ;;
+    --model=*)
+      MODEL="${arg#*=}"
+      shift
+      ;;
+    --tokenizer=*)
+      TOKENIZER="${arg#*=}"
+      shift
+      ;;
+    --work-dir=*)
+      WORK_DIR="${arg#*=}"
+      shift
+      ;;
+    --output-dir=*)
+      OUTPUT_DIR="${arg#*=}"
+      shift
+      ;;
+    --gsm8k-script=*)
+      GSM8K_SCRIPT="${arg#*=}"
+      shift
+      ;;
+    --node=*)
+      NODE="${arg#*=}"
+      shift
+      ;;
+    --threshold=*)
+      THRESHOLD="${arg#*=}"
+      shift
+      ;;
+    --help)
+      echo "Usage: $0 [OPTIONS]"
+      echo "Options:"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $default_image)"
+      echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
+      echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
+      echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
+      echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
+      echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
+      echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
+      echo "  --help                 Show this help message"
+      exit 0
+      ;;
   esac
 done
+
+# Set defaults if not provided
+MODEL="${MODEL:-$DEFAULT_MODEL}"
+TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
+GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
+NODE="${NODE:-$DEFAULT_NODE}"
+THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
+
 docker_image="${docker_image:-${1:-$default_image}}"
 
 ###############################################################################
@@ -61,8 +140,15 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
 
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" \
       "${CONTAINER_NAME}" \
-      bash /mnt/raid/michael/sgl_benchmark_ci/grok_perf_online_csv.sh \
-           --docker_image="${FULL_IMAGE}"
+      bash "${SCRIPT_PATH}" \
+           --docker_image="${FULL_IMAGE}" \
+           --model="${MODEL}" \
+           --tokenizer="${TOKENIZER}" \
+           --work-dir="${WORK_DIR}" \
+           --output-dir="${OUTPUT_DIR}" \
+           --gsm8k-script="${GSM8K_SCRIPT}" \
+           --node="${NODE}" \
+           --threshold="${THRESHOLD}"
     exit 0
   fi
 fi
@@ -70,16 +156,13 @@ fi
 ###############################################################################
 # 2. Inside container → benchmark directory setup
 ###############################################################################
-cd /mnt/raid/michael/sgl_benchmark_ci/ || {
+cd "${WORK_DIR}" || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
 MODEL_NAME=GROK1
-folder="online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online"
+folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online"
 mkdir -p "$folder"
 OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv"
-
-NODE="dell300x-pla-t10-23"
-THRESHOLD=0.8
 
 ###############################################################################
 # 3. Helper: launch server (backend chosen by tag-type)
@@ -118,8 +201,8 @@ launch_server() {
 
   echo "[online] Launching backend=${attn_backend}"
   eval "${env_prefix} python3 -m sglang.launch_server \
-        --model /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/ \
-        --tokenizer-path Xenova/grok-1-tokenizer \
+        --model \"${MODEL}\" \
+        --tokenizer-path \"${TOKENIZER}\" \
         --tp 8 --quantization fp8 --trust-remote-code \
         --attention-backend ${attn_backend} ${extra_flags} \
         --mem-fraction-static 0.85 \
@@ -153,7 +236,7 @@ run_client_gsm8k() {
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          echo "Executing GSM8K test Run $i for mode ${mode}..." | tee -a "$gsm8k_log"
-         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 2>&1)
+         output=$(python3 "${GSM8K_SCRIPT}" --num-questions 2000 --parallel 2000 --num-shots 5 2>&1)
          echo "$output" | tee -a "$gsm8k_log"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
          run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\s*\K[\d.]+' | head -n1)
@@ -200,7 +283,7 @@ run_client_benchmark() {
             echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
             NUM_PROMPTS=$(( 300 * RATE ))
             [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
-            CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer Xenova/grok-1-tokenizer --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online.jsonl"
+            CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online.jsonl"
             echo "Executing: $CMD" | tee -a "$LOGFILE"
             eval "$CMD" 2>&1 | tee -a "$LOGFILE"
         done
