@@ -5,8 +5,12 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-
-#   bash deepseek_perf_offline_csv.sh --docker_image=sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250430
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
+#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
+#   bash deepseek_perf_offline_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
+#   bash deepseek_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
+#   bash deepseek_perf_offline_csv.sh --gsm8k-script=/path/to/bench_sglang.py
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -31,10 +35,35 @@ cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 ###############################################################################
-# 0. Parse CLI flag --docker_image=
+# 0. Parse CLI flags
 ###############################################################################
 docker_image_default="rocm/sgl-dev:20250430" # fall-back
 docker_image=""
+
+# Default paths - can be overridden
+DEFAULT_MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
+DEFAULT_MODEL_NAME="DeepSeek-V3-0324"
+DEFAULT_HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324"
+DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
+DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
+DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py"
+DEFAULT_THRESHOLD="0.93"
+
+# Initialize variables
+MODEL=""
+MODEL_NAME=""
+HF_MODEL_ID=""
+WORK_DIR=""
+OUTPUT_DIR=""
+GSM8K_SCRIPT=""
+THRESHOLD=""
+DOWNLOAD_MODEL="false"
+SCRIPT_PATH="$0"  # Get the script path from how it was called
+
+# Get absolute path of the script
+if [[ "$SCRIPT_PATH" != /* ]]; then
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+fi
 
 for arg in "$@"; do
   case $arg in
@@ -42,20 +71,72 @@ for arg in "$@"; do
       docker_image="${arg#*=}"
       shift # Remove parsed argument
       ;;
+    --model=*)
+      MODEL="${arg#*=}"
+      shift
+      ;;
+    --model-name=*)
+      MODEL_NAME="${arg#*=}"
+      shift
+      ;;
+    --hf-model-id=*)
+      HF_MODEL_ID="${arg#*=}"
+      shift
+      ;;
+    --work-dir=*)
+      WORK_DIR="${arg#*=}"
+      shift
+      ;;
+    --output-dir=*)
+      OUTPUT_DIR="${arg#*=}"
+      shift
+      ;;
+    --gsm8k-script=*)
+      GSM8K_SCRIPT="${arg#*=}"
+      shift
+      ;;
+    --threshold=*)
+      THRESHOLD="${arg#*=}"
+      shift
+      ;;
+    --download-model)
+      DOWNLOAD_MODEL="true"
+      shift
+      ;;
+    --help)
+      echo "Usage: $0 [OPTIONS]"
+      echo "Options:"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $docker_image_default)"
+      echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --model-name=NAME      Model name for output files (default: $DEFAULT_MODEL_NAME)"
+      echo "  --hf-model-id=ID       HuggingFace model ID for download (default: $DEFAULT_HF_MODEL_ID)"
+      echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
+      echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
+      echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
+      echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
+      echo "  --download-model       Download model if not present (default: false)"
+      echo "  --help                 Show this help message"
+      exit 0
+      ;;
   esac
 done
+
+# Set defaults if not provided
+MODEL="${MODEL:-$DEFAULT_MODEL}"
+MODEL_NAME="${MODEL_NAME:-$DEFAULT_MODEL_NAME}"
+HF_MODEL_ID="${HF_MODEL_ID:-$DEFAULT_HF_MODEL_ID}"
+WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
+GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
+THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
 # If not provided by flag, use positional argument or default
 docker_image="${docker_image:-${1:-$docker_image_default}}"
 
 ###############################################################################
-# 0-b. Normalise image name and extract tag
+# 0-b. Use the full image name as provided (no auto-prefixing)
 ###############################################################################
-if [[ "$docker_image" != */* ]]; then # if no / is present, assume it's a rocm image
-  FULL_IMAGE="rocm/${docker_image}"
-else
-  FULL_IMAGE="$docker_image"
-fi
+FULL_IMAGE="$docker_image"
 
 IMAGE_WITH_TAG="${FULL_IMAGE##*/}" # e.g., sgl-dev:20250429
 LATEST_TAG="${IMAGE_WITH_TAG#*:}"   # e.g., 20250429
@@ -98,8 +179,16 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${LATEST_TAG}" \
       "${CONTAINER_NAME}" \
-      bash /mnt/raid/michael/sgl_benchmark_ci/deepseek_perf_offline_csv.sh \
-           --docker_image="${FULL_IMAGE}"
+      bash "${SCRIPT_PATH}" \
+           --docker_image="${FULL_IMAGE}" \
+           --model="${MODEL}" \
+           --model-name="${MODEL_NAME}" \
+           --hf-model-id="${HF_MODEL_ID}" \
+           --work-dir="${WORK_DIR}" \
+           --output-dir="${OUTPUT_DIR}" \
+           --gsm8k-script="${GSM8K_SCRIPT}" \
+           --threshold="${THRESHOLD}" \
+           $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model")
     exit 0
   fi
 fi
@@ -107,7 +196,7 @@ fi
 # ---------------------------
 # 1. Inside Container: Setup Run Folder
 # ---------------------------
-cd /mnt/raid/michael/sgl_benchmark_ci/ || { echo "Cannot change to /mnt/raid/michael/sgl_benchmark_ci/ directory"; exit 1; }
+cd "${WORK_DIR}" || { echo "Cannot change to ${WORK_DIR} directory"; exit 1; }
 
 # If LATEST_TAG is not already defined (e.g. when script is re-invoked inside container), extract it.
 if [ -z "$LATEST_TAG" ]; then
@@ -115,19 +204,8 @@ if [ -z "$LATEST_TAG" ]; then
     LATEST_TAG=${IMAGE_WITH_TAG_FROM_ARG#*:}
 fi
 
-## 1.  Model / tokenizer  -------------------------------------------------------
-# t10-23
-MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"   # change to local path if mirrored
-MODEL_NAME="DeepSeek-V3-0324" # Used for folder naming, etc.
-HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324" # Actual Hugging Face model ID for download
-
-# t12-38
-# MODEL="/mnt/raid/models/DeepSeek-V3"   # change to local path if mirrored
-# MODEL_NAME="DeepSeek-V3" # Used for folder naming, etc.
-# HF_MODEL_ID="deepseek-ai/DeepSeek-V3" # Actual Hugging Face model ID for download
-
-# ---- Download model if not present (inside container) ----
-if [ -n "${INSIDE_CONTAINER}" ]; then # Only run download logic if inside the container
+# ---- Download model if requested and not present (inside container) ----
+if [ -n "${INSIDE_CONTAINER}" ] && [ "$DOWNLOAD_MODEL" = "true" ]; then # Only run download logic if inside the container and requested
   if command -v huggingface-cli >/dev/null 2>&1; then
     echo "[csv] huggingface-cli found. Ensuring model ${HF_MODEL_ID} is downloaded to ${MODEL}..."
     # Ensure parent directory of MODEL exists, huggingface-cli creates the final dir.
@@ -158,8 +236,6 @@ if [ -n "${INSIDE_CONTAINER}" ]; then # Only run download logic if inside the co
       exit 1
     fi
   fi
-else
-  echo "[csv] Skipping model download check as we are not inside the container yet."
 fi
 # ---- End model download ----
 
@@ -175,7 +251,7 @@ BS=32           # batch size
 THRESHOLD=0.93 # Define the accuracy threshold for GSM8K. Adjust as needed.
 
 ## 3.  Run-folder bookkeeping ---------------------------------------------------
-folder="offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline"
+folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline"
 mkdir -p "$folder"
 OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline.csv"
 LOG_FILE="${folder}/tp${TP}_bs${BS}.log" # Define log file path
@@ -201,7 +277,7 @@ run_client_gsm8k() {
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
-         output=$(python3 /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host http://127.0.0.1 2>&1)
+         output=$(python3 "${GSM8K_SCRIPT}" --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host http://127.0.0.1 2>&1)
          echo "$output" | tee -a "$GSM8K_LOG_FILE"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
          run_accuracy=$(echo "$output" | tr '\r' '\n' | grep '^Accuracy: ' | head -n 1 | awk '{print $2}')
@@ -290,8 +366,26 @@ fi
 
 ## 4.  Single-run benchmark -----------------------------------------------------
 echo "=== TP=${TP}, BS=${BS} ==="
+
+# Determine which environment variable to use based on version
+# Extract version from image tag if it's an lmsysorg/sglang image
+aiter_env_var="SGLANG_USE_AITER"
+if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
+  patch="${BASH_REMATCH[3]}"
+  # Use SGLANG_AITER_MOE for versions before v0.4.7
+  if [[ "$major" -eq 0 ]]; then
+    if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+      aiter_env_var="SGLANG_AITER_MOE"
+    fi
+  fi
+fi
+
+echo "[DEBUG] Using environment variable: ${aiter_env_var}"
+
 out=$(
-  RCCL_MSCCL_ENABLE=0 SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
+  env RCCL_MSCCL_ENABLE=0 ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
   python3 -m sglang.bench_one_batch \
     --model "${MODEL}" \
     --tp "${TP}" \
