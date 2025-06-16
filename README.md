@@ -13,14 +13,19 @@ The scripts have been updated to support command-line parameters, eliminating th
 - [Benchmark Modes](#benchmark-modes)
   - [Offline Mode](#offline-mode)
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
-    - [grok_perf_offline_csv_dummy.sh](#grok_perf_offline_csv_dummysh)
-    - [grok_perf_offline_csv_long_context.sh](#grok_perf_offline_csv_long_contextsh)
     - [deepseek_perf_offline_csv.sh](#deepseek_perf_offline_csvsh)
+    - [Offline Data Processing](#offline-data-processing)
     - [Viewing Offline Plots](#viewing-offline-plots)
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
+    - [Online Data Processing](#online-data-processing)
+    - [Viewing Online Plots](#viewing-online-plots)
+- [Data Processing and Visualization](#data-processing-and-visualization)
+  - [Processing Scripts](#processing-scripts)
+  - [Plotting Scripts](#plotting-scripts)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
+- [Cron Schedule](#cron-schedule)
 
 ---
 
@@ -149,24 +154,51 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
     --output-dir=/your/output/directory
   ```
 
+#### Offline Data Processing
+- **Purpose:** Process raw offline benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
+- **Script:** `process_offline_csv.py`
+- **Functionality:**
+  - Scans the last 30 days of benchmark results
+  - Aggregates data from all batch sizes and dates
+  - Creates a single summary CSV sorted by date and batch_size
+  - Automatically cleans up old individual batch size CSV files
+- **Output:** `GROK1_MOE-I4F8_offline_summary.csv` containing all benchmark data
+- **Usage:**
+  ```bash
+  cd /mnt/raid/michael/sgl_benchmark_ci
+  python3 process_offline_csv.py
+  ```
+
 #### Viewing Offline Plots
 
-The `generate_offline_plots.py` script (invoked by `python3 generate_offline_plots.py` after `process_offline_csv.py` has run) generates PNG plot files in the `/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/plots` directory.
+The `generate_offline_plots.py` script generates visualization plots from the consolidated summary CSV created by `process_offline_csv.py`.
 
-To view these plots via a web browser, a simple HTTP server can be started using the provided `plots_server.sh` script.
+- **Purpose:** Create visual representations of offline benchmark performance trends
+- **Script:** `generate_offline_plots.py`
+- **Functionality:**
+  - Reads from the consolidated summary CSV
+  - Generates three types of plots:
+    - **Latency vs Date:** Shows E2E latency trends for each batch size
+    - **Throughput vs Date:** Shows E2E throughput trends for each batch size
+    - **Combined Metrics:** Shows both latency and throughput trends on a single plot
+- **Output:** PNG files saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline/`
+- **Usage:**
+  ```bash
+  cd /mnt/raid/michael/sgl_benchmark_ci
+  python3 generate_offline_plots.py
+  ```
 
-1.  **Ensure no other process is using port 8000.** If it is, stop that process first.
-2.  **Start the server:**
-    ```bash
-    bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
-    ```
-    This script runs `custom_http_server.py` which serves files from the `/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/plots` directory on port 8000. The directory listing page will be titled "GROK1 offline plots".
+To view these plots via a web browser, use the provided plot server:
 
-3.  **Access the plots:**
-    Open a web browser and navigate to the server's address. If the server is running on a machine with IP address `10.194.129.138` (as an example), the URL would be:
-    `http://10.194.129.138:8000/`
+1. **Start the server:**
+   ```bash
+   bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
+   ```
+   This serves files from the plots directory on port 8000.
 
-    You can then click on the individual `.png` files to view them.
+2. **Access the plots:**
+   Open a web browser and navigate to `http://<server-ip>:8000/`
+   Navigate to the `GROK1/offline/` directory to view the plots.
 
 #### deepseek_perf_offline_csv.sh
 - **Purpose:** Benchmarks the DeepSeek V3 model with FP8 quantization.
@@ -275,6 +307,113 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --output-dir=/your/output/directory \
     --gsm8k-script=/path/to/gsm8k/bench_sglang.py
   ```
+
+#### Online Data Processing
+- **Purpose:** Process raw online benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
+- **Script:** `process_online_csv.py`
+- **Functionality:**
+  - Scans the last 30 days of benchmark results
+  - Parses multiple metric tables (E2E Latency, TTFT, ITL) from each CSV
+  - Extracts KV cache information from server log files
+  - Creates a single summary CSV sorted by date, mode, and request_rate
+- **Output:** `GROK1_MOE-I4F8_online_summary.csv` containing all benchmark data
+- **Usage:**
+  ```bash
+  cd /mnt/raid/michael/sgl_benchmark_ci
+  python3 process_online_csv.py
+  ```
+
+#### Viewing Online Plots
+
+The `generate_online_plots.py` script generates visualization plots from the consolidated summary CSV created by `process_online_csv.py`.
+
+- **Purpose:** Create visual representations of online benchmark performance trends
+- **Script:** `generate_online_plots.py`
+- **Functionality:**
+  - Reads from the consolidated summary CSV
+  - Generates a comprehensive plot with 5 subplots:
+    - **E2E Latency:** Shows trends for different request rates and modes
+    - **TTFT (Time to First Token):** First token generation latency
+    - **ITL (Inter-Token Latency):** Latency between tokens
+    - **Number of Tokens:** KV cache allocation at server startup
+    - **KV Cache Usage:** Memory usage in GB (bar chart)
+- **Output:** PNG file saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online/`
+- **Usage:**
+  ```bash
+  cd /mnt/raid/michael/sgl_benchmark_ci
+  python3 generate_online_plots.py
+  ```
+
+To view the plots, use the same plot server as for offline plots.
+
+---
+
+## Data Processing and Visualization
+
+The benchmark CI includes automated data processing and visualization scripts that consolidate results from multiple benchmark runs and generate performance trend plots.
+
+### Processing Scripts
+
+These scripts process raw benchmark outputs and create consolidated summary CSV files:
+
+- **process_offline_csv.py**
+  - Processes offline benchmark results from dated folders
+  - Consolidates data from all batch sizes into a single summary CSV
+  - Handles multiple date formats (YYYYMMDD and YYYYMMDDrc)
+  - Automatically cleans up old per-batch CSV files
+  - Key features:
+    - Robust error handling for missing or corrupted files
+    - Aggregates using mean values when multiple data points exist
+    - Maintains ILEN/OLEN configuration data
+
+- **process_online_csv.py**
+  - Processes online benchmark results with complex multi-table CSV format
+  - Extracts metrics from three sections: E2E Latency, TTFT, and ITL
+  - Parses KV cache information from server log files
+  - Key features:
+    - Compiled regex patterns for efficient log parsing
+    - Handles both 'aiter' and 'aiter_decode' modes
+    - Robust parsing with fallbacks for missing data
+
+### Plotting Scripts
+
+These scripts generate visualization plots from the consolidated summary CSVs:
+
+- **generate_offline_plots.py**
+  - Creates three types of visualizations:
+    - Individual subplots for each batch size showing latency trends
+    - Individual subplots for each batch size showing throughput trends
+    - Combined plot showing all batch sizes on single latency/throughput charts
+  - Features:
+    - Automatic date formatting on x-axis
+    - Value annotations on data points
+    - Handles missing data gracefully
+
+- **generate_online_plots.py**
+  - Creates a comprehensive multi-subplot figure showing:
+    - E2E Latency trends for different request rates and modes
+    - TTFT (Time to First Token) performance
+    - ITL (Inter-Token Latency) metrics
+    - Number of tokens allocated for KV cache
+    - KV Cache memory usage (as bar chart)
+  - Features:
+    - Intelligent annotation overlap detection
+    - Separate handling for performance metrics vs. resource metrics
+    - Explanatory notes for technical metrics
+
+### Plot Server
+
+A simple HTTP server is provided to view generated plots:
+
+```bash
+# Start the plot server
+bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
+
+# Access plots at http://<server-ip>:8000/
+# Navigate to GROK1/offline/ or GROK1/online/ directories
+```
+
+The server uses `custom_http_server.py` to serve files with proper directory listings.
 
 ---
 
