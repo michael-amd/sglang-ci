@@ -43,7 +43,26 @@ class OnlineGraphPlotter:
         Reads the summary CSV file into a pandas DataFrame.
         """
         try:
+            if not os.path.exists(self.summary_csv_path):
+                print(f"Error: Summary CSV file not found: {self.summary_csv_path}")
+                self.df = pd.DataFrame()
+                return
+                
             self.df = pd.read_csv(self.summary_csv_path)
+            
+            # Check if the dataframe is empty
+            if self.df.empty:
+                print(f"Warning: Summary CSV file is empty: {self.summary_csv_path}")
+                return
+                
+            # Check for required columns
+            required_columns = ['date']
+            missing_columns = [col for col in required_columns if col not in self.df.columns]
+            if missing_columns:
+                print(f"Error: Missing required columns {missing_columns} in {self.summary_csv_path}")
+                self.df = pd.DataFrame()
+                return
+                
             self.df['date'] = pd.to_datetime(self.df['date'], format='%Y%m%d')
             # Ensure new columns are numeric, coercing errors to NaN
             if 'num_tokens' in self.df.columns:
@@ -51,6 +70,12 @@ class OnlineGraphPlotter:
             if 'KV_size_GB' in self.df.columns:
                 self.df['KV_size_GB'] = pd.to_numeric(self.df['KV_size_GB'], errors='coerce')
             self.df = self.df.sort_values('date')
+        except pd.errors.EmptyDataError:
+            print(f"Error: CSV file is empty or corrupted: {self.summary_csv_path}")
+            self.df = pd.DataFrame()
+        except pd.errors.ParserError as e:
+            print(f"Error parsing CSV file {self.summary_csv_path}: {e}")
+            self.df = pd.DataFrame()
         except Exception as e:
             print(f"Error reading or processing summary CSV {self.summary_csv_path}: {e}")
             self.df = pd.DataFrame() # Ensure df is an empty DataFrame on error
