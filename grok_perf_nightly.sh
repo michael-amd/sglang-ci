@@ -72,9 +72,11 @@ else
 fi
 echo "[nightly] Launching $(basename "$SCRIPT") inside ${CONTAINER_NAME}"
 
+# Note: The LATEST_TAG env var helps the scripts identify this as a non-RC build
 docker exec \
   -e INSIDE_CONTAINER=1 \
   -e LATEST_TAG="${SELECTED_TAG}" \
+  -e FULL_IMAGE="${DOCKER_IMAGE}" \
   "${CONTAINER_NAME}" \
   bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
 
