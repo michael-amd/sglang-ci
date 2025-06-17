@@ -56,7 +56,7 @@ class OnlineDataProcessor:
         num_tokens = pd.NA
         kv_size_gb = pd.NA
         
-        server_logs = ['server_output_aiter.log', 'server_output_aiter_decode.log']
+        server_logs = ['server_output_aiter.log']
         for log_file in server_logs:
             log_path = os.path.join(csv_dir, log_file)
             if not os.path.exists(log_path):
@@ -148,17 +148,6 @@ class OnlineDataProcessor:
                     if IndexError:
                         print(f"Warning: Index out of bounds for aiter data, {metric_type_label}, rate {rr}")
                 metrics_data[('aiter', rr)] = value
-
-            # Parse MI300x-aiter_decode line
-            decode_values_str = next(section_iter).strip().split('\t')[1:]
-            for i, rr in enumerate(request_rates):
-                try:
-                    value = float(decode_values_str[i])
-                except (ValueError, IndexError):
-                    value = pd.NA
-                    if IndexError:
-                        print(f"Warning: Index out of bounds for aiter_decode data, {metric_type_label}, rate {rr}")
-                metrics_data[('aiter_decode', rr)] = value
                 
         except StopIteration:
             print(f"Warning: Section for '{metric_type_label}' not found or incomplete.")
