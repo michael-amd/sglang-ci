@@ -169,14 +169,13 @@ OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv"
 # 3. Helper: launch server (backend chosen by tag-type)
 ###############################################################################
 launch_server() {
-  local mode=$1          # "aiter" or "aiter_decode" (decode-only)
-  SERVER_LOG="${folder}/server_output_${mode}.log"
+  SERVER_LOG="${folder}/server_output_aiter.log"
   rm -f "$SERVER_LOG"
 
   if [[ "$LATEST_TAG" == *rc* ]]; then
     # --- RC image → original AITer path ---
     env_prefix="RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1"
-    attn_backend="${mode}"
+    attn_backend="aiter"
     extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
   else
     # --- Non-RC image → Triton path ---
@@ -236,9 +235,8 @@ shutdown_server() { kill "$SERVER_PID"; sleep 2; }
 ###############################################################################
 # This function runs the GSM8K test multiple times, computes the average accuracy,
 # and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
-# It now accepts a mode parameter ("aiter" or "decode") to split the log file accordingly.
 run_client_gsm8k() {
-    local mode="$1"   # mode: either "aiter" or "decode"
+    local mode="$1"   # mode: always "aiter" now
     local total_accuracy=0
     local runs=5
     local count=0
@@ -344,21 +342,12 @@ get_best_metrics() {
 # ---------------------------
 # 7. Run Benchmarks for Each Mode
 # ---------------------------
-echo "Starting benchmarks for mode 'aiter' (prefill+decode)..."
-launch_server "aiter"
+echo "Starting benchmarks for mode 'aiter'..."
+launch_server
 if run_client_gsm8k "aiter"; then
     run_client_benchmark "aiter"
 else
     echo "Skipping benchmarks for mode 'aiter' due to low GSM8K accuracy."
-fi
-shutdown_server
-
-echo "Starting benchmarks for mode 'aiter_decode' (decode only)..."
-launch_server "aiter_decode"
-if run_client_gsm8k "decode"; then
-    run_client_benchmark "decode"
-else
-    echo "Skipping benchmarks for mode 'aiter_decode' due to low GSM8K accuracy."
 fi
 shutdown_server
 
@@ -371,18 +360,12 @@ H100_TTFT=(99.1 102.0 113.4 170.7 520.9)
 H100_ITL=(23.0 24.4 25.9 63.9 108.6)
 
 declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
-declare -A best_e2e_decode best_ttft_decode best_itl_decode
 
 for rate in "${REQ_RATES[@]}"; do
     read e2e_a ttft_a itl_a < <(get_best_metrics "aiter" "$rate")
     best_e2e_aiter[$rate]="$e2e_a"
     best_ttft_aiter[$rate]="$ttft_a"
     best_itl_aiter[$rate]="$itl_a"
-    
-    read e2e_d ttft_d itl_d < <(get_best_metrics "decode" "$rate")
-    best_e2e_decode[$rate]="$e2e_d"
-    best_ttft_decode[$rate]="$ttft_d"
-    best_itl_decode[$rate]="$itl_d"
 done
 
 compute_ratio() {
@@ -409,27 +392,15 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), $NODE"
+  printf "MI300x-aiter, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_e2e_aiter[$rate]}"
-  done
-  echo ""
-  printf "MI300x-aiter_decode (decode only), $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_e2e_decode[$rate]}"
   done
   echo ""
   printf "H100/MI300x-aiter"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-  printf "H100/MI300x-aiter_decode"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_decode[$rate]}")
       printf "\t%s%%" "$ratio"
   done
   echo ""
@@ -445,27 +416,15 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), $NODE"
+  printf "MI300x-aiter, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_ttft_aiter[$rate]}"
-  done
-  echo ""
-  printf "MI300x-aiter_decode (decode only), $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_ttft_decode[$rate]}"
   done
   echo ""
   printf "H100/MI300x-aiter"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-  printf "H100/MI300x-aiter_decode"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_decode[$rate]}")
       printf "\t%s%%" "$ratio"
   done
   echo ""
@@ -481,27 +440,15 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter (prefill+decode), $NODE"
+  printf "MI300x-aiter, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_itl_aiter[$rate]}"
-  done
-  echo ""
-  printf "MI300x-aiter_decode (decode only), $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_itl_decode[$rate]}"
   done
   echo ""
   printf "H100/MI300x-aiter"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-  printf "H100/MI300x-aiter_decode"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_decode[$rate]}")
       printf "\t%s%%" "$ratio"
   done
   echo ""
