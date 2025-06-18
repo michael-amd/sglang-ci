@@ -31,15 +31,21 @@ import re # Import re for regular expressions
 from collections import defaultdict  # For cleaner dictionary handling
 
 class OnlineDataProcessor:
-    def __init__(self, data_dir, output_model_name_prefix):
+    def __init__(self, data_dir, output_model_name_prefix, mode_filter="aiter"):
         """
         Initializes the OnlineDataProcessor.
         Args:
             data_dir: Path to the directory containing dated run folders (e.g., .../online/GROK1).
             output_model_name_prefix: Prefix for the output summary CSV file (e.g., GROK1_MOE-I4F8_online).
+            mode_filter: Mode(s) to process. Can be:
+                - "all": Process all modes
+                - "aiter": Process only aiter mode (default)
+                - "triton": Process only triton mode
+                - list of modes: e.g., ["aiter", "triton"]
         """
         self.data_dir = data_dir
         self.output_model_name_prefix = output_model_name_prefix
+        self.mode_filter = mode_filter
         self.all_records = []
         current_date = datetime.today().date()
         # Generate list of dates for last 30 days excluding today
@@ -47,6 +53,23 @@ class OnlineDataProcessor:
         
         # Compile regex pattern for KV cache info parsing (used repeatedly)
         self.kv_cache_pattern = re.compile(r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB")
+        
+        # Convert mode_filter to a set for efficient checking
+        if isinstance(mode_filter, str):
+            if mode_filter.lower() == "all":
+                self.modes_to_process = None  # None means process all modes
+            else:
+                self.modes_to_process = {mode_filter}
+        elif isinstance(mode_filter, list):
+            self.modes_to_process = set(mode_filter)
+        else:
+            raise ValueError(f"Invalid mode_filter: {mode_filter}. Must be 'all', a string mode name, or a list of mode names.")
+
+    def _should_process_mode(self, mode):
+        """Check if a mode should be processed based on the filter."""
+        if self.modes_to_process is None:  # Process all modes
+            return True
+        return mode in self.modes_to_process
 
     def _parse_kv_cache_info(self, csv_dir):
         """
@@ -230,6 +253,10 @@ class OnlineDataProcessor:
         
         # Build records from metrics_map
         for (mode, rate), metrics in metrics_map.items():
+            # Filter based on mode
+            if not self._should_process_mode(mode):
+                continue
+                
             record = {
                 'date': date_str,
                 'mode': mode,
@@ -322,12 +349,29 @@ class OnlineDataProcessor:
             print(f"Error: Missing expected columns for sorting: {e}")
             # Try to save anyway without sorting
         
-        output_file = os.path.join(self.data_dir, f"{self.output_model_name_prefix}_summary.csv")
+        # Add mode suffix to output filename if not processing all modes
+        if self.modes_to_process is not None:
+            mode_suffix = "_" + "_".join(sorted(self.modes_to_process))
+        else:
+            mode_suffix = "_all"
+        
+        output_file = os.path.join(self.data_dir, f"{self.output_model_name_prefix}{mode_suffix}_summary.csv")
         try:
             # Ensure the directory exists
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
             summary_df.to_csv(output_file, index=False)
             print(f"Online summary CSV saved to: {output_file}")
+            
+            # Print summary of processed modes
+            if self.modes_to_process is None:
+                print("Processed all modes")
+            else:
+                print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
+            
+            # Show unique modes found in the data
+            unique_modes = summary_df['mode'].unique()
+            print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
+            
         except PermissionError:
             print(f"Error: Permission denied writing to {output_file}")
         except Exception as e:
@@ -350,6 +394,18 @@ if __name__ == "__main__":
     # e.g., GROK1_MOE-I4F8_online_summary.csv
     # This should match the model configuration used in the benchmark script.
     output_model_name_prefix = "GROK1_MOE-I4F8_online" 
+    
+    # Mode filter options:
+    # - "aiter" (default): Process only aiter mode
+    # - "triton": Process only triton mode
+    # - "all": Process all modes
+    # - ["aiter", "triton"]: Process specific modes
+    mode_filter = "aiter"  # Default to aiter only
+    
+    # Example usage for different mode filters:
+    # mode_filter = "all"  # Process all modes
+    # mode_filter = "triton"  # Process only triton mode
+    # mode_filter = ["aiter", "triton"]  # Process both aiter and triton modes
 
-    processor = OnlineDataProcessor(data_dir, output_model_name_prefix)
+    processor = OnlineDataProcessor(data_dir, output_model_name_prefix, mode_filter)
     processor.process_and_save() 
