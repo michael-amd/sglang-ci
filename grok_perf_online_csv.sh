@@ -6,7 +6,7 @@
 #
 # USAGE:
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250429
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250612
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
