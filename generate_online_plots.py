@@ -206,17 +206,19 @@ class OnlineGraphPlotter:
         plot_data_collections = []
         all_annotations = []
         
-        # Since we're only showing aiter mode, directly process the data
-        mode_data = self.df[self.df[metric_col].notna()]
-        if not mode_data.empty:
-            data_by_date = mode_data.groupby('date')[metric_col].mean()
-            if not data_by_date.empty:
-                plotted_dates.update(data_by_date.index)
-                plot_data_collections.append({
-                    'dates': data_by_date.index,
-                    'values': data_by_date.values,
-                    'label': f"aiter - # Tokens"
-                })
+        # Process data for each mode
+        for mode in unique_modes:
+            mode_data = self.df[self.df['mode'] == mode]
+            mode_data = mode_data[mode_data[metric_col].notna()]
+            if not mode_data.empty:
+                data_by_date = mode_data.groupby('date')[metric_col].mean()
+                if not data_by_date.empty:
+                    plotted_dates.update(data_by_date.index)
+                    plot_data_collections.append({
+                        'dates': data_by_date.index,
+                        'values': data_by_date.values,
+                        'label': f"{mode} - # Tokens"
+                    })
         
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -269,18 +271,20 @@ class OnlineGraphPlotter:
         plotted_dates = set()
         plot_data_collections = []
         
-        # Since we're only showing aiter mode, directly process the data
-        mode_data = self.df[self.df[metric_col].notna()]
-        if not mode_data.empty:
-            data_by_date = mode_data.groupby('date')[metric_col].mean()
-            if not data_by_date.empty:
-                plotted_dates.update(data_by_date.index)
-                plot_data_collections.append({
-                    'mode_idx': 0,  # Single mode, so index is 0
-                    'dates': data_by_date.index,
-                    'values': data_by_date.values,
-                    'label': f"aiter - KV Cache Usage"
-                })
+        # Process data for each mode
+        for mode_idx, mode in enumerate(unique_modes):
+            mode_data = self.df[self.df['mode'] == mode]
+            mode_data = mode_data[mode_data[metric_col].notna()]
+            if not mode_data.empty:
+                data_by_date = mode_data.groupby('date')[metric_col].mean()
+                if not data_by_date.empty:
+                    plotted_dates.update(data_by_date.index)
+                    plot_data_collections.append({
+                        'mode_idx': mode_idx,
+                        'dates': data_by_date.index,
+                        'values': data_by_date.values,
+                        'label': f"{mode} - KV Cache Usage"
+                    })
         
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -292,16 +296,20 @@ class OnlineGraphPlotter:
         ordered_dates = sorted(list(plotted_dates))
         date_to_idx = {date_obj: k for k, date_obj in enumerate(ordered_dates)}
         
-        # Bar plot settings - simplified for single mode
-        bar_width = 0.4  # Fixed width for single mode
+        # Bar plot settings
+        num_modes = len(unique_modes)
+        bar_width = 0.8 / num_modes if num_modes > 0 else 0.4
         
         # Plot bars for each mode
         for data_item in plot_data_collections:
             x_indices = [date_to_idx[d] for d in data_item['dates']]
             values = data_item['values']
             
-            # No offset needed for single mode - plot directly at x positions
-            ax.bar(x_indices, values, label=data_item['label'], width=bar_width)
+            # Calculate offset for this mode
+            offset = (data_item['mode_idx'] - (num_modes - 1) / 2) * bar_width
+            x_positions = [x + offset for x in x_indices]
+            
+            ax.bar(x_positions, values, label=data_item['label'], width=bar_width)
         
         # Setup axis
         ax.legend(loc='best', fontsize='small')

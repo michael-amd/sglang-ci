@@ -2,7 +2,6 @@
 # ------------------------------------------------------------------------------
 # grok_perf_online_csv.sh
 #   Online-serving benchmark for GROK-1.
-#   Now accepts --docker_image=<image[:tag]> like the offline script.
 #
 # USAGE:
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
@@ -11,10 +10,12 @@
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
-#   bash grok_perf_online_csv.sh --gsm8k-script=/path/to/bench_sglang.py --node=node-name
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
+
+# Set timezone to PST/PDT
+export TZ='America/Los_Angeles'
 
 ###############################################################################
 # 0. Parse CLI flags
@@ -30,6 +31,7 @@ DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py"
 DEFAULT_NODE="dell300x-pla-t10-23"
 DEFAULT_THRESHOLD="0.8"
+DEFAULT_SKIP_GSM8K="false"
 
 # Initialize variables
 MODEL=""
@@ -39,6 +41,7 @@ OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 NODE=""
 THRESHOLD=""
+SKIP_GSM8K=""
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -80,6 +83,10 @@ for arg in "$@"; do
       THRESHOLD="${arg#*=}"
       shift
       ;;
+    --skip-gsm8k=*)
+      SKIP_GSM8K="${arg#*=}"
+      shift
+      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -91,6 +98,7 @@ for arg in "$@"; do
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
+      echo "  --skip-gsm8k=VALUE     Skip GSM8K test (default: $DEFAULT_SKIP_GSM8K)"
       echo "  --help                 Show this help message"
       exit 0
       ;;
@@ -105,6 +113,7 @@ OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 NODE="${NODE:-$DEFAULT_NODE}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
+SKIP_GSM8K="${SKIP_GSM8K:-$DEFAULT_SKIP_GSM8K}"
 
 docker_image="${docker_image:-${1:-$default_image}}"
 
@@ -139,7 +148,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
         -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
     fi
 
-    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" \
+    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
       bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \
@@ -149,7 +158,8 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --output-dir="${OUTPUT_DIR}" \
            --gsm8k-script="${GSM8K_SCRIPT}" \
            --node="${NODE}" \
-           --threshold="${THRESHOLD}"
+           --threshold="${THRESHOLD}" \
+           --skip-gsm8k="${SKIP_GSM8K}"
     exit 0
   fi
 fi
@@ -157,6 +167,9 @@ fi
 ###############################################################################
 # 2. Inside container → benchmark directory setup
 ###############################################################################
+SCRIPT_START_TIME=$(date +%s)
+echo "[online] Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+
 cd "${WORK_DIR}" || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
@@ -165,54 +178,99 @@ folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_
 mkdir -p "$folder"
 OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv"
 
+# Create timing summary log
+TIMING_LOG="${folder}/timing_summary_$(date +%Y%m%d_%H%M%S).log"
+export TIMING_LOG  # Make it available to all functions
+echo "TIMING SUMMARY LOG" > "$TIMING_LOG"
+echo "==================" >> "$TIMING_LOG"
+echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+echo "Timezone: $(date +%Z) ($(date +%z))" >> "$TIMING_LOG"
+echo "Docker image: ${FULL_IMAGE}" >> "$TIMING_LOG"
+echo "Model: ${MODEL}" >> "$TIMING_LOG"
+echo "" >> "$TIMING_LOG"
+
 ###############################################################################
 # 3. Helper: launch server (backend chosen by tag-type)
 ###############################################################################
+# Global variable to store the actual attention backend being used
+ATTENTION_BACKEND=""
+
 launch_server() {
   SERVER_LOG="${folder}/server_output_aiter.log"
   rm -f "$SERVER_LOG"
 
-  if [[ "$LATEST_TAG" == *rc* ]]; then
-    # --- RC image → original AITer path ---
-    env_prefix="RCCL_MSCCL_ENABLE=0 CK_MOE=1 USE_INT4_WEIGHT=1"
-    attn_backend="aiter"
-    extra_flags="--enable-torch-compile --torch-compile-max-bs 4"
-  else
-    # --- Non-RC image → Triton path ---
-    # Determine which environment variables to use based on image type
-    if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
-      # For rocm/sgl-dev images, determine which AITER variable based on date
-      aiter_env_var="SGLANG_AITER_MOE"
-      if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-        tag_date="${BASH_REMATCH[1]}"
-        if [[ "$tag_date" -ge "20250606" ]]; then
-          aiter_env_var="SGLANG_USE_AITER"
-        fi
+  # Determine attention backend based on image and date
+  # Default to triton for older images, aiter for newer ones
+  attn_backend="triton"
+  
+  if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
+    # For rocm/sgl-dev images, check date to determine default backend
+    if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+      tag_date="${BASH_REMATCH[1]}"
+      # Since 20250521, default attention backend changed to aiter
+      if [[ "$tag_date" -ge "20250521" ]]; then
+        attn_backend="aiter"
       fi
-      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
-      # Original logic for lmsysorg/sglang images
-      major="${BASH_REMATCH[1]}"
-      minor="${BASH_REMATCH[2]}"
-      patch="${BASH_REMATCH[3]}"
-      aiter_env_var="SGLANG_USE_AITER"
-      # Use SGLANG_AITER_MOE for versions before v0.4.7
-      if [[ "$major" -eq 0 ]]; then
-        if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
-          aiter_env_var="SGLANG_AITER_MOE"
-        fi
-      fi
-      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    else
-      # Default to new env vars for other images
-      env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     fi
     
-    attn_backend="triton"
+    # Determine which environment variables to use based on date
+    aiter_env_var="SGLANG_AITER_MOE"
+    if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
+      tag_date="${BASH_REMATCH[1]}"
+      if [[ "$tag_date" -ge "20250606" ]]; then
+        aiter_env_var="SGLANG_USE_AITER"
+      fi
+    fi
+    
+    # Set environment based on which backend we're using
+    if [[ "$attn_backend" == "aiter" ]]; then
+      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    else
+      env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    fi
+    extra_flags=""
+    
+  elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+    # For lmsysorg/sglang images, determine backend based on version
+    major="${BASH_REMATCH[1]}"
+    minor="${BASH_REMATCH[2]}"
+    patch="${BASH_REMATCH[3]}"
+    
+    # Assume newer versions (>= v0.4.7) use aiter by default
+    if [[ "$major" -gt 0 ]] || [[ "$major" -eq 0 && "$minor" -gt 4 ]] || [[ "$major" -eq 0 && "$minor" -eq 4 && "$patch" -ge 7 ]]; then
+      attn_backend="aiter"
+    fi
+    
+    # Determine environment variable name
+    aiter_env_var="SGLANG_USE_AITER"
+    # Use SGLANG_AITER_MOE for versions before v0.4.7
+    if [[ "$major" -eq 0 ]]; then
+      if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+        aiter_env_var="SGLANG_AITER_MOE"
+      fi
+    fi
+    
+    # Set environment based on which backend we're using
+    if [[ "$attn_backend" == "aiter" ]]; then
+      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    else
+      env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    fi
+    extra_flags=""
+    
+  else
+    # Default for other images: use aiter with new env vars
+    attn_backend="aiter"
+    env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     extra_flags=""
   fi
+  
+  # Store the backend globally for CSV output
+  ATTENTION_BACKEND="$attn_backend"
 
   echo "[online] Launching backend=${attn_backend}"
+  echo "Attention backend: ${attn_backend}" >> "$TIMING_LOG"
+  
   eval "${env_prefix} python3 -m sglang.launch_server \
         --model \"${MODEL}\" \
         --tokenizer-path \"${TOKENIZER}\" \
@@ -222,14 +280,42 @@ launch_server() {
         > \"${SERVER_LOG}\" 2>&1 &"
   SERVER_PID=$!
 
+  # Wait for server to be ready with timeout
+  local timeout=300  # 5 minutes timeout
+  local elapsed=0
+  echo "[online] Waiting for server to be ready (timeout: ${timeout}s)..."
   while ! grep -q "The server is fired up and ready to roll!" "$SERVER_LOG"; do
     sleep 1
+    elapsed=$((elapsed + 1))
+    if [ $elapsed -ge $timeout ]; then
+      echo "[online] ERROR: Server failed to start within ${timeout} seconds"
+      echo "[online] Last 50 lines of server log:"
+      tail -50 "$SERVER_LOG"
+      kill "$SERVER_PID" 2>/dev/null || true
+      exit 1
+    fi
+    # Show progress every 10 seconds
+    if [ $((elapsed % 10)) -eq 0 ]; then
+      echo "[online] Still waiting... (${elapsed}s elapsed)"
+    fi
   done
-  echo "[online] Server ready (PID ${SERVER_PID})"
+  echo "[online] Server ready after ${elapsed} seconds (PID ${SERVER_PID})"
+  echo "Server startup time: ${elapsed} seconds" >> "$TIMING_LOG"
 }
 
-shutdown_server() { kill "$SERVER_PID"; sleep 2; }
- 
+shutdown_server() { 
+    echo "[online] Shutting down server (PID ${SERVER_PID})..."
+    local shutdown_start=$(date +%s)
+    kill "$SERVER_PID"
+    sleep 2
+    local shutdown_end=$(date +%s)
+    local shutdown_duration=$((shutdown_end - shutdown_start))
+    echo "[online] Server shutdown completed in ${shutdown_duration} seconds"
+    if [ -n "$TIMING_LOG" ]; then
+        echo "Server shutdown time: ${shutdown_duration} seconds" >> "$TIMING_LOG"
+    fi
+}
+
 ###############################################################################
 # 4. GSM8K accuracy warm-up
 ###############################################################################
@@ -237,19 +323,26 @@ shutdown_server() { kill "$SERVER_PID"; sleep 2; }
 # and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
 run_client_gsm8k() {
     local mode="$1"   # mode: always "aiter" now
+    local gsm8k_start_time=$(date +%s)
     local total_accuracy=0
-    local runs=5
+    local runs=5  
     local count=0
     local run_accuracy=0
     local output
     # Set log file name based on mode.
     local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${mode}.log"
     
+    echo "Starting GSM8K accuracy test at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$gsm8k_log"
+    
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
+         local run_start_time=$(date +%s)
          echo "Executing GSM8K test Run $i for mode ${mode}..." | tee -a "$gsm8k_log"
          output=$(python3 "${GSM8K_SCRIPT}" --num-questions 2000 --parallel 2000 --num-shots 5 2>&1)
+         local run_end_time=$(date +%s)
+         local run_duration=$((run_end_time - run_start_time))
          echo "$output" | tee -a "$gsm8k_log"
+         echo "Run $i completed in ${run_duration} seconds" | tee -a "$gsm8k_log"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
          run_accuracy=$(echo "$output" | grep -oP 'Accuracy:\s*\K[\d.]+' | head -n1)
          if [ -z "$run_accuracy" ]; then
@@ -262,7 +355,18 @@ run_client_gsm8k() {
     done
     local avg_accuracy
     avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
+    local gsm8k_end_time=$(date +%s)
+    local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
+    echo "GSM8K test completed in ${gsm8k_duration} seconds" | tee -a "$gsm8k_log"
     echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
+    
+    # Log to timing summary
+    echo "" >> "$TIMING_LOG"
+    echo "GSM8K Test Results:" >> "$TIMING_LOG"
+    echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
+    echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
+    echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
          echo "Average accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
          return 0
@@ -275,31 +379,73 @@ run_client_gsm8k() {
 # ---------------------------
 # 5. Client Benchmark (runs only missing logs)
 # ---------------------------
+run_single_rate_benchmark() {
+    local mode=$1
+    local RATE=$2
+    local TIMESTAMP=$3
+    local rate_start_time=$(date +%s)
+    
+    echo "Processing request rate ${RATE} for mode ${mode}..."
+    for i in {1..3}; do
+        existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+        if [ -n "$existing_log" ]; then
+            echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+            continue
+        fi
+        
+        LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
+        echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
+        
+        local run_start_time=$(date +%s)
+        echo "Run started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$LOGFILE"
+        
+        NUM_PROMPTS=$(( 300 * RATE ))
+        [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
+        
+        CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online_${RATE}.jsonl"
+        echo "Executing: $CMD" | tee -a "$LOGFILE"
+        eval "$CMD" 2>&1 | tee -a "$LOGFILE"
+        
+        local run_end_time=$(date +%s)
+        local run_duration=$((run_end_time - run_start_time))
+        echo "Run completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$LOGFILE"
+        echo "Run duration: ${run_duration} seconds" | tee -a "$LOGFILE"
+        echo "----------------------------------------" | tee -a "$LOGFILE"
+        
+        # Log to timing summary
+        echo "  Rate ${RATE}, Run ${i}: ${run_duration} seconds" >> "$TIMING_LOG"
+    done
+    
+    # Calculate total time for this rate
+    local rate_end_time=$(date +%s)
+    local rate_total_duration=$((rate_end_time - rate_start_time))
+    echo "Completed rate ${RATE} - Total time: ${rate_total_duration} seconds" >> "$TIMING_LOG"
+}
+
 run_client_benchmark() {
     local mode=$1
+    local benchmark_start_time=$(date +%s)
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     REQUEST_RATES=(1 2 4 8 16)
-    echo "Running client benchmark for mode ${mode}..."
+    echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
+    
+    # Sequential execution only - model uses all 8 GPUs
+    echo "Running benchmarks sequentially..."
+    echo "" >> "$TIMING_LOG"
+    echo "Client Benchmark Results:" >> "$TIMING_LOG"
+    echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+    
     for RATE in "${REQUEST_RATES[@]}"; do
-        for i in {1..3}; do
-            # --------- change this line ----------
-            existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
-            echo "[DEBUG] Checking for existing log pattern: ${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_*.log"
-            echo "[DEBUG] Found existing_log variable content: '${existing_log}'"
-            # --------------------------------------
-            if [ -n "$existing_log" ]; then
-                echo "Log for mode ${mode}, rate ${RATE}, run ${i} (matched by pattern, files: '${existing_log}') already exists. Skipping."
-                continue
-            fi
-            LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
-            echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
-            NUM_PROMPTS=$(( 300 * RATE ))
-            [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
-            CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online.jsonl"
-            echo "Executing: $CMD" | tee -a "$LOGFILE"
-            eval "$CMD" 2>&1 | tee -a "$LOGFILE"
-        done
+        run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
     done
+    
+    local benchmark_end_time=$(date +%s)
+    local benchmark_duration=$((benchmark_end_time - benchmark_start_time))
+    echo "Client benchmark completed in ${benchmark_duration} seconds"
+    
+    # Log to timing summary
+    echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+    echo "  Total duration: ${benchmark_duration} seconds" >> "$TIMING_LOG"
 }
 
 # ---------------------------
@@ -342,13 +488,20 @@ get_best_metrics() {
 # ---------------------------
 # 7. Run Benchmarks for Each Mode
 # ---------------------------
-echo "Starting benchmarks for mode 'aiter'..."
+echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
 launch_server
-if run_client_gsm8k "aiter"; then
-    run_client_benchmark "aiter"
+
+if [ "$SKIP_GSM8K" = "true" ]; then
+    echo "Skipping GSM8K test as requested (--skip-gsm8k=true)"
+    run_client_benchmark "${ATTENTION_BACKEND}"
 else
-    echo "Skipping benchmarks for mode 'aiter' due to low GSM8K accuracy."
+    if run_client_gsm8k "${ATTENTION_BACKEND}"; then
+        run_client_benchmark "${ATTENTION_BACKEND}"
+    else
+        echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
+    fi
 fi
+
 shutdown_server
 
 # ---------------------------
@@ -359,10 +512,27 @@ H100_E2E=(13209 13874 16613 44918 85049)
 H100_TTFT=(99.1 102.0 113.4 170.7 520.9)
 H100_ITL=(23.0 24.4 25.9 63.9 108.6)
 
+# Function to extract throughput from log files
+extract_throughput() {
+    local mode=$1
+    local rate=$2
+    local log_file=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log" 2>/dev/null | head -n1)
+    if [ -n "$log_file" ]; then
+        local throughput=$(grep -oP 'Throughput:\s*\K[\d.]+' "$log_file" | head -n1)
+        if [ -n "$throughput" ]; then
+            echo "$throughput"
+        else
+            echo "N/A"
+        fi
+    else
+        echo "N/A"
+    fi
+}
+
 declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 
 for rate in "${REQ_RATES[@]}"; do
-    read e2e_a ttft_a itl_a < <(get_best_metrics "aiter" "$rate")
+    read e2e_a ttft_a itl_a < <(get_best_metrics "${ATTENTION_BACKEND}" "$rate")
     best_e2e_aiter[$rate]="$e2e_a"
     best_ttft_aiter[$rate]="$ttft_a"
     best_itl_aiter[$rate]="$itl_a"
@@ -392,12 +562,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter, $NODE"
+  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_e2e_aiter[$rate]}"
   done
   echo ""
-  printf "H100/MI300x-aiter"
+  printf "H100/MI300x-${ATTENTION_BACKEND}"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_aiter[$rate]}")
@@ -416,12 +586,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter, $NODE"
+  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_ttft_aiter[$rate]}"
   done
   echo ""
-  printf "H100/MI300x-aiter"
+  printf "H100/MI300x-${ATTENTION_BACKEND}"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_aiter[$rate]}")
@@ -440,12 +610,12 @@ compute_ratio() {
       printf "\t%s" "$val"
   done
   echo ""
-  printf "MI300x-aiter, $NODE"
+  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
   for rate in "${REQ_RATES[@]}"; do
       printf "\t%s" "${best_itl_aiter[$rate]}"
   done
   echo ""
-  printf "H100/MI300x-aiter"
+  printf "H100/MI300x-${ATTENTION_BACKEND}"
   for idx in "${!REQ_RATES[@]}"; do
       rate=${REQ_RATES[$idx]}
       ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_aiter[$rate]}")
@@ -456,6 +626,45 @@ compute_ratio() {
 
 echo "CSV summary saved to ${OUTPUT_CSV}"
 echo "All done! Client logs and CSV summary are saved in ${folder}."
+
+# Add performance summary to timing log
+echo "" >> "$TIMING_LOG"
+echo "Performance Summary:" >> "$TIMING_LOG"
+echo "===================" >> "$TIMING_LOG"
+for rate in "${REQ_RATES[@]}"; do
+    echo "Request Rate ${rate}:" >> "$TIMING_LOG"
+    echo "  E2E Latency: ${best_e2e_aiter[$rate]} ms" >> "$TIMING_LOG"
+    echo "  TTFT: ${best_ttft_aiter[$rate]} ms" >> "$TIMING_LOG"
+    echo "  ITL: ${best_itl_aiter[$rate]} ms" >> "$TIMING_LOG"
+    throughput=$(extract_throughput "${ATTENTION_BACKEND}" "$rate")
+    echo "  Throughput: ${throughput} requests/s" >> "$TIMING_LOG"
+    echo "" >> "$TIMING_LOG"
+done
+
+# Final timing summary
+SCRIPT_END_TIME=$(date +%s)
+TOTAL_DURATION=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+
+# Write final summary to timing log
+echo "" >> "$TIMING_LOG"
+echo "========================================" >> "$TIMING_LOG"
+echo "OVERALL SCRIPT SUMMARY" >> "$TIMING_LOG"
+echo "========================================" >> "$TIMING_LOG"
+echo "Script ended at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+echo "Total execution time: ${TOTAL_DURATION} seconds ($(($TOTAL_DURATION / 60)) minutes)" >> "$TIMING_LOG"
+echo "========================================" >> "$TIMING_LOG"
+
+# Display summary on console
+echo ""
+echo "=========================================="
+echo "SCRIPT EXECUTION SUMMARY"
+echo "=========================================="
+echo "Script completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "Total execution time: ${TOTAL_DURATION} seconds ($(($TOTAL_DURATION / 60)) minutes)"
+echo "Output directory: ${folder}"
+echo "CSV file: ${OUTPUT_CSV}"
+echo "Timing log: ${TIMING_LOG}"
+echo "=========================================="
 
 # Reminder: If you encounter memory capacity errors, please ensure that
 # any other processes occupying GPU memory are terminated or cleaned up.

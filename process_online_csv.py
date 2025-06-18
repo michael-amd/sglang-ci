@@ -138,17 +138,53 @@ class OnlineDataProcessor:
             # Skip the "H100" data line
             next(section_iter)
             
-            # Parse MI300x-aiter line
-            aiter_values_str = next(section_iter).strip().split('\t')[1:]
-            for i, rr in enumerate(request_rates):
+            # Parse MI300x lines (can be multiple modes)
+            while True:
                 try:
-                    value = float(aiter_values_str[i])
-                except (ValueError, IndexError):
-                    value = pd.NA
-                    if IndexError:
-                        print(f"Warning: Index out of bounds for aiter data, {metric_type_label}, rate {rr}")
-                metrics_data[('aiter', rr)] = value
-                
+                    line = next(section_iter).strip()
+                    if not line or "H100/MI300x" in line:
+                        break  # End of data rows
+                    
+                    # Extract mode/backend from the line
+                    # Format can be:
+                    # - MI300x-aiter, node_name\t...
+                    # - MI300x-triton, node_name\t...
+                    # - MI300x-aiter (prefill+decode), node_name\t... (legacy)
+                    # - MI300x-aiter_decode (decode only), node_name\t... (legacy)
+                    if line.startswith("MI300x-"):
+                        parts = line.split('\t')
+                        if len(parts) > 0:
+                            # Extract mode from first part
+                            first_part = parts[0]
+                            if "MI300x-aiter_decode" in first_part:
+                                mode = "aiter_decode"
+                            elif "MI300x-aiter" in first_part:
+                                mode = "aiter"
+                            elif "MI300x-triton" in first_part:
+                                mode = "triton"
+                            else:
+                                # Try to extract mode after "MI300x-"
+                                mode_match = re.search(r'MI300x-(\w+)', first_part)
+                                if mode_match:
+                                    mode = mode_match.group(1).split()[0]  # Take first word after dash
+                                else:
+                                    print(f"Warning: Could not extract mode from line: {first_part}")
+                                    continue
+                            
+                            # Parse values
+                            values_str = parts[1:]
+                            for i, rr in enumerate(request_rates):
+                                try:
+                                    value = float(values_str[i])
+                                except (ValueError, IndexError):
+                                    value = pd.NA
+                                    if IndexError:
+                                        print(f"Warning: Index out of bounds for {mode} data, {metric_type_label}, rate {rr}")
+                                metrics_data[(mode, rr)] = value
+                                
+                except StopIteration:
+                    break  # No more lines
+                    
         except StopIteration:
             print(f"Warning: Section for '{metric_type_label}' not found or incomplete.")
         except Exception as e:
@@ -160,6 +196,7 @@ class OnlineDataProcessor:
         """
         Parses a single online benchmark summary CSV file.
         The CSV contains multiple tables for E2E Latency, TTFT, and ITL.
+        Dynamically extracts backend modes (aiter, triton, etc.) from row labels.
         Also parses KV cache info from server log files in the same directory.
         """
         file_records = []
