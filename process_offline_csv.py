@@ -49,9 +49,22 @@ class OfflineDataProcessor:
     def _parse_offline_csv_file(self, file_path, date_str):
         """
         Parse a single offline CSV file and extract batch data.
+        Also tries to read backend information from config.json in the same directory.
         Returns: list of records for all batch sizes in the file
         """
         records = []
+        backend = 'unknown'  # Default backend
+        
+        # Try to read backend info from config.json if it exists
+        config_path = os.path.join(os.path.dirname(file_path), 'config.json')
+        if os.path.exists(config_path):
+            try:
+                import json
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                    backend = config.get('attention_backend', 'unknown')
+            except Exception as e:
+                print(f"Warning: Could not read config.json from {config_path}: {e}")
         
         try:
             df = pd.read_csv(file_path)
@@ -60,15 +73,20 @@ class OfflineDataProcessor:
                 print(f"Warning: Empty CSV file: {file_path}")
                 return records
 
-            # Check expected columns
-            expected_columns = 10
-            if len(df.columns) != expected_columns:
-                print(f"Warning: Expected {expected_columns} columns but found {len(df.columns)} in {file_path}")
-                
-            # Set column names
-            df.columns = ['TP','batch_size','IL','OL','Prefill_latency(s)','Median_decode_latency(s)',
-                         'E2E_Latency(s)','Prefill_Throughput(token/s)','Median_Decode_Throughput(token/s)',
-                         'E2E_Throughput(token/s)']
+            # Check if Backend column exists
+            has_backend_column = 'Backend' in df.columns or (len(df.columns) > 10 and df.columns[4] == 'Backend')
+            
+            # Set column names based on whether Backend column exists
+            if has_backend_column or len(df.columns) == 11:
+                # New format with Backend column
+                df.columns = ['TP','batch_size','IL','OL','Backend','Prefill_latency(s)','Median_decode_latency(s)',
+                             'E2E_Latency(s)','Prefill_Throughput(token/s)','Median_Decode_Throughput(token/s)',
+                             'E2E_Throughput(token/s)']
+            else:
+                # Old format without Backend column
+                df.columns = ['TP','batch_size','IL','OL','Prefill_latency(s)','Median_decode_latency(s)',
+                             'E2E_Latency(s)','Prefill_Throughput(token/s)','Median_Decode_Throughput(token/s)',
+                             'E2E_Throughput(token/s)']
             
             # Process each batch size
             for batch_size in df['batch_size'].unique():
@@ -80,10 +98,18 @@ class OfflineDataProcessor:
                     print(f"Warning: No valid data for batch size {batch_size} in {file_path}")
                     continue
                 
+                # Get backend from CSV if available, otherwise use from config.json
+                if 'Backend' in batch_data.columns:
+                    # Use the most common backend for this batch size
+                    csv_backend = batch_data['Backend'].mode()[0] if not batch_data['Backend'].empty else backend
+                else:
+                    csv_backend = backend
+                
                 # Use mean for aggregation if multiple rows per batch size
                 record = {
                     'date': date_str,
                     'batch_size': int(batch_size),
+                    'backend': csv_backend,
                     'E2E_Latency(s)': batch_data['E2E_Latency(s)'].mean(),
                     'E2E_Throughput(token/s)': batch_data['E2E_Throughput(token/s)'].mean(),
                     'ILEN': self.ILEN,
@@ -188,7 +214,7 @@ class OfflineDataProcessor:
 
         # Sort by date and batch_size
         try:
-            summary_df = summary_df.sort_values(by=['date', 'batch_size'])
+            summary_df = summary_df.sort_values(by=['date', 'batch_size', 'backend'])
         except KeyError as e:
             print(f"Error: Missing expected columns for sorting: {e}")
             # Try to save anyway without sorting

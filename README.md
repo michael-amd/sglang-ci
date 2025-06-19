@@ -99,7 +99,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 #### grok_perf_offline_csv.sh
 - **Purpose:** Benchmarks the GROK model with multiple test modes (normal, long_context, dummy).
 - **Parameters:**
-  - `--docker_image=IMAGE`: Docker image to use (default: rocm/sgl-dev:20250331rc)
+  - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
   - `--mode=MODE`: Test mode - normal, long_context, or dummy (default: normal)
   - `--model=PATH`: Model path (default: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
@@ -107,6 +107,14 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - `--work-dir=PATH`: Working directory (default: /mnt/raid/michael/sgl_benchmark_ci)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
   - `--help`: Show help message
+- **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
+  - For `rocm/sgl-dev` images: 
+    - Dates >= 20250521 use `aiter` backend
+    - Dates < 20250521 use `triton` backend
+  - For `lmsysorg/sglang` images:
+    - Versions >= v0.4.7 use `aiter` backend
+    - Versions < v0.4.7 use `triton` backend
+  - Other images default to `aiter` backend
 - **Configuration by Mode:**
   - **Normal Mode:**
     - TP: 8, Batch Sizes: 1, 2, 4, 8, 16, 32, 64, 128, 256
@@ -126,7 +134,8 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - E2E throughput (token/s)
 - **Output:**
   - A folder named with the current date and configuration information.
-  - A CSV file containing a row for each benchmark run.
+  - A CSV file containing a row for each benchmark run with backend information.
+  - A `config.json` file with Docker image and backend details.
   - An optional `result.jsonl` file with detailed result data.
 - **Usage:**  
   ```bash
@@ -134,8 +143,9 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   bash grok_perf_offline_csv.sh
   
   # Using specific Docker images
-  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250331rc
-  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
+  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250520  # Uses triton
+  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250521  # Uses aiter
+  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630  # Uses aiter
   
   # Custom model and tokenizer
   bash grok_perf_offline_csv.sh \
@@ -160,9 +170,11 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 - **Functionality:**
   - Scans the last 30 days of benchmark results
   - Aggregates data from all batch sizes and dates
-  - Creates a single summary CSV sorted by date and batch_size
+  - Extracts backend information from CSV files (if Backend column exists) or config.json
+  - Handles both old format (without Backend column) and new format (with Backend column)
+  - Creates a single summary CSV sorted by date, batch_size, and backend
   - Automatically cleans up old individual batch size CSV files
-- **Output:** `GROK1_MOE-I4F8_offline_summary.csv` containing all benchmark data
+- **Output:** `GROK1_MOE-I4F8_offline_summary.csv` containing all benchmark data with backend information
 - **Usage:**
   ```bash
   cd /mnt/raid/michael/sgl_benchmark_ci
@@ -177,9 +189,10 @@ The `generate_offline_plots.py` script generates visualization plots from the co
 - **Script:** `generate_offline_plots.py`
 - **Functionality:**
   - Reads from the consolidated summary CSV
+  - Displays backend information (aiter/triton) in plot titles when available
   - Generates three types of plots:
-    - **Latency vs Date:** Shows E2E latency trends for each batch size
-    - **Throughput vs Date:** Shows E2E throughput trends for each batch size
+    - **Latency vs Date:** Shows E2E latency trends for each batch size with backend info
+    - **Throughput vs Date:** Shows E2E throughput trends for each batch size with backend info
     - **Combined Metrics:** Shows both latency and throughput trends on a single plot
 - **Output:** PNG files saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline/`
 - **Usage:**
@@ -256,7 +269,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 #### grok_perf_online_csv.sh
 - **Purpose:** Benchmarks the online serving performance, capturing both server startup and response latencies.
 - **Parameters:**
-  - `--docker_image=IMAGE`: Docker image to use (default: rocm/sgl-dev:20250331rc)
+  - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
   - `--model=PATH`: Model path (default: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
   - `--work-dir=PATH`: Working directory (default: /mnt/raid/michael/sgl_benchmark_ci)
@@ -264,6 +277,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (default: /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py)
   - `--node=NAME`: Node name for reporting (default: dell300x-pla-t10-23)
   - `--threshold=VALUE`: GSM8K accuracy threshold (default: 0.8)
+  - `--skip-gsm8k=VALUE`: Skip GSM8K test (default: false)
   - `--help`: Show help message
 - **Workflow:**
   1. **Container Management:**  
@@ -271,23 +285,30 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
      - If executed outside a container and Docker is available, the script manages the container lifecycle: checks for an existing container, starts one if necessary, or pulls a new image and then re-invokes itself inside the container.
   2. **Run Folder Setup:**  
      - Creates a folder named  
-       `YYYYMMDD_<TAG>_GROK1_MOE-I4F8_online`.  
+       `<TAG>_GROK1_MOE-I4F8_online`.  
   3. **Server Launch & Client Benchmark:**  
-     - **Image selection:** pass `--docker_image=<image[:tag]>`.  
-       - If the tag **ends with `rc`**, the script keeps the original **AITer** back-ends (`aiter` and `aiter_decode`).  
-       - Otherwise it launches a single **Triton** back-end with environment variables:
-         - For SGLang v0.4.7+: `SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
-         - For SGLang v0.4.6 and earlier: `SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
+     - **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
+       - For `rocm/sgl-dev` images: 
+         - Dates >= 20250521 use `aiter` backend
+         - Dates < 20250521 use `triton` backend
+       - For `lmsysorg/sglang` images:
+         - Versions >= v0.4.7 use `aiter` backend
+         - Versions < v0.4.7 use `triton` backend
+       - Other images default to `aiter` backend
+     - Sets appropriate environment variables based on image version:
+       - For SGLang v0.4.7+: `SGLANG_USE_AITER=1` (when using aiter)
+       - For SGLang v0.4.6 and earlier: `SGLANG_AITER_MOE=1` (when using aiter)
+       - Always sets: `SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
      - Runs client benchmarks at multiple request rates.  
      - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
   4. **Results Aggregation:**  
      - Aggregates metrics and compares them with reference H100 values.  
-     - Generates a CSV summary including metric ratios.
+     - Generates a CSV summary with dynamic backend labeling (e.g., MI300x-aiter or MI300x-triton).
 - **Output:**  
   A run folder containing:  
   - Server logs  
   - Client logs  
-  - A CSV summary of online benchmark metrics  
+  - A CSV summary of online benchmark metrics with backend-specific labels (MI300x-aiter or MI300x-triton)
 - **Usage:**  
   ```bash
   # Basic usage
@@ -295,7 +316,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   
   # Custom configuration
   bash grok_perf_online_csv.sh \
-    --docker_image=lmsysorg/sglang:v0.4.7 \
+    --docker_image=lmsysorg/sglang:v0.4.7-rocm630 \
     --model=/path/to/your/grok/model \
     --tokenizer=your-tokenizer-name \
     --node=your-node-name \
@@ -306,6 +327,9 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --work-dir=/your/work/directory \
     --output-dir=/your/output/directory \
     --gsm8k-script=/path/to/gsm8k/bench_sglang.py
+  
+  # Skip GSM8K accuracy test
+  bash grok_perf_online_csv.sh --skip-gsm8k=true
   ```
 
 #### Online Data Processing
@@ -313,8 +337,14 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Script:** `process_online_csv.py`
 - **Functionality:**
   - Scans the last 30 days of benchmark results
-  - Parses multiple metric tables (E2E Latency, TTFT, ITL) from each CSV
-  - Extracts KV cache information from server log files
+  - Extracts metrics from three sections: E2E Latency, TTFT, and ITL
+  - Dynamically extracts backend modes (aiter, triton) from CSV row labels
+  - Parses KV cache information from server log files
+  - Key features:
+    - Compiled regex patterns for efficient log parsing
+    - Handles multiple backend modes dynamically
+    - Supports both legacy (e.g., MI300x-aiter (prefill+decode)) and new formats (e.g., MI300x-aiter, MI300x-triton)
+    - Robust parsing with fallbacks for missing data
   - Creates a single summary CSV sorted by date, mode, and request_rate
 - **Output:** `GROK1_MOE-I4F8_online_summary.csv` containing all benchmark data
 - **Usage:**
@@ -332,11 +362,13 @@ The `generate_online_plots.py` script generates visualization plots from the con
 - **Functionality:**
   - Reads from the consolidated summary CSV
   - Generates a comprehensive plot with 5 subplots:
-    - **E2E Latency:** Shows trends for different request rates and modes
-    - **TTFT (Time to First Token):** First token generation latency
-    - **ITL (Inter-Token Latency):** Latency between tokens
-    - **Number of Tokens:** KV cache allocation at server startup
-    - **KV Cache Usage:** Memory usage in GB (bar chart)
+    - **E2E Latency:** Shows trends for different request rates and backend modes (aiter, triton)
+    - **TTFT (Time to First Token):** First token generation latency across modes
+    - **ITL (Inter-Token Latency):** Latency between tokens for each backend
+    - **Number of Tokens:** KV cache allocation at server startup per backend mode
+    - **KV Cache Usage:** Memory usage in GB (bar chart) for each backend
+  - Automatically handles multiple backend modes in the data
+  - Differentiates modes with distinct colors and labels in plots
 - **Output:** PNG file saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online/`
 - **Usage:**
   ```bash
@@ -369,10 +401,12 @@ These scripts process raw benchmark outputs and create consolidated summary CSV 
 - **process_online_csv.py**
   - Processes online benchmark results with complex multi-table CSV format
   - Extracts metrics from three sections: E2E Latency, TTFT, and ITL
+  - Dynamically extracts backend modes (aiter, triton) from CSV row labels
   - Parses KV cache information from server log files
   - Key features:
     - Compiled regex patterns for efficient log parsing
-    - Handles both 'aiter' and 'aiter_decode' modes
+    - Handles multiple backend modes dynamically
+    - Supports both legacy (e.g., MI300x-aiter (prefill+decode)) and new formats (e.g., MI300x-aiter, MI300x-triton)
     - Robust parsing with fallbacks for missing data
 
 ### Plotting Scripts
@@ -391,7 +425,7 @@ These scripts generate visualization plots from the consolidated summary CSVs:
 
 - **generate_online_plots.py**
   - Creates a comprehensive multi-subplot figure showing:
-    - E2E Latency trends for different request rates and modes
+    - E2E Latency trends for different request rates and backend modes (aiter, triton)
     - TTFT (Time to First Token) performance
     - ITL (Inter-Token Latency) metrics
     - Number of tokens allocated for KV cache
