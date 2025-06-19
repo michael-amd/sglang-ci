@@ -4,9 +4,7 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250331rc
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250612
-#   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
@@ -271,13 +269,22 @@ launch_server() {
   echo "[online] Launching backend=${attn_backend}"
   echo "Attention backend: ${attn_backend}" >> "$TIMING_LOG"
   
-  eval "${env_prefix} python3 -m sglang.launch_server \
-        --model \"${MODEL}\" \
-        --tokenizer-path \"${TOKENIZER}\" \
+  # Build command with proper env handling
+  if [[ "$attn_backend" == "aiter" ]]; then
+    cmd="env '${aiter_env_var}=1' SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+  else
+    cmd="env SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+  fi
+  
+  cmd="${cmd} python3 -m sglang.launch_server \
+        --model '${MODEL}' \
+        --tokenizer-path '${TOKENIZER}' \
         --tp 8 --quantization fp8 --trust-remote-code \
         --attention-backend ${attn_backend} ${extra_flags} \
         --mem-fraction-static 0.85 \
-        > \"${SERVER_LOG}\" 2>&1 &"
+        > '${SERVER_LOG}' 2>&1 &"
+  
+  eval "$cmd"
   SERVER_PID=$!
 
   # Wait for server to be ready with timeout
@@ -422,32 +429,6 @@ run_single_rate_benchmark() {
     echo "Completed rate ${RATE} - Total time: ${rate_total_duration} seconds" >> "$TIMING_LOG"
 }
 
-run_client_benchmark() {
-    local mode=$1
-    local benchmark_start_time=$(date +%s)
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    REQUEST_RATES=(1 2 4 8 16)
-    echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
-    
-    # Sequential execution only - model uses all 8 GPUs
-    echo "Running benchmarks sequentially..."
-    echo "" >> "$TIMING_LOG"
-    echo "Client Benchmark Results:" >> "$TIMING_LOG"
-    echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
-    
-    for RATE in "${REQUEST_RATES[@]}"; do
-        run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
-    done
-    
-    local benchmark_end_time=$(date +%s)
-    local benchmark_duration=$((benchmark_end_time - benchmark_start_time))
-    echo "Client benchmark completed in ${benchmark_duration} seconds"
-    
-    # Log to timing summary
-    echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
-    echo "  Total duration: ${benchmark_duration} seconds" >> "$TIMING_LOG"
-}
-
 # ---------------------------
 # 6. Function to Select Best Metrics from Logs
 # ---------------------------
@@ -486,6 +467,272 @@ get_best_metrics() {
 }
 
 # ---------------------------
+# 6b. CSV Generation Functions
+# ---------------------------
+# Global arrays for storing metrics
+declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
+
+# H100 baseline data
+REQ_RATES=(1 2 4 8 16)
+H100_E2E=(13209 13874 16613 44918 85049)
+H100_TTFT=(99.1 102.0 113.4 170.7 520.9)
+H100_ITL=(23.0 24.4 25.9 63.9 108.6)
+
+compute_ratio() {
+    local ref=$1
+    local meas=$2
+    if [[ "$meas" == "NA" || "$meas" == "0" ]]; then
+        echo "NA"
+    else
+        awk -v r="$ref" -v m="$meas" 'BEGIN { printf "%d", (r/m)*100 }'
+    fi
+}
+
+# Initialize the CSV with headers and baseline data
+init_csv() {
+    echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
+    echo "" >> "$OUTPUT_CSV"
+    
+    # E2E Latency section
+    echo "Median E2E Latency (ms, lower better)" >> "$OUTPUT_CSV"
+    printf "request rate" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t%s" "$rate" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    printf "H100" >> "$OUTPUT_CSV"
+    for val in "${H100_E2E[@]}"; do
+        printf "\t%s" "$val" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for MI300x results
+    printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for ratios
+    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    echo "" >> "$OUTPUT_CSV"
+    
+    # TTFT section
+    echo "Median TTFT (ms, lower better)" >> "$OUTPUT_CSV"
+    printf "request rate" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t%s" "$rate" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    printf "H100" >> "$OUTPUT_CSV"
+    for val in "${H100_TTFT[@]}"; do
+        printf "\t%s" "$val" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for MI300x results
+    printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for ratios
+    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    echo "" >> "$OUTPUT_CSV"
+    
+    # ITL section
+    echo "Median ITL (ms, lower better)" >> "$OUTPUT_CSV"
+    printf "request rate" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t%s" "$rate" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    printf "H100" >> "$OUTPUT_CSV"
+    for val in "${H100_ITL[@]}"; do
+        printf "\t%s" "$val" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for MI300x results
+    printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    # Placeholder for ratios
+    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
+    for rate in "${REQ_RATES[@]}"; do
+        printf "\t" >> "$OUTPUT_CSV"
+    done
+    echo "" >> "$OUTPUT_CSV"
+    
+    echo "[online] CSV initialized at ${OUTPUT_CSV}"
+}
+
+# Update CSV with results for a specific rate
+update_csv_for_rate() {
+    local rate=$1
+    
+    # Get metrics for this rate
+    read e2e_a ttft_a itl_a < <(get_best_metrics "${ATTENTION_BACKEND}" "$rate")
+    best_e2e_aiter[$rate]="$e2e_a"
+    best_ttft_aiter[$rate]="$ttft_a"
+    best_itl_aiter[$rate]="$itl_a"
+    
+    echo "[online] Updating CSV for rate ${rate}: E2E=${e2e_a}ms, TTFT=${ttft_a}ms, ITL=${itl_a}ms"
+    
+    # Rebuild the entire CSV with current data
+    {
+        echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})"
+        echo ""
+        
+        # E2E Latency section
+        echo "Median E2E Latency (ms, lower better)"
+        printf "request rate"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "$r"
+        done
+        echo ""
+        
+        printf "H100"
+        for val in "${H100_E2E[@]}"; do
+            printf "\t%s" "$val"
+        done
+        echo ""
+        
+        printf "MI300x-${ATTENTION_BACKEND}, $NODE"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "${best_e2e_aiter[$r]:-}"
+        done
+        echo ""
+        
+        printf "H100/MI300x-${ATTENTION_BACKEND}"
+        for idx in "${!REQ_RATES[@]}"; do
+            r=${REQ_RATES[$idx]}
+            if [ -n "${best_e2e_aiter[$r]:-}" ]; then
+                ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_aiter[$r]}")
+                printf "\t%s%%" "$ratio"
+            else
+                printf "\t"
+            fi
+        done
+        echo ""
+        echo ""
+        
+        # TTFT section
+        echo "Median TTFT (ms, lower better)"
+        printf "request rate"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "$r"
+        done
+        echo ""
+        
+        printf "H100"
+        for val in "${H100_TTFT[@]}"; do
+            printf "\t%s" "$val"
+        done
+        echo ""
+        
+        printf "MI300x-${ATTENTION_BACKEND}, $NODE"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "${best_ttft_aiter[$r]:-}"
+        done
+        echo ""
+        
+        printf "H100/MI300x-${ATTENTION_BACKEND}"
+        for idx in "${!REQ_RATES[@]}"; do
+            r=${REQ_RATES[$idx]}
+            if [ -n "${best_ttft_aiter[$r]:-}" ]; then
+                ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_aiter[$r]}")
+                printf "\t%s%%" "$ratio"
+            else
+                printf "\t"
+            fi
+        done
+        echo ""
+        echo ""
+        
+        # ITL section
+        echo "Median ITL (ms, lower better)"
+        printf "request rate"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "$r"
+        done
+        echo ""
+        
+        printf "H100"
+        for val in "${H100_ITL[@]}"; do
+            printf "\t%s" "$val"
+        done
+        echo ""
+        
+        printf "MI300x-${ATTENTION_BACKEND}, $NODE"
+        for r in "${REQ_RATES[@]}"; do
+            printf "\t%s" "${best_itl_aiter[$r]:-}"
+        done
+        echo ""
+        
+        printf "H100/MI300x-${ATTENTION_BACKEND}"
+        for idx in "${!REQ_RATES[@]}"; do
+            r=${REQ_RATES[$idx]}
+            if [ -n "${best_itl_aiter[$r]:-}" ]; then
+                ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_aiter[$r]}")
+                printf "\t%s%%" "$ratio"
+            else
+                printf "\t"
+            fi
+        done
+        echo ""
+    } > "$OUTPUT_CSV"
+    
+    echo "[online] CSV updated with results for rate ${rate}"
+}
+
+run_client_benchmark() {
+    local mode=$1
+    local benchmark_start_time=$(date +%s)
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    REQUEST_RATES=(1 2 4 8 16)
+    echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
+    
+    # Initialize CSV at the start
+    init_csv
+    
+    # Sequential execution only - model uses all 8 GPUs
+    echo "Running benchmarks sequentially..."
+    echo "" >> "$TIMING_LOG"
+    echo "Client Benchmark Results:" >> "$TIMING_LOG"
+    echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+    
+    for RATE in "${REQUEST_RATES[@]}"; do
+        run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
+        # Update CSV after each rate completes all runs
+        update_csv_for_rate "$RATE"
+    done
+    
+    local benchmark_end_time=$(date +%s)
+    local benchmark_duration=$((benchmark_end_time - benchmark_start_time))
+    echo "Client benchmark completed in ${benchmark_duration} seconds"
+    
+    # Log to timing summary
+    echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+    echo "  Total duration: ${benchmark_duration} seconds" >> "$TIMING_LOG"
+}
+
+# ---------------------------
 # 7. Run Benchmarks for Each Mode
 # ---------------------------
 echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
@@ -507,11 +754,6 @@ shutdown_server
 # ---------------------------
 # 8. Parse Logs and Generate CSV Summary (with Ratio Rows)
 # ---------------------------
-REQ_RATES=(1 2 4 8 16)
-H100_E2E=(13209 13874 16613 44918 85049)
-H100_TTFT=(99.1 102.0 113.4 170.7 520.9)
-H100_ITL=(23.0 24.4 25.9 63.9 108.6)
-
 # Function to extract throughput from log files
 extract_throughput() {
     local mode=$1
@@ -528,101 +770,6 @@ extract_throughput() {
         echo "N/A"
     fi
 }
-
-declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
-
-for rate in "${REQ_RATES[@]}"; do
-    read e2e_a ttft_a itl_a < <(get_best_metrics "${ATTENTION_BACKEND}" "$rate")
-    best_e2e_aiter[$rate]="$e2e_a"
-    best_ttft_aiter[$rate]="$ttft_a"
-    best_itl_aiter[$rate]="$itl_a"
-done
-
-compute_ratio() {
-    local ref=$1
-    local meas=$2
-    if [[ "$meas" == "NA" || "$meas" == "0" ]]; then
-        echo "NA"
-    else
-        awk -v r="$ref" -v m="$meas" 'BEGIN { printf "%d", (r/m)*100 }'
-    fi
-}
-
-{
-  echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})"
-  echo ""
-  echo "Median E2E Latency (ms, lower better)"
-  printf "request rate"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "$rate"
-  done
-  echo ""
-  printf "H100"
-  for val in "${H100_E2E[@]}"; do
-      printf "\t%s" "$val"
-  done
-  echo ""
-  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_e2e_aiter[$rate]}"
-  done
-  echo ""
-  printf "H100/MI300x-${ATTENTION_BACKEND}"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-  echo ""
-  echo "Median TTFT (ms, lower better)"
-  printf "request rate"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "$rate"
-  done
-  echo ""
-  printf "H100"
-  for val in "${H100_TTFT[@]}"; do
-      printf "\t%s" "$val"
-  done
-  echo ""
-  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_ttft_aiter[$rate]}"
-  done
-  echo ""
-  printf "H100/MI300x-${ATTENTION_BACKEND}"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-  echo ""
-  echo "Median ITL (ms, lower better)"
-  printf "request rate"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "$rate"
-  done
-  echo ""
-  printf "H100"
-  for val in "${H100_ITL[@]}"; do
-      printf "\t%s" "$val"
-  done
-  echo ""
-  printf "MI300x-${ATTENTION_BACKEND}, $NODE"
-  for rate in "${REQ_RATES[@]}"; do
-      printf "\t%s" "${best_itl_aiter[$rate]}"
-  done
-  echo ""
-  printf "H100/MI300x-${ATTENTION_BACKEND}"
-  for idx in "${!REQ_RATES[@]}"; do
-      rate=${REQ_RATES[$idx]}
-      ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_aiter[$rate]}")
-      printf "\t%s%%" "$ratio"
-  done
-  echo ""
-} > "$OUTPUT_CSV"
 
 echo "CSV summary saved to ${OUTPUT_CSV}"
 echo "All done! Client logs and CSV summary are saved in ${folder}."
