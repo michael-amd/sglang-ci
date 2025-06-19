@@ -301,6 +301,7 @@ for tp in "${TP_VALUES[@]}"; do
               --trust-remote-code \
               --enable-torch-compile 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         else
           # Use triton backend
           # Determine which environment variables to use
@@ -335,6 +336,7 @@ for tp in "${TP_VALUES[@]}"; do
               --quantization fp8 \
               --trust-remote-code 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         fi
       elif [[ "$mode" == "long_context" ]]; then
         # Long context mode command
@@ -371,6 +373,7 @@ for tp in "${TP_VALUES[@]}"; do
               --quantization fp8 \
               --trust-remote-code 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         else
           # Use triton backend
           # Determine which environment variables to use
@@ -404,6 +407,7 @@ for tp in "${TP_VALUES[@]}"; do
               --quantization fp8 \
               --trust-remote-code 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         fi
       else
         # Normal mode
@@ -411,7 +415,7 @@ for tp in "${TP_VALUES[@]}"; do
         if [[ "$bs" -eq 128 ]]; then
           mem_fraction_arg=" --mem-fraction-static 0.85"
         elif [[ "$bs" -eq 256 ]]; then
-          mem_fraction_arg=" --mem-fraction-static 0.8"
+          mem_fraction_arg=" --mem-fraction-static 0.75"
         fi
         
         if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then
@@ -449,6 +453,7 @@ for tp in "${TP_VALUES[@]}"; do
               --trust-remote-code \
               --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         else
           # Use triton backend
           # Determine which environment variables to use
@@ -484,7 +489,16 @@ for tp in "${TP_VALUES[@]}"; do
               --trust-remote-code \
               --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
           )
+          cmd_exit_status=${PIPESTATUS[0]}
         fi
+      fi
+      
+      # Check if the command failed due to OOM
+      if [[ ${cmd_exit_status:-0} -ne 0 ]] || echo "$out" | grep -q "OutOfMemoryError"; then
+        echo "WARNING: Batch size ${bs} failed with OutOfMemoryError. Skipping..."
+        # Write NA values to CSV for failed run
+        echo "${tp},${bs},${ilen},${OLEN},${ATTENTION_BACKEND},NA,NA,NA,NA,NA,NA" >> "${OUTPUT_CSV}"
+        continue
       fi
       
       # Isolate the section after "Benchmark ..." (assumes final block of output).
