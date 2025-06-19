@@ -294,6 +294,10 @@ class OnlineDataProcessor:
         for folder_name in folder_list:
             folder_path = os.path.join(self.data_dir, folder_name)
             if os.path.isdir(folder_path):
+                # Check if folder ends with exactly "_online" (not "_online_old" etc.)
+                if not folder_name.endswith("_online"):
+                    continue
+                    
                 # Folder name format: ${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online
                 # LATEST_TAG can be YYYYMMDD or YYYYMMDDrc
                 folder_date_part = folder_name.split('_')[0]

@@ -7,31 +7,49 @@ import sys
 from collections import defaultdict
 
 # --------- Configuration ---------
-# Set date, image name, and node values:
-RUN_TAG = "20250511"  # Example: 20250511 (Update this for different runs)
+# Set date and node values:
+RUN_TAG = "20250526"  # Example: 20250511 (Update this for different runs)
 NODE = "dell300x-pla-t10-23"
 
+# Model name
+MODEL_NAME = "GROK1"
+
 # Folder path (adjust if needed or take as a command-line argument)
-# New naming convention: <RUN_TAG>_GROK1_MOE-I4F8_online
-folder_base_name = f"{RUN_TAG}_GROK1_MOE-I4F8_online"
-folder = f"./online/{folder_base_name}" # Assumes script is run from sgl_benchmark_ci directory
+# New naming convention: online/<MODEL_NAME>/<RUN_TAG>_<MODEL_NAME>_MOE-I4F8_online
+folder_base_name = f"{RUN_TAG}_{MODEL_NAME}_MOE-I4F8_online"
+folder = f"./online/{MODEL_NAME}/{folder_base_name}" # Assumes script is run from sgl_benchmark_ci directory
+
+# Check if folder exists
+if not os.path.exists(folder):
+    print(f"Error: Folder does not exist: {folder}")
+    print(f"Please make sure the benchmark has been run for date {RUN_TAG}")
+    sys.exit(1)
 
 # Output CSV file name:
-output_csv = os.path.join(folder, f"{folder_base_name}_parsed.csv")
+output_csv = os.path.join(folder, f"{folder_base_name}.csv")
+
+# Check write permissions
+try:
+    # Try to create a temp file to test write permissions
+    test_file = os.path.join(folder, ".test_write_permission")
+    with open(test_file, "w") as f:
+        f.write("test")
+    os.remove(test_file)
+except PermissionError:
+    print(f"Error: No write permission in folder: {folder}")
+    print("Please check folder permissions or run with appropriate privileges")
+    sys.exit(1)
+except Exception as e:
+    print(f"Error checking permissions: {e}")
+    sys.exit(1)
 
 # Request rates to consider (as strings)
 req_rates = ["1", "2", "4", "8", "16"]
-# We also include an "inf" column (set to blank if not available)
-inf_col = "N/A"
 
 # Hard-coded H100 reference arrays for each metric (online mode)
-H100_E2E = ["13209", "13874", "16613", "44918", "85049", ""]
-H100_TTFT = ["99.1", "102.0", "113.4", "170.7", "520.9", ""]
-H100_ITL = ["23.0", "24.4", "25.9", "63.9", "108.6", ""]
-
-# Row labels for the two modes (using the NODE variable)
-label_aiter = f"MI300x-aiter (prefill+decode), {NODE}"
-label_decode = f"MI300x-decode (decode only), {NODE}"  # Updated decode label
+H100_E2E = ["13209", "13874", "16613", "44918", "85049"]
+H100_TTFT = ["99.1", "102.0", "113.4", "170.7", "520.9"]
+H100_ITL = ["23.0", "24.4", "25.9", "63.9", "108.6"]
 
 # --------- Helper functions ---------
 def parse_metrics_from_file(filepath):
@@ -43,8 +61,13 @@ def parse_metrics_from_file(filepath):
       Median ITL (ms): <value>
     Returns a tuple of (e2e, ttft, itl) as floats if found; otherwise None.
     """
-    with open(filepath, "r") as f:
-        content = f.read()
+    try:
+        with open(filepath, "r") as f:
+            content = f.read()
+    except Exception as e:
+        print(f"Warning: Could not read file {filepath}: {e}")
+        return None
+        
     # Use regex to extract numbers
     e2e_match = re.search(r"Median E2E Latency \(ms\):\s*([\d\.]+)", content)
     ttft_match = re.search(r"Median TTFT \(ms\):\s*([\d\.]+)", content)
@@ -75,29 +98,64 @@ def parse_metrics_from_file(filepath):
         return None
     return (e2e, ttft, itl)
 
-def get_best_metrics_for_mode(mode):
+def detect_attention_backend():
     """
-    For a given mode (either "aiter" or "decode"), find all log files,
+    Detect which attention backend was used by examining log files or server output.
+    Returns "aiter", "triton", or "unknown"
+    """
+    # First try to check server output log
+    server_log = os.path.join(folder, "server_output_aiter.log")
+    if os.path.exists(server_log):
+        try:
+            with open(server_log, "r") as f:
+                content = f.read()
+                if "--attention-backend aiter" in content:
+                    return "aiter"
+                elif "--attention-backend triton" in content:
+                    return "triton"
+        except Exception as e:
+            print(f"Warning: Could not read server log: {e}")
+    
+    # If not found in server log, check client log filenames
+    log_files = glob.glob(os.path.join(folder, "sglang_client_log_*.log"))
+    for filepath in log_files:
+        basename = os.path.basename(filepath)
+        # Look for patterns like grok1_aiter_1_run or grok1_triton_1_run
+        if "_aiter_" in basename:
+            return "aiter"
+        elif "_triton_" in basename:
+            return "triton"
+    
+    # Default to aiter if not found (matching the script's newer default)
+    return "aiter"
+
+def get_best_metrics_for_backend(backend):
+    """
+    For a given backend (either "aiter" or "triton"), find all log files,
     group them by request rate (extracted from filename), and choose the one
     with the minimum Median E2E Latency for each request rate.
     Returns a dict mapping request rate (string) -> (e2e, ttft, itl) (as floats or None)
     """
-    # Pattern: sglang_client_log_grok1_<mode>_<rate>_run*.log
-    pattern = os.path.join(folder, f"sglang_client_log_grok1_{mode}_*_run*.log")
+    # Pattern: sglang_client_log_<MODEL_NAME>_<backend>_<rate>_run*.log
+    pattern = os.path.join(folder, f"sglang_client_log_{MODEL_NAME}_{backend}_*_run*.log")
     files = glob.glob(pattern)
+    print(f"Found {len(files)} log files for backend {backend}")
+    
     # Group by request rate
     groups = defaultdict(list)
     for filepath in files:
         basename = os.path.basename(filepath)
-        # Example filename: sglang_client_log_grok1_decode_1_run1_20250401_231818.log
-        m = re.search(r"sglang_client_log_grok1_" + re.escape(mode) + r"_(\d+)_run", basename)
+        # Example filename: sglang_client_log_GROK1_aiter_1_run1_20250401_231818.log
+        m = re.search(r"sglang_client_log_" + MODEL_NAME + "_" + re.escape(backend) + r"_(\d+)_run", basename)
         if m:
             rate = m.group(1)
             groups[rate].append(filepath)
+    
     best = {}
     for rate in req_rates:
         if rate not in groups:
             best[rate] = None
+            print(f"No logs found for rate {rate}")
         else:
             best_val = None
             for filepath in groups[rate]:
@@ -107,6 +165,8 @@ def get_best_metrics_for_mode(mode):
                 if best_val is None or metrics[0] < best_val[0]:
                     best_val = metrics
             best[rate] = best_val
+            if best_val:
+                print(f"Rate {rate}: Best E2E={best_val[0]:.2f}ms from {len(groups[rate])} runs")
     return best
 
 def compute_ratio(ref_str, meas_val):
@@ -130,107 +190,81 @@ def format_metric(value):
     return f"{value:.2f}"
 
 # --------- Main Parsing ---------
-# Read DOCKER_NAME from config.json
+# Read docker image name from config.json
 config_path = os.path.join(folder, "config.json")
 docker_name = "N/A"
 if os.path.exists(config_path):
-    with open(config_path, "r") as f:
-        try:
+    try:
+        with open(config_path, "r") as f:
             config = json.load(f)
             docker_name = config.get("docker", "N/A")
-        except:
-            docker_name = "N/A"
+    except Exception as e:
+        print(f"Warning: Could not read config.json: {e}")
+        docker_name = "N/A"
 
-# Get best metrics for both modes
-best_aiter = get_best_metrics_for_mode("aiter")
-best_decode = get_best_metrics_for_mode("decode")  # Updated to search for decode mode logs
+# Detect which attention backend was used
+backend = detect_attention_backend()
+print(f"Detected attention backend: {backend}")
+
+# Get best metrics for the detected backend
+best_metrics = get_best_metrics_for_backend(backend)
 
 # Now, build CSV content lines (as list of strings)
 lines = []
-lines.append(f"Online mode - GROK1 ({docker_name})")
+lines.append(f"Online mode - {MODEL_NAME} ({docker_name})")
 lines.append("")
 
-# Helper function to build a section given a header and two best dictionaries and H100 reference.
-def build_section(section_title, h100_ref, label_aiter, label_decode):
+# Helper function to build a section given a header and metrics dictionary and H100 reference.
+def build_section(section_title, h100_ref, backend_metrics, backend_name):
     sec_lines = []
     sec_lines.append(section_title)
-    # Header row: "request rate" then req_rates + "inf"
-    header = "request rate\t" + "\t".join(req_rates) + "\tinf"
+    # Header row: "request rate" then req_rates
+    header = "request rate\t" + "\t".join(req_rates)
     sec_lines.append(header)
     # H100 row
-    h100_line = "H100\t" + "\t".join(h100_ref) + "\t"
+    h100_line = "H100\t" + "\t".join(h100_ref)
     sec_lines.append(h100_line)
-    # Row for aiter
-    aiter_values = []
+    # Row for MI300x with backend
+    mi300x_values = []
     for r in req_rates:
-        m = best_aiter.get(r)
+        m = backend_metrics.get(r)
         if m is None:
-            aiter_values.append("N/A")
+            mi300x_values.append("N/A")
         else:
             # Depending on section, choose index: 0 for E2E, 1 for TTFT, 2 for ITL
             if section_title.startswith("Median E2E"):
-                aiter_values.append(format_metric(m[0]))
+                mi300x_values.append(format_metric(m[0]))
             elif section_title.startswith("Median TTFT"):
-                aiter_values.append(format_metric(m[1]))
+                mi300x_values.append(format_metric(m[1]))
             elif section_title.startswith("Median ITL"):
-                aiter_values.append(format_metric(m[2]))
-    aiter_line = f"{label_aiter}\t" + "\t".join(aiter_values) + "\t"
-    sec_lines.append(aiter_line)
-    # Row for decode mode
-    decode_values = []
-    for r in req_rates:
-        m = best_decode.get(r)
-        if m is None:
-            decode_values.append("N/A")
-        else:
-            if section_title.startswith("Median E2E"):
-                decode_values.append(format_metric(m[0]))
-            elif section_title.startswith("Median TTFT"):
-                decode_values.append(format_metric(m[1]))
-            elif section_title.startswith("Median ITL"):
-                decode_values.append(format_metric(m[2]))
-    decode_line = f"{label_decode}\t" + "\t".join(decode_values) + "\t"
-    sec_lines.append(decode_line)
-    # Ratio rows for each mode: compute ratio row as: H100/MI300x-aiter and H100/MI300x-decode.
-    ratio_aiter = []
+                mi300x_values.append(format_metric(m[2]))
+    mi300x_line = f"MI300x-{backend_name}, {NODE}\t" + "\t".join(mi300x_values)
+    sec_lines.append(mi300x_line)
+    # Ratio row: compute ratio row as: H100/MI300x-backend
+    ratio_values = []
     for idx, r in enumerate(req_rates):
-        m_val = best_aiter.get(r)
+        m_val = backend_metrics.get(r)
         if m_val is None:
-            ratio_aiter.append("N/A")
+            ratio_values.append("N/A")
         else:
             if section_title.startswith("Median E2E"):
-                ratio_aiter.append(compute_ratio(h100_ref[idx], m_val[0]))
+                ratio_values.append(compute_ratio(h100_ref[idx], m_val[0]))
             elif section_title.startswith("Median TTFT"):
-                ratio_aiter.append(compute_ratio(h100_ref[idx], m_val[1]))
+                ratio_values.append(compute_ratio(h100_ref[idx], m_val[1]))
             elif section_title.startswith("Median ITL"):
-                ratio_aiter.append(compute_ratio(h100_ref[idx], m_val[2]))
-    ratio_line_aiter = f"H100/MI300x-aiter\t" + "\t".join(ratio_aiter)
-    sec_lines.append(ratio_line_aiter)
-    
-    ratio_decode = []
-    for idx, r in enumerate(req_rates):
-        m_val = best_decode.get(r)
-        if m_val is None:
-            ratio_decode.append("N/A")
-        else:
-            if section_title.startswith("Median E2E"):
-                ratio_decode.append(compute_ratio(h100_ref[idx], m_val[0]))
-            elif section_title.startswith("Median TTFT"):
-                ratio_decode.append(compute_ratio(h100_ref[idx], m_val[1]))
-            elif section_title.startswith("Median ITL"):
-                ratio_decode.append(compute_ratio(h100_ref[idx], m_val[2]))
-    ratio_line_decode = f"H100/MI300x-decode\t" + "\t".join(ratio_decode)
-    sec_lines.append(ratio_line_decode)
+                ratio_values.append(compute_ratio(h100_ref[idx], m_val[2]))
+    ratio_line = f"H100/MI300x-{backend_name}\t" + "\t".join(ratio_values)
+    sec_lines.append(ratio_line)
     
     return sec_lines
 
-# Build sections using the updated labels
-section_e2e = build_section("Median E2E Latency (ms, lower better)", H100_E2E[:5], 
-                             label_aiter, label_decode)
-section_ttft = build_section("Median TTFT (ms, lower better)", H100_TTFT[:5], 
-                             label_aiter, label_decode)
-section_itl = build_section("Median ITL (ms, lower better)", H100_ITL[:5], 
-                             label_aiter, label_decode)
+# Build sections using the detected backend
+section_e2e = build_section("Median E2E Latency (ms, lower better)", H100_E2E, 
+                            best_metrics, backend)
+section_ttft = build_section("Median TTFT (ms, lower better)", H100_TTFT, 
+                             best_metrics, backend)
+section_itl = build_section("Median ITL (ms, lower better)", H100_ITL, 
+                            best_metrics, backend)
 
 # Append sections to lines (with blank lines between)
 lines.extend(section_e2e)
@@ -240,8 +274,21 @@ lines.append("")
 lines.extend(section_itl)
 
 # Write final CSV (tab-delimited text file)
-with open(output_csv, "w") as f:
+try:
+    with open(output_csv, "w") as f:
+        for line in lines:
+            f.write(line + "\n")
+    print(f"CSV summary saved to {output_csv}")
+except PermissionError:
+    print(f"Error: Permission denied when writing to {output_csv}")
+    print("Possible solutions:")
+    print("1. Check if the file is open in another program")
+    print("2. Check file/folder permissions")
+    print("3. Try running with sudo if appropriate")
+    # Try to output to stdout as fallback
+    print("\n--- CSV Output ---")
     for line in lines:
-        f.write(line + "\n")
-
-print(f"CSV summary saved to {output_csv}")
+        print(line)
+except Exception as e:
+    print(f"Error writing CSV: {e}")
+    sys.exit(1)
