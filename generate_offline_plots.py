@@ -80,9 +80,10 @@ class OfflineGraphPlotter:
             print(f"Error reading or processing summary CSV {self.summary_csv_path}: {e}")
             self.df = pd.DataFrame()
 
-    def _setup_subplot_axis(self, ax, dates, batch_size, metric_label, ilen, olen):
+    def _setup_subplot_axis(self, ax, dates, batch_size, metric_label, ilen, olen, backend=None):
         """Helper method to set up common axis properties for subplots."""
-        ax.set_title(f"{metric_label} vs Image name for Batch Size {batch_size} (ILEN={ilen}, OLEN={olen})")
+        backend_text = f" [{backend}]" if backend and backend != 'unknown' else ""
+        ax.set_title(f"{metric_label} vs Image name for Batch Size {batch_size} (ILEN={ilen}, OLEN={olen}){backend_text}")
         ax.set_ylabel(metric_label)
         ax.grid(True)
         ax.legend()
@@ -131,6 +132,11 @@ class OfflineGraphPlotter:
             ilen = int(batch_data['ILEN'].mean()) if 'ILEN' in batch_data.columns else 'N/A'
             olen = int(batch_data['OLEN'].mean()) if 'OLEN' in batch_data.columns else 'N/A'
             
+            # Get backend (should be constant for a batch size, use mode to be safe)
+            backend = None
+            if 'backend' in batch_data.columns:
+                backend = batch_data['backend'].mode()[0] if not batch_data['backend'].empty else 'unknown'
+            
             # Plot the metric
             ax.plot(batch_data['date'], batch_data[metric_col], 
                    marker='o', linestyle='-', label=f'Batch Size {batch_size}')
@@ -144,7 +150,7 @@ class OfflineGraphPlotter:
             
             # Setup axis
             self._setup_subplot_axis(ax, batch_data['date'].tolist(), batch_size, 
-                                   metric_label, ilen, olen)
+                                   metric_label, ilen, olen, backend)
         
         # Set common x-label
         axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
