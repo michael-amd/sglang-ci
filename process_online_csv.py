@@ -29,6 +29,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import re # Import re for regular expressions
 from collections import defaultdict  # For cleaner dictionary handling
+import argparse  # For command-line argument parsing
 
 class OnlineDataProcessor:
     def __init__(self, data_dir, output_model_name_prefix, mode_filter="aiter"):
@@ -468,28 +469,57 @@ class OnlineDataProcessor:
         self.filter_complete_dates()  # Filter to only keep dates with complete data
         self.save_summary_csv()
 
-if __name__ == "__main__":
-    # data_dir is the parent directory of the dated run folders.
-    # For online benchmarks, this is typically .../online/${MODEL_NAME_FROM_SCRIPT}
-    # e.g., /mnt/raid/michael/sgl_benchmark_ci/online/GROK1
-    data_dir = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1" 
-    
-    # This prefix is used for the output summary CSV file name.
-    # e.g., GROK1_MOE-I4F8_online_summary.csv
-    # This should match the model configuration used in the benchmark script.
-    output_model_name_prefix = "GROK1_MOE-I4F8_online" 
-    
-    # Mode filter options:
-    # - "aiter" (default): Process only aiter mode
-    # - "triton": Process only triton mode
-    # - "all": Process all modes
-    # - ["aiter", "triton"]: Process specific modes
-    mode_filter = "aiter"  # Default to aiter only
-    
-    # Example usage for different mode filters:
-    # mode_filter = "all"  # Process all modes
-    # mode_filter = "triton"  # Process only triton mode
-    # mode_filter = ["aiter", "triton"]  # Process both aiter and triton modes
+def parse_mode_filter(mode_str):
+    """Parse mode filter string into appropriate format."""
+    if not mode_str or mode_str.lower() == "all":
+        return "all"
+    elif "," in mode_str:
+        # Multiple modes separated by comma
+        return [m.strip() for m in mode_str.split(",") if m.strip()]
+    else:
+        # Single mode
+        return mode_str.strip()
 
-    processor = OnlineDataProcessor(data_dir, output_model_name_prefix, mode_filter)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Process online benchmark CSV files and generate summary CSV",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        default="/mnt/raid/michael/sgl_benchmark_ci/online/GROK1",
+        help="Path to the directory containing dated run folders (e.g., .../online/GROK1)"
+    )
+    
+    parser.add_argument(
+        "--output-prefix",
+        type=str,
+        default="GROK1_MOE-I4F8_online",
+        help="Prefix for the output summary CSV file (e.g., GROK1_MOE-I4F8_online)"
+    )
+    
+    parser.add_argument(
+        "--mode-filter",
+        type=str,
+        default="aiter",
+        help="Mode(s) to process. Options: 'all', 'aiter', 'triton', or comma-separated list like 'aiter,triton'"
+    )
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # Parse mode filter
+    mode_filter = parse_mode_filter(args.mode_filter)
+    
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Data directory: {args.data_dir}")
+    print(f"  Output prefix: {args.output_prefix}")
+    print(f"  Mode filter: {mode_filter}")
+    print()
+    
+    # Create processor and run
+    processor = OnlineDataProcessor(args.data_dir, args.output_prefix, mode_filter)
     processor.process_and_save() 
