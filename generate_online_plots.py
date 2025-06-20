@@ -51,6 +51,9 @@ class OnlineGraphPlotter:
         os.makedirs(self.plot_dir, exist_ok=True)
         self.df = None
         
+        # Expected request rates for complete data
+        self.expected_request_rates = [1, 2, 4, 8, 16]  # Powers of 2
+        
         # Convert mode_filter to a set for efficient checking
         if mode_filter is None:
             self.modes_to_plot = None  # None means plot all modes
@@ -116,6 +119,79 @@ class OnlineGraphPlotter:
             print(f"Error reading or processing summary CSV {self.summary_csv_path}: {e}")
             self.df = pd.DataFrame() # Ensure df is an empty DataFrame on error
 
+    def filter_complete_dates(self):
+        """
+        Filters dataframe to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
+        Valid data means at least one performance metric (E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        """
+        if self.df.empty:
+            return
+        
+        # Performance metric columns to check
+        metric_columns = ['E2E_Latency_ms', 'TTFT_ms', 'ITL_ms']
+        
+        # Group by date and mode to check completeness
+        complete_dates = set()
+        
+        for date in self.df['date'].unique():
+            date_df = self.df[self.df['date'] == date]
+            
+            # Get unique modes for this date
+            modes_in_date = date_df['mode'].unique()
+            
+            # Check if each mode has all expected request rates with valid data
+            is_complete = True
+            for mode in modes_in_date:
+                mode_df = date_df[date_df['mode'] == mode]
+                
+                # Check request rates
+                request_rates_found = sorted(mode_df['request_rate'].unique())
+                if request_rates_found != self.expected_request_rates:
+                    is_complete = False
+                    missing_rates = set(self.expected_request_rates) - set(request_rates_found)
+                    extra_rates = set(request_rates_found) - set(self.expected_request_rates)
+                    if missing_rates:
+                        print(f"Date {date.strftime('%Y%m%d')}, Mode {mode}: Missing request rates: {sorted(missing_rates)}")
+                    if extra_rates:
+                        print(f"Date {date.strftime('%Y%m%d')}, Mode {mode}: Extra request rates: {sorted(extra_rates)}")
+                    break
+                
+                # Check that each request rate has valid data (at least one non-NA metric)
+                for rr in self.expected_request_rates:
+                    rr_df = mode_df[mode_df['request_rate'] == rr]
+                    if len(rr_df) == 0:
+                        is_complete = False
+                        print(f"Date {date.strftime('%Y%m%d')}, Mode {mode}: No data for request rate {rr}")
+                        break
+                    
+                    # Check if at least one performance metric has valid data
+                    has_valid_data = False
+                    for metric in metric_columns:
+                        if metric in rr_df.columns and rr_df[metric].notna().any():
+                            has_valid_data = True
+                            break
+                    
+                    if not has_valid_data:
+                        is_complete = False
+                        print(f"Date {date.strftime('%Y%m%d')}, Mode {mode}, RR {rr}: No valid performance metrics (all NA)")
+                        break
+                
+                if not is_complete:
+                    break
+            
+            if is_complete:
+                complete_dates.add(date)
+                print(f"Date {date.strftime('%Y%m%d')}: Complete and valid data for all modes and request rates")
+        
+        # Filter dataframe to only keep complete dates
+        if complete_dates:
+            self.df = self.df[self.df['date'].isin(complete_dates)]
+            print(f"\nKept {len(complete_dates)} dates with complete and valid data for plotting")
+            print(f"Total records after filtering: {len(self.df)}")
+        else:
+            print("\nNo dates found with complete and valid data for all request rates [1, 2, 4, 8, 16]")
+            self.df = pd.DataFrame()
+
     def _setup_subplot_axis(self, ax, ordered_dates, y_label, title):
         """Helper method to set up common axis properties for subplots."""
         ax.set_title(title)
@@ -130,11 +206,27 @@ class OnlineGraphPlotter:
         if not annotations:
             return []
         
+        # First, handle annotations with the same y value - keep only the leftmost one
+        y_value_to_annotations = {}
+        for ann in annotations:
+            y_val = ann['y']
+            if y_val not in y_value_to_annotations:
+                y_value_to_annotations[y_val] = []
+            y_value_to_annotations[y_val].append(ann)
+        
+        # For each unique y value, keep only the annotation with the smallest x
+        unique_y_annotations = []
+        for y_val, anns in y_value_to_annotations.items():
+            # Sort by x position and keep the leftmost one
+            leftmost = min(anns, key=lambda a: a['x'])
+            unique_y_annotations.append(leftmost)
+        
+        # Now apply the original overlap filtering on the remaining annotations
         # Sort annotations by x, then by y (descending for y to prioritize higher values)
-        annotations.sort(key=lambda a: (a['x'], -a['y']))
+        unique_y_annotations.sort(key=lambda a: (a['x'], -a['y']))
         
         # Estimate y-axis range for overlap threshold calculation
-        y_values = [a['y'] for a in annotations]
+        y_values = [a['y'] for a in unique_y_annotations]
         y_range = max(y_values) - min(y_values) if len(y_values) > 1 else 1
         # Handle corner case where all y values are the same
         if y_range == 0:
@@ -143,13 +235,17 @@ class OnlineGraphPlotter:
         x_overlap_threshold = 0.15  # x positions within 0.15 units considered overlapping
         
         filtered_annotations = []
-        for ann in annotations:
+        for ann in unique_y_annotations:
             # Check if this annotation would overlap with any already accepted annotation
             overlap_found = False
             for accepted in filtered_annotations:
                 x_dist = abs(ann['x'] - accepted['x'])
                 y_dist = abs(ann['y'] - accepted['y'])
                 
+                # Skip y distance check if values are exactly the same (already handled above)
+                if ann['y'] == accepted['y']:
+                    continue
+                    
                 if x_dist <= x_overlap_threshold and y_dist <= y_overlap_threshold:
                     overlap_found = True
                     break
@@ -218,7 +314,7 @@ class OnlineGraphPlotter:
                 all_annotations.append({
                     'x': x_val_idx,
                     'y': y_val,
-                    'text': f'{y_val:.1f}'
+                    'text': f'{y_val:.0f}'
                 })
         
         # Add annotations and setup axis
@@ -278,7 +374,7 @@ class OnlineGraphPlotter:
                 all_annotations.append({
                     'x': x_val_idx,
                     'y': y_val,
-                    'text': f'{y_val:.1f}'
+                    'text': f'{y_val:.0f}'
                 })
         
         # Add annotations and setup axis
@@ -418,6 +514,7 @@ class OnlineGraphPlotter:
         Main method to orchestrate reading data and generating plots.
         """
         self.read_summary_csv()
+        self.filter_complete_dates()  # Filter to only keep dates with complete data
         self.plot_metrics_vs_date()
 
 if __name__ == "__main__":

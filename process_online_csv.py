@@ -54,6 +54,9 @@ class OnlineDataProcessor:
         # Compile regex pattern for KV cache info parsing (used repeatedly)
         self.kv_cache_pattern = re.compile(r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB")
         
+        # Expected request rates for complete data
+        self.expected_request_rates = [1, 2, 4, 8, 16]  # Powers of 2
+        
         # Convert mode_filter to a set for efficient checking
         if isinstance(mode_filter, str):
             if mode_filter.lower() == "all":
@@ -328,6 +331,82 @@ class OnlineDataProcessor:
                             file_specific_records = self._parse_single_online_csv(file_path, date_str_from_file)
                             self.all_records.extend(file_specific_records)
     
+    def filter_complete_dates(self):
+        """
+        Filters records to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
+        Valid data means at least one performance metric (E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        """
+        if not self.all_records:
+            return
+        
+        # Convert records to DataFrame for easier filtering
+        df = pd.DataFrame(self.all_records)
+        
+        # Performance metric columns to check
+        metric_columns = ['E2E_Latency_ms', 'TTFT_ms', 'ITL_ms']
+        
+        # Group by date and mode to check completeness
+        complete_dates = set()
+        
+        for date in df['date'].unique():
+            date_df = df[df['date'] == date]
+            
+            # Get unique modes for this date
+            modes_in_date = date_df['mode'].unique()
+            
+            # Check if each mode has all expected request rates with valid data
+            is_complete = True
+            for mode in modes_in_date:
+                mode_df = date_df[date_df['mode'] == mode]
+                
+                # Check request rates
+                request_rates_found = sorted(mode_df['request_rate'].unique())
+                if request_rates_found != self.expected_request_rates:
+                    is_complete = False
+                    missing_rates = set(self.expected_request_rates) - set(request_rates_found)
+                    extra_rates = set(request_rates_found) - set(self.expected_request_rates)
+                    if missing_rates:
+                        print(f"Date {date}, Mode {mode}: Missing request rates: {sorted(missing_rates)}")
+                    if extra_rates:
+                        print(f"Date {date}, Mode {mode}: Extra request rates: {sorted(extra_rates)}")
+                    break
+                
+                # Check that each request rate has valid data (at least one non-NA metric)
+                for rr in self.expected_request_rates:
+                    rr_df = mode_df[mode_df['request_rate'] == rr]
+                    if rr_df.empty:
+                        is_complete = False
+                        print(f"Date {date}, Mode {mode}: No data for request rate {rr}")
+                        break
+                    
+                    # Check if at least one performance metric has valid data
+                    has_valid_data = False
+                    for metric in metric_columns:
+                        if metric in rr_df.columns and not pd.isna(rr_df[metric].iloc[0]):
+                            has_valid_data = True
+                            break
+                    
+                    if not has_valid_data:
+                        is_complete = False
+                        print(f"Date {date}, Mode {mode}, RR {rr}: No valid performance metrics (all NA)")
+                        break
+                
+                if not is_complete:
+                    break
+            
+            if is_complete:
+                complete_dates.add(date)
+                print(f"Date {date}: Complete and valid data for all modes and request rates")
+        
+        # Filter records to only keep complete dates
+        if complete_dates:
+            self.all_records = [r for r in self.all_records if r['date'] in complete_dates]
+            print(f"\nKept {len(complete_dates)} dates with complete and valid data: {sorted(complete_dates)}")
+            print(f"Total records after filtering: {len(self.all_records)}")
+        else:
+            print("\nNo dates found with complete and valid data for all request rates [1, 2, 4, 8, 16]")
+            self.all_records = []
+
     def save_summary_csv(self):
         """
         Saves the aggregated data into a single summary CSV file.
@@ -386,6 +465,7 @@ class OnlineDataProcessor:
         Main orchestrator method.
         """
         self.read_and_process_files()
+        self.filter_complete_dates()  # Filter to only keep dates with complete data
         self.save_summary_csv()
 
 if __name__ == "__main__":
