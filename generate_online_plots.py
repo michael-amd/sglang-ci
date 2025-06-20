@@ -29,9 +29,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
+import argparse  # For command-line argument parsing
 
 class OnlineGraphPlotter:
-    def __init__(self, summary_csv_path, plot_dir, model_name_in_plot, mode_filter=None):
+    def __init__(self, summary_csv_path, plot_dir, model_name_in_plot, mode_filter=None, split_request_rates=False):
         """
         Initialize the OnlineGraphPlotter.
         Args:
@@ -43,16 +44,22 @@ class OnlineGraphPlotter:
                 - "aiter": Plot only aiter mode
                 - "triton": Plot only triton mode
                 - list of modes: e.g., ["aiter", "triton"]
+            split_request_rates: If True, create separate plots for low (1,2,4) and high (8,16) request rates
         """
         self.summary_csv_path = summary_csv_path
         self.plot_dir = plot_dir
         self.model_name_in_plot = model_name_in_plot # e.g. "GROK1 MOE-I4F8 Online"
         self.mode_filter = mode_filter
+        self.split_request_rates = split_request_rates
         os.makedirs(self.plot_dir, exist_ok=True)
         self.df = None
         
         # Expected request rates for complete data
         self.expected_request_rates = [1, 2, 4, 8, 16]  # Powers of 2
+        
+        # Define low and high request rate groups
+        self.low_request_rates = [1, 2, 4]
+        self.high_request_rates = [8, 16]
         
         # Convert mode_filter to a set for efficient checking
         if mode_filter is None:
@@ -466,6 +473,15 @@ class OnlineGraphPlotter:
         # Print summary of modes being plotted
         print(f"Plotting modes: {', '.join(sorted(unique_modes))}")
 
+        if self.split_request_rates:
+            # Create separate plots for low and high request rates
+            self._create_split_plots(unique_modes, unique_request_rates)
+        else:
+            # Create single plot with all request rates
+            self._create_single_plot(unique_modes, unique_request_rates)
+
+    def _create_single_plot(self, unique_modes, unique_request_rates):
+        """Create a single plot with all request rates."""
         # Create figure with subplots
         fig, axes = plt.subplots(3, 2, figsize=(20, 18))
         axes = axes.flatten()
@@ -509,6 +525,94 @@ class OnlineGraphPlotter:
             print(f"Error saving plot to {output_file_path}: {e}")
         plt.close()
 
+    def _create_split_plots(self, unique_modes, unique_request_rates):
+        """Create separate plots for low and high request rates."""
+        # Filter request rates into low and high groups
+        low_rr = [rr for rr in unique_request_rates if rr in self.low_request_rates]
+        high_rr = [rr for rr in unique_request_rates if rr in self.high_request_rates]
+        
+        current_date_str = datetime.now().strftime('%Y%m%d')
+        
+        # Add mode suffix to plot filename if filtering modes
+        if self.modes_to_plot is not None:
+            mode_suffix = "_" + "_".join(sorted(self.modes_to_plot))
+        else:
+            mode_suffix = "_all"
+        
+        # Create plot for low request rates
+        if low_rr:
+            print(f"\nCreating plot for low request rates: {low_rr}")
+            fig, axes = plt.subplots(3, 2, figsize=(20, 18))
+            axes = axes.flatten()
+
+            # Plot performance metrics
+            self._plot_performance_metrics(axes[0], "E2E_Latency_ms", "E2E Latency (ms) - Low RR", 
+                                          unique_modes, low_rr)
+            self._plot_performance_metrics(axes[1], "TTFT_ms", "TTFT (ms) - Low RR", 
+                                          unique_modes, low_rr)
+            self._plot_performance_metrics(axes[2], "ITL_ms", "ITL (ms) - Low RR", 
+                                          unique_modes, low_rr)
+            
+            # Plot num_tokens
+            self._plot_num_tokens(axes[3], unique_modes)
+            
+            # Plot KV cache usage
+            self._plot_kv_cache_usage(axes[4], unique_modes)
+
+            # Remove the unused subplot
+            fig.delaxes(axes[5])
+
+            # Adjust layout
+            plt.tight_layout(rect=[0, 0, 0.88, 1])
+            
+            # Save the plot
+            plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}{mode_suffix}_low_rr_{current_date_str}.png"
+            output_file_path = os.path.join(self.plot_dir, plot_filename)
+            
+            try:
+                plt.savefig(output_file_path)
+                print(f"Low request rate plot saved to: {output_file_path}")
+            except Exception as e:
+                print(f"Error saving low RR plot to {output_file_path}: {e}")
+            plt.close()
+        
+        # Create plot for high request rates
+        if high_rr:
+            print(f"\nCreating plot for high request rates: {high_rr}")
+            fig, axes = plt.subplots(3, 2, figsize=(20, 18))
+            axes = axes.flatten()
+
+            # Plot performance metrics
+            self._plot_performance_metrics(axes[0], "E2E_Latency_ms", "E2E Latency (ms) - High RR", 
+                                          unique_modes, high_rr)
+            self._plot_performance_metrics(axes[1], "TTFT_ms", "TTFT (ms) - High RR", 
+                                          unique_modes, high_rr)
+            self._plot_performance_metrics(axes[2], "ITL_ms", "ITL (ms) - High RR", 
+                                          unique_modes, high_rr)
+            
+            # Plot num_tokens
+            self._plot_num_tokens(axes[3], unique_modes)
+            
+            # Plot KV cache usage
+            self._plot_kv_cache_usage(axes[4], unique_modes)
+
+            # Remove the unused subplot
+            fig.delaxes(axes[5])
+
+            # Adjust layout
+            plt.tight_layout(rect=[0, 0, 0.88, 1])
+            
+            # Save the plot
+            plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}{mode_suffix}_high_rr_{current_date_str}.png"
+            output_file_path = os.path.join(self.plot_dir, plot_filename)
+            
+            try:
+                plt.savefig(output_file_path)
+                print(f"High request rate plot saved to: {output_file_path}")
+            except Exception as e:
+                print(f"Error saving high RR plot to {output_file_path}: {e}")
+            plt.close()
+
     def generate_and_save_plots(self):
         """
         Main method to orchestrate reading data and generating plots.
@@ -517,37 +621,112 @@ class OnlineGraphPlotter:
         self.filter_complete_dates()  # Filter to only keep dates with complete data
         self.plot_metrics_vs_date()
 
-if __name__ == "__main__":
-    # Mode configuration - should match what was used in process_online_csv.py
-    mode_filter = "aiter"  # Default to aiter only
-    # mode_filter = "all"  # For all modes
-    # mode_filter = "triton"  # For triton only
-    # mode_filter = ["aiter", "triton"]  # For specific modes
-    
-    # Build summary CSV path based on mode filter
-    base_path = "/mnt/raid/michael/sgl_benchmark_ci/online/GROK1"
-    base_prefix = "GROK1_MOE-I4F8_online"
-    
-    if mode_filter == "all":
-        summary_csv_path = f"{base_path}/{base_prefix}_all_summary.csv"
-    elif isinstance(mode_filter, str):
-        summary_csv_path = f"{base_path}/{base_prefix}_{mode_filter}_summary.csv"
-    elif isinstance(mode_filter, list):
-        mode_suffix = "_".join(sorted(mode_filter))
-        summary_csv_path = f"{base_path}/{base_prefix}_{mode_suffix}_summary.csv"
+def parse_mode_filter(mode_str):
+    """Parse mode filter string into appropriate format."""
+    if not mode_str or mode_str.lower() == "none":
+        return None
+    elif mode_str.lower() == "all":
+        return None  # None means plot all modes
+    elif "," in mode_str:
+        # Multiple modes separated by comma
+        return [m.strip() for m in mode_str.split(",") if m.strip()]
     else:
-        # Default to aiter
-        summary_csv_path = f"{base_path}/{base_prefix}_aiter_summary.csv"
-    
-    # Directory where the plots will be saved
-    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online"
-    
-    # Model name to be used in plot titles
-    model_name_in_plot = "GROK1 MOE-I4F8 Online"
+        # Single mode
+        return mode_str.strip()
 
-    # Note: mode_filter parameter in the plotter is optional
-    # If you already have a CSV with all modes and want to filter during plotting:
-    # plotter = OnlineGraphPlotter(summary_csv_path, plot_dir, model_name_in_plot, mode_filter="aiter")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate plots from online benchmark summary CSV",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     
-    plotter = OnlineGraphPlotter(summary_csv_path, plot_dir, model_name_in_plot, mode_filter=None)
+    parser.add_argument(
+        "--summary-csv",
+        type=str,
+        help="Path to the summary CSV file (if not provided, will be auto-generated based on other options)"
+    )
+    
+    parser.add_argument(
+        "--plot-dir",
+        type=str,
+        default="/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online",
+        help="Directory where plots will be saved"
+    )
+    
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default="GROK1 MOE-I4F8 Online",
+        help="Model name to use in plot titles"
+    )
+    
+    parser.add_argument(
+        "--mode-filter",
+        type=str,
+        default="none",
+        help="Mode(s) to plot. Options: 'none' (plot all from CSV), 'aiter', 'triton', or comma-separated list"
+    )
+    
+    parser.add_argument(
+        "--split-request-rates",
+        action="store_true",
+        help="Create separate plots for low (1,2,4) and high (8,16) request rates"
+    )
+    
+    # Legacy options for auto-generating summary CSV path
+    parser.add_argument(
+        "--base-path",
+        type=str,
+        default="/mnt/raid/michael/sgl_benchmark_ci/online/GROK1",
+        help="Base path for summary CSV (used if --summary-csv not provided)"
+    )
+    
+    parser.add_argument(
+        "--base-prefix",
+        type=str,
+        default="GROK1_MOE-I4F8_online",
+        help="Base prefix for summary CSV (used if --summary-csv not provided)"
+    )
+    
+    parser.add_argument(
+        "--csv-mode-filter",
+        type=str,
+        default="aiter",
+        help="Mode filter used in CSV filename (used if --summary-csv not provided)"
+    )
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # Determine summary CSV path
+    if args.summary_csv:
+        summary_csv_path = args.summary_csv
+    else:
+        # Auto-generate path based on csv-mode-filter
+        csv_mode_filter = parse_mode_filter(args.csv_mode_filter)
+        if csv_mode_filter == "all" or csv_mode_filter is None:
+            summary_csv_path = f"{args.base_path}/{args.base_prefix}_all_summary.csv"
+        elif isinstance(csv_mode_filter, str):
+            summary_csv_path = f"{args.base_path}/{args.base_prefix}_{csv_mode_filter}_summary.csv"
+        elif isinstance(csv_mode_filter, list):
+            mode_suffix = "_".join(sorted(csv_mode_filter))
+            summary_csv_path = f"{args.base_path}/{args.base_prefix}_{mode_suffix}_summary.csv"
+        else:
+            summary_csv_path = f"{args.base_path}/{args.base_prefix}_aiter_summary.csv"
+    
+    # Parse mode filter for plotting
+    mode_filter = parse_mode_filter(args.mode_filter)
+    
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Summary CSV: {summary_csv_path}")
+    print(f"  Plot directory: {args.plot_dir}")
+    print(f"  Model name: {args.model_name}")
+    print(f"  Mode filter: {mode_filter if mode_filter is not None else 'all modes from CSV'}")
+    print(f"  Split request rates: {args.split_request_rates}")
+    print()
+    
+    # Create plotter and generate plots
+    plotter = OnlineGraphPlotter(summary_csv_path, args.plot_dir, args.model_name, 
+                                mode_filter=mode_filter, split_request_rates=args.split_request_rates)
     plotter.generate_and_save_plots() 
