@@ -267,13 +267,13 @@ run_client_gsm8k() {
     local mode="$1" # Assign the first argument to the mode variable
     # The gsm8k_log variable is now defined globally as GSM8K_LOG_FILE
     # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
-    
+
     local total_accuracy=0
     local runs=5
     local count=0
     local run_accuracy=0
     local output
-    
+
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"

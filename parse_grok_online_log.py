@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import os
 import glob
-import re
 import json
+import os
+import re
 import sys
 from collections import defaultdict
 
@@ -17,7 +17,7 @@ MODEL_NAME = "GROK1"
 # Folder path (adjust if needed or take as a command-line argument)
 # New naming convention: online/<MODEL_NAME>/<RUN_TAG>_<MODEL_NAME>_MOE-I4F8_online
 folder_base_name = f"{RUN_TAG}_{MODEL_NAME}_MOE-I4F8_online"
-folder = f"./online/{MODEL_NAME}/{folder_base_name}" # Assumes script is run from sgl_benchmark_ci directory
+folder = f"./online/{MODEL_NAME}/{folder_base_name}"  # Assumes script is run from sgl_benchmark_ci directory
 
 # Check if folder exists
 if not os.path.exists(folder):
@@ -51,6 +51,7 @@ H100_E2E = ["13209", "13874", "16613", "44918", "85049"]
 H100_TTFT = ["99.1", "102.0", "113.4", "170.7", "520.9"]
 H100_ITL = ["23.0", "24.4", "25.9", "63.9", "108.6"]
 
+
 # --------- Helper functions ---------
 def parse_metrics_from_file(filepath):
     """
@@ -67,7 +68,7 @@ def parse_metrics_from_file(filepath):
     except Exception as e:
         print(f"Warning: Could not read file {filepath}: {e}")
         return None
-        
+
     # Use regex to extract numbers
     e2e_match = re.search(r"Median E2E Latency \(ms\):\s*([\d\.]+)", content)
     ttft_match = re.search(r"Median TTFT \(ms\):\s*([\d\.]+)", content)
@@ -98,6 +99,7 @@ def parse_metrics_from_file(filepath):
         return None
     return (e2e, ttft, itl)
 
+
 def detect_attention_backend():
     """
     Detect which attention backend was used by examining log files or server output.
@@ -115,7 +117,7 @@ def detect_attention_backend():
                     return "triton"
         except Exception as e:
             print(f"Warning: Could not read server log: {e}")
-    
+
     # If not found in server log, check client log filenames
     log_files = glob.glob(os.path.join(folder, "sglang_client_log_*.log"))
     for filepath in log_files:
@@ -125,9 +127,10 @@ def detect_attention_backend():
             return "aiter"
         elif "_triton_" in basename:
             return "triton"
-    
+
     # Default to aiter if not found (matching the script's newer default)
     return "aiter"
+
 
 def get_best_metrics_for_backend(backend):
     """
@@ -137,20 +140,29 @@ def get_best_metrics_for_backend(backend):
     Returns a dict mapping request rate (string) -> (e2e, ttft, itl) (as floats or None)
     """
     # Pattern: sglang_client_log_<MODEL_NAME>_<backend>_<rate>_run*.log
-    pattern = os.path.join(folder, f"sglang_client_log_{MODEL_NAME}_{backend}_*_run*.log")
+    pattern = os.path.join(
+        folder, f"sglang_client_log_{MODEL_NAME}_{backend}_*_run*.log"
+    )
     files = glob.glob(pattern)
     print(f"Found {len(files)} log files for backend {backend}")
-    
+
     # Group by request rate
     groups = defaultdict(list)
     for filepath in files:
         basename = os.path.basename(filepath)
         # Example filename: sglang_client_log_GROK1_aiter_1_run1_20250401_231818.log
-        m = re.search(r"sglang_client_log_" + MODEL_NAME + "_" + re.escape(backend) + r"_(\d+)_run", basename)
+        m = re.search(
+            r"sglang_client_log_"
+            + MODEL_NAME
+            + "_"
+            + re.escape(backend)
+            + r"_(\d+)_run",
+            basename,
+        )
         if m:
             rate = m.group(1)
             groups[rate].append(filepath)
-    
+
     best = {}
     for rate in req_rates:
         if rate not in groups:
@@ -166,8 +178,11 @@ def get_best_metrics_for_backend(backend):
                     best_val = metrics
             best[rate] = best_val
             if best_val:
-                print(f"Rate {rate}: Best E2E={best_val[0]:.2f}ms from {len(groups[rate])} runs")
+                print(
+                    f"Rate {rate}: Best E2E={best_val[0]:.2f}ms from {len(groups[rate])} runs"
+                )
     return best
+
 
 def compute_ratio(ref_str, meas_val):
     """Compute ratio as integer percentage: round(ref/meas*100). If meas is None or zero, return 'N/A'."""
@@ -180,6 +195,7 @@ def compute_ratio(ref_str, meas_val):
     ratio = round(ref / meas_val * 100)
     return f"{ratio}%"
 
+
 def format_metric(value):
     """Format a numeric value as string; if None, return 'N/A'."""
     if value is None:
@@ -188,6 +204,7 @@ def format_metric(value):
     if int(value) == value:
         return str(int(value))
     return f"{value:.2f}"
+
 
 # --------- Main Parsing ---------
 # Read docker image name from config.json
@@ -213,6 +230,7 @@ best_metrics = get_best_metrics_for_backend(backend)
 lines = []
 lines.append(f"Online mode - {MODEL_NAME} ({docker_name})")
 lines.append("")
+
 
 # Helper function to build a section given a header and metrics dictionary and H100 reference.
 def build_section(section_title, h100_ref, backend_metrics, backend_name):
@@ -255,16 +273,20 @@ def build_section(section_title, h100_ref, backend_metrics, backend_name):
                 ratio_values.append(compute_ratio(h100_ref[idx], m_val[2]))
     ratio_line = f"H100/MI300x-{backend_name}\t" + "\t".join(ratio_values)
     sec_lines.append(ratio_line)
-    
+
     return sec_lines
 
+
 # Build sections using the detected backend
-section_e2e = build_section("Median E2E Latency (ms, lower better)", H100_E2E, 
-                            best_metrics, backend)
-section_ttft = build_section("Median TTFT (ms, lower better)", H100_TTFT, 
-                             best_metrics, backend)
-section_itl = build_section("Median ITL (ms, lower better)", H100_ITL, 
-                            best_metrics, backend)
+section_e2e = build_section(
+    "Median E2E Latency (ms, lower better)", H100_E2E, best_metrics, backend
+)
+section_ttft = build_section(
+    "Median TTFT (ms, lower better)", H100_TTFT, best_metrics, backend
+)
+section_itl = build_section(
+    "Median ITL (ms, lower better)", H100_ITL, best_metrics, backend
+)
 
 # Append sections to lines (with blank lines between)
 lines.extend(section_e2e)

@@ -58,4 +58,4 @@ echo "  - http://$(hostname -I | awk '{print $1}'):$PORT/GROK1/online/ for onlin
 echo ""
 echo "Starting HTTP server on port $PORT..."
 echo "Press Ctrl+C to stop the server"
-python3 "/mnt/raid/michael/sgl_benchmark_ci/custom_http_server.py" "$PORT" 
+python3 "/mnt/raid/michael/sgl_benchmark_ci/custom_http_server.py" "$PORT"
