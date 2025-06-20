@@ -49,37 +49,37 @@ The benchmark scripts support Docker images from multiple sources:
 
 3. **Custom Built Images from SGLang Source:**
    You can also build your own Docker images from the [sglang upstream source](https://github.com/sgl-project/sglang):
-   
+
    ```bash
    # Clone the sglang repository
    git clone https://github.com/sgl-project/sglang.git
    cd sglang
-   
+
    # Build the Docker image (adjust ROCm version as needed)
    docker build -t my-sglang:custom-rocm630 -f docker/Dockerfile.rocm \
      --build-arg ROCM_VERSION=6.3.0 \
      --build-arg PYTHON_VERSION=3.10 .
-   
+
    # Or build with specific commit/branch
    git checkout <specific-branch-or-commit>
    docker build -t my-sglang:dev-$(git rev-parse --short HEAD)-rocm630 \
      -f docker/Dockerfile.rocm .
    ```
-   
+
    **Alternative: Use the provided build helper script:**
    ```bash
    # Build from main branch (default)
    bash michael/sgl_benchmark_ci/build_sglang_docker.sh
-   
+
    # Build from specific branch/tag/commit
    bash michael/sgl_benchmark_ci/build_sglang_docker.sh --branch=v0.4.7
-   
+
    # Build from fork
    bash michael/sgl_benchmark_ci/build_sglang_docker.sh \
      --repo=https://github.com/yourusername/sglang.git \
      --branch=your-feature-branch
    ```
-   
+
    Then use your custom image with the benchmark scripts:
    ```bash
    bash grok_perf_offline_csv.sh --docker_image=my-sglang:custom-rocm630
@@ -108,7 +108,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
   - `--help`: Show help message
 - **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
-  - For `rocm/sgl-dev` images: 
+  - For `rocm/sgl-dev` images:
     - Dates >= 20250521 use `aiter` backend
     - Dates < 20250521 use `triton` backend
   - For `lmsysorg/sglang` images:
@@ -125,7 +125,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - **Dummy Mode:**
     - TP: 8, Batch Size: 2
     - Input Length: 256, Output Length: 4096
-- **Metrics Captured:** 
+- **Metrics Captured:**
   - Prefill latency (s)
   - Median decode latency (s)
   - End-to-end (E2E) latency (s)
@@ -137,27 +137,27 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - A CSV file containing a row for each benchmark run with backend information.
   - A `config.json` file with Docker image and backend details.
   - An optional `result.jsonl` file with detailed result data.
-- **Usage:**  
+- **Usage:**
   ```bash
   # Basic usage with default parameters
   bash grok_perf_offline_csv.sh
-  
+
   # Using specific Docker images
   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250520  # Uses triton
   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250521  # Uses aiter
   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630  # Uses aiter
-  
+
   # Custom model and tokenizer
   bash grok_perf_offline_csv.sh \
     --model=/path/to/your/grok/model \
     --tokenizer=your-tokenizer-name
-  
+
   # Long context mode
   bash grok_perf_offline_csv.sh --mode=long_context
-  
+
   # Dummy mode with custom model
   bash grok_perf_offline_csv.sh --mode=dummy --dummy-model=/path/to/dummy/model
-  
+
   # Custom directories
   bash grok_perf_offline_csv.sh \
     --work-dir=/your/work/directory \
@@ -231,29 +231,29 @@ To view these plots via a web browser, use the provided plot server:
   - **Batch Size:** Fixed at 32.
   - **Input / Output Lengths:** Input length (IL) set to 128 and output length (OL) set to 32.
   - **GSM8K Warm-up:** Performs GSM8K accuracy testing before benchmarking.
-- **Metrics Captured:** 
+- **Metrics Captured:**
   - Same as grok_perf_offline_csv.sh (latency and throughput metrics)
 - **Output:**
   - A folder named with the date and model configuration.
   - A CSV file with benchmark results.
   - Log files for server output and GSM8K testing.
-- **Usage:**  
+- **Usage:**
   ```bash
   # Basic usage
   bash deepseek_perf_offline_csv.sh
-  
+
   # Custom model configuration
   bash deepseek_perf_offline_csv.sh \
     --model=/path/to/deepseek/model \
     --model-name=DeepSeek-V3-Custom \
     --hf-model-id=deepseek-ai/DeepSeek-V3
-  
+
   # Download model if not present
   bash deepseek_perf_offline_csv.sh \
     --model=/new/path/for/model \
     --hf-model-id=deepseek-ai/DeepSeek-V3 \
     --download-model
-  
+
   # Custom paths and threshold
   bash deepseek_perf_offline_csv.sh \
     --work-dir=/your/work/directory \
@@ -280,15 +280,15 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - `--skip-gsm8k=VALUE`: Skip GSM8K test (default: false)
   - `--help`: Show help message
 - **Workflow:**
-  1. **Container Management:**  
-     - Detects whether the script is running inside a container.  
+  1. **Container Management:**
+     - Detects whether the script is running inside a container.
      - If executed outside a container and Docker is available, the script manages the container lifecycle: checks for an existing container, starts one if necessary, or pulls a new image and then re-invokes itself inside the container.
-  2. **Run Folder Setup:**  
-     - Creates a folder named  
-       `<TAG>_GROK1_MOE-I4F8_online`.  
-  3. **Server Launch & Client Benchmark:**  
+  2. **Run Folder Setup:**
+     - Creates a folder named
+       `<TAG>_GROK1_MOE-I4F8_online`.
+  3. **Server Launch & Client Benchmark:**
      - **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
-       - For `rocm/sgl-dev` images: 
+       - For `rocm/sgl-dev` images:
          - Dates >= 20250521 use `aiter` backend
          - Dates < 20250521 use `triton` backend
        - For `lmsysorg/sglang` images:
@@ -299,21 +299,21 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
        - For SGLang v0.4.7+: `SGLANG_USE_AITER=1` (when using aiter)
        - For SGLang v0.4.6 and earlier: `SGLANG_AITER_MOE=1` (when using aiter)
        - Always sets: `SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
-     - Runs client benchmarks at multiple request rates.  
+     - Runs client benchmarks at multiple request rates.
      - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
-  4. **Results Aggregation:**  
-     - Aggregates metrics and compares them with reference H100 values.  
+  4. **Results Aggregation:**
+     - Aggregates metrics and compares them with reference H100 values.
      - Generates a CSV summary with dynamic backend labeling (e.g., MI300x-aiter or MI300x-triton).
-- **Output:**  
-  A run folder containing:  
-  - Server logs  
-  - Client logs  
+- **Output:**
+  A run folder containing:
+  - Server logs
+  - Client logs
   - A CSV summary of online benchmark metrics with backend-specific labels (MI300x-aiter or MI300x-triton)
-- **Usage:**  
+- **Usage:**
   ```bash
   # Basic usage
   bash grok_perf_online_csv.sh
-  
+
   # Custom configuration
   bash grok_perf_online_csv.sh \
     --docker_image=lmsysorg/sglang:v0.4.7-rocm630 \
@@ -321,13 +321,13 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --tokenizer=your-tokenizer-name \
     --node=your-node-name \
     --threshold=0.85
-  
+
   # Custom paths
   bash grok_perf_online_csv.sh \
     --work-dir=/your/work/directory \
     --output-dir=/your/output/directory \
     --gsm8k-script=/path/to/gsm8k/bench_sglang.py
-  
+
   # Skip GSM8K accuracy test
   bash grok_perf_online_csv.sh --skip-gsm8k=true
   ```
@@ -465,11 +465,11 @@ The server uses `custom_http_server.py` to serve files with proper directory lis
 
 ## Additional Notes
 
-- **Output Organization:**  
+- **Output Organization:**
   All scripts automatically create output folders named with the current date and a description of the benchmark run. Output location can be customized using the `--output-dir` parameter.
-- **Script Customization:**  
+- **Script Customization:**
   Use command-line parameters to specify model paths, tokenizer paths, or benchmark parameters instead of modifying scripts directly. Run any script with `--help` to see available options.
-- **Resource Management:**  
+- **Resource Management:**
   Ensure that no other processes are consuming critical GPU resources to avoid memory capacity errors.
 
 ---
@@ -482,4 +482,3 @@ The benchmarks are scheduled to run daily via cron jobs. The schedule is defined
 - **Online Benchmark:** Runs daily at 8 PM PT.
 
 To apply these rules, run: `crontab /mnt/raid/michael/sgl_benchmark_ci/crontab_rules.txt`
-

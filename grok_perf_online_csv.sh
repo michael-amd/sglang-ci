@@ -200,7 +200,7 @@ launch_server() {
   # Determine attention backend based on image and date
   # Default to triton for older images, aiter for newer ones
   attn_backend="triton"
-  
+
   if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
     # For rocm/sgl-dev images, check date to determine default backend
     if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
@@ -210,7 +210,7 @@ launch_server() {
         attn_backend="aiter"
       fi
     fi
-    
+
     # Determine which environment variables to use based on date
     aiter_env_var="SGLANG_AITER_MOE"
     if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
@@ -219,7 +219,7 @@ launch_server() {
         aiter_env_var="SGLANG_USE_AITER"
       fi
     fi
-    
+
     # Set environment based on which backend we're using
     if [[ "$attn_backend" == "aiter" ]]; then
       env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
@@ -227,18 +227,18 @@ launch_server() {
       env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     fi
     extra_flags=""
-    
+
   elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
     # For lmsysorg/sglang images, determine backend based on version
     major="${BASH_REMATCH[1]}"
     minor="${BASH_REMATCH[2]}"
     patch="${BASH_REMATCH[3]}"
-    
+
     # Assume newer versions (>= v0.4.7) use aiter by default
     if [[ "$major" -gt 0 ]] || [[ "$major" -eq 0 && "$minor" -gt 4 ]] || [[ "$major" -eq 0 && "$minor" -eq 4 && "$patch" -ge 7 ]]; then
       attn_backend="aiter"
     fi
-    
+
     # Determine environment variable name
     aiter_env_var="SGLANG_USE_AITER"
     # Use SGLANG_AITER_MOE for versions before v0.4.7
@@ -247,7 +247,7 @@ launch_server() {
         aiter_env_var="SGLANG_AITER_MOE"
       fi
     fi
-    
+
     # Set environment based on which backend we're using
     if [[ "$attn_backend" == "aiter" ]]; then
       env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
@@ -255,27 +255,27 @@ launch_server() {
       env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     fi
     extra_flags=""
-    
+
   else
     # Default for other images: use aiter with new env vars
     attn_backend="aiter"
     env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     extra_flags=""
   fi
-  
+
   # Store the backend globally for CSV output
   ATTENTION_BACKEND="$attn_backend"
 
   echo "[online] Launching backend=${attn_backend}"
   echo "Attention backend: ${attn_backend}" >> "$TIMING_LOG"
-  
+
   # Build command with proper env handling
   if [[ "$attn_backend" == "aiter" ]]; then
     cmd="env '${aiter_env_var}=1' SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
   else
     cmd="env SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
   fi
-  
+
   cmd="${cmd} python3 -m sglang.launch_server \
         --model '${MODEL}' \
         --tokenizer-path '${TOKENIZER}' \
@@ -283,7 +283,7 @@ launch_server() {
         --attention-backend ${attn_backend} ${extra_flags} \
         --mem-fraction-static 0.85 \
         > '${SERVER_LOG}' 2>&1 &"
-  
+
   eval "$cmd"
   SERVER_PID=$!
 
@@ -310,7 +310,7 @@ launch_server() {
   echo "Server startup time: ${elapsed} seconds" >> "$TIMING_LOG"
 }
 
-shutdown_server() { 
+shutdown_server() {
     echo "[online] Shutting down server (PID ${SERVER_PID})..."
     local shutdown_start=$(date +%s)
     kill "$SERVER_PID"
@@ -332,15 +332,15 @@ run_client_gsm8k() {
     local mode="$1"   # mode: always "aiter" now
     local gsm8k_start_time=$(date +%s)
     local total_accuracy=0
-    local runs=5  
+    local runs=5
     local count=0
     local run_accuracy=0
     local output
     # Set log file name based on mode.
     local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${mode}.log"
-    
+
     echo "Starting GSM8K accuracy test at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$gsm8k_log"
-    
+
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          local run_start_time=$(date +%s)
@@ -366,14 +366,14 @@ run_client_gsm8k() {
     local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
     echo "GSM8K test completed in ${gsm8k_duration} seconds" | tee -a "$gsm8k_log"
     echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
-    
+
     # Log to timing summary
     echo "" >> "$TIMING_LOG"
     echo "GSM8K Test Results:" >> "$TIMING_LOG"
     echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
     echo "  Number of runs: $runs" >> "$TIMING_LOG"
-    
+
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
          echo "Average accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
          return 0
@@ -391,7 +391,7 @@ run_single_rate_benchmark() {
     local RATE=$2
     local TIMESTAMP=$3
     local rate_start_time=$(date +%s)
-    
+
     echo "Processing request rate ${RATE} for mode ${mode}..."
     for i in {1..3}; do
         existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
@@ -399,30 +399,30 @@ run_single_rate_benchmark() {
             echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
             continue
         fi
-        
+
         LOGFILE="${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}_${TIMESTAMP}.log"
         echo "Running benchmark with request rate: $RATE (Run $i) for mode ${mode}" | tee -a "$LOGFILE"
-        
+
         local run_start_time=$(date +%s)
         echo "Run started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$LOGFILE"
-        
+
         NUM_PROMPTS=$(( 300 * RATE ))
         [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
-        
+
         CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online_${RATE}.jsonl"
         echo "Executing: $CMD" | tee -a "$LOGFILE"
         eval "$CMD" 2>&1 | tee -a "$LOGFILE"
-        
+
         local run_end_time=$(date +%s)
         local run_duration=$((run_end_time - run_start_time))
         echo "Run completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$LOGFILE"
         echo "Run duration: ${run_duration} seconds" | tee -a "$LOGFILE"
         echo "----------------------------------------" | tee -a "$LOGFILE"
-        
+
         # Log to timing summary
         echo "  Rate ${RATE}, Run ${i}: ${run_duration} seconds" >> "$TIMING_LOG"
     done
-    
+
     # Calculate total time for this rate
     local rate_end_time=$(date +%s)
     local rate_total_duration=$((rate_end_time - rate_start_time))
@@ -492,7 +492,7 @@ compute_ratio() {
 init_csv() {
     echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
     echo "" >> "$OUTPUT_CSV"
-    
+
     # E2E Latency section
     echo "Median E2E Latency (ms, lower better)" >> "$OUTPUT_CSV"
     printf "request rate" >> "$OUTPUT_CSV"
@@ -500,20 +500,20 @@ init_csv() {
         printf "\t%s" "$rate" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     printf "H100" >> "$OUTPUT_CSV"
     for val in "${H100_E2E[@]}"; do
         printf "\t%s" "$val" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for ratios
     printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
@@ -521,7 +521,7 @@ init_csv() {
     done
     echo "" >> "$OUTPUT_CSV"
     echo "" >> "$OUTPUT_CSV"
-    
+
     # TTFT section
     echo "Median TTFT (ms, lower better)" >> "$OUTPUT_CSV"
     printf "request rate" >> "$OUTPUT_CSV"
@@ -529,20 +529,20 @@ init_csv() {
         printf "\t%s" "$rate" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     printf "H100" >> "$OUTPUT_CSV"
     for val in "${H100_TTFT[@]}"; do
         printf "\t%s" "$val" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for ratios
     printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
@@ -550,7 +550,7 @@ init_csv() {
     done
     echo "" >> "$OUTPUT_CSV"
     echo "" >> "$OUTPUT_CSV"
-    
+
     # ITL section
     echo "Median ITL (ms, lower better)" >> "$OUTPUT_CSV"
     printf "request rate" >> "$OUTPUT_CSV"
@@ -558,47 +558,47 @@ init_csv() {
         printf "\t%s" "$rate" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     printf "H100" >> "$OUTPUT_CSV"
     for val in "${H100_ITL[@]}"; do
         printf "\t%s" "$val" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     # Placeholder for ratios
     printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
     echo "" >> "$OUTPUT_CSV"
-    
+
     echo "[online] CSV initialized at ${OUTPUT_CSV}"
 }
 
 # Update CSV with results for a specific rate
 update_csv_for_rate() {
     local rate=$1
-    
+
     # Get metrics for this rate
     read e2e_a ttft_a itl_a < <(get_best_metrics "${ATTENTION_BACKEND}" "$rate")
     best_e2e_aiter[$rate]="$e2e_a"
     best_ttft_aiter[$rate]="$ttft_a"
     best_itl_aiter[$rate]="$itl_a"
-    
+
     echo "[online] Updating CSV for rate ${rate}: E2E=${e2e_a}ms, TTFT=${ttft_a}ms, ITL=${itl_a}ms"
-    
+
     # Rebuild the entire CSV with current data
     {
         echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})"
         echo ""
-        
+
         # E2E Latency section
         echo "Median E2E Latency (ms, lower better)"
         printf "request rate"
@@ -606,19 +606,19 @@ update_csv_for_rate() {
             printf "\t%s" "$r"
         done
         echo ""
-        
+
         printf "H100"
         for val in "${H100_E2E[@]}"; do
             printf "\t%s" "$val"
         done
         echo ""
-        
+
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_e2e_aiter[$r]:-}"
         done
         echo ""
-        
+
         printf "H100/MI300x-${ATTENTION_BACKEND}"
         for idx in "${!REQ_RATES[@]}"; do
             r=${REQ_RATES[$idx]}
@@ -631,7 +631,7 @@ update_csv_for_rate() {
         done
         echo ""
         echo ""
-        
+
         # TTFT section
         echo "Median TTFT (ms, lower better)"
         printf "request rate"
@@ -639,19 +639,19 @@ update_csv_for_rate() {
             printf "\t%s" "$r"
         done
         echo ""
-        
+
         printf "H100"
         for val in "${H100_TTFT[@]}"; do
             printf "\t%s" "$val"
         done
         echo ""
-        
+
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_ttft_aiter[$r]:-}"
         done
         echo ""
-        
+
         printf "H100/MI300x-${ATTENTION_BACKEND}"
         for idx in "${!REQ_RATES[@]}"; do
             r=${REQ_RATES[$idx]}
@@ -664,7 +664,7 @@ update_csv_for_rate() {
         done
         echo ""
         echo ""
-        
+
         # ITL section
         echo "Median ITL (ms, lower better)"
         printf "request rate"
@@ -672,19 +672,19 @@ update_csv_for_rate() {
             printf "\t%s" "$r"
         done
         echo ""
-        
+
         printf "H100"
         for val in "${H100_ITL[@]}"; do
             printf "\t%s" "$val"
         done
         echo ""
-        
+
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_itl_aiter[$r]:-}"
         done
         echo ""
-        
+
         printf "H100/MI300x-${ATTENTION_BACKEND}"
         for idx in "${!REQ_RATES[@]}"; do
             r=${REQ_RATES[$idx]}
@@ -697,7 +697,7 @@ update_csv_for_rate() {
         done
         echo ""
     } > "$OUTPUT_CSV"
-    
+
     echo "[online] CSV updated with results for rate ${rate}"
 }
 
@@ -707,26 +707,26 @@ run_client_benchmark() {
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     REQUEST_RATES=(1 2 4 8 16)
     echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
-    
+
     # Initialize CSV at the start
     init_csv
-    
+
     # Sequential execution only - model uses all 8 GPUs
     echo "Running benchmarks sequentially..."
     echo "" >> "$TIMING_LOG"
     echo "Client Benchmark Results:" >> "$TIMING_LOG"
     echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
-    
+
     for RATE in "${REQUEST_RATES[@]}"; do
         run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
         # Update CSV after each rate completes all runs
         update_csv_for_rate "$RATE"
     done
-    
+
     local benchmark_end_time=$(date +%s)
     local benchmark_duration=$((benchmark_end_time - benchmark_start_time))
     echo "Client benchmark completed in ${benchmark_duration} seconds"
-    
+
     # Log to timing summary
     echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
     echo "  Total duration: ${benchmark_duration} seconds" >> "$TIMING_LOG"

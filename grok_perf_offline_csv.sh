@@ -12,7 +12,7 @@
 #   bash grok_perf_offline_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
- 
+
 ###############################################################################
 # Parse CLI options
 ###############################################################################
@@ -165,7 +165,7 @@ cd "${WORK_DIR}" || { echo "Cannot change to ${WORK_DIR} directory"; exit 1; }
 
 # If LATEST_TAG is not already defined, extract it from docker_image.
 if [ -z "$LATEST_TAG" ]; then
-    IMAGE_WITH_TAG=${docker_image#*/} 
+    IMAGE_WITH_TAG=${docker_image#*/}
     LATEST_TAG=${IMAGE_WITH_TAG#*:}
 fi
 
@@ -232,7 +232,7 @@ elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[
   major="${BASH_REMATCH[1]}"
   minor="${BASH_REMATCH[2]}"
   patch="${BASH_REMATCH[3]}"
-  
+
   # Assume newer versions (>= v0.4.7) use aiter by default
   if [[ "$major" -gt 0 ]] || [[ "$major" -eq 0 && "$minor" -gt 4 ]] || [[ "$major" -eq 0 && "$minor" -eq 4 && "$patch" -ge 7 ]]; then
     ATTENTION_BACKEND="aiter"
@@ -284,7 +284,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=1" SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
             python3 -m sglang.bench_one_batch \
@@ -321,7 +321,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=0" SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
             python3 -m sglang.bench_one_batch \
@@ -359,7 +359,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=1" SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
             python3 -m sglang.bench_one_batch \
@@ -393,7 +393,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=0" SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
             python3 -m sglang.bench_one_batch \
@@ -417,7 +417,7 @@ for tp in "${TP_VALUES[@]}"; do
         elif [[ "$bs" -eq 256 ]]; then
           mem_fraction_arg=" --mem-fraction-static 0.75"
         fi
-        
+
         if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then
           # Use aiter backend
           # Determine which environment variables to use
@@ -437,7 +437,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=1" SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
             python3 -m sglang.bench_one_batch \
@@ -473,7 +473,7 @@ for tp in "${TP_VALUES[@]}"; do
               aiter_env_var="SGLANG_AITER_MOE"
             fi
           fi
-          
+
           out=$(
             env "${aiter_env_var}=0" SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
             python3 -m sglang.bench_one_batch \
@@ -492,7 +492,7 @@ for tp in "${TP_VALUES[@]}"; do
           cmd_exit_status=${PIPESTATUS[0]}
         fi
       fi
-      
+
       # Check if the command failed due to OOM
       if [[ ${cmd_exit_status:-0} -ne 0 ]] || echo "$out" | grep -q "OutOfMemoryError"; then
         echo "WARNING: Batch size ${bs} failed with OutOfMemoryError. Skipping..."
@@ -500,23 +500,23 @@ for tp in "${TP_VALUES[@]}"; do
         echo "${tp},${bs},${ilen},${OLEN},${ATTENTION_BACKEND},NA,NA,NA,NA,NA,NA" >> "${OUTPUT_CSV}"
         continue
       fi
-      
+
       # Isolate the section after "Benchmark ..." (assumes final block of output).
       last_section=$(echo "$out" | awk '/Benchmark/ {flag=1; next} flag')
-      
+
       # Parse metrics:
       prefill_latency=$(echo "$last_section" | grep -oP 'Prefill\. latency:\s*\K[\d.]+' | tail -n 1)
       prefill_throughput=$(echo "$last_section" | grep -oP 'Prefill\. latency:.*throughput:\s*\K[\d.]+' | tail -n 1)
-      
+
       decode_median_latency=$(echo "$last_section" | grep -oP 'Decode\.\s+median latency:\s*\K[\d.]+' | tail -n 1)
       decode_median_throughput=$(echo "$last_section" | grep -oP 'Decode\.\s+median latency:.*median throughput:\s*\K[\d.]+' | tail -n 1)
-      
+
       total_latency=$(echo "$last_section" | grep -oP 'Total\. latency:\s*\K[\d.]+' | tail -n 1)
       e2e_throughput=$(echo "$last_section" | grep -oP 'Total\. latency:.*throughput:\s*\K[\d.]+' | tail -n 1)
-      
+
       # Append CSV row:
       echo "${tp},${bs},${ilen},${OLEN},${ATTENTION_BACKEND},${prefill_latency},${decode_median_latency},${total_latency},${prefill_throughput},${decode_median_throughput},${e2e_throughput}" >> "${OUTPUT_CSV}"
-      
+
       # If a result file (result.jsonl) is produced, rename it.
       if [ -f result.jsonl ]; then
         dest_json="${folder}/${JSON_NAME}"
