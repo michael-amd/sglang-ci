@@ -62,7 +62,23 @@ cd sglang
 # Checkout branch if specified
 if [ "$SGL_BRANCH" != "main" ]; then
     echo "Checking out branch: $SGL_BRANCH"
-    git checkout "$SGL_BRANCH"
+
+    # Handle pull request refs specially
+    if [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
+        PR_NUMBER="${BASH_REMATCH[1]}"
+        echo "Fetching pull request #$PR_NUMBER..."
+        git fetch origin "pull/$PR_NUMBER/head:pr-$PR_NUMBER"
+        # Try to fetch the merge ref if available
+        git fetch origin "pull/$PR_NUMBER/merge:pr-$PR_NUMBER-merge" 2>/dev/null || {
+            echo "Could not fetch merge ref, using PR head instead"
+            git checkout "pr-$PR_NUMBER"
+        }
+        if git rev-parse "pr-$PR_NUMBER-merge" >/dev/null 2>&1; then
+            git checkout "pr-$PR_NUMBER-merge"
+        fi
+    else
+        git checkout "$SGL_BRANCH"
+    fi
 fi
 
 # Get short commit hash for tagging
@@ -78,6 +94,10 @@ fi
 # Build Docker image with tag format matching Dockerfile.rocm example
 if [ "$SGL_BRANCH" = "main" ]; then
     IMAGE_TAG="${SGL_BRANCH}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
+elif [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
+    # For pull requests, use pr-NUMBER format
+    PR_NUMBER="${BASH_REMATCH[1]}"
+    IMAGE_TAG="pr-${PR_NUMBER}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
 else
     # For version tags like v0.4.7, use the simpler format
     IMAGE_TAG="${SGL_BRANCH}-rocm${ROCM_VERSION}"
