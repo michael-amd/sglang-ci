@@ -59,7 +59,8 @@ cd "$BUILD_DIR"
 git clone "$SGLANG_REPO" sglang
 cd sglang
 
-# Checkout branch if specified
+# Handle PR refs and checkout
+ACTUAL_BRANCH="$SGL_BRANCH"
 if [ "$SGL_BRANCH" != "main" ]; then
     echo "Checking out branch: $SGL_BRANCH"
 
@@ -72,17 +73,22 @@ if [ "$SGL_BRANCH" != "main" ]; then
         git fetch origin "pull/$PR_NUMBER/merge:pr-$PR_NUMBER-merge" 2>/dev/null || {
             echo "Could not fetch merge ref, using PR head instead"
             git checkout "pr-$PR_NUMBER"
+            ACTUAL_BRANCH="pr-$PR_NUMBER"
         }
         if git rev-parse "pr-$PR_NUMBER-merge" >/dev/null 2>&1; then
             git checkout "pr-$PR_NUMBER-merge"
+            ACTUAL_BRANCH="pr-$PR_NUMBER-merge"
         fi
     else
         git checkout "$SGL_BRANCH"
     fi
 fi
 
-# Get short commit hash for tagging
+# Get the actual commit hash that we're building
 COMMIT_HASH=$(git rev-parse --short HEAD)
+FULL_COMMIT_HASH=$(git rev-parse HEAD)
+
+echo "Building from commit: $FULL_COMMIT_HASH"
 
 # Determine ROCm version from base image name
 if [[ "$BASE_IMAGE" =~ rocm([0-9]+) ]]; then
@@ -91,7 +97,7 @@ else
     ROCM_VERSION="630"  # default
 fi
 
-# Build Docker image with tag format matching Dockerfile.rocm example
+# Build Docker image with tag format
 if [ "$SGL_BRANCH" = "main" ]; then
     IMAGE_TAG="${SGL_BRANCH}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
 elif [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
@@ -107,12 +113,100 @@ echo "Building Docker image: $IMAGE_TAG"
 echo "Using base image: $BASE_IMAGE"
 echo "Build type: $BUILD_TYPE"
 
+# Create a temporary Dockerfile that clones at the specific commit
+cat > Dockerfile.tmp <<EOF
+# Usage (to build SGLang ROCm docker image):
+# docker build -t sglang-pr -f Dockerfile.tmp .
+
+FROM ${BASE_IMAGE} AS base
+USER root
+
+WORKDIR /sgl-workspace
+ARG BUILD_TYPE=${BUILD_TYPE}
+ARG SGL_REPO=${SGLANG_REPO}
+ARG SGL_COMMIT=${FULL_COMMIT_HASH}
+
+# Environment variables from original Dockerfile
+ENV SGL_DEFAULT="main"
+
+# Triton and Aiter repositories (from original Dockerfile)
+ARG TRITON_REPO="https://github.com/ROCm/triton.git"
+ARG TRITON_COMMIT="improve_fa_decode_3.0.0"
+ARG AITER_REPO="https://github.com/ROCm/aiter.git"
+ARG AITER_COMMIT="v0.1.3"
+
+# Clone and build SGLang at specific commit
+RUN git clone \${SGL_REPO} sglang && \\
+    cd sglang && \\
+    git checkout \${SGL_COMMIT} && \\
+    cd sgl-kernel && \\
+    rm -f pyproject.toml && \\
+    mv pyproject_rocm.toml pyproject.toml && \\
+    python setup_rocm.py install && \\
+    cd .. && \\
+    if [ "\${BUILD_TYPE}" = "srt" ]; then \\
+        python -m pip --no-cache-dir install -e "python[srt_hip]"; \\
+    else \\
+        python -m pip --no-cache-dir install -e "python[all_hip]"; \\
+    fi
+
+RUN cp -r /sgl-workspace/sglang /sglang
+RUN python -m pip cache purge
+
+# Install additional dependencies from original Dockerfile
+RUN pip install IPython \\
+    && pip install orjson \\
+    && pip install python-multipart \\
+    && pip install torchao \\
+    && pip install pybind11
+
+# Install Triton
+RUN pip install ninja cmake wheel pybind11 && \\
+    cd /opt && \\
+    git clone \${TRITON_REPO} && \\
+    cd triton && \\
+    git checkout \${TRITON_COMMIT} && \\
+    cd python && \\
+    pip install . && \\
+    cd /opt && \\
+    rm -rf triton
+
+# Install Aiter
+RUN cd /opt && \\
+    git clone \${AITER_REPO} && \\
+    cd aiter && \\
+    git checkout \${AITER_COMMIT} && \\
+    pip install .
+
+# Environment configurations from original
+RUN find /sgl-workspace/sglang/python/sglang/srt/layers/quantization/configs/ \\
+         /sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/ \\
+         -type f -name '*MI300X*' | xargs -I {} sh -c 'vf_config=\$(echo "\$1" | sed "s/MI300X/MI300X_VF/"); cp "\$1" "\$vf_config"' -- {}
+
+ENV HIP_FORCE_DEV_KERNARG=1
+ENV HSA_NO_SCRATCH_RECLAIM=1
+ENV SGLANG_SET_CPU_AFFINITY=1
+ENV SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1
+ENV NCCL_MIN_NCHANNELS=112
+ENV SGLANG_MOE_PADDING=1
+ENV VLLM_FP8_PADDING=1
+ENV VLLM_FP8_ACT_PADDING=1
+ENV VLLM_FP8_WEIGHT_PADDING=1
+ENV VLLM_FP8_REDUCE_CONV=1
+ENV TORCHINDUCTOR_MAX_AUTOTUNE=1
+ENV TORCHINDUCTOR_MAX_AUTOTUNE_POINTWISE=1
+
+WORKDIR /sglang
+
+CMD ["/bin/bash"]
+EOF
+
+# Build using our temporary Dockerfile
 docker build \
     -t "$IMAGE_TAG" \
-    -f docker/Dockerfile.rocm \
-    --build-arg BASE_IMAGE="$BASE_IMAGE" \
-    --build-arg SGL_BRANCH="$SGL_BRANCH" \
+    -f Dockerfile.tmp \
     --build-arg SGL_REPO="$SGLANG_REPO" \
+    --build-arg SGL_COMMIT="$FULL_COMMIT_HASH" \
     --build-arg BUILD_TYPE="$BUILD_TYPE" \
     .
 
