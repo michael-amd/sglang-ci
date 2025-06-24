@@ -90,6 +90,12 @@ FULL_COMMIT_HASH=$(git rev-parse HEAD)
 
 echo "Building from commit: $FULL_COMMIT_HASH"
 
+# Extract PR number if building from a PR
+PR_NUMBER=""
+if [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
+    PR_NUMBER="${BASH_REMATCH[1]}"
+fi
+
 # Determine ROCm version from base image name
 if [[ "$BASE_IMAGE" =~ rocm([0-9]+) ]]; then
     ROCM_VERSION="${BASH_REMATCH[1]}"
@@ -125,6 +131,7 @@ WORKDIR /sgl-workspace
 ARG BUILD_TYPE=${BUILD_TYPE}
 ARG SGL_REPO=${SGLANG_REPO}
 ARG SGL_COMMIT=${FULL_COMMIT_HASH}
+ARG PR_NUMBER=${PR_NUMBER}
 
 # Environment variables from original Dockerfile
 ENV SGL_DEFAULT="main"
@@ -138,6 +145,11 @@ ARG AITER_COMMIT="v0.1.3"
 # Clone and build SGLang at specific commit
 RUN git clone \${SGL_REPO} sglang && \\
     cd sglang && \\
+    if [ -n "\${PR_NUMBER}" ]; then \\
+        echo "Fetching PR #\${PR_NUMBER} refs..." && \\
+        git fetch origin pull/\${PR_NUMBER}/head:pr-\${PR_NUMBER} && \\
+        git fetch origin pull/\${PR_NUMBER}/merge:pr-\${PR_NUMBER}-merge 2>/dev/null || true; \\
+    fi && \\
     git checkout \${SGL_COMMIT} && \\
     cd sgl-kernel && \\
     rm -f pyproject.toml && \\
@@ -208,6 +220,7 @@ docker build \
     --build-arg SGL_REPO="$SGLANG_REPO" \
     --build-arg SGL_COMMIT="$FULL_COMMIT_HASH" \
     --build-arg BUILD_TYPE="$BUILD_TYPE" \
+    --build-arg PR_NUMBER="$PR_NUMBER" \
     .
 
 # Clean up
