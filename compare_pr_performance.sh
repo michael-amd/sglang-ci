@@ -5,11 +5,9 @@
 # Compare performance between a PR and the SGLang main branch
 #
 # USAGE:
-#   bash compare_pr_performance.sh --pr=1234
-#   bash compare_pr_performance.sh --pr=1234 --repo=sgl-project/sglang
-#   bash compare_pr_performance.sh --pr=1234 --models=grok,deepseek
-#   bash compare_pr_performance.sh --pr=1234 --benchmark-types=offline,online
-#   bash compare_pr_performance.sh --pr=1234 --base-image=rocm/sgl-dev:vllm20250114
+#   bash compare_pr_performance.sh --pr=7493
+#   bash compare_pr_performance.sh --pr=7493 --models=grok,deepseek
+#   bash compare_pr_performance.sh --pr=7493 --benchmark-types=offline,online
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
@@ -24,7 +22,6 @@ SCRIPT_START_TIME=$(date +%s)
 # Parse CLI options
 ###############################################################################
 PR_NUMBER=""
-REPO="sgl-project/sglang"
 MODELS="grok,deepseek"  # comma-separated list
 BENCHMARK_TYPES="offline,online"  # comma-separated list
 BASE_IMAGE="rocm/sgl-dev:vllm20250114"
@@ -38,10 +35,6 @@ for arg in "$@"; do
   case $arg in
     --pr=*)
       PR_NUMBER="${arg#*=}"
-      shift
-      ;;
-    --repo=*)
-      REPO="${arg#*=}"
       shift
       ;;
     --models=*)
@@ -80,7 +73,6 @@ for arg in "$@"; do
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
       echo "  --pr=NUMBER             PR number to compare (required)"
-      echo "  --repo=REPO             GitHub repository (default: sgl-project/sglang)"
       echo "  --models=LIST           Comma-separated list of models to test: grok,deepseek (default: grok,deepseek)"
       echo "  --benchmark-types=LIST  Comma-separated list of benchmark types: offline,online (default: offline,online)"
       echo "  --base-image=IMAGE      Base Docker image for building (default: rocm/sgl-dev:vllm20250114)"
@@ -112,7 +104,7 @@ mkdir -p "$COMPARISON_DIR"
 # Log file for the comparison process
 LOG_FILE="${COMPARISON_DIR}/comparison.log"
 echo "Comparison started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee "$LOG_FILE"
-echo "PR: #${PR_NUMBER} from ${REPO}" | tee -a "$LOG_FILE"
+echo "PR: #${PR_NUMBER}" | tee -a "$LOG_FILE"
 echo "Models: ${MODELS}" | tee -a "$LOG_FILE"
 echo "Benchmark types: ${BENCHMARK_TYPES}" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
@@ -131,36 +123,43 @@ build_images() {
     # Build main branch image if not provided
     if [[ -z "$MAIN_IMAGE" ]]; then
         echo "Building SGLang main branch Docker image..." | tee -a "$LOG_FILE"
-        bash "${WORK_DIR}/build_sglang_docker.sh" \
+
+        # Capture the build output to extract the image name
+        local build_output=$(bash "${WORK_DIR}/build_sglang_docker.sh" \
             --branch=main \
-            --repo="https://github.com/${REPO}.git" \
             --base-image="${BASE_IMAGE}" \
-            2>&1 | tee -a "$LOG_FILE"
+            2>&1 | tee -a "$LOG_FILE")
 
         # Extract the built image name from the output
-        MAIN_IMAGE=$(grep "Successfully built Docker image:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        MAIN_IMAGE=$(echo "$build_output" | grep "Successfully built Docker image:" | tail -1 | awk '{print $NF}')
         if [[ -z "$MAIN_IMAGE" ]]; then
-            echo "Error: Failed to build main branch image" | tee -a "$LOG_FILE"
+            echo "Error: Failed to extract main branch image name from build output" | tee -a "$LOG_FILE"
+            echo "Build output:" | tee -a "$LOG_FILE"
+            echo "$build_output" | tee -a "$LOG_FILE"
             exit 1
         fi
+        echo "Main branch image built: ${MAIN_IMAGE}" | tee -a "$LOG_FILE"
     fi
 
     # Build PR image if not provided
     if [[ -z "$PR_IMAGE" ]]; then
         echo "Building SGLang PR #${PR_NUMBER} Docker image..." | tee -a "$LOG_FILE"
-        # For PRs, we need to use the PR's merge ref
-        bash "${WORK_DIR}/build_sglang_docker.sh" \
+
+        # Capture the build output to extract the image name
+        local build_output=$(bash "${WORK_DIR}/build_sglang_docker.sh" \
             --branch="pull/${PR_NUMBER}/merge" \
-            --repo="https://github.com/${REPO}.git" \
             --base-image="${BASE_IMAGE}" \
-            2>&1 | tee -a "$LOG_FILE"
+            2>&1 | tee -a "$LOG_FILE")
 
         # Extract the built image name from the output
-        PR_IMAGE=$(grep "Successfully built Docker image:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        PR_IMAGE=$(echo "$build_output" | grep "Successfully built Docker image:" | tail -1 | awk '{print $NF}')
         if [[ -z "$PR_IMAGE" ]]; then
-            echo "Error: Failed to build PR image" | tee -a "$LOG_FILE"
+            echo "Error: Failed to extract PR image name from build output" | tee -a "$LOG_FILE"
+            echo "Build output:" | tee -a "$LOG_FILE"
+            echo "$build_output" | tee -a "$LOG_FILE"
             exit 1
         fi
+        echo "PR image built: ${PR_IMAGE}" | tee -a "$LOG_FILE"
     fi
 
     local build_end=$(date +%s)
@@ -239,7 +238,7 @@ compare_results() {
     cat > "$REPORT_FILE" <<EOF
 # Performance Comparison Report
 
-**PR:** #${PR_NUMBER} from ${REPO}
+**PR:** #${PR_NUMBER}
 **Date:** $(date '+%Y-%m-%d %H:%M:%S %Z')
 **Main Branch Image:** ${MAIN_IMAGE}
 **PR Image:** ${PR_IMAGE}
