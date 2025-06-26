@@ -165,8 +165,29 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
         docker start "${CONTAINER_NAME}"
       fi
     else
-      echo "[csv] Pulling image and creating container ..."
-      docker pull "${FULL_IMAGE}"
+      echo "[csv] Checking if image exists locally ..."
+      # Check if image exists locally
+      if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FULL_IMAGE}$"; then
+        echo "[csv] Found local image: ${FULL_IMAGE}"
+      else
+        # For custom built images without repo prefix, check without the prefix
+        if docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^${IMAGE_WITH_TAG}$|^${REPO}:latest$"; then
+          echo "[csv] Found local image: ${IMAGE_WITH_TAG}"
+        else
+          echo "[csv] Image not found locally. Attempting to pull ..."
+          if ! docker pull "${FULL_IMAGE}" 2>/dev/null; then
+            echo "[csv] WARNING: Failed to pull ${FULL_IMAGE}. Image might be a local build."
+            echo "[csv] Checking if it exists with a different tag ..."
+            # Final check for the image
+            if ! docker images | grep -q "${REPO}"; then
+              echo "[csv] ERROR: Image ${FULL_IMAGE} not found locally or remotely."
+              exit 1
+            fi
+          fi
+        fi
+      fi
+
+      echo "[csv] Creating container ..."
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
