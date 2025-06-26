@@ -39,10 +39,10 @@ The SGL Benchmark CI repository is intended to evaluate the performance of GROK 
 
 The benchmark scripts support Docker images from multiple sources:
 
-1. **ROCm SGLang Development Images:** Available at https://hub.docker.com/r/rocm/sgl-dev
+1. **ROCm SGLang Development Images:** Available at <https://hub.docker.com/r/rocm/sgl-dev>
    - Example: `rocm/sgl-dev:20250623` (nightly build)
 
-2. **LMSYS SGLang Images:** Available at https://hub.docker.com/r/lmsysorg/sglang/tags
+2. **LMSYS SGLang Images:** Available at <https://hub.docker.com/r/lmsysorg/sglang/tags>
    - Example: `lmsysorg/sglang:v0.4.7-rocm630`
 
 3. **Custom Built Images from SGLang Source:**
@@ -65,6 +65,7 @@ The benchmark scripts support Docker images from multiple sources:
    ```
 
    **Alternative: Use the provided build helper script:**
+
    ```bash
    # Build from main branch (default)
    bash michael/sgl_benchmark_ci/build_sglang_docker.sh
@@ -79,6 +80,7 @@ The benchmark scripts support Docker images from multiple sources:
    ```
 
    Then use your custom image with the benchmark scripts:
+
    ```bash
    bash grok_perf_offline_csv.sh --docker_image=my-sglang:custom-rocm630
    bash grok_perf_online_csv.sh --docker_image=my-sglang:dev-abc1234-rocm630
@@ -95,6 +97,7 @@ The benchmark scripts support Docker images from multiple sources:
 Offline mode benchmarks are executed without real-time interaction, measuring model performance through batch processing. The following scripts are available for offline benchmarking:
 
 #### grok_perf_offline_csv.sh
+
 - **Purpose:** Benchmarks the GROK model with multiple test modes (normal, long_context, dummy).
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
@@ -136,6 +139,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - A `config.json` file with Docker image and backend details.
   - An optional `result.jsonl` file with detailed result data.
 - **Usage:**
+
   ```bash
   # Basic usage with default parameters
   bash grok_perf_offline_csv.sh
@@ -163,6 +167,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   ```
 
 #### Offline Data Processing
+
 - **Purpose:** Process raw offline benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
 - **Script:** `process_offline_csv.py`
 - **Functionality:**
@@ -174,6 +179,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - Automatically cleans up old individual batch size CSV files
 - **Output:** `GROK1_MOE-I4F8_offline_summary.csv` containing all benchmark data with backend information
 - **Usage:**
+
   ```bash
   cd /mnt/raid/michael/sgl_benchmark_ci
   python3 process_offline_csv.py
@@ -194,6 +200,7 @@ The `generate_offline_plots.py` script generates visualization plots from the co
     - **Combined Metrics:** Shows both latency and throughput trends on a single plot
 - **Output:** PNG files saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline/`
 - **Usage:**
+
   ```bash
   cd /mnt/raid/michael/sgl_benchmark_ci
   python3 generate_offline_plots.py
@@ -202,9 +209,11 @@ The `generate_offline_plots.py` script generates visualization plots from the co
 To view these plots via a web browser, use the provided plot server:
 
 1. **Start the server:**
+
    ```bash
    bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
    ```
+
    This serves files from the plots directory on port 8000.
 
 2. **Access the plots:**
@@ -212,6 +221,7 @@ To view these plots via a web browser, use the provided plot server:
    Navigate to the `GROK1/offline/` directory to view the plots.
 
 #### deepseek_perf_offline_csv.sh
+
 - **Purpose:** Benchmarks the DeepSeek V3 model with FP8 quantization.
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: rocm/sgl-dev:20250430)
@@ -236,6 +246,7 @@ To view these plots via a web browser, use the provided plot server:
   - A CSV file with benchmark results.
   - Log files for server output and GSM8K testing.
 - **Usage:**
+
   ```bash
   # Basic usage
   bash deepseek_perf_offline_csv.sh
@@ -265,6 +276,7 @@ To view these plots via a web browser, use the provided plot server:
 Online mode benchmarks measure the real-time serving performance of GROK1. This mode is designed to simulate interactive use and assess latency under different request rates.
 
 #### grok_perf_online_csv.sh
+
 - **Purpose:** Benchmarks the online serving performance, capturing both server startup and response latencies.
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
@@ -308,6 +320,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - Client logs
   - A CSV summary of online benchmark metrics with backend-specific labels (MI300x-aiter or MI300x-triton)
 - **Usage:**
+
   ```bash
   # Basic usage
   bash grok_perf_online_csv.sh
@@ -331,6 +344,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   ```
 
 #### Online Data Processing
+
 - **Purpose:** Process raw online benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
 - **Script:** `process_online_csv.py`
 - **Functionality:**
@@ -346,6 +360,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - Creates a single summary CSV sorted by date, mode, and request_rate
 - **Output:** `GROK1_MOE-I4F8_online_summary.csv` containing all benchmark data
 - **Usage:**
+
   ```bash
   cd /mnt/raid/michael/sgl_benchmark_ci
   python3 process_online_csv.py
@@ -369,6 +384,7 @@ The `generate_online_plots.py` script generates visualization plots from the con
   - Differentiates modes with distinct colors and labels in plots
 - **Output:** PNG file saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online/`
 - **Usage:**
+
   ```bash
   cd /mnt/raid/michael/sgl_benchmark_ci
   python3 generate_online_plots.py
