@@ -40,11 +40,9 @@ The SGL Benchmark CI repository is intended to evaluate the performance of GROK 
 The benchmark scripts support Docker images from multiple sources:
 
 1. **ROCm SGLang Development Images:** Available at https://hub.docker.com/r/rocm/sgl-dev
-   - Example: `rocm/sgl-dev:20250331rc` (release candidate)
-   - Example: `rocm/sgl-dev:20250429` (nightly build)
+   - Example: `rocm/sgl-dev:20250623` (nightly build)
 
 2. **LMSYS SGLang Images:** Available at https://hub.docker.com/r/lmsysorg/sglang/tags
-   - Example: `lmsysorg/sglang:v0.4.6.post3-rocm630`
    - Example: `lmsysorg/sglang:v0.4.7-rocm630`
 
 3. **Custom Built Images from SGLang Source:**
