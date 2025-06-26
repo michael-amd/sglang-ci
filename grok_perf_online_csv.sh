@@ -26,7 +26,7 @@ DEFAULT_MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
 DEFAULT_TOKENIZER="Xenova/grok-1-tokenizer"
 DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
 DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py"
+DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py"
 DEFAULT_NODE="dell300x-pla-t10-23"
 DEFAULT_THRESHOLD="0.8"
 DEFAULT_SKIP_GSM8K="false"
@@ -394,7 +394,14 @@ run_single_rate_benchmark() {
 
     echo "Processing request rate ${RATE} for mode ${mode}..."
     for i in {1..3}; do
-        existing_log=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log 2>/dev/null || true)
+        # Check if log already exists using glob pattern
+        existing_log=""
+        for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log; do
+            if [[ -f "$log_file" ]]; then
+                existing_log="$log_file"
+                break
+            fi
+        done
         if [ -n "$existing_log" ]; then
             echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
             continue
@@ -439,7 +446,9 @@ get_best_metrics() {
     local best_ttft=""
     local best_itl=""
     local best_file=""
-    for f in $(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log" 2>/dev/null); do
+    for f in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log"; do
+        # Skip if no files match the pattern
+        [[ -f "$f" ]] || continue
         local e2e=$(grep -oP 'Median E2E Latency \(ms\):\s*\K[\d.]+' "$f" | head -n1)
         if [ -z "$e2e" ]; then
             continue
@@ -758,7 +767,14 @@ shutdown_server
 extract_throughput() {
     local mode=$1
     local rate=$2
-    local log_file=$(ls "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log" 2>/dev/null | head -n1)
+    # Use glob pattern instead of ls - find first matching file
+    local log_file=""
+    for f in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${rate}_run"*".log"; do
+        if [[ -f "$f" ]]; then
+            log_file="$f"
+            break
+        fi
+    done
     if [ -n "$log_file" ]; then
         local throughput=$(grep -oP 'Throughput:\s*\K[\d.]+' "$log_file" | head -n1)
         if [ -n "$throughput" ]; then
