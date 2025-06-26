@@ -4,7 +4,7 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250612
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250625
 #   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
@@ -138,7 +138,29 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       docker start "${CONTAINER_NAME}" >/dev/null || true
     else
-      docker pull "${FULL_IMAGE}"
+      echo "[online] Checking if image exists locally ..."
+      # Check if image exists locally
+      if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FULL_IMAGE}$"; then
+        echo "[online] Found local image: ${FULL_IMAGE}"
+      else
+        # For custom built images without repo prefix, check without the prefix
+        if docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^${IMAGE_WITH_TAG}$|^${REPO}:latest$"; then
+          echo "[online] Found local image: ${IMAGE_WITH_TAG}"
+        else
+          echo "[online] Image not found locally. Attempting to pull ..."
+          if ! docker pull "${FULL_IMAGE}" 2>/dev/null; then
+            echo "[online] WARNING: Failed to pull ${FULL_IMAGE}. Image might be a local build."
+            echo "[online] Checking if it exists with a different tag ..."
+            # Final check for the image
+            if ! docker images | grep -q "${REPO}"; then
+              echo "[online] ERROR: Image ${FULL_IMAGE} not found locally or remotely."
+              exit 1
+            fi
+          fi
+        fi
+      fi
+
+      echo "[online] Creating container ..."
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
