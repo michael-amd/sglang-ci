@@ -42,6 +42,7 @@ class OfflineGraphPlotter:
         self.model_name_in_plot = model_name_in_plot
         self.df = None
         os.makedirs(self.plot_dir, exist_ok=True)
+        self.expected_batch_sizes = {1, 2, 4, 8, 16, 32, 64, 128, 256}
 
     def read_summary_csv(self):
         """
@@ -94,6 +95,46 @@ class OfflineGraphPlotter:
                 f"Error reading or processing summary CSV {self.summary_csv_path}: {e}"
             )
             self.df = pd.DataFrame()
+
+    def filter_complete_dates(self):
+        """
+        Filters dataframe to only keep dates that have data for all expected batch sizes.
+        """
+        if self.df.empty:
+            print("No data to filter.")
+            return
+
+        print(
+            f"Filtering for dates with all required batch sizes: {sorted(list(self.expected_batch_sizes))}"
+        )
+
+        # Group by date and check which dates have the required batch sizes
+        date_completeness = self.df.groupby("date")["batch_size"].apply(set)
+
+        complete_dates = date_completeness[
+            date_completeness.apply(lambda x: x.issuperset(self.expected_batch_sizes))
+        ].index
+
+        # Log incomplete dates for user feedback
+        incomplete_dates = date_completeness[
+            ~date_completeness.index.isin(complete_dates)
+        ].index
+        for date in incomplete_dates:
+            present_bs = date_completeness[date]
+            missing_bs = self.expected_batch_sizes - present_bs
+            if missing_bs:
+                print(
+                    f"Date {date.strftime('%Y-%m-%d')}: Incomplete data. Missing batch sizes: {sorted(list(missing_bs))}"
+                )
+
+        if len(complete_dates) == 0:
+            print("\nNo dates found with complete data for all required batch sizes.")
+            self.df = pd.DataFrame()
+        else:
+            self.df = self.df[self.df["date"].isin(complete_dates)]
+            print(
+                f"\nFound {len(complete_dates)} dates with complete data: {[d.strftime('%Y-%m-%d') for d in sorted(complete_dates)]}"
+            )
 
     def _setup_subplot_axis(
         self, ax, batch_size, metric_label, ilen, olen, backend=None
@@ -356,9 +397,11 @@ class OfflineGraphPlotter:
         """
         self.read_summary_csv()
         if not self.df.empty:
-            self.plot_latency_vs_date()
-            self.plot_throughput_vs_date()
-            self.plot_combined_metrics()
+            self.filter_complete_dates()  # Filter for complete data
+            if not self.df.empty:
+                self.plot_latency_vs_date()
+                self.plot_throughput_vs_date()
+                self.plot_combined_metrics()
         else:
             print("No data to plot. Please check the summary CSV file.")
 
