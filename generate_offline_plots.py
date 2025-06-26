@@ -96,7 +96,7 @@ class OfflineGraphPlotter:
             self.df = pd.DataFrame()
 
     def _setup_subplot_axis(
-        self, ax, dates, batch_size, metric_label, ilen, olen, backend=None
+        self, ax, batch_size, metric_label, ilen, olen, backend=None
     ):
         """Helper method to set up common axis properties for subplots."""
         backend_text = f" [{backend}]" if backend and backend != "unknown" else ""
@@ -106,19 +106,19 @@ class OfflineGraphPlotter:
         ax.set_ylabel(metric_label)
         ax.grid(True)
         ax.legend()
-        # Format x-axis dates
-        ax.set_xticks(range(len(dates)))
-        ax.set_xticklabels(
-            [d.strftime("%Y-%m-%d") for d in dates], rotation=45, ha="right"
-        )
 
     def _plot_metric_for_batch_sizes(self, metric_col, metric_label, output_file):
         """
         Create subplot for each batch size showing metric vs date.
+        X-axis shows all available dates without gaps.
         """
         if self.df.empty:
             print("No data available to plot.")
             return
+
+        # Get unique dates from the entire dataframe to create a unified x-axis
+        all_unique_dates = sorted(self.df["date"].unique())
+        date_to_idx = {date: i for i, date in enumerate(all_unique_dates)}
 
         # Get unique batch sizes
         batch_sizes = sorted(self.df["batch_size"].unique())
@@ -180,9 +180,12 @@ class OfflineGraphPlotter:
                     else "unknown"
                 )
 
-            # Plot the metric
+            # Map dates to indices for plotting
+            x_indices = batch_data["date"].map(date_to_idx)
+
+            # Plot the metric using indices
             ax.plot(
-                batch_data["date"],
+                x_indices,
                 batch_data[metric_col],
                 marker="o",
                 linestyle="-",
@@ -191,9 +194,10 @@ class OfflineGraphPlotter:
 
             # Add value annotations on data points
             for idx, row in batch_data.iterrows():
+                x_pos = date_to_idx[row["date"]]
                 ax.annotate(
                     f"{row[metric_col]:.2f}",
-                    (row["date"], row[metric_col]),
+                    (x_pos, row[metric_col]),
                     textcoords="offset points",
                     xytext=(0, 7),
                     ha="center",
@@ -201,18 +205,18 @@ class OfflineGraphPlotter:
                 )
 
             # Setup axis
-            self._setup_subplot_axis(
-                ax,
-                batch_data["date"].tolist(),
-                batch_size,
-                metric_label,
-                ilen,
-                olen,
-                backend,
-            )
+            self._setup_subplot_axis(ax, batch_size, metric_label, ilen, olen, backend)
 
         # Set common x-label
         axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
+
+        # Set x-ticks and labels for the shared axis to show dates without gaps
+        plt.xticks(
+            ticks=range(len(all_unique_dates)),
+            labels=[d.strftime("%Y-%m-%d") for d in all_unique_dates],
+            rotation=45,
+            ha="right",
+        )
 
         # Adjust layout
         plt.tight_layout()
@@ -254,11 +258,16 @@ class OfflineGraphPlotter:
     def plot_combined_metrics(self):
         """
         Create a combined plot showing both latency and throughput trends for all batch sizes.
+        X-axis shows all available dates without gaps.
         """
         print("Generating combined metrics plot...")
         if self.df.empty:
             print("No data available to plot.")
             return
+
+        # Get unique dates from the entire dataframe to create a unified x-axis
+        all_unique_dates = sorted(self.df["date"].unique())
+        date_to_idx = {date: i for i, date in enumerate(all_unique_dates)}
 
         # Get unique batch sizes
         batch_sizes = sorted(self.df["batch_size"].unique())
@@ -273,8 +282,11 @@ class OfflineGraphPlotter:
                 batch_data = batch_data.sort_values("date")
                 # Calculate mean latency per date (in case of duplicates)
                 latency_by_date = batch_data.groupby("date")["E2E_Latency(s)"].mean()
+
+                # Map dates to indices for plotting
+                x_indices = [date_to_idx[d] for d in latency_by_date.index]
                 ax1.plot(
-                    latency_by_date.index,
+                    x_indices,
                     latency_by_date.values,
                     marker="o",
                     linestyle="-",
@@ -286,7 +298,10 @@ class OfflineGraphPlotter:
         ax1.set_ylabel("E2E Latency (s)")
         ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         ax1.grid(True, alpha=0.3)
-        ax1.tick_params(axis="x", rotation=45)
+        ax1.set_xticks(range(len(all_unique_dates)))
+        ax1.set_xticklabels(
+            [d.strftime("%Y-%m-%d") for d in all_unique_dates], rotation=45, ha="right"
+        )
 
         # Plot throughput trends
         for batch_size in batch_sizes:
@@ -297,8 +312,11 @@ class OfflineGraphPlotter:
                 throughput_by_date = batch_data.groupby("date")[
                     "E2E_Throughput(token/s)"
                 ].mean()
+
+                # Map dates to indices for plotting
+                x_indices = [date_to_idx[d] for d in throughput_by_date.index]
                 ax2.plot(
-                    throughput_by_date.index,
+                    x_indices,
                     throughput_by_date.values,
                     marker="o",
                     linestyle="-",
@@ -310,7 +328,10 @@ class OfflineGraphPlotter:
         ax2.set_ylabel("E2E Throughput (token/s)")
         ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         ax2.grid(True, alpha=0.3)
-        ax2.tick_params(axis="x", rotation=45)
+        ax2.set_xticks(range(len(all_unique_dates)))
+        ax2.set_xticklabels(
+            [d.strftime("%Y-%m-%d") for d in all_unique_dates], rotation=45, ha="right"
+        )
 
         # Adjust layout
         plt.tight_layout()
