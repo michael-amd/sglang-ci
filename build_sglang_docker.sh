@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Helper script to build SGLang Docker images using existing Dockerfile.rocm
+#
+# IMPORTANT: Please specify your SGLANG_DOCKERFILE_PATH using --dockerfile-path=<PATH>
+# If this script doesn't work due to sglang changes, you can build directly
 
 set -euo pipefail
 
 # Default values
 SGLANG_DOCKERFILE_PATH="${SGLANG_DOCKERFILE_PATH:-/mnt/raid/michael/sgl-project/sglang/docker/Dockerfile.rocm}"
 SGL_BRANCH="${SGL_BRANCH:-main}"
-BASE_IMAGE="${BASE_IMAGE:-rocm/sgl-dev:vllm20250114}"
+ROCM_VERSION="${ROCM_VERSION:-630}"
 BUILD_TYPE="${BUILD_TYPE:-all}"
 PULL_LATEST="${PULL_LATEST:-true}"
 
@@ -21,8 +24,8 @@ while [[ $# -gt 0 ]]; do
             SGL_BRANCH="${1#*=}"
             shift
             ;;
-        --base-image=*)
-            BASE_IMAGE="${1#*=}"
+        --rocm-version=*)
+            ROCM_VERSION="${1#*=}"
             shift
             ;;
         --build-type=*)
@@ -38,14 +41,14 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --dockerfile-path=PATH  Path to Dockerfile.rocm (default: /mnt/raid/michael/sgl-project/sglang/docker/Dockerfile.rocm)"
             echo "  --branch=BRANCH         Git branch/tag/commit/PR (default: main)"
-            echo "  --base-image=IMAGE      Base Docker image (default: rocm/sgl-dev:vllm20250114)"
+            echo "  --rocm-version=VERSION  ROCm version for tag (default: 630)"
             echo "  --build-type=TYPE       Build type: all or srt (default: all)"
             echo "  --no-pull               Skip git pull (default: pull latest)"
             echo "  --help                  Show this help message"
             echo ""
             echo "Examples:"
             echo "  $0 --branch=v0.4.7"
-            echo "  $0 --branch=main --base-image=rocm/sgl-dev:vllm20250114"
+            echo "  $0 --branch=main"
             echo "  $0 --branch=pull/1234/merge"
             echo "  $0 --dockerfile-path=/path/to/Dockerfile.rocm --branch=commit_hash"
             exit 0
@@ -146,28 +149,25 @@ if [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
     PR_NUMBER="${BASH_REMATCH[1]}"
 fi
 
-# Determine ROCm version from base image name
-if [[ "$BASE_IMAGE" =~ rocm([0-9]+) ]]; then
-    ROCM_VERSION="${BASH_REMATCH[1]}"
+# Build Docker image with tag format
+if [ "$SGL_BRANCH" = "main" ]; then
+    IMAGE_TAG="main-${COMMIT_HASH}-rocm${ROCM_VERSION}"
+elif [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
+    # For pull requests, use pr-NUMBER format
+    PR_NUMBER="${BASH_REMATCH[1]}"
+    IMAGE_TAG="pr-${PR_NUMBER}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
 else
-    ROCM_VERSION="630"  # default
+    # For version tags like v0.4.7, use the simpler format
+    # For commit hashes, include the hash in the tag
+    if [[ "$SGL_BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+        IMAGE_TAG="${SGL_BRANCH}-rocm${ROCM_VERSION}"
+    else
+        IMAGE_TAG="${SGL_BRANCH}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
+    fi
 fi
-
-# Extract image name from Dockerfile usage comment and append '-build'
-USAGE_EXAMPLE=$(grep -A 1 "# Usage" "$SGLANG_DOCKERFILE_PATH" | tail -1)
-BASE_TAG_FROM_DOCKERFILE=$(echo "$USAGE_EXAMPLE" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
-
-if [ -z "$BASE_TAG_FROM_DOCKERFILE" ]; then
-    echo "Error: Could not extract image name from Dockerfile."
-    echo "Expected a line like: #   docker build ... -t <image_name> ..."
-    exit 1
-fi
-
-IMAGE_TAG="${BASE_TAG_FROM_DOCKERFILE}-build"
 
 echo ""
 echo "Building Docker image: $IMAGE_TAG"
-echo "Using base image: $BASE_IMAGE"
 echo "Build type: $BUILD_TYPE"
 echo "Using dockerfile: $DOCKERFILE_NAME"
 
@@ -192,7 +192,6 @@ echo "Modified aiter installation line to use 'pip install .' instead of PREBUIL
 
 # Build using the modified Dockerfile
 docker build \
-    --build-arg BASE_IMAGE="$BASE_IMAGE" \
     --build-arg SGL_BRANCH="$SGL_BRANCH" \
     --build-arg BUILD_TYPE="$BUILD_TYPE" \
     -t "$IMAGE_TAG" \
