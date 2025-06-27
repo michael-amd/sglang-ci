@@ -195,8 +195,11 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
                             output.append(
                                 f"| {batch_size} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |"
                             )
-                    except:
-                        pass
+                    except (ValueError, KeyError, TypeError, ZeroDivisionError) as e:
+                        print(f"Warning: Failed to process {metric} for batch_size {batch_size}: {e}", file=sys.stderr)
+                        # Add a row indicating missing data
+                        metric_name = metric.replace("(token/s)", "").replace("(s)", "").replace("_", " ")
+                        output.append(f"| {batch_size} | {metric_name} | N/A | N/A | Error |")
 
     return "\n".join(output) + "\n"
 
@@ -254,8 +257,9 @@ def compare_online_results(
                     output.append(
                         f"| {rate} | {main_val:.1f} | {pr_val:.1f} | {change_str} |"
                     )
-                except:
-                    pass
+                except (ValueError, KeyError, TypeError, IndexError, ZeroDivisionError) as e:
+                    print(f"Warning: Failed to process request rate column {i} for {metric_type}: {e}", file=sys.stderr)
+                    # Skip this column and continue
 
     return "\n".join(output) + "\n"
 
