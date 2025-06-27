@@ -9,9 +9,26 @@ import argparse
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
+
+def find_csv_files(directory: str, model: Optional[str] = None) -> List[Path]:
+    """Find CSV files in the given directory, optionally filtering by model name."""
+    dir_path = Path(directory)
+    if not dir_path.exists():
+        print(f"Directory {directory} does not exist", file=sys.stderr)
+        return []
+
+    csv_files = list(dir_path.glob("*.csv"))
+
+    if model:
+        # Filter by model name (case-insensitive)
+        csv_files = [f for f in csv_files if model.lower() in f.name.lower()]
+
+    return csv_files
 
 
 def parse_offline_csv(filepath: str) -> pd.DataFrame:
@@ -98,6 +115,19 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
     """Compare offline benchmark results and generate markdown."""
     output = []
 
+    # Check if either dataframe has empty values
+    main_has_data = not main_df.empty and main_df.iloc[:, 5:].notna().any().any()
+    pr_has_data = not pr_df.empty and pr_df.iloc[:, 5:].notna().any().any()
+
+    if not main_has_data and not pr_has_data:
+        return "❌ Both CSV files contain no benchmark data.\n"
+    elif not main_has_data:
+        return "❌ Main CSV contains no benchmark data. Cannot perform comparison.\n\n" + \
+               "**PR CSV Summary:**\n" + pr_df.to_string(index=False) + "\n"
+    elif not pr_has_data:
+        return "❌ PR CSV contains no benchmark data. Cannot perform comparison.\n\n" + \
+               "**Main CSV Summary:**\n" + main_df.to_string(index=False) + "\n"
+
     # Merge dataframes on common columns
     merge_cols = ["TP", "batch_size", "IL", "OL"]
     merged = pd.merge(main_df, pr_df, on=merge_cols, suffixes=("_main", "_pr"))
@@ -105,57 +135,53 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
     if merged.empty:
         return "No common configurations found between main and PR results.\n"
 
-    # Calculate performance differences
+    # Only compare E2E metrics
     metrics = [
         ("E2E_Throughput(token/s)", "higher"),
-        ("Prefill_Throughput(token/s)", "higher"),
-        ("Median_Decode_Throughput(token/s)", "higher"),
         ("E2E_Latency(s)", "lower"),
-        ("Prefill_latency(s)", "lower"),
-        ("Median_decode_latency(s)", "lower"),
     ]
 
-    output.append("| Configuration | Metric | Main | PR | Change |")
-    output.append("|---------------|--------|------|----|---------| ")
+    output.append("| Batch Size | Metric | Main | PR | Change |")
+    output.append("|------------|--------|------|----|---------| ")
 
-    for _, row in merged.iterrows():
-        config = (
-            f"TP={row['TP']}, BS={row['batch_size']}, IL={row['IL']}, OL={row['OL']}"
-        )
+    # Group by batch size
+    for batch_size in sorted(merged['batch_size'].unique()):
+        batch_rows = merged[merged['batch_size'] == batch_size]
 
-        for metric, better_direction in metrics:
-            main_col = f"{metric}_main"
-            pr_col = f"{metric}_pr"
+        for _, row in batch_rows.iterrows():
+            for metric, better_direction in metrics:
+                main_col = f"{metric}_main"
+                pr_col = f"{metric}_pr"
 
-            if main_col in row and pr_col in row:
-                try:
-                    main_val = float(row[main_col])
-                    pr_val = float(row[pr_col])
+                if main_col in row and pr_col in row:
+                    try:
+                        main_val = float(row[main_col])
+                        pr_val = float(row[pr_col])
 
-                    if main_val > 0:
-                        if better_direction == "higher":
-                            change_pct = ((pr_val - main_val) / main_val) * 100
-                        else:  # lower is better
-                            change_pct = ((main_val - pr_val) / main_val) * 100
+                        if main_val > 0:
+                            if better_direction == "higher":
+                                change_pct = ((pr_val - main_val) / main_val) * 100
+                            else:  # lower is better
+                                change_pct = ((main_val - pr_val) / main_val) * 100
 
-                        # Format change with color
-                        if change_pct > 5:
-                            change_str = f"**+{change_pct:.1f}%** 🟢"
-                        elif change_pct < -5:
-                            change_str = f"**{change_pct:.1f}%** 🔴"
-                        else:
-                            change_str = f"{change_pct:+.1f}%"
+                            # Format change with color
+                            if change_pct > 5:
+                                change_str = f"**+{change_pct:.1f}%** 🟢"
+                            elif change_pct < -5:
+                                change_str = f"**{change_pct:.1f}%** 🔴"
+                            else:
+                                change_str = f"{change_pct:+.1f}%"
 
-                        metric_name = (
-                            metric.replace("(token/s)", "")
-                            .replace("(s)", "")
-                            .replace("_", " ")
-                        )
-                        output.append(
-                            f"| {config} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |"
-                        )
-                except:
-                    pass
+                            metric_name = (
+                                metric.replace("(token/s)", "")
+                                .replace("(s)", "")
+                                .replace("_", " ")
+                            )
+                            output.append(
+                                f"| {batch_size} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |"
+                            )
+                    except:
+                        pass
 
     return "\n".join(output) + "\n"
 
@@ -222,25 +248,78 @@ def compare_online_results(
 def main():
     parser = argparse.ArgumentParser(description="Compare SGLang benchmark CSV results")
     parser.add_argument(
-        "--main-csv", required=True, help="Path to main branch CSV file"
+        "--csv1", required=True, help="Path to first CSV directory"
     )
-    parser.add_argument("--pr-csv", required=True, help="Path to PR CSV file")
+    parser.add_argument("--csv2", required=True, help="Path to second CSV directory")
     parser.add_argument(
-        "--output-md", required=True, help="Path to output markdown file"
+        "--mode", required=True, choices=["offline", "online"], help="Benchmark mode"
+    )
+    parser.add_argument(
+        "--model", help="Model name to filter CSV files (optional)"
+    )
+    parser.add_argument(
+        "--output-md", help="Path to output markdown file (optional, auto-generated if not provided)"
+    )
+    parser.add_argument(
+        "--output-dir", help="Output directory (default: /mnt/raid/michael/sgl_benchmark_ci/comparison_results)"
     )
     parser.add_argument("--append", action="store_true", help="Append to existing file")
 
     args = parser.parse_args()
 
-    # Determine if this is offline or online benchmark based on filename
-    is_offline = "offline" in args.main_csv.lower()
+    # Find CSV files in both directories
+    csv1_files = find_csv_files(args.csv1, args.model)
+    csv2_files = find_csv_files(args.csv2, args.model)
+
+    if not csv1_files:
+        print(f"No CSV files found in {args.csv1}", file=sys.stderr)
+        sys.exit(1)
+
+    if not csv2_files:
+        print(f"No CSV files found in {args.csv2}", file=sys.stderr)
+        sys.exit(1)
+
+    # For now, take the first CSV file from each directory
+    # In the future, you might want to match files by date or other criteria
+    main_csv = csv1_files[0]
+    pr_csv = csv2_files[0]
+
+    print(f"Comparing:\n  Main: {main_csv}\n  PR: {pr_csv}")
+
+    # Generate output directory and filename if not provided
+    if not args.output_md:
+        base_output_dir = Path(args.output_dir) if args.output_dir else Path("/mnt/raid/michael/sgl_benchmark_ci/comparison_results")
+
+        # Extract directory names from CSV paths
+        csv1_dirname = Path(args.csv1).name
+        csv2_dirname = Path(args.csv2).name
+
+        # Generate folder name with date and CSV directory names
+        date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        folder_name = f"{date_str}_{csv1_dirname}_vs_{csv2_dirname}"
+
+        # Create the specific output folder
+        output_folder = base_output_dir / folder_name
+        output_folder.mkdir(parents=True, exist_ok=True)
+
+        # Put markdown file inside the folder
+        output_path = output_folder / f"{folder_name}.md"
+    else:
+        output_path = Path(args.output_md)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
     output_lines = []
+    output_lines.append(f"## {args.model.upper() if args.model else 'Model'} Benchmark Comparison\n")
+    output_lines.append(f"**Mode**: {args.mode}\n")
+    output_lines.append(f"**Main CSV**: `{main_csv.name}`\n")
+    output_lines.append(f"**PR CSV**: `{pr_csv.name}`\n")
+    output_lines.append(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    output_lines.append("\n### Results\n")
 
-    if is_offline:
+    if args.mode == "offline":
         # Parse offline CSVs
-        main_df = parse_offline_csv(args.main_csv)
-        pr_df = parse_offline_csv(args.pr_csv)
+        main_df = parse_offline_csv(str(main_csv))
+        pr_df = parse_offline_csv(str(pr_csv))
 
         if main_df is not None and pr_df is not None:
             comparison = compare_offline_results(main_df, pr_df)
@@ -249,8 +328,8 @@ def main():
             output_lines.append("Failed to parse CSV files.\n")
     else:
         # Parse online CSVs
-        main_data = parse_online_csv(args.main_csv)
-        pr_data = parse_online_csv(args.pr_csv)
+        main_data = parse_online_csv(str(main_csv))
+        pr_data = parse_online_csv(str(pr_csv))
 
         if main_data and pr_data:
             comparison = compare_online_results(main_data, pr_data)
@@ -260,10 +339,10 @@ def main():
 
     # Write output
     mode = "a" if args.append else "w"
-    with open(args.output_md, mode) as f:
+    with open(output_path, mode) as f:
         f.write("\n".join(output_lines))
 
-    print(f"Comparison written to {args.output_md}")
+    print(f"Comparison written to {output_path}")
 
 
 if __name__ == "__main__":
