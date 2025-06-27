@@ -24,6 +24,57 @@
 #
 #################################################################################
 
+"""
+Online Benchmark Plot Generator
+
+This script generates performance plots from online benchmark summary CSV files.
+It creates visualizations for E2E Latency, TTFT, ITL, token counts, and KV cache usage.
+
+USAGE EXAMPLES:
+
+1. Basic usage with default settings:
+   python generate_online_plots.py
+
+2. Specify custom CSV file and plot directory:
+   python generate_online_plots.py \
+     --summary-csv /path/to/summary.csv \
+     --plot-dir /path/to/output/plots
+
+3. Filter by specific mode (e.g., only "aiter" mode):
+   python generate_online_plots.py --mode-filter aiter
+
+4. Filter by multiple modes:
+   python generate_online_plots.py --mode-filter "aiter,triton"
+
+5. Generate split request rate plots (separate low/high RR in single plot):
+   python generate_online_plots.py --split-request-rates
+
+6. Complete example with all options:
+   python generate_online_plots.py \
+     --summary-csv /mnt/raid/michael/sgl_benchmark_ci/online/GROK1/GROK1_MOE-I4F8_online_aiter_summary.csv \
+     --plot-dir /mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online \
+     --model-name "GROK1 MOE-I4F8 Online" \
+     --mode-filter aiter \
+     --split-request-rates
+
+PLOT LAYOUTS:
+
+Normal mode (--split-request-rates not used):
+- Single plot with 6 subplots (3x2 grid)
+- All request rates shown together in performance metric plots
+
+Split mode (--split-request-rates used):
+- Single plot with 8 subplots (3x3 grid, horizontally enlarged)
+- Row 1: Low request rates (1,2,4) - E2E Latency, TTFT, ITL
+- Row 2: High request rates (8,16) - E2E Latency, TTFT, ITL
+- Row 3: # Tokens and KV Cache Usage plots
+
+INPUT CSV FORMAT:
+Expected columns: date, mode, request_rate, E2E_Latency_ms, TTFT_ms, ITL_ms, num_tokens, KV_size_GB
+Date format: YYYYMMDD
+Request rates: 1, 2, 4, 8, 16 (powers of 2)
+"""
+
 import argparse  # For command-line argument parsing
 import os
 from datetime import datetime, timedelta
@@ -457,15 +508,15 @@ class OnlineGraphPlotter:
             f"{y_label} vs. Date for {self.model_name_in_plot}",
         )
 
-        # Add explanation text
+        # Add explanation text below the plot (positioned lower to avoid overlap with date labels)
         explanation_text = 'Note: "# Tokens*" refers to the number of tokens for which the\nKey-Value (KV) Cache is allocated at server startup.'
         ax.text(
-            1.02,
             0.5,
+            -0.25,
             explanation_text,
             transform=ax.transAxes,
-            ha="left",
-            va="center",
+            ha="center",
+            va="top",
             fontsize="small",
             color="gray",
             bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.5),
@@ -591,8 +642,8 @@ class OnlineGraphPlotter:
         # Remove the unused subplot
         fig.delaxes(axes[5])
 
-        # Adjust layout to make space for legends and potential side notes
-        plt.tight_layout(rect=[0, 0, 0.88, 1])  # Adjusted right padding for side note
+        # Adjust layout with reduced horizontal spacing and space for notes below
+        plt.tight_layout(rect=[0, 0.08, 0.95, 1], w_pad=1.0)  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot
         current_date_str = datetime.now().strftime("%Y%m%d")
@@ -614,7 +665,7 @@ class OnlineGraphPlotter:
         plt.close()
 
     def _create_split_plots(self, unique_modes, unique_request_rates):
-        """Create separate plots for low and high request rates."""
+        """Create a single plot with low and high request rates in separate rows."""
         # Filter request rates into low and high groups
         low_rr = [rr for rr in unique_request_rates if rr in self.low_request_rates]
         high_rr = [rr for rr in unique_request_rates if rr in self.high_request_rates]
@@ -627,93 +678,75 @@ class OnlineGraphPlotter:
         else:
             mode_suffix = "_all"
 
-        # Create plot for low request rates
-        if low_rr:
-            print(f"\nCreating plot for low request rates: {low_rr}")
-            fig, axes = plt.subplots(3, 2, figsize=(20, 18))
-            axes = axes.flatten()
+        print(f"\nCreating combined plot with low RR: {low_rr} and high RR: {high_rr}")
 
-            # Plot performance metrics
+        # Create figure with 3 rows and 3 columns (enlarged horizontally)
+        fig, axes = plt.subplots(3, 3, figsize=(30, 18))
+
+        # First row: Low request rate performance metrics
+        if low_rr:
             self._plot_performance_metrics(
-                axes[0],
+                axes[0, 0],
                 "E2E_Latency_ms",
                 "E2E Latency (ms) - Low RR",
                 unique_modes,
                 low_rr,
             )
             self._plot_performance_metrics(
-                axes[1], "TTFT_ms", "TTFT (ms) - Low RR", unique_modes, low_rr
+                axes[0, 1], "TTFT_ms", "TTFT (ms) - Low RR", unique_modes, low_rr
             )
             self._plot_performance_metrics(
-                axes[2], "ITL_ms", "ITL (ms) - Low RR", unique_modes, low_rr
+                axes[0, 2], "ITL_ms", "ITL (ms) - Low RR", unique_modes, low_rr
             )
+        else:
+            # If no low RR data, show empty plots
+            for i in range(3):
+                axes[0, i].set_title(f"Low RR Metrics (No Data)")
+                axes[0, i].set_xticks([])
+                axes[0, i].set_yticks([])
 
-            # Plot num_tokens
-            self._plot_num_tokens(axes[3], unique_modes)
-
-            # Plot KV cache usage
-            self._plot_kv_cache_usage(axes[4], unique_modes)
-
-            # Remove the unused subplot
-            fig.delaxes(axes[5])
-
-            # Adjust layout
-            plt.tight_layout(rect=[0, 0, 0.88, 1])
-
-            # Save the plot
-            plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}{mode_suffix}_low_rr_{current_date_str}.png"
-            output_file_path = os.path.join(self.plot_dir, plot_filename)
-
-            try:
-                plt.savefig(output_file_path)
-                print(f"Low request rate plot saved to: {output_file_path}")
-            except Exception as e:
-                print(f"Error saving low RR plot to {output_file_path}: {e}")
-            plt.close()
-
-        # Create plot for high request rates
+        # Second row: High request rate performance metrics
         if high_rr:
-            print(f"\nCreating plot for high request rates: {high_rr}")
-            fig, axes = plt.subplots(3, 2, figsize=(20, 18))
-            axes = axes.flatten()
-
-            # Plot performance metrics
             self._plot_performance_metrics(
-                axes[0],
+                axes[1, 0],
                 "E2E_Latency_ms",
                 "E2E Latency (ms) - High RR",
                 unique_modes,
                 high_rr,
             )
             self._plot_performance_metrics(
-                axes[1], "TTFT_ms", "TTFT (ms) - High RR", unique_modes, high_rr
+                axes[1, 1], "TTFT_ms", "TTFT (ms) - High RR", unique_modes, high_rr
             )
             self._plot_performance_metrics(
-                axes[2], "ITL_ms", "ITL (ms) - High RR", unique_modes, high_rr
+                axes[1, 2], "ITL_ms", "ITL (ms) - High RR", unique_modes, high_rr
             )
+        else:
+            # If no high RR data, show empty plots
+            for i in range(3):
+                axes[1, i].set_title(f"High RR Metrics (No Data)")
+                axes[1, i].set_xticks([])
+                axes[1, i].set_yticks([])
 
-            # Plot num_tokens
-            self._plot_num_tokens(axes[3], unique_modes)
+        # Third row: num_tokens and KV cache usage
+        self._plot_num_tokens(axes[2, 0], unique_modes)
+        self._plot_kv_cache_usage(axes[2, 1], unique_modes)
 
-            # Plot KV cache usage
-            self._plot_kv_cache_usage(axes[4], unique_modes)
+        # Remove the unused subplot in the third row
+        fig.delaxes(axes[2, 2])
 
-            # Remove the unused subplot
-            fig.delaxes(axes[5])
+        # Adjust layout with reduced horizontal spacing and space for notes below
+        plt.tight_layout(rect=[0, 0.08, 0.95, 1], w_pad=1.0)  # Reduced horizontal padding, increased bottom space, reduced right margin
 
-            # Adjust layout
-            plt.tight_layout(rect=[0, 0, 0.88, 1])
+        # Save the plot
+        plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}{mode_suffix}_split_rr_{current_date_str}.png"
+        output_file_path = os.path.join(self.plot_dir, plot_filename)
 
-            # Save the plot
-            plot_filename = f"online_metrics_vs_date_{self.model_name_in_plot.replace(' ', '_')}{mode_suffix}_high_rr_{current_date_str}.png"
-            output_file_path = os.path.join(self.plot_dir, plot_filename)
-
-            try:
-                plt.savefig(output_file_path)
-                print(f"High request rate plot saved to: {output_file_path}")
-            except Exception as e:
-                print(f"Error saving high RR plot to {output_file_path}: {e}")
-            plt.close()
+        try:
+            plt.savefig(output_file_path)
+            print(f"Split request rate plot saved to: {output_file_path}")
+        except Exception as e:
+            print(f"Error saving split RR plot to {output_file_path}: {e}")
+        plt.close()
 
     def generate_and_save_plots(self):
         """
