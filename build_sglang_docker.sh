@@ -153,22 +153,17 @@ else
     ROCM_VERSION="630"  # default
 fi
 
-# Build Docker image with tag format
-if [ "$SGL_BRANCH" = "main" ]; then
-    IMAGE_TAG="main-${COMMIT_HASH}-rocm${ROCM_VERSION}"
-elif [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)/merge$ ]]; then
-    # For pull requests, use pr-NUMBER format
-    PR_NUMBER="${BASH_REMATCH[1]}"
-    IMAGE_TAG="pr-${PR_NUMBER}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
-else
-    # For version tags like v0.4.7, use the simpler format
-    # For commit hashes, include the hash in the tag
-    if [[ "$SGL_BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-        IMAGE_TAG="${SGL_BRANCH}-rocm${ROCM_VERSION}"
-    else
-        IMAGE_TAG="${SGL_BRANCH}-${COMMIT_HASH}-rocm${ROCM_VERSION}"
-    fi
+# Extract image name from Dockerfile usage comment and append '-build'
+USAGE_EXAMPLE=$(grep -A 1 "# Usage" "$SGLANG_DOCKERFILE_PATH" | tail -1)
+BASE_TAG_FROM_DOCKERFILE=$(echo "$USAGE_EXAMPLE" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
+
+if [ -z "$BASE_TAG_FROM_DOCKERFILE" ]; then
+    echo "Error: Could not extract image name from Dockerfile."
+    echo "Expected a line like: #   docker build ... -t <image_name> ..."
+    exit 1
 fi
+
+IMAGE_TAG="${BASE_TAG_FROM_DOCKERFILE}-build"
 
 echo ""
 echo "Building Docker image: $IMAGE_TAG"
