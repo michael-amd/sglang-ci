@@ -3,6 +3,21 @@
 Compare CSV results from SGLang benchmarks and generate markdown reports.
 
 This script handles both offline and online benchmark CSV formats.
+
+Usage Examples:
+1. Offline GROK1 comparison:
+   python3 compare_csv_results.py --csv1 offline/GROK1/20250624_GROK1_MOE-I4F8_offline --csv2 offline/GROK1/20250626_GROK1_MOE-I4F8_offline --mode offline --model grok1
+
+2. Online GROK1 comparison:
+   python3 compare_csv_results.py --csv1 online/GROK1/20250624_GROK1_MOE-I4F8_online --csv2 online/GROK1/20250626_GROK1_MOE-I4F8_online --mode online --model grok1
+
+3. Offline DeepSeek-V3 comparison:
+   python3 compare_csv_results.py --csv1 offline/DeepSeek-V3-0324/20250515_DeepSeek-V3-0324_FP8_offline --csv2 offline/DeepSeek-V3-0324/20250516_DeepSeek-V3-0324_FP8_offline --mode offline --model DeepSeek-V3-0324
+
+Output:
+- Creates a folder in /mnt/raid/michael/sgl_benchmark_ci/comparison_results/
+- Folder name format: {date}_{csv1_dirname}_vs_{csv2_dirname}
+- Contains a markdown file with the same name showing E2E performance comparisons
 """
 
 import argparse
