@@ -24,7 +24,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return None
 
-        list_dir.sort(key=lambda a: a.lower())
+        list_dir.sort()
 
         r = []
         # Use the custom server title for both the <title> tag and the main <h1> header
