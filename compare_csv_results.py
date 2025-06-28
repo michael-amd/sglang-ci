@@ -126,7 +126,7 @@ def parse_online_csv(filepath: str) -> Dict[str, pd.DataFrame]:
         return {}
 
 
-def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
+def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> List[str]:
     """Compare offline benchmark results and generate markdown."""
     output = []
 
@@ -135,20 +135,20 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
     pr_has_data = not pr_df.empty and pr_df.iloc[:, 5:].notna().any().any()
 
     if not main_has_data and not pr_has_data:
-        return "❌ Both CSV files contain no benchmark data.\n"
+        return ["❌ Both CSV files contain no benchmark data.\n", "\n"]
     elif not main_has_data:
-        return "❌ Main CSV contains no benchmark data. Cannot perform comparison.\n\n" + \
-               "**PR CSV Summary:**\n" + pr_df.to_string(index=False) + "\n"
+        return ["❌ Main CSV contains no benchmark data. Cannot perform comparison.\n", "\n",
+                "**PR CSV Summary:**\n", pr_df.to_string(index=False) + "\n", "\n"]
     elif not pr_has_data:
-        return "❌ PR CSV contains no benchmark data. Cannot perform comparison.\n\n" + \
-               "**Main CSV Summary:**\n" + main_df.to_string(index=False) + "\n"
+        return ["❌ PR CSV contains no benchmark data. Cannot perform comparison.\n", "\n",
+                "**Main CSV Summary:**\n", main_df.to_string(index=False) + "\n", "\n"]
 
     # Merge dataframes on common columns
     merge_cols = ["TP", "batch_size", "IL", "OL"]
     merged = pd.merge(main_df, pr_df, on=merge_cols, suffixes=("_main", "_pr"))
 
     if merged.empty:
-        return "No common configurations found between main and PR results.\n"
+        return ["No common configurations found between main and PR results.\n", "\n"]
 
     # Only compare E2E metrics
     metrics = [
@@ -156,8 +156,8 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
         ("E2E_Latency(s)", "lower"),
     ]
 
-    output.append("| Batch Size | Metric | Main | PR | Change |")
-    output.append("|------------|--------|------|----|---------| ")
+    output.append("| Batch Size | Metric | Main | PR | Change |\n")
+    output.append("|------------|--------|------|----|---------|\n")
 
     # Group by batch size
     for batch_size in sorted(merged['batch_size'].unique()):
@@ -193,20 +193,21 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame) -> str:
                                 .replace("_", " ")
                             )
                             output.append(
-                                f"| {batch_size} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |"
+                                f"| {batch_size} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |\n"
                             )
                     except (ValueError, KeyError, TypeError, ZeroDivisionError) as e:
                         print(f"Warning: Failed to process {metric} for batch_size {batch_size}: {e}", file=sys.stderr)
                         # Add a row indicating missing data
                         metric_name = metric.replace("(token/s)", "").replace("(s)", "").replace("_", " ")
-                        output.append(f"| {batch_size} | {metric_name} | N/A | N/A | Error |")
+                        output.append(f"| {batch_size} | {metric_name} | N/A | N/A | Error |\n")
 
-    return "\n".join(output) + "\n"
+    output.append("\n")  # Add empty line at the end
+    return output
 
 
 def compare_online_results(
     main_data: Dict[str, pd.DataFrame], pr_data: Dict[str, pd.DataFrame]
-) -> str:
+) -> List[str]:
     """Compare online benchmark results and generate markdown."""
     output = []
 
@@ -214,7 +215,7 @@ def compare_online_results(
         if metric_type not in main_data or metric_type not in pr_data:
             continue
 
-        output.append(f"\n#### {metric_type} Latency Comparison\n")
+        output.append(f"\n#### {metric_type} Latency Comparison\n\n")
 
         main_df = main_data[metric_type]
         pr_df = pr_data[metric_type]
@@ -234,8 +235,8 @@ def compare_online_results(
                 break
 
         if main_mi300x_row is not None and pr_mi300x_row is not None:
-            output.append("| Request Rate | Main (ms) | PR (ms) | Change |")
-            output.append("|--------------|-----------|---------|---------|")
+            output.append("| Request Rate | Main (ms) | PR (ms) | Change |\n")
+            output.append("|--------------|-----------|---------|---------|\n")
 
             # Compare each request rate
             for i in range(1, len(main_mi300x_row)):
@@ -255,13 +256,14 @@ def compare_online_results(
                         change_str = f"{change_pct:+.1f}%"
 
                     output.append(
-                        f"| {rate} | {main_val:.1f} | {pr_val:.1f} | {change_str} |"
+                        f"| {rate} | {main_val:.1f} | {pr_val:.1f} | {change_str} |\n"
                     )
                 except (ValueError, KeyError, TypeError, IndexError, ZeroDivisionError) as e:
                     print(f"Warning: Failed to process request rate column {i} for {metric_type}: {e}", file=sys.stderr)
                     # Skip this column and continue
 
-    return "\n".join(output) + "\n"
+    output.append("\n")  # Add empty line at the end
+    return output
 
 
 def main():
@@ -282,17 +284,20 @@ def main():
     parser.add_argument(
         "--output-dir", help="Output directory (default: /mnt/raid/michael/sgl_benchmark_ci/comparison_results)"
     )
-    parser.add_argument("--append", action="store_true", help="Append to existing file")
+    parser.add_argument(
+        "--append", action="store_true", help="Append to existing file"
+    )
 
     args = parser.parse_args()
 
     # Find CSV files in both directories
     csv1_files = find_csv_files(args.csv1, args.model)
-    csv2_files = find_csv_files(args.csv2, args.model)
 
     if not csv1_files:
         print(f"No CSV files found in {args.csv1}", file=sys.stderr)
         sys.exit(1)
+
+    csv2_files = find_csv_files(args.csv2, args.model)
 
     if not csv2_files:
         print(f"No CSV files found in {args.csv2}", file=sys.stderr)
@@ -328,12 +333,12 @@ def main():
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
     output_lines = []
-    output_lines.append(f"## {args.model.upper() if args.model else 'Model'} Benchmark Comparison\n")
-    output_lines.append(f"**Mode**: {args.mode}\n")
-    output_lines.append(f"**Main CSV**: `{main_csv.name}`\n")
-    output_lines.append(f"**PR CSV**: `{pr_csv.name}`\n")
-    output_lines.append(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    output_lines.append("\n### Results\n")
+    output_lines.append(f"## {args.model.upper() if args.model else 'Model'} Benchmark Comparison\n\n")
+    output_lines.append(f"**Mode**: {args.mode}\n\n")
+    output_lines.append(f"**Main CSV**: `{main_csv.name}`\n\n")
+    output_lines.append(f"**PR CSV**: `{pr_csv.name}`\n\n")
+    output_lines.append(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+    output_lines.append("### Results\n\n")
 
     if args.mode == "offline":
         # Parse offline CSVs
@@ -342,7 +347,7 @@ def main():
 
         if main_df is not None and pr_df is not None:
             comparison = compare_offline_results(main_df, pr_df)
-            output_lines.append(comparison)
+            output_lines.extend(comparison)
         else:
             output_lines.append("Failed to parse CSV files.\n")
     else:
@@ -352,14 +357,14 @@ def main():
 
         if main_data and pr_data:
             comparison = compare_online_results(main_data, pr_data)
-            output_lines.append(comparison)
+            output_lines.extend(comparison)
         else:
             output_lines.append("Failed to parse CSV files.\n")
 
     # Write output
     mode = "a" if args.append else "w"
     with open(output_path, mode) as f:
-        f.write("\n".join(output_lines))
+        f.writelines(output_lines)
 
     print(f"Comparison written to {output_path}")
 
