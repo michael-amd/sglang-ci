@@ -45,8 +45,24 @@ The benchmark scripts support Docker images from multiple sources:
 2. **LMSYS SGLang Images:** Available at <https://hub.docker.com/r/lmsysorg/sglang/tags>
    - Example: `lmsysorg/sglang:v0.4.7-rocm630`
 
-3. **Custom Built Images from SGLang Source:**
-   You can also build your own Docker images from the [sglang upstream source](https://github.com/sgl-project/sglang):
+3. **Pre-built Images via Helper Script:**
+   **Recommended approach:** Use the provided helper script to pull pre-built SGLang images from DockerHub:
+
+   ```bash
+   # Pull latest image (main branch)
+   bash ./build_sglang_docker.sh
+
+   # Pull specific version
+   bash ./build_sglang_docker.sh --branch=v0.4.9
+   ```
+
+   **Important Limitations:**
+   - This approach pulls pre-built images and will **NOT work for PRs that change aiter version**
+   - Pre-built images are based on main/released versions, not specific PR changes
+   - This is a workaround until aiter build becomes faster in the future
+
+   **Manual Build Alternative:**
+   If you need to build from source (e.g., for PRs with version changes), you can manually build:
 
    ```bash
    # Clone the sglang repository
@@ -64,22 +80,9 @@ The benchmark scripts support Docker images from multiple sources:
      -f docker/Dockerfile.rocm .
    ```
 
-   **Alternative: Use the provided build helper script:**
+   **Note:** When building from source in the future, remember to rebuild sgl_kernel inside the Docker image after PR checkout.
 
-   ```bash
-   # Build from main branch (default)
-   bash michael/sgl_benchmark_ci/build_sglang_docker.sh
-
-   # Build from specific branch/tag/commit
-   bash michael/sgl_benchmark_ci/build_sglang_docker.sh --branch=v0.4.7
-
-   # Build from fork
-   bash michael/sgl_benchmark_ci/build_sglang_docker.sh \
-     --repo=https://github.com/yourusername/sglang.git \
-     --branch=your-feature-branch
-   ```
-
-   Then use your custom image with the benchmark scripts:
+   Then use your image with the benchmark scripts:
 
    ```bash
    bash grok_perf_offline_csv.sh --docker_image=my-sglang:custom-rocm630
