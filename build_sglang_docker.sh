@@ -2,7 +2,17 @@
 # Helper script to pull SGLang Docker images from DockerHub using latest tag from GitHub
 #
 # This script fetches the latest image tag from the SGLang Dockerfile.rocm on GitHub
-# and pulls the corresponding pre-built image from lmsysorg/sglang
+# and pulls the corresponding pre-built image from lmsysorg/sglang instead of building
+##
+# IMPORTANT LIMITATIONS:
+# 1. This approach will NOT work for PRs that change aiter version, since pre-built images
+#    are based on main/released versions, not specific PR changes
+# 2. This is a WORKAROUND until aiter build becomes faster in the future
+# 3. When we go back to building images from PRs, remember to rebuild sgl_kernel
+#    in the docker image after the PR branch is cloned
+#
+# TODO: Consider hybrid approach - pull pre-built for released versions,
+#       build from source for PRs with version changes
 
 set -euo pipefail
 
@@ -92,6 +102,14 @@ echo "Logging all output to $LOG_FILE"
             # For version tags, use the tag in the URL
             DOCKERFILE_URL="https://raw.githubusercontent.com/sgl-project/sglang/$SGL_BRANCH/docker/Dockerfile.rocm"
             echo "Using branch-specific Dockerfile URL: $DOCKERFILE_URL"
+        elif [[ "$SGL_BRANCH" =~ ^pull/([0-9]+)(/merge)?$ ]]; then
+            # Warn about PR limitations
+            echo "⚠ WARNING: Using PR branch '$SGL_BRANCH'"
+            echo "⚠ This script pulls pre-built images and will NOT include PR-specific changes!"
+            echo "⚠ If this PR changes aiter version, the pre-built image may not work correctly."
+            echo "⚠ Consider building from source when aiter build becomes faster."
+            echo ""
+            DOCKERFILE_URL="$GITHUB_DOCKERFILE_URL"
         else
             echo "Using main branch Dockerfile URL for non-version branch: $SGL_BRANCH"
             DOCKERFILE_URL="$GITHUB_DOCKERFILE_URL"
@@ -160,11 +178,19 @@ echo "Logging all output to $LOG_FILE"
         echo "1. Image not yet available on DockerHub for this version"
         echo "2. Network connectivity issues"
         echo "3. Incorrect image tag format"
+        echo "4. PR-specific changes not available in pre-built images"
         echo ""
         echo "You may need to:"
         echo "1. Check available tags at: https://hub.docker.com/r/lmsysorg/sglang/tags"
         echo "2. Try a different branch/version"
+        echo "3. For PRs with aiter changes, consider building from source when faster"
         exit 1
     fi
 
 } 2>&1 | tee "$LOG_FILE"
+
+# FUTURE BUILD PROCESS NOTES:
+# When aiter build becomes faster and we switch back to building from source:
+# 1. Clone/checkout the specific PR branch
+# 2. IMPORTANT: Rebuild sgl_kernel inside the Docker image after PR checkout
+# 3. Consider hybrid approach: pull for releases, build for PRs with changes
