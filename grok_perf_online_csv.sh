@@ -281,6 +281,7 @@ launch_server() {
   else
     # Default for other images: use aiter with new env vars
     attn_backend="aiter"
+    aiter_env_var="SGLANG_USE_AITER"
     env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
     extra_flags=""
   fi
