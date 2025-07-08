@@ -20,6 +20,8 @@ The scripts have been updated to support command-line parameters, eliminating th
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
     - [Online Data Processing](#online-data-processing)
     - [Viewing Online Plots](#viewing-online-plots)
+- [Automated Nightly Benchmarking](#automated-nightly-benchmarking)
+    - [grok_perf_nightly.sh](#grok_perf_nightlysh)
 - [Data Processing and Visualization](#data-processing-and-visualization)
   - [Processing Scripts](#processing-scripts)
   - [Plotting Scripts](#plotting-scripts)
@@ -393,6 +395,63 @@ The `generate_online_plots.py` script generates visualization plots from the con
   ```
 
 To view the plots, use the same plot server as for offline plots.
+
+---
+
+## Automated Nightly Benchmarking
+
+The `grok_perf_nightly.sh` script provides automated orchestration for running nightly benchmarks with the latest Docker images. This script is designed to be run via cron jobs and handles the complete workflow from Docker image management to benchmark execution and data processing.
+
+### grok_perf_nightly.sh
+
+- **Purpose:** Automated nightly benchmark orchestration that pulls the latest `rocm/sgl-dev` Docker image and runs benchmarks with proper resource management.
+- **Key Features:**
+  - **Automatic Image Selection:** Pulls the latest `rocm/sgl-dev` image for the current PST date (with fallback to previous day)
+  - **GPU Resource Management:** Checks GPU idle status and stops running containers if needed
+  - **Container Management:** Creates/manages persistent containers with proper mounts and configuration
+  - **Comprehensive Workflow:** Runs benchmarks, processes CSV data, and generates plots automatically
+  - **Flexible Mode Selection:** Supports running offline-only, online-only, or both benchmarks
+- **Parameters:**
+  - `--mode=MODE`: Specify which benchmarks to run:
+    - `offline`: Run offline benchmarks only
+    - `online`: Run online benchmarks only
+    - `all`: Run both offline and online benchmarks (default)
+- **Environment Variables:** All configuration can be customized via environment variables:
+  - `BENCHMARK_CI_DIR`: Base directory for benchmark scripts (default: `/mnt/raid/michael/sgl_benchmark_ci`)
+  - `MOUNT_DIR`: Directory to mount in container (default: `/mnt/raid/`)
+  - `WORK_DIR`: Working directory inside container (default: `/sgl-workspace`)
+  - `IMAGE_REPO`: Docker image repository (default: `rocm/sgl-dev`)
+  - `GPU_USAGE_THRESHOLD`: GPU usage threshold for idle check (default: 20%)
+  - `VRAM_USAGE_THRESHOLD`: VRAM usage threshold for idle check (default: 20%)
+  - `TIME_ZONE`: Timezone for date calculations (default: `America/Los_Angeles`)
+- **Workflow:**
+  1. **GPU Idle Check:** Ensures GPU is not busy; stops running containers if needed
+  2. **Image Management:** Pulls latest `rocm/sgl-dev:YYYYMMDD` image for current PST date
+  3. **Container Setup:** Creates/starts container with proper mounts and privileges
+  4. **Benchmark Execution:** Runs selected benchmark scripts inside container
+  5. **Data Processing:** Automatically processes CSV data and generates plots
+  6. **Logging:** Saves processing logs to benchmark output folders
+- **Output:**
+  - Benchmark results in standard output folders
+  - Processing logs: `process_offline_csv.log`, `generate_offline_plots.log` (for offline mode)
+  - Processing logs: `process_online_csv.log`, `generate_online_plots.log` (for online mode)
+- **Usage:**
+
+  ```bash
+  # Run both offline and online benchmarks (default)
+  bash grok_perf_nightly.sh
+
+  # Run offline benchmarks only
+  bash grok_perf_nightly.sh --mode=offline
+
+  # Run online benchmarks only
+  bash grok_perf_nightly.sh --mode=online
+
+  # Run all benchmarks (explicit)
+  bash grok_perf_nightly.sh --mode=all
+  ```
+
+**Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
 
 ---
 
