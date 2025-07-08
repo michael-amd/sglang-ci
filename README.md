@@ -105,10 +105,10 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
   - `--mode=MODE`: Test mode - normal, long_context, or dummy (default: normal)
-  - `--model=PATH`: Model path (default: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/)
+  - `--model=PATH`: Model path (configurable via environment variables)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
-  - `--dummy-model=PATH`: Dummy model path for dummy mode (default: /mnt/raid/models/dummy_prod1/)
-  - `--work-dir=PATH`: Working directory (default: /mnt/raid/michael/sgl_benchmark_ci)
+  - `--dummy-model=PATH`: Dummy model path for dummy mode (configurable via environment variables)
+  - `--work-dir=PATH`: Working directory (configurable via environment variables)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
   - `--help`: Show help message
 - **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
@@ -154,19 +154,19 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
   # Custom model and tokenizer
   bash grok_perf_offline_csv.sh \
-    --model=/path/to/your/grok/model \
-    --tokenizer=your-tokenizer-name
+    --model=$MODEL_PATH \
+    --tokenizer=$TOKENIZER_NAME
 
   # Long context mode
   bash grok_perf_offline_csv.sh --mode=long_context
 
   # Dummy mode with custom model
-  bash grok_perf_offline_csv.sh --mode=dummy --dummy-model=/path/to/dummy/model
+  bash grok_perf_offline_csv.sh --mode=dummy --dummy-model=$DUMMY_MODEL_PATH
 
   # Custom directories
   bash grok_perf_offline_csv.sh \
-    --work-dir=/your/work/directory \
-    --output-dir=/your/output/directory
+    --work-dir=$WORK_DIR \
+    --output-dir=$OUTPUT_DIR
   ```
 
 #### Offline Data Processing
@@ -184,7 +184,6 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 - **Usage:**
 
   ```bash
-  cd /mnt/raid/michael/sgl_benchmark_ci
   python3 process_offline_csv.py
   ```
 
@@ -201,11 +200,11 @@ The `generate_offline_plots.py` script generates visualization plots from the co
     - **Latency vs Date:** Shows E2E latency trends for each batch size with backend info
     - **Throughput vs Date:** Shows E2E throughput trends for each batch size with backend info
     - **Combined Metrics:** Shows both latency and throughput trends on a single plot
-- **Output:** PNG files saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline/`
+- **Output:** PNG files saved to the configured plots directory
 - **Usage:**
 
   ```bash
-  cd /mnt/raid/michael/sgl_benchmark_ci
+  cd $WORK_DIR
   python3 generate_offline_plots.py
   ```
 
@@ -214,7 +213,7 @@ To view these plots via a web browser, use the provided plot server:
 1. **Start the server:**
 
    ```bash
-   bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
+   bash $WORK_DIR/plots_server.sh
    ```
 
    This serves files from the plots directory on port 8000.
@@ -228,12 +227,12 @@ To view these plots via a web browser, use the provided plot server:
 - **Purpose:** Benchmarks the DeepSeek V3 model with FP8 quantization.
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: rocm/sgl-dev:20250430)
-  - `--model=PATH`: Model path (default: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)
+  - `--model=PATH`: Model path (configurable via environment variables)
   - `--model-name=NAME`: Model name for output files (default: DeepSeek-V3-0324)
   - `--hf-model-id=ID`: HuggingFace model ID for download (default: deepseek-ai/DeepSeek-V3-0324)
-  - `--work-dir=PATH`: Working directory (default: /mnt/raid/michael/sgl_benchmark_ci)
+  - `--work-dir=PATH`: Working directory (configurable via environment variables)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
-  - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (default: /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py)
+  - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (configurable via environment variables)
   - `--threshold=VALUE`: GSM8K accuracy threshold (default: 0.93)
   - `--download-model`: Download model if not present (default: false)
   - `--help`: Show help message
@@ -256,21 +255,21 @@ To view these plots via a web browser, use the provided plot server:
 
   # Custom model configuration
   bash deepseek_perf_offline_csv.sh \
-    --model=/path/to/deepseek/model \
+    --model=$MODEL_PATH \
     --model-name=DeepSeek-V3-Custom \
     --hf-model-id=deepseek-ai/DeepSeek-V3
 
   # Download model if not present
   bash deepseek_perf_offline_csv.sh \
-    --model=/new/path/for/model \
+    --model=$MODEL_PATH \
     --hf-model-id=deepseek-ai/DeepSeek-V3 \
     --download-model
 
   # Custom paths and threshold
   bash deepseek_perf_offline_csv.sh \
-    --work-dir=/your/work/directory \
-    --output-dir=/your/output/directory \
-    --gsm8k-script=/path/to/gsm8k/bench_sglang.py \
+    --work-dir=$WORK_DIR \
+    --output-dir=$OUTPUT_DIR \
+    --gsm8k-script=$GSM8K_SCRIPT_PATH \
     --threshold=0.95
   ```
 
@@ -283,12 +282,12 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Purpose:** Benchmarks the online serving performance, capturing both server startup and response latencies.
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
-  - `--model=PATH`: Model path (default: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/)
+  - `--model=PATH`: Model path (configurable via environment variables)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
-  - `--work-dir=PATH`: Working directory (default: /mnt/raid/michael/sgl_benchmark_ci)
+  - `--work-dir=PATH`: Working directory (configurable via environment variables)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
-  - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (default: /mnt/raid/michael/sglang/benchmark/gsm8k/bench_sglang.py)
-  - `--node=NAME`: Node name for reporting (default: dell300x-pla-t10-23)
+  - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (configurable via environment variables)
+  - `--node=NAME`: Node name for reporting (configurable via environment variables)
   - `--threshold=VALUE`: GSM8K accuracy threshold (default: 0.8)
   - `--skip-gsm8k=VALUE`: Skip GSM8K test (default: false)
   - `--help`: Show help message
@@ -331,16 +330,16 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   # Custom configuration
   bash grok_perf_online_csv.sh \
     --docker_image=lmsysorg/sglang:v0.4.7-rocm630 \
-    --model=/path/to/your/grok/model \
-    --tokenizer=your-tokenizer-name \
-    --node=your-node-name \
+    --model=$MODEL_PATH \
+    --tokenizer=$TOKENIZER_NAME \
+    --node=$NODE_NAME \
     --threshold=0.85
 
   # Custom paths
   bash grok_perf_online_csv.sh \
-    --work-dir=/your/work/directory \
-    --output-dir=/your/output/directory \
-    --gsm8k-script=/path/to/gsm8k/bench_sglang.py
+    --work-dir=$WORK_DIR \
+    --output-dir=$OUTPUT_DIR \
+    --gsm8k-script=$GSM8K_SCRIPT_PATH
 
   # Skip GSM8K accuracy test
   bash grok_perf_online_csv.sh --skip-gsm8k=true
@@ -365,7 +364,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Usage:**
 
   ```bash
-  cd /mnt/raid/michael/sgl_benchmark_ci
+  cd $WORK_DIR
   python3 process_online_csv.py
   ```
 
@@ -385,11 +384,11 @@ The `generate_online_plots.py` script generates visualization plots from the con
     - **KV Cache Usage:** Memory usage in GB (bar chart) for each backend
   - Automatically handles multiple backend modes in the data
   - Differentiates modes with distinct colors and labels in plots
-- **Output:** PNG file saved to `/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online/`
+- **Output:** PNG file saved to the configured plots directory
 - **Usage:**
 
   ```bash
-  cd /mnt/raid/michael/sgl_benchmark_ci
+  cd $WORK_DIR
   python3 generate_online_plots.py
   ```
 
@@ -458,7 +457,7 @@ A simple HTTP server is provided to view generated plots:
 
 ```bash
 # Start the plot server
-bash /mnt/raid/michael/sgl_benchmark_ci/plots_server.sh
+bash plots_server.sh
 
 # Access plots at http://<server-ip>:8000/
 # Navigate to GROK1/offline/ or GROK1/online/ directories
@@ -498,4 +497,4 @@ The benchmarks are scheduled to run daily via cron jobs. The schedule is defined
 - **Offline Benchmark:** Runs daily at 7 PM PT.
 - **Online Benchmark:** Runs daily at 8 PM PT.
 
-To apply these rules, run: `crontab /mnt/raid/michael/sgl_benchmark_ci/crontab_rules.txt`
+To apply these rules, run: `crontab $WORK_DIR/crontab_rules.txt`
