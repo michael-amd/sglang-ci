@@ -14,6 +14,47 @@
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
+###############################################################################
+# Configuration Variables - Override via environment variables if needed
+###############################################################################
+
+# Default image and model configuration
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:20250430}"
+MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
+
+# Default paths - can be overridden
+DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324}"
+DEFAULT_MODEL_NAME="${DEFAULT_MODEL_NAME:-DeepSeek-V3-0324}"
+DEFAULT_HF_MODEL_ID="${DEFAULT_HF_MODEL_ID:-deepseek-ai/DeepSeek-V3-0324}"
+DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
+DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
+DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.93}"
+
+# Container configuration
+CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
+WORK_DIR_CONTAINER="${WORK_DIR_CONTAINER:-/sgl-workspace}"
+
+# Benchmark configuration (can be overridden)
+ILEN="${DEEPSEEK_INPUT_LENGTH:-128}"        # input tokens
+OLEN="${DEEPSEEK_OUTPUT_LENGTH:-32}"        # output tokens
+TP="${DEEPSEEK_TP:-8}"                      # tensor-parallel degree
+BS="${DEEPSEEK_BATCH_SIZE:-32}"             # batch size
+
+# GSM8K configuration
+GSM8K_NUM_QUESTIONS="${GSM8K_NUM_QUESTIONS:-2000}"
+GSM8K_PARALLEL="${GSM8K_PARALLEL:-2000}"
+GSM8K_NUM_SHOTS="${GSM8K_NUM_SHOTS:-5}"
+GSM8K_RUNS="${GSM8K_RUNS:-5}"
+GSM8K_PORT="${GSM8K_PORT:-30000}"
+GSM8K_HOST="${GSM8K_HOST:-http://127.0.0.1}"
+
+# Server configuration
+WARMUP_SERVER_MEM_FRACTION="${WARMUP_SERVER_MEM_FRACTION:-0.7}"
+WARMUP_SERVER_MAX_REQUESTS="${WARMUP_SERVER_MAX_REQUESTS:-1024}"
+WARMUP_SERVER_TIMEOUT="${WARMUP_SERVER_TIMEOUT:-900}"  # 15 minutes
+
 # File to store background server PID
 SERVER_PID_FILE=$(mktemp)
 
@@ -37,17 +78,7 @@ trap cleanup EXIT SIGINT SIGTERM
 ###############################################################################
 # 0. Parse CLI flags
 ###############################################################################
-docker_image_default="rocm/sgl-dev:20250430" # fall-back
 docker_image=""
-
-# Default paths - can be overridden
-DEFAULT_MODEL="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
-DEFAULT_MODEL_NAME="DeepSeek-V3-0324"
-DEFAULT_HF_MODEL_ID="deepseek-ai/DeepSeek-V3-0324"
-DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
-DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py"
-DEFAULT_THRESHOLD="0.93"
 
 # Initialize variables
 MODEL=""
@@ -106,7 +137,7 @@ for arg in "$@"; do
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
-      echo "  --docker_image=IMAGE    Docker image to use (default: $docker_image_default)"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $DOCKER_IMAGE_DEFAULT)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
       echo "  --model-name=NAME      Model name for output files (default: $DEFAULT_MODEL_NAME)"
       echo "  --hf-model-id=ID       HuggingFace model ID for download (default: $DEFAULT_HF_MODEL_ID)"
@@ -116,6 +147,18 @@ for arg in "$@"; do
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --help                 Show this help message"
+      echo ""
+      echo "Environment Variables:"
+      echo "  DEFAULT_DOCKER_IMAGE      Default Docker image"
+      echo "  DEFAULT_MODEL_PATH        Default model path"
+      echo "  DEFAULT_MODEL_NAME        Default model name"
+      echo "  DEEPSEEK_INPUT_LENGTH     Input length (default: $ILEN)"
+      echo "  DEEPSEEK_OUTPUT_LENGTH    Output length (default: $OLEN)"
+      echo "  DEEPSEEK_TP               Tensor parallel degree (default: $TP)"
+      echo "  DEEPSEEK_BATCH_SIZE       Batch size (default: $BS)"
+      echo "  GSM8K_NUM_QUESTIONS       GSM8K questions count (default: $GSM8K_NUM_QUESTIONS)"
+      echo "  GSM8K_RUNS               GSM8K test runs (default: $GSM8K_RUNS)"
+      echo "  WARMUP_SERVER_TIMEOUT     Server startup timeout (default: $WARMUP_SERVER_TIMEOUT seconds)"
       exit 0
       ;;
   esac
@@ -131,7 +174,7 @@ GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
 # If not provided by flag, use positional argument or default
-docker_image="${docker_image:-${1:-$docker_image_default}}"
+docker_image="${docker_image:-${1:-$DOCKER_IMAGE_DEFAULT}}"
 
 ###############################################################################
 # 0-b. Use the full image name as provided (no auto-prefixing)
@@ -189,10 +232,10 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
 
       echo "[csv] Creating container ..."
       docker run -d --name "${CONTAINER_NAME}" \
-        --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+        --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
-        -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
+        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
     echo "[csv] Re-invoking inside ${CONTAINER_NAME} ..."
@@ -260,21 +303,10 @@ if [ -n "${INSIDE_CONTAINER}" ] && [ "$DOWNLOAD_MODEL" = "true" ]; then # Only r
 fi
 # ---- End model download ----
 
-## 2.  Work-load sizes ----------------------------------------------------------
-ILEN=128        # input tokens
-OLEN=32         # output tokens
-TP=8            # tensor-parallel degree
-BS=32           # batch size
-
-###############################################################################
-# 3. Define GSM8K Accuracy Threshold
-###############################################################################
-THRESHOLD=0.93 # Define the accuracy threshold for GSM8K. Adjust as needed.
-
-## 3.  Run-folder bookkeeping ---------------------------------------------------
-folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline"
+## 2.  Run-folder bookkeeping ---------------------------------------------------
+folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
 mkdir -p "$folder"
-OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline.csv"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline.csv"
 LOG_FILE="${folder}/tp${TP}_bs${BS}.log" # Define log file path
 GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
 WARMUP_SERVER_LOG_FILE="${folder}/sglang_warmup_server.log" # Define warm-up server log path
@@ -290,7 +322,7 @@ run_client_gsm8k() {
     # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
 
     local total_accuracy=0
-    local runs=5
+    local runs=$GSM8K_RUNS
     local count=0
     local run_accuracy=0
     local output
@@ -298,7 +330,7 @@ run_client_gsm8k() {
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
-         output=$(python3 "${GSM8K_SCRIPT}" --num-questions 2000 --parallel 2000 --num-shots 5 --port 30000 --host http://127.0.0.1 2>&1)
+         output=$(python3 "${GSM8K_SCRIPT}" --num-questions "$GSM8K_NUM_QUESTIONS" --parallel "$GSM8K_PARALLEL" --num-shots "$GSM8K_NUM_SHOTS" --port "$GSM8K_PORT" --host "$GSM8K_HOST" 2>&1)
          echo "$output" | tee -a "$GSM8K_LOG_FILE"
          # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
          run_accuracy=$(echo "$output" | tr '\r' '\n' | grep '^Accuracy: ' | head -n 1 | awk '{print $2}')
@@ -335,18 +367,18 @@ echo "Starting SGLang server for GSM8K warm-up... (TorchInductor autotuning disa
 TORCHINDUCTOR_AUTOTUNE_ENABLE=0 python3 -m sglang.launch_server \
     --model-path "${MODEL}" \
     --tp-size "${TP}" \
-    --port 30000 \
+    --port "$GSM8K_PORT" \
     --trust-remote-code \
-    --mem-fraction-static 0.7 \
-    --max-running-requests 1024 > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
+    --mem-fraction-static "$WARMUP_SERVER_MEM_FRACTION" \
+    --max-running-requests "$WARMUP_SERVER_MAX_REQUESTS" > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
 echo $! > "$SERVER_PID_FILE"
 SERVER_PID=$(cat "$SERVER_PID_FILE")
 
 echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
 echo "Server logs are being written to: $WARMUP_SERVER_LOG_FILE"
 # Wait for server to be ready - poll get_model_info endpoint
-# Timeout after 900 seconds (15 minutes)
-if ! timeout 900s bash -c 'until curl -s -f http://127.0.0.1:30000/get_model_info > /dev/null 2>&1; do echo -n "."; sleep 5; done'; then
+# Timeout after configured seconds
+if ! timeout "${WARMUP_SERVER_TIMEOUT}s" bash -c "until curl -s -f ${GSM8K_HOST}:${GSM8K_PORT}/get_model_info > /dev/null 2>&1; do echo -n '.'; sleep 5; done"; then
     echo "" # Newline after dots
     echo "SGLang server failed to start in time. Check $WARMUP_SERVER_LOG_FILE for details. Killing server (if any) and exiting."
     # Cleanup trap will handle killing the server
@@ -448,7 +480,7 @@ echo "${TP},${BS},${ILEN},${OLEN},${prefill_lat},${decode_lat},${total_lat},${pr
 
 # Save raw JSONL if bench_one_batch produced one
 if [ -f result.jsonl ]; then
-  mv result.jsonl "${folder}/${LATEST_TAG}_${MODEL_NAME}_FP8_offline.jsonl"
+  mv result.jsonl "${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline.jsonl"
 fi
 
 echo "✅  Results written to ${OUTPUT_CSV}"

@@ -777,6 +777,25 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    # Default values from environment variables
+    default_base_path = os.environ.get(
+        'ONLINE_BASE_PATH',
+        '/mnt/raid/michael/sgl_benchmark_ci/online/GROK1'
+    )
+    default_base_prefix = os.environ.get(
+        'ONLINE_BASE_PREFIX',
+        'GROK1_MOE-I4F8_online'
+    )
+    default_csv_mode_filter = os.environ.get('ONLINE_CSV_MODE_FILTER', 'aiter')
+    default_plot_dir = os.environ.get(
+        'ONLINE_PLOT_DIR',
+        '/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online'
+    )
+    default_model_name = os.environ.get(
+        'ONLINE_MODEL_NAME',
+        'GROK1 MOE-I4F8 Online'
+    )
+
     parser.add_argument(
         "--summary-csv",
         type=str,
@@ -786,14 +805,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--plot-dir",
         type=str,
-        default="/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online",
+        default=default_plot_dir,
         help="Directory where plots will be saved",
     )
 
     parser.add_argument(
         "--model-name",
         type=str,
-        default="GROK1 MOE-I4F8 Online",
+        default=default_model_name,
         help="Model name to use in plot titles",
     )
 
@@ -814,21 +833,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--base-path",
         type=str,
-        default="/mnt/raid/michael/sgl_benchmark_ci/online/GROK1",
+        default=default_base_path,
         help="Base path for summary CSV (used if --summary-csv not provided)",
     )
 
     parser.add_argument(
         "--base-prefix",
         type=str,
-        default="GROK1_MOE-I4F8_online",
+        default=default_base_prefix,
         help="Base prefix for summary CSV (used if --summary-csv not provided)",
     )
 
     parser.add_argument(
         "--csv-mode-filter",
         type=str,
-        default="aiter",
+        default=default_csv_mode_filter,
         help="Mode filter used in CSV filename (used if --summary-csv not provided)",
     )
 

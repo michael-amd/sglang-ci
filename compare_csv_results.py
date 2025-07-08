@@ -16,13 +16,19 @@ Usage Examples:
    python3 compare_csv_results.py --csv1 offline/DeepSeek-V3-0324/20250515_DeepSeek-V3-0324_FP8_offline --csv2 offline/DeepSeek-V3-0324/20250516_DeepSeek-V3-0324_FP8_offline --mode offline --model DeepSeek-V3-0324
 
 Output:
-- Creates a folder in /mnt/raid/michael/sgl_benchmark_ci/comparison_results/
+- Creates a folder in the configured comparison results directory
 - Folder name format: {date}_{csv1_dirname}_vs_{csv2_dirname}
 - Contains a markdown file with the same name showing E2E performance comparisons
 - Automatically includes GSM8K accuracy comparison
+
+Configuration:
+- Set COMPARISON_OUTPUT_DIR environment variable to change default output directory
+- Set GSM8K_ACCURACY_THRESHOLD environment variable to change accuracy comparison threshold (default: 0.001)
+- Set PERFORMANCE_THRESHOLD environment variable to change performance improvement threshold (default: 5.0%)
 """
 
 import argparse
+import os
 import sys
 import re
 import glob
@@ -32,6 +38,20 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
+# Configuration variables - can be overridden via environment variables
+DEFAULT_OUTPUT_DIR = os.environ.get(
+    'COMPARISON_OUTPUT_DIR',
+    '/mnt/raid/michael/sgl_benchmark_ci/comparison_results'
+)
+GSM8K_ACCURACY_THRESHOLD = float(os.environ.get('GSM8K_ACCURACY_THRESHOLD', '0.001'))
+PERFORMANCE_THRESHOLD = float(os.environ.get('PERFORMANCE_THRESHOLD', '5.0'))
+
+# GSM8K log file patterns (configurable via environment)
+GSM8K_LOG_PATTERNS = os.environ.get(
+    'GSM8K_LOG_PATTERNS',
+    '*gsm8k*.log;*GSM8K*.log;sglang_client_log_*_gsm8k*.log'
+).split(';')
 
 
 def find_csv_files(directory: str, model: Optional[str] = None) -> List[Path]:
@@ -56,16 +76,10 @@ def extract_gsm8k_accuracy(directory: str, model: Optional[str] = None) -> Optio
     if not dir_path.exists():
         return None
 
-    # Look for GSM8K log files
-    log_patterns = [
-        "*gsm8k*.log",
-        "*GSM8K*.log",
-        "sglang_client_log_*_gsm8k*.log"
-    ]
-
+    # Look for GSM8K log files using configurable patterns
     log_files = []
-    for pattern in log_patterns:
-        log_files.extend(dir_path.glob(pattern))
+    for pattern in GSM8K_LOG_PATTERNS:
+        log_files.extend(dir_path.glob(pattern.strip()))
 
     if model:
         # Filter by model name if specified
@@ -199,7 +213,7 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
         main_acc = main_info['gsm8k_accuracy']
         pr_acc = pr_info['gsm8k_accuracy']
         acc_diff = pr_acc - main_acc
-        if abs(acc_diff) >= 0.001:  # Only show if difference >= 0.1%
+        if abs(acc_diff) >= GSM8K_ACCURACY_THRESHOLD:
             if acc_diff > 0:
                 output.append(f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n")
             else:
@@ -261,10 +275,10 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
                             else:  # lower is better
                                 change_pct = ((main_val - pr_val) / main_val) * 100
 
-                            # Format change with color
-                            if change_pct > 5:
+                            # Format change with color using configurable threshold
+                            if change_pct > PERFORMANCE_THRESHOLD:
                                 change_str = f"**+{change_pct:.1f}%** 🟢"
-                            elif change_pct < -5:
+                            elif change_pct < -PERFORMANCE_THRESHOLD:
                                 change_str = f"**{change_pct:.1f}%** 🔴"
                             else:
                                 change_str = f"{change_pct:+.1f}%"
@@ -306,7 +320,7 @@ def compare_online_results(
         main_acc = main_info['gsm8k_accuracy']
         pr_acc = pr_info['gsm8k_accuracy']
         acc_diff = pr_acc - main_acc
-        if abs(acc_diff) >= 0.001:  # Only show if difference >= 0.1%
+        if abs(acc_diff) >= GSM8K_ACCURACY_THRESHOLD:
             if acc_diff > 0:
                 output.append(f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n")
             else:
@@ -355,9 +369,10 @@ def compare_online_results(
                     # Calculate percentage change (lower is better for latency)
                     change_pct = ((main_val - pr_val) / main_val) * 100
 
-                    if change_pct > 5:
+                    # Use configurable threshold
+                    if change_pct > PERFORMANCE_THRESHOLD:
                         change_str = f"**+{change_pct:.1f}%** 🟢"
-                    elif change_pct < -5:
+                    elif change_pct < -PERFORMANCE_THRESHOLD:
                         change_str = f"**{change_pct:.1f}%** 🔴"
                     else:
                         change_str = f"{change_pct:+.1f}%"
@@ -376,7 +391,10 @@ def compare_online_results(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compare SGLang benchmark CSV results")
+    parser = argparse.ArgumentParser(
+        description="Compare SGLang benchmark CSV results",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "--csv1", required=True, help="Path to first CSV directory"
     )
@@ -398,13 +416,40 @@ def main():
         "--output-md", help="Path to output markdown file (optional, auto-generated if not provided)"
     )
     parser.add_argument(
-        "--output-dir", help="Output directory (default: /mnt/raid/michael/sgl_benchmark_ci/comparison_results)"
+        "--output-dir",
+        default=DEFAULT_OUTPUT_DIR,
+        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR}, can be set via COMPARISON_OUTPUT_DIR env var)"
     )
     parser.add_argument(
         "--append", action="store_true", help="Append to existing file"
     )
+    parser.add_argument(
+        "--gsm8k-threshold",
+        type=float,
+        default=GSM8K_ACCURACY_THRESHOLD,
+        help=f"GSM8K accuracy threshold for significance (default: {GSM8K_ACCURACY_THRESHOLD}, can be set via GSM8K_ACCURACY_THRESHOLD env var)"
+    )
+    parser.add_argument(
+        "--performance-threshold",
+        type=float,
+        default=PERFORMANCE_THRESHOLD,
+        help=f"Performance change threshold for highlighting (default: {PERFORMANCE_THRESHOLD}%%, can be set via PERFORMANCE_THRESHOLD env var)"
+    )
 
     args = parser.parse_args()
+
+    # Update global thresholds with command-line arguments
+    global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
+    GSM8K_ACCURACY_THRESHOLD = args.gsm8k_threshold
+    PERFORMANCE_THRESHOLD = args.performance_threshold
+
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Output directory: {args.output_dir}")
+    print(f"  GSM8K threshold: {GSM8K_ACCURACY_THRESHOLD}")
+    print(f"  Performance threshold: {PERFORMANCE_THRESHOLD}%")
+    print(f"  GSM8K log patterns: {', '.join(GSM8K_LOG_PATTERNS)}")
+    print()
 
     # Handle model filtering
     model1 = args.model1 or args.model
@@ -448,7 +493,7 @@ def main():
 
     # Generate output directory and filename if not provided
     if not args.output_md:
-        base_output_dir = Path(args.output_dir) if args.output_dir else Path("/mnt/raid/michael/sgl_benchmark_ci/comparison_results")
+        base_output_dir = Path(args.output_dir)
 
         # Extract directory names from CSV paths
         csv1_dirname = Path(args.csv1).name

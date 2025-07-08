@@ -14,18 +14,54 @@
 # ------------------------------------------------------------------------------
 
 ###############################################################################
-# Parse CLI options
+# Configuration Variables - Override via environment variables if needed
 ###############################################################################
-docker_image_default="lmsysorg/sglang:v0.4.7-rocm630"   # fall-back
-docker_image=""
-mode="normal"  # default mode (normal, long_context, or dummy)
+
+# Default image and model configuration
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
+MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
+MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
 # Default paths - can be overridden
-DEFAULT_MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
-DEFAULT_TOKENIZER="Xenova/grok-1-tokenizer"
-DEFAULT_DUMMY_MODEL="/mnt/raid/models/dummy_prod1/"
-DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
-DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
+DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
+DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-Xenova/grok-1-tokenizer}"
+DEFAULT_DUMMY_MODEL="${DEFAULT_DUMMY_MODEL_PATH:-/mnt/raid/models/dummy_prod1/}"
+DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
+
+# Container configuration
+CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
+WORK_DIR_CONTAINER="${WORK_DIR_CONTAINER:-/sgl-workspace}"
+
+# Mode-specific configuration (can be overridden via environment)
+# Normal mode
+NORMAL_INPUT_LENGTHS="${NORMAL_INPUT_LENGTHS:-1024}"
+NORMAL_OUTPUT_LENGTH="${NORMAL_OUTPUT_LENGTH:-128}"
+NORMAL_TP_VALUES="${NORMAL_TP_VALUES:-8}"
+NORMAL_BATCH_SIZES="${NORMAL_BATCH_SIZES:-1 2 4 8 16 32 64 128 256}"
+
+# Long context mode
+LONG_CONTEXT_INPUT_LENGTHS="${LONG_CONTEXT_INPUT_LENGTHS:-8192 16384 32768}"
+LONG_CONTEXT_OUTPUT_LENGTH="${LONG_CONTEXT_OUTPUT_LENGTH:-10}"
+LONG_CONTEXT_TP_VALUES="${LONG_CONTEXT_TP_VALUES:-8}"
+LONG_CONTEXT_BATCH_SIZES="${LONG_CONTEXT_BATCH_SIZES:-1}"
+
+# Dummy mode
+DUMMY_INPUT_LENGTHS="${DUMMY_INPUT_LENGTHS:-256}"
+DUMMY_OUTPUT_LENGTH="${DUMMY_OUTPUT_LENGTH:-4096}"
+DUMMY_TP_VALUES="${DUMMY_TP_VALUES:-8}"
+DUMMY_BATCH_SIZES="${DUMMY_BATCH_SIZES:-2}"
+
+# Memory fraction configuration
+BATCH_SIZE_128_MEM_FRACTION="${BATCH_SIZE_128_MEM_FRACTION:-0.85}"
+BATCH_SIZE_256_MEM_FRACTION="${BATCH_SIZE_256_MEM_FRACTION:-0.75}"
+
+###############################################################################
+# Parse CLI options
+###############################################################################
+docker_image=""
+mode="normal"  # default mode (normal, long_context, or dummy)
 
 # Initialize variables with defaults
 MODEL=""
@@ -73,7 +109,7 @@ for arg in "$@"; do
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
-      echo "  --docker_image=IMAGE    Docker image to use (default: $docker_image_default)"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $DOCKER_IMAGE_DEFAULT)"
       echo "  --mode=MODE            Mode: normal, long_context, or dummy (default: normal)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
       echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
@@ -94,7 +130,7 @@ WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 
 # If not provided, also allow a positional 1st argument for backward-compat.
-docker_image="${docker_image:-${1:-$docker_image_default}}"
+docker_image="${docker_image:-${1:-$DOCKER_IMAGE_DEFAULT}}"
 
 # Validate mode
 if [[ "$mode" != "normal" && "$mode" != "long_context" && "$mode" != "dummy" ]]; then
@@ -155,10 +191,10 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
 
       echo "[csv] Creating container ..."
       docker run -d --name "${CONTAINER_NAME}" \
-        --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+        --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
-        -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
+        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
     # ---- 0.3 Re-invoke this script inside the container
@@ -199,8 +235,6 @@ fi
 # ---------------------------
 # Mode-specific Configuration
 # ---------------------------
-MODEL_NAME=GROK1
-
 # Set mode suffix for folder/file names
 mode_suffix=""
 if [[ "$mode" != "normal" ]]; then
@@ -208,32 +242,32 @@ if [[ "$mode" != "normal" ]]; then
 fi
 
 # Base folder structure
-folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline${mode_suffix}"
+folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline${mode_suffix}"
 
 if [[ "$mode" == "long_context" ]]; then
   # Long context mode configuration
-  INPUT_LENGTHS=(8192 16384 32768)
-  OLEN=10
-  TP_VALUES=(8)
-  BATCH_SIZES=(1)
+  read -ra INPUT_LENGTHS <<< "$LONG_CONTEXT_INPUT_LENGTHS"
+  OLEN="$LONG_CONTEXT_OUTPUT_LENGTH"
+  read -ra TP_VALUES <<< "$LONG_CONTEXT_TP_VALUES"
+  read -ra BATCH_SIZES <<< "$LONG_CONTEXT_BATCH_SIZES"
 elif [[ "$mode" == "dummy" ]]; then
   # Dummy mode configuration - use the dummy model
   MODEL="${DUMMY_MODEL}"
-  INPUT_LENGTHS=(256)
-  OLEN=4096
-  TP_VALUES=(8)
-  BATCH_SIZES=(2)
+  read -ra INPUT_LENGTHS <<< "$DUMMY_INPUT_LENGTHS"
+  OLEN="$DUMMY_OUTPUT_LENGTH"
+  read -ra TP_VALUES <<< "$DUMMY_TP_VALUES"
+  read -ra BATCH_SIZES <<< "$DUMMY_BATCH_SIZES"
 else
   # Normal mode configuration (default)
-  INPUT_LENGTHS=(1024)
-  OLEN=128
-  TP_VALUES=(8)
-  BATCH_SIZES=(1 2 4 8 16 32 64 128 256)
+  read -ra INPUT_LENGTHS <<< "$NORMAL_INPUT_LENGTHS"
+  OLEN="$NORMAL_OUTPUT_LENGTH"
+  read -ra TP_VALUES <<< "$NORMAL_TP_VALUES"
+  read -ra BATCH_SIZES <<< "$NORMAL_BATCH_SIZES"
 fi
 
 # Set output file names
-OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline${mode_suffix}.csv"
-JSON_NAME="${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_offline${mode_suffix}.jsonl"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline${mode_suffix}.csv"
+JSON_NAME="${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline${mode_suffix}.jsonl"
 
 mkdir -p "$folder"
 
@@ -440,9 +474,9 @@ for tp in "${TP_VALUES[@]}"; do
         # Normal mode
         mem_fraction_arg=""
         if [[ "$bs" -eq 128 ]]; then
-          mem_fraction_arg=" --mem-fraction-static 0.85"
+          mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_128_MEM_FRACTION"
         elif [[ "$bs" -eq 256 ]]; then
-          mem_fraction_arg=" --mem-fraction-static 0.75"
+          mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_256_MEM_FRACTION"
         fi
 
         if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then

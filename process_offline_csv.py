@@ -24,6 +24,7 @@
 #
 #################################################################################
 
+import argparse
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -32,22 +33,26 @@ import pandas as pd
 
 
 class OfflineDataProcessor:
-    def __init__(self, data_dir, output_model_name_prefix):
+    def __init__(self, data_dir, output_model_name_prefix, ilen=None, olen=None, days_to_process=None):
         """
         Initializes the OfflineDataProcessor class with the directory path where CSV files are stored.
         Args:
             data_dir: Path to the directory containing dated run folders
             output_model_name_prefix: Prefix for the output summary CSV file
+            ilen: Input length (default: 1024)
+            olen: Output length (default: 128)
+            days_to_process: Number of days to look back (default: 30)
         """
         self.data_dir = data_dir
         self.output_model_name_prefix = output_model_name_prefix
-        self.ILEN = 1024
-        self.OLEN = 128
+        self.ILEN = ilen or 1024
+        self.OLEN = olen or 128
         self.all_records = []
         current_date = datetime.today().date()
-        # Generate list of dates for last 30 days excluding today
+        # Generate list of dates for specified number of days excluding today
+        days_back = days_to_process or 30
         self.date_prefixes = [
-            (current_date - timedelta(days=i)).strftime("%Y%m%d") for i in range(1, 31)
+            (current_date - timedelta(days=i)).strftime("%Y%m%d") for i in range(1, days_back + 1)
         ]
 
     def _parse_offline_csv_file(self, file_path, date_str):
@@ -296,12 +301,81 @@ class OfflineDataProcessor:
         self.save_summary_csv()
 
 
+def parse_arguments():
+    """Parse command line arguments with environment variable defaults."""
+    parser = argparse.ArgumentParser(
+        description="Process offline benchmark CSV files and generate summary CSV",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    # Default values from environment variables
+    default_data_dir = os.environ.get(
+        'OFFLINE_DATA_DIR',
+        '/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1'
+    )
+    default_output_prefix = os.environ.get(
+        'OFFLINE_OUTPUT_PREFIX',
+        'GROK1_MOE-I4F8_offline'
+    )
+    default_ilen = int(os.environ.get('OFFLINE_ILEN', '1024'))
+    default_olen = int(os.environ.get('OFFLINE_OLEN', '128'))
+    default_days = int(os.environ.get('OFFLINE_DAYS_TO_PROCESS', '30'))
+
+    parser.add_argument(
+        '--data-dir',
+        type=str,
+        default=default_data_dir,
+        help='Path to the directory containing dated run folders'
+    )
+
+    parser.add_argument(
+        '--output-prefix',
+        type=str,
+        default=default_output_prefix,
+        help='Prefix for the output summary CSV file'
+    )
+
+    parser.add_argument(
+        '--ilen',
+        type=int,
+        default=default_ilen,
+        help='Input length for records'
+    )
+
+    parser.add_argument(
+        '--olen',
+        type=int,
+        default=default_olen,
+        help='Output length for records'
+    )
+
+    parser.add_argument(
+        '--days',
+        type=int,
+        default=default_days,
+        help='Number of days to look back for processing'
+    )
+
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    # Path to the parent directory containing dated folders
-    data_dir = "/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1"
+    args = parse_arguments()
 
-    # This prefix is used for the output summary CSV file name
-    output_model_name_prefix = "GROK1_MOE-I4F8_offline"
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Data directory: {args.data_dir}")
+    print(f"  Output prefix: {args.output_prefix}")
+    print(f"  Input length: {args.ilen}")
+    print(f"  Output length: {args.olen}")
+    print(f"  Days to process: {args.days}")
+    print()
 
-    processor = OfflineDataProcessor(data_dir, output_model_name_prefix)
+    processor = OfflineDataProcessor(
+        args.data_dir,
+        args.output_prefix,
+        args.ilen,
+        args.olen,
+        args.days
+    )
     processor.process_and_save()
