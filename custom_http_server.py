@@ -5,9 +5,11 @@ import socketserver
 import sys
 from http import HTTPStatus
 
-DEFAULT_PORT = 8000
-SERVER_TITLE = (
-    "SGL Benchmark Plots Server"  # Updated title for centralized plots server
+# Configuration variables - can be overridden via environment variables
+DEFAULT_PORT = int(os.environ.get('HTTP_SERVER_PORT', '8000'))
+SERVER_TITLE = os.environ.get(
+    'HTTP_SERVER_TITLE',
+    'SGL Benchmark Plots Server'
 )
 
 
@@ -82,25 +84,49 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port_to_use = DEFAULT_PORT
-    if len(sys.argv) > 1:
-        try:
-            port_to_use = int(sys.argv[1])
-        except ValueError:
-            print(
-                f"Warning: Could not parse port '{sys.argv[1]}'. Using default port {DEFAULT_PORT}.",
-                file=sys.stderr,
-            )
+    import argparse
 
-    # The handler will serve files from the CWD where this script is run from.
-    # The plots_server.sh script will cd into /mnt/raid/michael/sgl_benchmark_ci/plots_server/
-    # which contains organized plots in subdirectories like GROK1/offline/ and GROK1/online/
+    parser = argparse.ArgumentParser(
+        description="Simple HTTP server for serving SGL benchmark plots",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument(
+        'port',
+        type=int,
+        nargs='?',
+        default=DEFAULT_PORT,
+        help=f'Port to serve on (default: {DEFAULT_PORT}, can be set via HTTP_SERVER_PORT env var)'
+    )
+
+    parser.add_argument(
+        '--title',
+        type=str,
+        default=SERVER_TITLE,
+        help=f'Server title (default: {SERVER_TITLE}, can be set via HTTP_SERVER_TITLE env var)'
+    )
+
+    parser.add_argument(
+        '--bind',
+        type=str,
+        default=os.environ.get('HTTP_SERVER_BIND', '0.0.0.0'),
+        help='Address to bind to (default: 0.0.0.0, can be set via HTTP_SERVER_BIND env var)'
+    )
+
+    args = parser.parse_args()
+
+    # Update the global SERVER_TITLE with command line argument
+    SERVER_TITLE = args.title
+
+    port_to_use = args.port
+
+
     Handler = CustomHTTPRequestHandler
 
-    # Bind to 0.0.0.0 to make it accessible from other machines on the network
-    with socketserver.TCPServer(("", port_to_use), Handler) as httpd:
+    # Bind to specified address to make it accessible from other machines on the network
+    with socketserver.TCPServer((args.bind, port_to_use), Handler) as httpd:
         print(
-            f"Serving HTTP on 0.0.0.0 port {port_to_use} from directory '{os.getcwd()}'..."
+            f"Serving HTTP on {args.bind} port {port_to_use} from directory '{os.getcwd()}'..."
         )
         print(f'Directory listing title will be: "{SERVER_TITLE}"')
         try:

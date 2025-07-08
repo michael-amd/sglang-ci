@@ -16,20 +16,51 @@ set -euo pipefail
 export TZ='America/Los_Angeles'
 
 ###############################################################################
-# 0. Parse CLI flags
+# Configuration Variables - Override via environment variables if needed
 ###############################################################################
-default_image="lmsysorg/sglang:v0.4.7-rocm630"
-docker_image=""
+
+# Default image and model configuration
+DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
+MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
+MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
 # Default paths - can be overridden
-DEFAULT_MODEL="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/"
-DEFAULT_TOKENIZER="Xenova/grok-1-tokenizer"
-DEFAULT_WORK_DIR="/mnt/raid/michael/sgl_benchmark_ci"
-DEFAULT_OUTPUT_DIR=""  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py"
-DEFAULT_NODE="dell300x-pla-t10-23"
-DEFAULT_THRESHOLD="0.8"
-DEFAULT_SKIP_GSM8K="false"
+DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
+DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-Xenova/grok-1-tokenizer}"
+DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
+DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
+DEFAULT_NODE="${DEFAULT_NODE_NAME:-dell300x-pla-t10-23}"
+DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.8}"
+DEFAULT_SKIP_GSM8K="${DEFAULT_SKIP_GSM8K:-false}"
+
+# Container configuration
+CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
+WORK_DIR_CONTAINER="${WORK_DIR_CONTAINER:-/sgl-workspace}"
+
+# Benchmark configuration
+RANDOM_INPUT_LENGTH="${RANDOM_INPUT_LENGTH:-1024}"
+RANDOM_OUTPUT_LENGTH="${RANDOM_OUTPUT_LENGTH:-1024}"
+GSM8K_NUM_QUESTIONS="${GSM8K_NUM_QUESTIONS:-2000}"
+GSM8K_PARALLEL="${GSM8K_PARALLEL:-2000}"
+GSM8K_NUM_SHOTS="${GSM8K_NUM_SHOTS:-5}"
+GSM8K_RUNS="${GSM8K_RUNS:-5}"
+MAX_NUM_PROMPTS="${MAX_NUM_PROMPTS:-2400}"
+PROMPTS_PER_RATE_MULTIPLIER="${PROMPTS_PER_RATE_MULTIPLIER:-300}"
+
+# Request rates for benchmarking
+REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
+
+# H100 baseline data (can be overridden via environment)
+H100_E2E_VALUES="${H100_E2E_VALUES:-13209 13874 16613 44918 85049}"
+H100_TTFT_VALUES="${H100_TTFT_VALUES:-99.1 102.0 113.4 170.7 520.9}"
+H100_ITL_VALUES="${H100_ITL_VALUES:-23.0 24.4 25.9 63.9 108.6}"
+
+###############################################################################
+# 0. Parse CLI flags
+###############################################################################
+docker_image=""
 
 # Initialize variables
 MODEL=""
@@ -88,7 +119,7 @@ for arg in "$@"; do
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
-      echo "  --docker_image=IMAGE    Docker image to use (default: $default_image)"
+      echo "  --docker_image=IMAGE    Docker image to use (default: $DEFAULT_IMAGE)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
       echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
@@ -113,7 +144,7 @@ NODE="${NODE:-$DEFAULT_NODE}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 SKIP_GSM8K="${SKIP_GSM8K:-$DEFAULT_SKIP_GSM8K}"
 
-docker_image="${docker_image:-${1:-$default_image}}"
+docker_image="${docker_image:-${1:-$DEFAULT_IMAGE}}"
 
 ###############################################################################
 # 0-b. Use the full image name as provided (no auto-prefixing)
@@ -162,10 +193,10 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
 
       echo "[online] Creating container ..."
       docker run -d --name "${CONTAINER_NAME}" \
-        --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+        --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
-        -w /sgl-workspace "${FULL_IMAGE}" tail -f /dev/null
+        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
@@ -193,10 +224,9 @@ echo "[online] Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 cd "${WORK_DIR}" || {
   echo "cannot cd to benchmark dir"; exit 1; }
 
-MODEL_NAME=GROK1
-folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online"
+folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
 mkdir -p "$folder"
-OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_MOE-I4F8_online.csv"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online.csv"
 
 # Create timing summary log
 TIMING_LOG="${folder}/timing_summary_$(date +%Y%m%d_%H%M%S).log"
@@ -355,7 +385,7 @@ run_client_gsm8k() {
     local mode="$1"   # mode: always "aiter" now
     local gsm8k_start_time=$(date +%s)
     local total_accuracy=0
-    local runs=5
+    local runs=$GSM8K_RUNS
     local count=0
     local run_accuracy=0
     local output
@@ -368,7 +398,7 @@ run_client_gsm8k() {
     for i in $(seq 1 $runs); do
          local run_start_time=$(date +%s)
          echo "Executing GSM8K test Run $i for mode ${mode}..." | tee -a "$gsm8k_log"
-         output=$(python3 "${GSM8K_SCRIPT}" --num-questions 2000 --parallel 2000 --num-shots 5 2>&1)
+         output=$(python3 "${GSM8K_SCRIPT}" --num-questions "$GSM8K_NUM_QUESTIONS" --parallel "$GSM8K_PARALLEL" --num-shots "$GSM8K_NUM_SHOTS" 2>&1)
          local run_end_time=$(date +%s)
          local run_duration=$((run_end_time - run_start_time))
          echo "$output" | tee -a "$gsm8k_log"
@@ -436,10 +466,10 @@ run_single_rate_benchmark() {
         local run_start_time=$(date +%s)
         echo "Run started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" | tee -a "$LOGFILE"
 
-        NUM_PROMPTS=$(( 300 * RATE ))
-        [ "$NUM_PROMPTS" -gt 2400 ] && NUM_PROMPTS=2400
+        NUM_PROMPTS=$(( PROMPTS_PER_RATE_MULTIPLIER * RATE ))
+        [ "$NUM_PROMPTS" -gt "$MAX_NUM_PROMPTS" ] && NUM_PROMPTS="$MAX_NUM_PROMPTS"
 
-        CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input 1024 --random-output 1024 --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online_${RATE}.jsonl"
+        CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input $RANDOM_INPUT_LENGTH --random-output $RANDOM_OUTPUT_LENGTH --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online_${RATE}.jsonl"
         echo "Executing: $CMD" | tee -a "$LOGFILE"
         eval "$CMD" 2>&1 | tee -a "$LOGFILE"
 
@@ -504,11 +534,11 @@ get_best_metrics() {
 # Global arrays for storing metrics
 declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 
-# H100 baseline data
-REQ_RATES=(1 2 4 8 16)
-H100_E2E=(13209 13874 16613 44918 85049)
-H100_TTFT=(99.1 102.0 113.4 170.7 520.9)
-H100_ITL=(23.0 24.4 25.9 63.9 108.6)
+# H100 baseline data - convert from environment variables to arrays
+read -ra REQ_RATES <<< "$REQUEST_RATES"
+read -ra H100_E2E <<< "$H100_E2E_VALUES"
+read -ra H100_TTFT <<< "$H100_TTFT_VALUES"
+read -ra H100_ITL <<< "$H100_ITL_VALUES"
 
 compute_ratio() {
     local ref=$1
@@ -737,7 +767,7 @@ run_client_benchmark() {
     local mode=$1
     local benchmark_start_time=$(date +%s)
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    REQUEST_RATES=(1 2 4 8 16)
+    read -ra REQUEST_RATES_ARRAY <<< "$REQUEST_RATES"
     echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
 
     # Initialize CSV at the start
@@ -749,7 +779,7 @@ run_client_benchmark() {
     echo "Client Benchmark Results:" >> "$TIMING_LOG"
     echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 
-    for RATE in "${REQUEST_RATES[@]}"; do
+    for RATE in "${REQUEST_RATES_ARRAY[@]}"; do
         run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
         # Update CSV after each rate completes all runs
         update_csv_for_rate "$RATE"

@@ -552,25 +552,44 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    # Default values from environment variables
+    default_data_dir = os.environ.get(
+        'ONLINE_DATA_DIR',
+        '/mnt/raid/michael/sgl_benchmark_ci/online/GROK1'
+    )
+    default_output_prefix = os.environ.get(
+        'ONLINE_OUTPUT_PREFIX',
+        'GROK1_MOE-I4F8_online'
+    )
+    default_mode_filter = os.environ.get('ONLINE_MODE_FILTER', 'aiter')
+    default_days = int(os.environ.get('ONLINE_DAYS_TO_PROCESS', '30'))
+
     parser.add_argument(
         "--data-dir",
         type=str,
-        default="/mnt/raid/michael/sgl_benchmark_ci/online/GROK1",
+        default=default_data_dir,
         help="Path to the directory containing dated run folders (e.g., .../online/GROK1)",
     )
 
     parser.add_argument(
         "--output-prefix",
         type=str,
-        default="GROK1_MOE-I4F8_online",
+        default=default_output_prefix,
         help="Prefix for the output summary CSV file (e.g., GROK1_MOE-I4F8_online)",
     )
 
     parser.add_argument(
         "--mode-filter",
         type=str,
-        default="aiter",
+        default=default_mode_filter,
         help="Mode(s) to process. Options: 'all', 'aiter', 'triton', or comma-separated list like 'aiter,triton'",
+    )
+
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=default_days,
+        help="Number of days to look back for processing",
     )
 
     # Parse arguments
@@ -584,8 +603,14 @@ if __name__ == "__main__":
     print(f"  Data directory: {args.data_dir}")
     print(f"  Output prefix: {args.output_prefix}")
     print(f"  Mode filter: {mode_filter}")
+    print(f"  Days to process: {args.days}")
     print()
 
     # Create processor and run
     processor = OnlineDataProcessor(args.data_dir, args.output_prefix, mode_filter)
+    # Update the processor to use configurable days
+    processor.date_prefixes = [
+        (datetime.today().date() - timedelta(days=i)).strftime("%Y%m%d")
+        for i in range(1, args.days + 1)
+    ]
     processor.process_and_save()

@@ -15,6 +15,45 @@
 set -euo pipefail
 
 ###############################################################################
+# Configuration Variables - Override via environment variables if needed
+###############################################################################
+
+# Base paths and directories
+BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
+WORK_DIR="${WORK_DIR:-/sgl-workspace}"
+
+# Docker configuration
+IMAGE_REPO="${IMAGE_REPO:-rocm/sgl-dev}"
+CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
+
+# Model configuration
+MODEL_NAME="${MODEL_NAME:-GROK1}"
+MODEL_VARIANT="${MODEL_VARIANT:-MOE-I4F8}"
+
+# GPU monitoring thresholds
+GPU_USAGE_THRESHOLD="${GPU_USAGE_THRESHOLD:-20}"
+VRAM_USAGE_THRESHOLD="${VRAM_USAGE_THRESHOLD:-20}"
+GPU_IDLE_WAIT_TIME="${GPU_IDLE_WAIT_TIME:-20}"
+
+# Timezone for date calculations
+TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
+
+# Script paths
+OFFLINE_SCRIPT="${OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
+ONLINE_SCRIPT="${ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
+
+# Python scripts for processing
+PROCESS_OFFLINE_CSV_SCRIPT="${PROCESS_OFFLINE_CSV_SCRIPT:-${BENCHMARK_CI_DIR}/process_offline_csv.py}"
+GENERATE_OFFLINE_PLOTS_SCRIPT="${GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/generate_offline_plots.py}"
+PROCESS_ONLINE_CSV_SCRIPT="${PROCESS_ONLINE_CSV_SCRIPT:-${BENCHMARK_CI_DIR}/process_online_csv.py}"
+GENERATE_ONLINE_PLOTS_SCRIPT="${GENERATE_ONLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/generate_online_plots.py}"
+
+# Output directories
+OFFLINE_OUTPUT_DIR="${OFFLINE_OUTPUT_DIR:-${BENCHMARK_CI_DIR}/offline}"
+ONLINE_OUTPUT_DIR="${ONLINE_OUTPUT_DIR:-${BENCHMARK_CI_DIR}/online}"
+
+###############################################################################
 # A. GPU idle check function
 ###############################################################################
 check_gpu_idle() {
@@ -23,13 +62,14 @@ check_gpu_idle() {
     return 0
   fi
   # This awk script checks the last two columns, typically GPU% and VRAM%, for any non-zero usage.
-  if rocm-smi | awk 'NR > 2 && NF >= 2 {
-    gpu_usage=gensub(/%/, "", "g", $(NF-1));
-    vram_usage=gensub(/%/, "", "g", $NF);
-    if (gpu_usage > 20 || vram_usage > 20) {
-      exit 1;
-    }
-  }'; then
+  if rocm-smi | awk -v gpu_thresh="$GPU_USAGE_THRESHOLD" -v vram_thresh="$VRAM_USAGE_THRESHOLD" '
+    NR > 2 && NF >= 2 {
+      gpu_usage=gensub(/%/, "", "g", $(NF-1));
+      vram_usage=gensub(/%/, "", "g", $NF);
+      if (gpu_usage > gpu_thresh || vram_usage > vram_thresh) {
+        exit 1;
+      }
+    }'; then
     return 0  # idle
   else
     return 1  # busy
@@ -46,8 +86,8 @@ ensure_gpu_idle() {
     else
         echo "[nightly] No running containers to stop."
     fi
-    echo "[nightly] Waiting 20s for GPU to become idle..."
-    sleep 20
+    echo "[nightly] Waiting ${GPU_IDLE_WAIT_TIME}s for GPU to become idle..."
+    sleep "$GPU_IDLE_WAIT_TIME"
   fi
 
   if check_gpu_idle; then
@@ -81,8 +121,6 @@ else
     exit 1
 fi
 
-IMAGE_REPO="rocm/sgl-dev"
-
 ###############################################################################
 # 1. Ensure GPU is idle before starting
 ###############################################################################
@@ -91,7 +129,7 @@ ensure_gpu_idle
 ###############################################################################
 # 2. Pick image tag (PST date)
 ###############################################################################
-date_pst() { TZ=America/Los_Angeles date -d "-$1 day" +%Y%m%d; }
+date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 SELECTED_TAG=""
 for offset in 0 1; do
@@ -115,10 +153,10 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 else
   echo "[nightly] Creating container ${CONTAINER_NAME}"
   docker run -d --name "${CONTAINER_NAME}" \
-    --shm-size 32g --ipc=host --cap-add=SYS_PTRACE --network=host \
+    --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
     --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-    -v /mnt/raid/:/mnt/raid/ --group-add video --privileged \
-    -w /sgl-workspace "${DOCKER_IMAGE}" tail -f /dev/null
+    -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+    -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
 fi
 
 ###############################################################################
@@ -129,9 +167,9 @@ for MODE in $MODES_TO_RUN; do
 
   # Determine which benchmark script to run
   if [ "$MODE" == "offline" ]; then
-    SCRIPT="/mnt/raid/michael/sgl_benchmark_ci/grok_perf_offline_csv.sh"
+    SCRIPT="$OFFLINE_SCRIPT"
   else
-    SCRIPT="/mnt/raid/michael/sgl_benchmark_ci/grok_perf_online_csv.sh"
+    SCRIPT="$ONLINE_SCRIPT"
   fi
   echo "[nightly] Launching $(basename "$SCRIPT") inside ${CONTAINER_NAME}"
 
@@ -146,8 +184,7 @@ for MODE in $MODES_TO_RUN; do
   # Process CSV and Generate Plots
   if [ "$MODE" == "offline" ]; then
     # Construct the path to the log folder, similar to grok_perf_offline_csv.sh
-    MODEL_NAME="GROK1" # As defined in grok_perf_offline_csv.sh
-    BENCHMARK_OUTPUT_FOLDER="/mnt/raid/michael/sgl_benchmark_ci/offline/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_MOE-I4F8_offline"
+    BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
 
     PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_offline_csv.log"
     GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_offline_plots.log"
@@ -156,19 +193,18 @@ for MODE in $MODES_TO_RUN; do
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/process_offline_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${PROCESS_OFFLINE_CSV_SCRIPT}' > '${PROCESS_CSV_LOG_FILE}' 2>&1"
 
     echo "[nightly] Generating offline plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/generate_offline_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_OFFLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
   fi
 
   if [ "$MODE" == "online" ]; then
     # Construct the path to the log folder, similar to grok_perf_online_csv.sh
-    MODEL_NAME="GROK1" # As defined in grok_perf_online_csv.sh
-    BENCHMARK_OUTPUT_FOLDER="/mnt/raid/michael/sgl_benchmark_ci/online/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_MOE-I4F8_online"
+    BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
 
     PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_online_csv.log"
     GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_online_plots.log"
@@ -177,13 +213,13 @@ for MODE in $MODES_TO_RUN; do
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/process_online_csv.py > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${PROCESS_ONLINE_CSV_SCRIPT}' > '${PROCESS_CSV_LOG_FILE}' 2>&1"
 
     echo "[nightly] Generating online plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 /mnt/raid/michael/sgl_benchmark_ci/generate_online_plots.py > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_ONLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
   fi
 
   echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
