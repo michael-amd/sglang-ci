@@ -8,16 +8,16 @@
 # Usage Examples:
 #
 # Pull pre-built image for release (default workflow):
-#   ./pull_sglang_docker.sh --branch=v0.4.9
+#   ./build_sglang_docker.sh
 #
 # Pull base image and update with PR code (recommended for PRs):
-#   ./pull_sglang_docker.sh --pr=7865
+#   ./build_sglang_docker.sh --pr=7865
 #
 # Pull base image and update with PR code using specific base branch:
-#   ./pull_sglang_docker.sh --pr=7865 --branch=v0.4.9
+#   ./build_sglang_docker.sh --pr=7865 --branch=v0.4.9
 #
 # Show help:
-#   ./pull_sglang_docker.sh --help
+#   ./build_sglang_docker.sh --help
 #
 # Limitations:
 # - PR feature only updates SGLang code, not dependencies
@@ -479,7 +479,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: $0 [options]"
+            echo "Usage: ./build_sglang_docker.sh [options]"
             echo ""
             echo "Options:"
             echo "  --github-dockerfile-url=URL  URL to Dockerfile.rocm on GitHub"
@@ -491,16 +491,16 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Examples:"
             echo "  # Pull pre-built image for release (default workflow)"
-            echo "  $0 --branch=v0.4.9"
+            echo "  ./build_sglang_docker.sh --branch=v0.4.9"
             echo ""
             echo "  # Pull base image and update with PR code (recommended for PRs)"
-            echo "  $0 --pr=7865"
+            echo "  ./build_sglang_docker.sh --pr=7865"
             echo ""
             echo "  # Pull base image and update with PR code using specific base branch"
-            echo "  $0 --pr=7865 --branch=v0.4.9"
+            echo "  ./build_sglang_docker.sh --pr=7865 --branch=v0.4.9"
             echo ""
             echo "  # Use custom GitHub token"
-            echo "  $0 --pr=7865 --github-token=ghp_xxxx"
+            echo "  ./build_sglang_docker.sh --pr=7865 --github-token=ghp_xxxx"
             echo ""
             echo "Environment Variables:"
             echo "  GITHUB_TOKEN    GitHub personal access token"
