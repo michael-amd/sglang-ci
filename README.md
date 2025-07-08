@@ -25,6 +25,8 @@ The scripts have been updated to support command-line parameters, eliminating th
 - [Data Processing and Visualization](#data-processing-and-visualization)
   - [Processing Scripts](#processing-scripts)
   - [Plotting Scripts](#plotting-scripts)
+- [Benchmark Comparison](#benchmark-comparison)
+  - [compare_csv_results.py](#compare_csv_resultspy)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
@@ -523,6 +525,92 @@ bash plots_server.sh
 ```
 
 The server uses `custom_http_server.py` to serve files with proper directory listings.
+
+---
+
+## Benchmark Comparison
+
+The benchmark CI includes a powerful comparison tool that allows you to compare CSV results between different benchmark runs, automatically extracting GSM8K accuracy information and generating detailed performance comparison reports.
+
+### compare_csv_results.py
+
+**Purpose:** Compare SGLang benchmark CSV results from different runs and generate comprehensive markdown reports with performance analysis.
+
+**Key Features:**
+- **Automatic Mode Detection:** Detects whether CSV files are from offline or online benchmarks
+- **GSM8K Accuracy Extraction:** Automatically extracts GSM8K accuracy from associated log files
+- **Performance Threshold Analysis:** Configurable thresholds for highlighting significant changes
+- **Flexible Output:** Generates timestamped comparison folders with markdown reports
+- **Multi-Model Support:** Handles different model comparisons (GROK1, DeepSeek-V3, etc.)
+
+**Parameters:**
+- `--csv1`: Path to first CSV directory (required)
+- `--csv2`: Path to second CSV directory (required)
+- `--mode`: Benchmark mode (`offline`, `online`, or `auto` for auto-detection)
+- `--model`: Model name to filter CSV files (for same model comparisons)
+- `--model1`: Model name for first directory (overrides `--model`)
+- `--model2`: Model name for second directory (overrides `--model`)
+- `--output-md`: Custom path for output markdown file (optional)
+- `--output-dir`: Output directory (default: `/mnt/raid/michael/sgl_benchmark_ci/comparison_results`)
+- `--append`: Append to existing file instead of overwriting
+- `--gsm8k-threshold`: GSM8K accuracy threshold for significance detection (default: 0.001)
+- `--performance-threshold`: Performance change threshold for highlighting (default: 5.0%)
+
+**Configuration via Environment Variables:**
+- `COMPARISON_OUTPUT_DIR`: Default output directory
+- `GSM8K_ACCURACY_THRESHOLD`: Default GSM8K accuracy threshold
+- `PERFORMANCE_THRESHOLD`: Default performance improvement threshold
+- `GSM8K_LOG_PATTERNS`: Patterns for GSM8K log files (semicolon-separated)
+
+**Offline Mode Comparison:**
+- Compares E2E throughput and latency across different batch sizes
+- Automatically merges results on common configurations (TP, batch_size, IL, OL)
+- Generates performance change percentages with color-coded improvements/regressions
+- Includes comprehensive GSM8K accuracy comparison
+
+**Online Mode Comparison:**
+- Compares E2E Latency, TTFT, and ITL metrics across different request rates
+- Focuses on MI300x performance data
+- Calculates percentage improvements for latency metrics (lower is better)
+- Provides detailed breakdown by request rate and metric type
+
+**Output Structure:**
+- Creates timestamped folders: `{date}_{csv1_dirname}_vs_{csv2_dirname}/`
+- Contains markdown report with same name as folder
+- Includes performance tables with color-coded change indicators:
+  - 🟢 Green: Improvements above threshold
+  - 🔴 Red: Regressions above threshold
+  - Standard: Changes within threshold range
+
+**Usage Examples:**
+
+```bash
+# Compare offline GROK1 results
+python3 compare_csv_results.py \
+  --csv1 offline/GROK1/20250624_GROK1_MOE-I4F8_offline \
+  --csv2 offline/GROK1/20250626_GROK1_MOE-I4F8_offline \
+  --mode offline --model grok1
+
+# Compare online GROK1 results
+python3 compare_csv_results.py \
+  --csv1 online/GROK1/20250624_GROK1_MOE-I4F8_online \
+  --csv2 online/GROK1/20250626_GROK1_MOE-I4F8_online \
+  --mode online --model grok1
+
+# Compare DeepSeek-V3 offline results
+python3 compare_csv_results.py \
+  --csv1 offline/DeepSeek-V3-0324/20250515_DeepSeek-V3-0324_FP8_offline \
+  --csv2 offline/DeepSeek-V3-0324/20250516_DeepSeek-V3-0324_FP8_offline \
+  --mode offline --model DeepSeek-V3-0324
+```
+
+**Sample Output:**
+The generated markdown reports include:
+- Header with comparison details and generation timestamp
+- GSM8K accuracy comparison with significance testing
+- Performance comparison tables organized by batch size/request rate
+- Color-coded change indicators for easy identification of improvements/regressions
+- Detailed metrics for E2E latency, throughput, TTFT, and ITL
 
 ---
 
