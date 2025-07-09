@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # grok_perf_nightly.sh
-#   • Pull rocm/sgl-dev:$YYYYMMDD (today PST; fallback yesterday).
-#   • Ensure container  sgl-dev_$TAG  is up with proper mounts.
+#   • Pull appropriate Docker image based on model type
+#   • Ensure container is up with proper mounts
 #   • Invoke chosen benchmark script (offline or online) inside it,
 #     forwarding --docker_image so the script knows which backend to use.
 #
 # USAGE:
-#   bash grok_perf_nightly.sh                 # runs offline then online
-#   bash grok_perf_nightly.sh --mode=offline  # run offline only
-#   bash grok_perf_nightly.sh --mode=online   # run online only
-#   bash grok_perf_nightly.sh --mode=all      # run offline then online
+#   bash grok_perf_nightly.sh                              # runs grok offline then online
+#   bash grok_perf_nightly.sh --mode=offline               # run grok offline only
+#   bash grok_perf_nightly.sh --mode=online                # run grok online only
+#   bash grok_perf_nightly.sh --model=deepseek             # run deepseek online only
+#   bash grok_perf_nightly.sh --model=deepseek --mode=all  # run deepseek online (no offline support yet)
+#   bash grok_perf_nightly.sh --model=grok --mode=all      # run grok offline then online
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -24,12 +26,16 @@ MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
 WORK_DIR="${WORK_DIR:-/sgl-workspace}"
 
 # Docker configuration
-IMAGE_REPO="${IMAGE_REPO:-rocm/sgl-dev}"
+GROK_IMAGE_REPO="${GROK_IMAGE_REPO:-rocm/sgl-dev}"
+DEEPSEEK_IMAGE_REPO="${DEEPSEEK_IMAGE_REPO:-rocm/sgl-dev}"
+DEEPSEEK_IMAGE_TAG="${DEEPSEEK_IMAGE_TAG:-v0.4.8-rocm630}"
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
 
-# Model configuration
-MODEL_NAME="${MODEL_NAME:-GROK1}"
-MODEL_VARIANT="${MODEL_VARIANT:-MOE-I4F8}"
+# Model configuration - will be set based on --model parameter
+GROK_MODEL_NAME="${GROK_MODEL_NAME:-GROK1}"
+GROK_MODEL_VARIANT="${GROK_MODEL_VARIANT:-MOE-I4F8}"
+DEEPSEEK_MODEL_NAME="${DEEPSEEK_MODEL_NAME:-DeepSeek-V3-0324}"
+DEEPSEEK_MODEL_VARIANT="${DEEPSEEK_MODEL_VARIANT:-FP8}"
 
 # GPU monitoring thresholds
 GPU_USAGE_THRESHOLD="${GPU_USAGE_THRESHOLD:-20}"
@@ -39,9 +45,10 @@ GPU_IDLE_WAIT_TIME="${GPU_IDLE_WAIT_TIME:-20}"
 # Timezone for date calculations
 TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 
-# Script paths
-OFFLINE_SCRIPT="${OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
-ONLINE_SCRIPT="${ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
+# Script paths - will be set based on model type
+GROK_OFFLINE_SCRIPT="${GROK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
+GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
+DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_online_csv.sh}"
 
 # Python scripts for processing
 PROCESS_OFFLINE_CSV_SCRIPT="${PROCESS_OFFLINE_CSV_SCRIPT:-${BENCHMARK_CI_DIR}/process_offline_csv.py}"
@@ -101,25 +108,67 @@ ensure_gpu_idle() {
 # 0. Parse CLI flags
 ###############################################################################
 MODE="all" # Default to run both offline and online
+MODEL="grok" # Default to grok
+
 for arg in "$@"; do
   case $arg in
     --mode=*)
       MODE="${arg#*=}"
       shift ;;
+    --model=*)
+      MODEL="${arg#*=}"
+      shift ;;
   esac
 done
 
-MODES_TO_RUN=""
-if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
-    MODES_TO_RUN="offline online"
-elif [[ "$MODE" == "offline" ]]; then
-    MODES_TO_RUN="offline"
-elif [[ "$MODE" == "online" ]]; then
-    MODES_TO_RUN="online"
-else
-    echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', or 'all'."
+# Validate model parameter
+if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" ]]; then
+    echo "[nightly] ERROR: Invalid --model value. Must be 'grok' or 'deepseek'."
     exit 1
 fi
+
+# Set model-specific variables
+if [[ "$MODEL" == "grok" ]]; then
+    IMAGE_REPO="$GROK_IMAGE_REPO"
+    MODEL_NAME="$GROK_MODEL_NAME"
+    MODEL_VARIANT="$GROK_MODEL_VARIANT"
+    OFFLINE_SCRIPT="$GROK_OFFLINE_SCRIPT"
+    ONLINE_SCRIPT="$GROK_ONLINE_SCRIPT"
+    USE_DATED_TAG=true
+elif [[ "$MODEL" == "deepseek" ]]; then
+    IMAGE_REPO="$DEEPSEEK_IMAGE_REPO"
+    MODEL_NAME="$DEEPSEEK_MODEL_NAME"
+    MODEL_VARIANT="$DEEPSEEK_MODEL_VARIANT"
+    OFFLINE_SCRIPT="" # DeepSeek doesn't have offline script yet
+    ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
+    USE_DATED_TAG=true
+fi
+
+# Determine modes to run based on model capabilities
+MODES_TO_RUN=""
+if [[ "$MODEL" == "deepseek" ]]; then
+    # DeepSeek only supports online mode currently
+    if [[ "$MODE" == "offline" ]]; then
+        echo "[nightly] ERROR: DeepSeek model does not support offline mode yet."
+        exit 1
+    elif [[ "$MODE" == "all" || "$MODE" == "online" ]]; then
+        MODES_TO_RUN="online"
+    fi
+else
+    # Grok supports both modes
+    if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
+        MODES_TO_RUN="offline online"
+    elif [[ "$MODE" == "offline" ]]; then
+        MODES_TO_RUN="offline"
+    elif [[ "$MODE" == "online" ]]; then
+        MODES_TO_RUN="online"
+    else
+        echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', or 'all'."
+        exit 1
+    fi
+fi
+
+echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
 
 ###############################################################################
 # 1. Ensure GPU is idle before starting
@@ -127,22 +176,40 @@ fi
 ensure_gpu_idle
 
 ###############################################################################
-# 2. Pick image tag (PST date)
+# 2. Pick image tag based on model type
 ###############################################################################
 date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 SELECTED_TAG=""
-for offset in 0 1; do
-  tag=$(date_pst "$offset")
-  echo "[nightly] Trying ${IMAGE_REPO}:${tag} ..."
-  if docker pull "${IMAGE_REPO}:${tag}" >/dev/null 2>&1; then
-    SELECTED_TAG="$tag"; break
+if [[ "$USE_DATED_TAG" == "true" ]]; then
+  # Try dated tags (today and yesterday)
+  for offset in 0 1; do
+    tag=$(date_pst "$offset")
+    echo "[nightly] Trying ${IMAGE_REPO}:${tag} ..."
+    if docker pull "${IMAGE_REPO}:${tag}" >/dev/null 2>&1; then
+      SELECTED_TAG="$tag"; break
+    fi
+  done
+  [[ -n "$SELECTED_TAG" ]] || { echo "[nightly] No nightly image found for $MODEL"; exit 1; }
+else
+  # This branch is currently unused as both models use dated tags
+  SELECTED_TAG="$FIXED_TAG"
+  echo "[nightly] Using fixed tag ${IMAGE_REPO}:${SELECTED_TAG} for $MODEL ..."
+  if ! docker pull "${IMAGE_REPO}:${SELECTED_TAG}" >/dev/null 2>&1; then
+    echo "[nightly] Failed to pull ${IMAGE_REPO}:${SELECTED_TAG}"
+    exit 1
   fi
-done
-[[ -n "$SELECTED_TAG" ]] || { echo "[nightly] No nightly image found"; exit 1; }
+fi
 
 DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-CONTAINER_NAME="sgl-dev_${SELECTED_TAG}"
+if [[ "$MODEL" == "grok" ]]; then
+    CONTAINER_NAME="sgl-dev_${SELECTED_TAG}"
+else
+    CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"  # Replace : and . with _ for valid container name
+fi
+
+echo "[nightly] Using Docker image: $DOCKER_IMAGE"
+echo "[nightly] Container name: $CONTAINER_NAME"
 
 ###############################################################################
 # 2. Ensure container is running
@@ -162,28 +229,46 @@ fi
 ###############################################################################
 # 3. Run benchmarks for each mode
 ###############################################################################
-for MODE in $MODES_TO_RUN; do
-  echo "[nightly] === Starting nightly Grok-1 ${MODE} benchmark ==="
+for MODE_TO_RUN in $MODES_TO_RUN; do
+  echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
 
   # Determine which benchmark script to run
-  if [ "$MODE" == "offline" ]; then
+  if [ "$MODE_TO_RUN" == "offline" ]; then
     SCRIPT="$OFFLINE_SCRIPT"
   else
     SCRIPT="$ONLINE_SCRIPT"
   fi
+
+  if [ -z "$SCRIPT" ]; then
+    echo "[nightly] ERROR: No ${MODE_TO_RUN} script available for ${MODEL}"
+    continue
+  fi
+
   echo "[nightly] Launching $(basename "$SCRIPT") inside ${CONTAINER_NAME}"
 
   # Note: The LATEST_TAG env var helps the scripts identify this as a non-RC build
-  docker exec \
-    -e INSIDE_CONTAINER=1 \
-    -e LATEST_TAG="${SELECTED_TAG}" \
-    -e FULL_IMAGE="${DOCKER_IMAGE}" \
-    "${CONTAINER_NAME}" \
-    bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
+  if [[ "$MODEL" == "deepseek" ]]; then
+    # For DeepSeek, pass additional parameters if needed
+    docker exec \
+      -e INSIDE_CONTAINER=1 \
+      -e LATEST_TAG="${SELECTED_TAG}" \
+      -e FULL_IMAGE="${DOCKER_IMAGE}" \
+      -e TZ='America/Los_Angeles' \
+      "${CONTAINER_NAME}" \
+      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
+  else
+    # For Grok, use the existing command structure
+    docker exec \
+      -e INSIDE_CONTAINER=1 \
+      -e LATEST_TAG="${SELECTED_TAG}" \
+      -e FULL_IMAGE="${DOCKER_IMAGE}" \
+      "${CONTAINER_NAME}" \
+      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
+  fi
 
   # Process CSV and Generate Plots
-  if [ "$MODE" == "offline" ]; then
-    # Construct the path to the log folder, similar to grok_perf_offline_csv.sh
+  if [ "$MODE_TO_RUN" == "offline" ]; then
+    # Construct the path to the log folder for offline benchmarks
     BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
 
     PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_offline_csv.log"
@@ -202,8 +287,8 @@ for MODE in $MODES_TO_RUN; do
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_OFFLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
   fi
 
-  if [ "$MODE" == "online" ]; then
-    # Construct the path to the log folder, similar to grok_perf_online_csv.sh
+  if [ "$MODE_TO_RUN" == "online" ]; then
+    # Construct the path to the log folder for online benchmarks
     BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
 
     PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_online_csv.log"
@@ -222,5 +307,5 @@ for MODE in $MODES_TO_RUN; do
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_ONLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
   fi
 
-  echo "[nightly] === ${MODE^} benchmark dispatched; check logs in ${CONTAINER_NAME} ==="
+  echo "[nightly] === ${MODE_TO_RUN^} benchmark dispatched for ${MODEL^^}; check logs in ${CONTAINER_NAME} ==="
 done
