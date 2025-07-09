@@ -416,89 +416,7 @@ run_gsm8k_benchmark() {
 ###############################################################################
 # 4. Main Online Benchmark
 ###############################################################################
-echo "Clearing previous logs..."
-if [ "$SKIP_GSM8K" = "false" ]; then
-    > "$GSM8K_LOG_FILE" # Clear/truncate the GSM8K log file
-fi
-> "$SERVER_LOG_FILE" # Clear/truncate the server log file
-
-if [ "$SKIP_GSM8K" = "true" ]; then
-    echo "Starting SGLang server for serving benchmarks (GSM8K skipped)..."
-else
-    echo "Starting SGLang server for online GSM8K benchmark..."
-fi
-
-# Determine which environment variable to use based on version
-aiter_env_var="SGLANG_USE_AITER"
-if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
-  major="${BASH_REMATCH[1]}"
-  minor="${BASH_REMATCH[2]}"
-  patch="${BASH_REMATCH[3]}"
-  # Use SGLANG_AITER_MOE for versions before v0.4.7
-  if [[ "$major" -eq 0 ]]; then
-    if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
-      aiter_env_var="SGLANG_AITER_MOE"
-    fi
-  fi
-fi
-
-echo "[DEBUG] Using environment variable: ${aiter_env_var}"
-
-# Start server in background using the online command format
-env ${aiter_env_var}=1 python3 -m sglang.launch_server \
-    --model-path "${MODEL}" \
-    --tp-size "${TP}" \
-    --port "$GSM8K_PORT" \
-    --trust-remote-code \
-    --mem-fraction-static "$SERVER_MEM_FRACTION" \
-    --max-running-requests "$SERVER_MAX_REQUESTS" > "$SERVER_LOG_FILE" 2>&1 &
-echo $! > "$SERVER_PID_FILE"
-SERVER_PID=$(cat "$SERVER_PID_FILE")
-
-echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
-echo "Server logs are being written to: $SERVER_LOG_FILE"
-
-# Wait for server to be ready - poll get_model_info endpoint
-server_startup_start=$(date +%s)
-if ! timeout "${SERVER_TIMEOUT}s" bash -c "until curl -s -f ${GSM8K_HOST}:${GSM8K_PORT}/get_model_info > /dev/null 2>&1; do echo -n '.'; sleep 5; done"; then
-    echo "" # Newline after dots
-    echo "SGLang server failed to start in time. Check $SERVER_LOG_FILE for details. Killing server (if any) and exiting."
-    exit 1
-fi
-server_startup_end=$(date +%s)
-server_startup_duration=$((server_startup_end - server_startup_start))
-echo "" # Newline after dots
-echo "SGLang server started successfully after ${server_startup_duration} seconds."
-echo "Server startup time: ${server_startup_duration} seconds" >> "$TIMING_LOG"
-
-# Run GSM8K benchmark if not skipped
-if [ "$SKIP_GSM8K" = "false" ]; then
-    # Initialize GSM8K CSV with structured format
-    echo "GSM8K Accuracy Test - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
-    echo "" >> "$OUTPUT_CSV"
-    echo "Test Configuration" >> "$OUTPUT_CSV"
-    echo "TP\t${TP}" >> "$OUTPUT_CSV"
-    echo "Questions\t${GSM8K_NUM_QUESTIONS}" >> "$OUTPUT_CSV"
-    echo "Parallel\t${GSM8K_PARALLEL}" >> "$OUTPUT_CSV"
-    echo "Shots\t${GSM8K_NUM_SHOTS}" >> "$OUTPUT_CSV"
-    echo "Runs\t${GSM8K_RUNS}" >> "$OUTPUT_CSV"
-    echo "" >> "$OUTPUT_CSV"
-
-    echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
-
-    # Run the main GSM8K benchmark
-    if run_gsm8k_benchmark; then
-        echo "✅ GSM8K benchmark completed successfully."
-        echo "Results written to ${OUTPUT_CSV}"
-        echo "GSM8K log saved to ${GSM8K_LOG_FILE}"
-        echo "Server log saved to ${SERVER_LOG_FILE}"
-    else
-        echo "❌ GSM8K benchmark failed or accuracy below threshold."
-        exit 1
-    fi
-else
-    echo "GSM8K benchmark skipped as requested."
-fi
+# Server startup will be conditional based on whether benchmarks are needed
 
 ###############################################################################
 # 5. Function to Get Best Metrics from Multiple Runs
@@ -546,8 +464,6 @@ get_best_metrics() {
 ###############################################################################
 # 6. Serving Benchmark with Different Concurrency Levels
 ###############################################################################
-echo "Starting serving benchmark tests with different concurrency levels..."
-serving_benchmark_start_time=$(date +%s)
 
 # Setup serving benchmark CSV
 SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
@@ -904,18 +820,176 @@ run_concurrency_benchmark() {
     echo "Completed concurrency ${concurrency} - Total time: ${concurrency_duration} seconds" >> "$TIMING_LOG"
 }
 
-# Initialize the structured CSV
-init_serving_csv
+# Function to check if all required logs exist and are complete
+check_all_logs_complete() {
+    echo "Scanning existing logs to check if all benchmarks are already complete..."
+    local all_complete=true
+    local missing_runs=0
+    local total_runs=0
 
-# Log to timing summary
-echo "" >> "$TIMING_LOG"
-echo "Serving Benchmark Results:" >> "$TIMING_LOG"
-echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+    for concurrency in "${concurrency_values[@]}"; do
+        for run_number in {1..3}; do
+            total_runs=$((total_runs + 1))
+            local log_found=false
 
-# Run benchmark with different concurrency values (largest to smallest)
-for concurrency in "${concurrency_values[@]}"; do
-    run_concurrency_benchmark "$concurrency"
-done
+            # Check if log already exists and completed successfully using glob pattern
+            for log_file in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run${run_number}"_*.log; do
+                if [[ -f "$log_file" ]]; then
+                    # Check if the run completed successfully by looking for completion marker
+                    if grep -q "Run completed at:" "$log_file"; then
+                        log_found=true
+                        break
+                    else
+                        echo "Found incomplete log: $log_file"
+                    fi
+                fi
+            done
+
+            if [ "$log_found" = false ]; then
+                echo "Missing: Concurrency ${concurrency}, Run ${run_number}"
+                all_complete=false
+                missing_runs=$((missing_runs + 1))
+            fi
+        done
+    done
+
+    echo "Scan complete: ${total_runs} total runs needed, ${missing_runs} missing/incomplete"
+
+    if [ "$all_complete" = true ]; then
+        echo "✅ All benchmark logs are present and complete! No server startup needed."
+        return 0
+    else
+        echo "❌ Missing ${missing_runs} benchmark runs. Server startup required."
+        return 1
+    fi
+}
+
+# Check if all logs are already complete
+if check_all_logs_complete; then
+    echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
+    echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
+
+    # Initialize the structured CSV
+    init_serving_csv
+
+    # Extract metrics from existing logs and update CSV
+    for concurrency in "${concurrency_values[@]}"; do
+        echo "Extracting metrics for concurrency ${concurrency} from existing logs..."
+        update_serving_csv_for_concurrency "$concurrency"
+    done
+
+    echo "✅ CSV generated from existing logs successfully."
+    echo "Serving benchmark results written to ${SERVING_CSV}"
+    if [ "$SKIP_GSM8K" = "false" ]; then
+        echo "Note: GSM8K benchmark was skipped (not needed when all serving logs exist)"
+    fi
+
+    serving_benchmark_start_time=$(date +%s)
+    serving_benchmark_end_time=$(date +%s)
+    serving_benchmark_duration=0
+
+else
+    # Not all logs complete - proceed with normal server startup and benchmarking
+    echo "Clearing previous logs..."
+    if [ "$SKIP_GSM8K" = "false" ]; then
+        > "$GSM8K_LOG_FILE" # Clear/truncate the GSM8K log file
+    fi
+    > "$SERVER_LOG_FILE" # Clear/truncate the server log file
+
+    if [ "$SKIP_GSM8K" = "true" ]; then
+        echo "Starting SGLang server for serving benchmarks (GSM8K skipped)..."
+    else
+        echo "Starting SGLang server for online GSM8K benchmark..."
+    fi
+
+    # Determine which environment variable to use based on version
+    aiter_env_var="SGLANG_USE_AITER"
+    if [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
+      major="${BASH_REMATCH[1]}"
+      minor="${BASH_REMATCH[2]}"
+      patch="${BASH_REMATCH[3]}"
+      # Use SGLANG_AITER_MOE for versions before v0.4.7
+      if [[ "$major" -eq 0 ]]; then
+        if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
+          aiter_env_var="SGLANG_AITER_MOE"
+        fi
+      fi
+    fi
+
+    echo "[DEBUG] Using environment variable: ${aiter_env_var}"
+
+    # Start server in background using the online command format
+    env ${aiter_env_var}=1 python3 -m sglang.launch_server \
+        --model-path "${MODEL}" \
+        --tp-size "${TP}" \
+        --port "$GSM8K_PORT" \
+        --trust-remote-code \
+        --mem-fraction-static "$SERVER_MEM_FRACTION" \
+        --max-running-requests "$SERVER_MAX_REQUESTS" > "$SERVER_LOG_FILE" 2>&1 &
+    echo $! > "$SERVER_PID_FILE"
+    SERVER_PID=$(cat "$SERVER_PID_FILE")
+
+    echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
+    echo "Server logs are being written to: $SERVER_LOG_FILE"
+
+    # Wait for server to be ready - poll get_model_info endpoint
+    server_startup_start=$(date +%s)
+    if ! timeout "${SERVER_TIMEOUT}s" bash -c "until curl -s -f ${GSM8K_HOST}:${GSM8K_PORT}/get_model_info > /dev/null 2>&1; do echo -n '.'; sleep 5; done"; then
+        echo "" # Newline after dots
+        echo "SGLang server failed to start in time. Check $SERVER_LOG_FILE for details. Killing server (if any) and exiting."
+        exit 1
+    fi
+    server_startup_end=$(date +%s)
+    server_startup_duration=$((server_startup_end - server_startup_start))
+    echo "" # Newline after dots
+    echo "SGLang server started successfully after ${server_startup_duration} seconds."
+    echo "Server startup time: ${server_startup_duration} seconds" >> "$TIMING_LOG"
+
+    # Run GSM8K benchmark if not skipped
+    if [ "$SKIP_GSM8K" = "false" ]; then
+        # Initialize GSM8K CSV with structured format
+        echo "GSM8K Accuracy Test - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
+        echo "" >> "$OUTPUT_CSV"
+        echo "Test Configuration" >> "$OUTPUT_CSV"
+        echo "TP\t${TP}" >> "$OUTPUT_CSV"
+        echo "Questions\t${GSM8K_NUM_QUESTIONS}" >> "$OUTPUT_CSV"
+        echo "Parallel\t${GSM8K_PARALLEL}" >> "$OUTPUT_CSV"
+        echo "Shots\t${GSM8K_NUM_SHOTS}" >> "$OUTPUT_CSV"
+        echo "Runs\t${GSM8K_RUNS}" >> "$OUTPUT_CSV"
+        echo "" >> "$OUTPUT_CSV"
+
+        echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
+
+        # Run the main GSM8K benchmark
+        if run_gsm8k_benchmark; then
+            echo "✅ GSM8K benchmark completed successfully."
+            echo "Results written to ${OUTPUT_CSV}"
+            echo "GSM8K log saved to ${GSM8K_LOG_FILE}"
+            echo "Server log saved to ${SERVER_LOG_FILE}"
+        else
+            echo "❌ GSM8K benchmark failed or accuracy below threshold."
+            exit 1
+        fi
+    else
+        echo "GSM8K benchmark skipped as requested."
+    fi
+
+    echo "Starting serving benchmark tests with different concurrency levels..."
+    serving_benchmark_start_time=$(date +%s)
+
+    # Initialize the structured CSV
+    init_serving_csv
+
+    # Log to timing summary
+    echo "" >> "$TIMING_LOG"
+    echo "Serving Benchmark Results:" >> "$TIMING_LOG"
+    echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+
+    # Run benchmark with different concurrency values (largest to smallest)
+    for concurrency in "${concurrency_values[@]}"; do
+        run_concurrency_benchmark "$concurrency"
+    done
+fi
 
 serving_benchmark_end_time=$(date +%s)
 serving_benchmark_duration=$((serving_benchmark_end_time - serving_benchmark_start_time))
@@ -928,6 +1002,29 @@ echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_co
 echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 echo "  Total duration: ${serving_benchmark_duration} seconds" >> "$TIMING_LOG"
 
+# Function to extract throughput from log files (similar to grok script)
+extract_throughput() {
+    local concurrency=$1
+    # Use glob pattern to find first matching file
+    local log_file=""
+    for f in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run"*".log"; do
+        if [[ -f "$f" ]]; then
+            log_file="$f"
+            break
+        fi
+    done
+    if [ -n "$log_file" ]; then
+        local throughput=$(grep -oP 'Throughput:\s*\K[\d.]+' "$log_file" | head -n1)
+        if [ -n "$throughput" ]; then
+            echo "$throughput"
+        else
+            echo "N/A"
+        fi
+    else
+        echo "N/A"
+    fi
+}
+
 # Add performance summary to timing log
 echo "" >> "$TIMING_LOG"
 echo "Performance Summary:" >> "$TIMING_LOG"
@@ -937,8 +1034,8 @@ for conc in "${concurrency_values[@]}"; do
     echo "  E2E Latency: ${best_e2e_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  TTFT: ${best_ttft_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  ITL: ${best_itl_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
-    echo "  Tokens: ${best_num_tokens[$conc]:-NA}" >> "$TIMING_LOG"
-    echo "  KV Cache: ${best_kv_size[$conc]:-NA} GB" >> "$TIMING_LOG"
+    throughput=$(extract_throughput "$conc")
+    echo "  Throughput: ${throughput} requests/s" >> "$TIMING_LOG"
     echo "" >> "$TIMING_LOG"
 done
 
