@@ -1,9 +1,6 @@
 # machine is at CT time
-# 12 AM PT (2 AM CT) - Grok offline benchmark
-0 2 * * * bash /mnt/raid/michael/sgl_benchmark_ci/perf_nightly.sh --model=grok --mode=offline >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/grok_nightly_offline_$(date +\%Y\%m\%d).log 2>&1
+# 12 AM PT (2 AM CT) - Grok online and offline benchmark with gating logic
+0 2 * * * bash /mnt/raid/michael/sgl_benchmark_ci/perf_nightly.sh --model=grok --mode=all >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
 
-# 1 AM PT (3 AM CT) - Grok online serving benchmark
-0 3 * * * bash /mnt/raid/michael/sgl_benchmark_ci/perf_nightly.sh --model=grok --mode=online >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/grok_nightly_online_$(date +\%Y\%m\%d).log 2>&1
-
-# 4 AM PT (6 AM CT) - DeepSeek online serving benchmark
-0 6 * * * bash /mnt/raid/michael/sgl_benchmark_ci/perf_nightly.sh --model=deepseek --mode=online >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+# 3 AM PT (5 AM CT) - DeepSeek online serving benchmark
+0 5 * * * bash /mnt/raid/michael/sgl_benchmark_ci/perf_nightly.sh --model=deepseek --mode=online >> /mnt/raid/michael/sgl_benchmark_ci/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1
