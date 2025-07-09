@@ -48,6 +48,7 @@ TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 # Script paths - will be set based on model type
 GROK_OFFLINE_SCRIPT="${GROK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
 GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
+DEEPSEEK_OFFLINE_SCRIPT="${DEEPSEEK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_offline_csv.sh}"
 DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_online_csv.sh}"
 
 # Python scripts for processing
@@ -139,33 +140,22 @@ elif [[ "$MODEL" == "deepseek" ]]; then
     IMAGE_REPO="$DEEPSEEK_IMAGE_REPO"
     MODEL_NAME="$DEEPSEEK_MODEL_NAME"
     MODEL_VARIANT="$DEEPSEEK_MODEL_VARIANT"
-    OFFLINE_SCRIPT="" # DeepSeek doesn't have offline script yet
+    OFFLINE_SCRIPT="$DEEPSEEK_OFFLINE_SCRIPT"
     ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
     USE_DATED_TAG=true
 fi
 
-# Determine modes to run based on model capabilities
+# Determine modes to run based on user input
 MODES_TO_RUN=""
-if [[ "$MODEL" == "deepseek" ]]; then
-    # DeepSeek only supports online mode currently
-    if [[ "$MODE" == "offline" ]]; then
-        echo "[nightly] ERROR: DeepSeek model does not support offline mode yet."
-        exit 1
-    elif [[ "$MODE" == "all" || "$MODE" == "online" ]]; then
-        MODES_TO_RUN="online"
-    fi
+if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
+    MODES_TO_RUN="offline online"
+elif [[ "$MODE" == "offline" ]]; then
+    MODES_TO_RUN="offline"
+elif [[ "$MODE" == "online" ]]; then
+    MODES_TO_RUN="online"
 else
-    # Grok supports both modes
-    if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
-        MODES_TO_RUN="offline online"
-    elif [[ "$MODE" == "offline" ]]; then
-        MODES_TO_RUN="offline"
-    elif [[ "$MODE" == "online" ]]; then
-        MODES_TO_RUN="online"
-    else
-        echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', or 'all'."
-        exit 1
-    fi
+    echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', or 'all'."
+    exit 1
 fi
 
 echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
