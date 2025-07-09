@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# grok_perf_nightly.sh
+# perf_nightly.sh
 #   • Pull appropriate Docker image based on model type
 #   • Ensure container is up with proper mounts
 #   • Invoke chosen benchmark script (offline or online) inside it,
 #     forwarding --docker_image so the script knows which backend to use.
 #
 # USAGE:
-#   bash grok_perf_nightly.sh                              # runs grok offline then online
-#   bash grok_perf_nightly.sh --mode=offline               # run grok offline only
-#   bash grok_perf_nightly.sh --mode=online                # run grok online only
-#   bash grok_perf_nightly.sh --model=deepseek             # run deepseek online only
-#   bash grok_perf_nightly.sh --model=deepseek --mode=all  # run deepseek online (no offline support yet)
-#   bash grok_perf_nightly.sh --model=grok --mode=all      # run grok offline then online
+#   bash perf_nightly.sh                              # runs grok online first then offline, if online GSM8K benchmark failed or accuracy below threshold. no need to run offline.
+#   bash perf_nightly.sh --mode=offline               # run grok offline only
+#   bash perf_nightly.sh --mode=online                # run grok online only
+#   bash perf_nightly.sh --model=deepseek             # run deepseek online only
+#   bash perf_nightly.sh --model=deepseek --mode=all  # run deepseek online first then offline, with same GSM8K gating logic
+#   bash perf_nightly.sh --model=grok --mode=all      # run grok online first then offline, with GSM8K gating logic
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -148,7 +148,7 @@ fi
 # Determine modes to run based on user input
 MODES_TO_RUN=""
 if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
-    MODES_TO_RUN="offline online"
+    MODES_TO_RUN="online offline"
 elif [[ "$MODE" == "offline" ]]; then
     MODES_TO_RUN="offline"
 elif [[ "$MODE" == "online" ]]; then
@@ -219,7 +219,21 @@ fi
 ###############################################################################
 # 3. Run benchmarks for each mode
 ###############################################################################
+ONLINE_SUCCEEDED=false
+RUNNING_ALL_MODES=false
+
+# Check if we're running both online and offline (all mode)
+if [[ "$MODES_TO_RUN" == "online offline" ]]; then
+    RUNNING_ALL_MODES=true
+fi
+
 for MODE_TO_RUN in $MODES_TO_RUN; do
+  # Skip offline if we're in all mode and online failed
+  if [[ "$MODE_TO_RUN" == "offline" && "$RUNNING_ALL_MODES" == "true" && "$ONLINE_SUCCEEDED" == "false" ]]; then
+    echo "[nightly] === Skipping offline benchmark because online GSM8K failed or accuracy below threshold ==="
+    continue
+  fi
+
   echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
 
   # Determine which benchmark script to run
@@ -236,7 +250,8 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
   echo "[nightly] Launching $(basename "$SCRIPT") inside ${CONTAINER_NAME}"
 
-  # Note: The LATEST_TAG env var helps the scripts identify this as a non-RC build
+  # Execute the benchmark script and capture exit code
+  BENCHMARK_EXIT_CODE=0
   if [[ "$MODEL" == "deepseek" ]]; then
     # For DeepSeek, pass additional parameters if needed
     docker exec \
@@ -245,7 +260,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
+      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}" || BENCHMARK_EXIT_CODE=$?
   else
     # For Grok, use the existing command structure
     docker exec \
@@ -253,7 +268,18 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       "${CONTAINER_NAME}" \
-      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}"
+      bash "$SCRIPT" --docker_image="${DOCKER_IMAGE}" || BENCHMARK_EXIT_CODE=$?
+  fi
+
+  # Track success of online benchmark for gating offline
+  if [[ "$MODE_TO_RUN" == "online" && "$RUNNING_ALL_MODES" == "true" ]]; then
+    if [ $BENCHMARK_EXIT_CODE -eq 0 ]; then
+      ONLINE_SUCCEEDED=true
+      echo "[nightly] === Online benchmark succeeded, offline benchmark will proceed ==="
+    else
+      ONLINE_SUCCEEDED=false
+      echo "[nightly] === Online benchmark failed (exit code: $BENCHMARK_EXIT_CODE), offline benchmark will be skipped ==="
+    fi
   fi
 
   # Process CSV and Generate Plots
