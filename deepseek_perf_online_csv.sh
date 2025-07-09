@@ -930,28 +930,7 @@ echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_co
 echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 echo "  Total duration: ${serving_benchmark_duration} seconds" >> "$TIMING_LOG"
 
-# Function to extract throughput from log files (similar to grok script)
-extract_throughput() {
-    local concurrency=$1
-    # Use glob pattern to find first matching file
-    local log_file=""
-    for f in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run"*".log"; do
-        if [[ -f "$f" ]]; then
-            log_file="$f"
-            break
-        fi
-    done
-    if [ -n "$log_file" ]; then
-        local throughput=$(grep -oP 'Throughput:\s*\K[\d.]+' "$log_file" | head -n1)
-        if [ -n "$throughput" ]; then
-            echo "$throughput"
-        else
-            echo "N/A"
-        fi
-    else
-        echo "N/A"
-    fi
-}
+
 
 # Add performance summary to timing log
 echo "" >> "$TIMING_LOG"
@@ -962,8 +941,6 @@ for conc in "${concurrency_values[@]}"; do
     echo "  E2E Latency: ${best_e2e_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  TTFT: ${best_ttft_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  ITL: ${best_itl_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
-    throughput=$(extract_throughput "$conc")
-    echo "  Throughput: ${throughput} requests/s" >> "$TIMING_LOG"
     echo "" >> "$TIMING_LOG"
 done
 
