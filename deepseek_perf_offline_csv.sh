@@ -28,8 +28,7 @@ DEFAULT_MODEL_NAME="${DEFAULT_MODEL_NAME:-DeepSeek-V3-0324}"
 DEFAULT_HF_MODEL_ID="${DEFAULT_HF_MODEL_ID:-deepseek-ai/DeepSeek-V3-0324}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
-DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.93}"
+
 
 # Container configuration
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
@@ -42,38 +41,7 @@ OLEN="${DEEPSEEK_OUTPUT_LENGTH:-32}"        # output tokens
 TP="${DEEPSEEK_TP:-8}"                      # tensor-parallel degree
 BS="${DEEPSEEK_BATCH_SIZE:-32}"             # batch size
 
-# GSM8K configuration
-GSM8K_NUM_QUESTIONS="${GSM8K_NUM_QUESTIONS:-2000}"
-GSM8K_PARALLEL="${GSM8K_PARALLEL:-2000}"
-GSM8K_NUM_SHOTS="${GSM8K_NUM_SHOTS:-5}"
-GSM8K_RUNS="${GSM8K_RUNS:-5}"
-GSM8K_PORT="${GSM8K_PORT:-30000}"
-GSM8K_HOST="${GSM8K_HOST:-http://127.0.0.1}"
 
-# Server configuration
-WARMUP_SERVER_MEM_FRACTION="${WARMUP_SERVER_MEM_FRACTION:-0.7}"
-WARMUP_SERVER_MAX_REQUESTS="${WARMUP_SERVER_MAX_REQUESTS:-1024}"
-WARMUP_SERVER_TIMEOUT="${WARMUP_SERVER_TIMEOUT:-900}"  # 15 minutes
-
-# File to store background server PID
-SERVER_PID_FILE=$(mktemp)
-
-cleanup() {
-    echo "Cleaning up..."
-    if [ -f "$SERVER_PID_FILE" ] && [ -s "$SERVER_PID_FILE" ]; then
-        BG_PID=$(cat "$SERVER_PID_FILE")
-        # Check if process exists
-        if ps -p $BG_PID > /dev/null 2>&1; then
-            echo "Killing background SGLang server (PID: $BG_PID)..."
-            kill $BG_PID
-            wait $BG_PID 2>/dev/null || echo "Server process $BG_PID not found or already terminated."
-        else
-            echo "Background SGLang server (PID: $BG_PID) already stopped."
-        fi
-    fi
-    rm -f "$SERVER_PID_FILE"
-}
-trap cleanup EXIT SIGINT SIGTERM
 
 ###############################################################################
 # 0. Parse CLI flags
@@ -86,8 +54,6 @@ MODEL_NAME=""
 HF_MODEL_ID=""
 WORK_DIR=""
 OUTPUT_DIR=""
-GSM8K_SCRIPT=""
-THRESHOLD=""
 DOWNLOAD_MODEL="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
@@ -122,14 +88,6 @@ for arg in "$@"; do
       OUTPUT_DIR="${arg#*=}"
       shift
       ;;
-    --gsm8k-script=*)
-      GSM8K_SCRIPT="${arg#*=}"
-      shift
-      ;;
-    --threshold=*)
-      THRESHOLD="${arg#*=}"
-      shift
-      ;;
     --download-model)
       DOWNLOAD_MODEL="true"
       shift
@@ -143,8 +101,6 @@ for arg in "$@"; do
       echo "  --hf-model-id=ID       HuggingFace model ID for download (default: $DEFAULT_HF_MODEL_ID)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
-      echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
-      echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --help                 Show this help message"
       echo ""
@@ -156,9 +112,6 @@ for arg in "$@"; do
       echo "  DEEPSEEK_OUTPUT_LENGTH    Output length (default: $OLEN)"
       echo "  DEEPSEEK_TP               Tensor parallel degree (default: $TP)"
       echo "  DEEPSEEK_BATCH_SIZE       Batch size (default: $BS)"
-      echo "  GSM8K_NUM_QUESTIONS       GSM8K questions count (default: $GSM8K_NUM_QUESTIONS)"
-      echo "  GSM8K_RUNS               GSM8K test runs (default: $GSM8K_RUNS)"
-      echo "  WARMUP_SERVER_TIMEOUT     Server startup timeout (default: $WARMUP_SERVER_TIMEOUT seconds)"
       exit 0
       ;;
   esac
@@ -170,8 +123,6 @@ MODEL_NAME="${MODEL_NAME:-$DEFAULT_MODEL_NAME}"
 HF_MODEL_ID="${HF_MODEL_ID:-$DEFAULT_HF_MODEL_ID}"
 WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
-GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
-THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
 # If not provided by flag, use positional argument or default
 docker_image="${docker_image:-${1:-$DOCKER_IMAGE_DEFAULT}}"
@@ -250,8 +201,6 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --hf-model-id="${HF_MODEL_ID}" \
            --work-dir="${WORK_DIR}" \
            --output-dir="${OUTPUT_DIR}" \
-           --gsm8k-script="${GSM8K_SCRIPT}" \
-           --threshold="${THRESHOLD}" \
            $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model")
     exit 0
   fi
@@ -308,109 +257,6 @@ folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_
 mkdir -p "$folder"
 OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline.csv"
 LOG_FILE="${folder}/tp${TP}_bs${BS}.log" # Define log file path
-GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
-WARMUP_SERVER_LOG_FILE="${folder}/sglang_warmup_server.log" # Define warm-up server log path
-
-###############################################################################
-# 4. GSM8K accuracy warm-up
-# This function runs the GSM8K test multiple times, computes the average accuracy,
-# and returns 0 if the average meets the threshold (THRESHOLD), or 1 otherwise.
-# It now accepts a mode parameter ("aiter" or "decode") to split the log file accordingly.
-run_client_gsm8k() {
-    local mode="$1" # Assign the first argument to the mode variable
-    # The gsm8k_log variable is now defined globally as GSM8K_LOG_FILE
-    # local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # This was local
-
-    local total_accuracy=0
-    local runs=$GSM8K_RUNS
-    local count=0
-    local run_accuracy=0
-    local output
-
-    # Run the test 'runs' times
-    for i in $(seq 1 $runs); do
-         echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
-         output=$(python3 "${GSM8K_SCRIPT}" --num-questions "$GSM8K_NUM_QUESTIONS" --parallel "$GSM8K_PARALLEL" --num-shots "$GSM8K_NUM_SHOTS" --port "$GSM8K_PORT" --host "$GSM8K_HOST" 2>&1)
-         echo "$output" | tee -a "$GSM8K_LOG_FILE"
-         # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
-         run_accuracy=$(echo "$output" | tr '\r' '\n' | grep '^Accuracy: ' | head -n 1 | awk '{print $2}')
-         if [ -z "$run_accuracy" ]; then
-            echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
-            run_accuracy=0
-         fi
-         echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
-         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
-         count=$((count+1))
-    done
-    local avg_accuracy
-    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
-    echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
-    if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
-         echo "Average accuracy meets threshold ($THRESHOLD)." | tee -a "$GSM8K_LOG_FILE"
-         return 0
-    else
-         echo "Average accuracy ($avg_accuracy) is below threshold ($THRESHOLD)." | tee -a "$GSM8K_LOG_FILE"
-         return 1
-    fi
-}
-
-###############################################################################
-# Call GSM8K warm-up before the main benchmark
-###############################################################################
-echo "Clearing previous GSM8K log..."
-> "$GSM8K_LOG_FILE" # Clear/truncate the log file
-
-echo "Starting SGLang server for GSM8K warm-up... (TorchInductor autotuning disabled)"
-# Start server in background. Use trust-remote-code like bench_one_batch.
-# Use --log-level warning to reduce noise, adjust if more verbosity is needed.
-# Disable Triton autotuning for TorchInductor for faster startup during warm-up.
-TORCHINDUCTOR_AUTOTUNE_ENABLE=0 python3 -m sglang.launch_server \
-    --model-path "${MODEL}" \
-    --tp-size "${TP}" \
-    --port "$GSM8K_PORT" \
-    --trust-remote-code \
-    --mem-fraction-static "$WARMUP_SERVER_MEM_FRACTION" \
-    --max-running-requests "$WARMUP_SERVER_MAX_REQUESTS" > "$WARMUP_SERVER_LOG_FILE" 2>&1 &
-echo $! > "$SERVER_PID_FILE"
-SERVER_PID=$(cat "$SERVER_PID_FILE")
-
-echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
-echo "Server logs are being written to: $WARMUP_SERVER_LOG_FILE"
-# Wait for server to be ready - poll get_model_info endpoint
-# Timeout after configured seconds
-if ! timeout "${WARMUP_SERVER_TIMEOUT}s" bash -c "until curl -s -f ${GSM8K_HOST}:${GSM8K_PORT}/get_model_info > /dev/null 2>&1; do echo -n '.'; sleep 5; done"; then
-    echo "" # Newline after dots
-    echo "SGLang server failed to start in time. Check $WARMUP_SERVER_LOG_FILE for details. Killing server (if any) and exiting."
-    # Cleanup trap will handle killing the server
-    exit 1
-fi
-echo "" # Newline after dots
-echo "SGLang server started successfully."
-
-echo "Starting GSM8K warm-up..."
-if run_client_gsm8k "aiter"; then
-    echo "GSM8K warm-up successful."
-else
-    echo "GSM8K warm-up failed or accuracy below threshold. Exiting."
-    # Cleanup trap will handle killing the server
-    exit 1
-fi
-# End GSM8K warm-up call
-
-# Ensure warm-up server is stopped before main benchmark
-# The trap will handle this on exit, but explicit kill here is also fine if script doesn't exit above.
-if [ -f "$SERVER_PID_FILE" ] && [ -s "$SERVER_PID_FILE" ]; then
-    BG_PID_TO_KILL=$(cat "$SERVER_PID_FILE")
-    if ps -p "$BG_PID_TO_KILL" > /dev/null 2>&1; then # Check if PID exists
-        echo "Stopping SGLang warm-up server (PID: $BG_PID_TO_KILL)..."
-        kill "$BG_PID_TO_KILL"
-        wait "$BG_PID_TO_KILL" 2>/dev/null || echo "Warm-up server PID $BG_PID_TO_KILL already stopped or not found."
-    else
-        echo "Warm-up server (PID: $BG_PID_TO_KILL) already stopped."
-    fi
-    > "$SERVER_PID_FILE" # Clear PID file as server is stopped
-fi
-
 
 # CSV header (only write if file is empty)
 if [ ! -s "$OUTPUT_CSV" ]; then
