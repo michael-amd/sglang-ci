@@ -9,7 +9,6 @@
 #   bash deepseek_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.8-rocm630
 #   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
-#   bash deepseek_perf_online_csv.sh --gsm8k-script=/path/to/bench_sglang.py
 #   bash deepseek_perf_online_csv.sh --skip-gsm8k
 # ------------------------------------------------------------------------------
 set -euo pipefail
@@ -184,8 +183,8 @@ docker_image="${docker_image:-${1:-$DOCKER_IMAGE_DEFAULT}}"
 ###############################################################################
 FULL_IMAGE="$docker_image"
 
-IMAGE_WITH_TAG="${FULL_IMAGE##*/}" # e.g., sgl-dev:20250429
-LATEST_TAG="${IMAGE_WITH_TAG#*:}"   # e.g., 20250429
+IMAGE_WITH_TAG="${FULL_IMAGE##*/}" # e.g., sgl-dev:20250708
+LATEST_TAG="${IMAGE_WITH_TAG#*:}"   # e.g., 20250708
 
 # ---------------------------
 # 0-c. Container Management (if applicable)
@@ -195,9 +194,9 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     echo "[csv] Docker not found — already inside container."
     INSIDE_CONTAINER=1
   else
-    IMAGE_WITH_TAG_FOR_CONTAINER_NAME="${FULL_IMAGE##*/}"      # sgl-dev:20250429
+    IMAGE_WITH_TAG_FOR_CONTAINER_NAME="${FULL_IMAGE##*/}"      # sgl-dev:20250708
     REPO="${IMAGE_WITH_TAG_FOR_CONTAINER_NAME%%:*}"            # sgl-dev
-    TAG_FOR_CONTAINER_NAME="${IMAGE_WITH_TAG_FOR_CONTAINER_NAME#*:}"       # 20250429
+    TAG_FOR_CONTAINER_NAME="${IMAGE_WITH_TAG_FOR_CONTAINER_NAME#*:}"       # 20250708
     CONTAINER_NAME="${REPO}_${TAG_FOR_CONTAINER_NAME}"
 
     echo "[csv] Target container : ${CONTAINER_NAME}"
@@ -469,7 +468,7 @@ get_best_metrics() {
 SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
 
 # Global arrays for storing metrics per concurrency
-declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics best_num_tokens best_kv_size
+declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics
 
 # Concurrency levels for organized output
 concurrency_values=(128 64 16 4 1)
@@ -527,68 +526,12 @@ init_serving_csv() {
     echo "" >> "$SERVING_CSV"
     echo "" >> "$SERVING_CSV"
 
-    # Number of tokens section
-    echo "Total Tokens Processed" >> "$SERVING_CSV"
-    printf "concurrency" >> "$SERVING_CSV"
-    for conc in "${concurrency_values[@]}"; do
-        printf "\t%s" "$conc" >> "$SERVING_CSV"
-    done
-    echo "" >> "$SERVING_CSV"
 
-    # Placeholder for results
-    printf "${MODEL_NAME}-${MODEL_VARIANT}" >> "$SERVING_CSV"
-    for conc in "${concurrency_values[@]}"; do
-        printf "\t" >> "$SERVING_CSV"
-    done
-    echo "" >> "$SERVING_CSV"
-    echo "" >> "$SERVING_CSV"
-
-    # KV Cache size section
-    echo "Estimated KV Cache Size (GB)" >> "$SERVING_CSV"
-    printf "concurrency" >> "$SERVING_CSV"
-    for conc in "${concurrency_values[@]}"; do
-        printf "\t%s" "$conc" >> "$SERVING_CSV"
-    done
-    echo "" >> "$SERVING_CSV"
-
-    # Placeholder for results
-    printf "${MODEL_NAME}-${MODEL_VARIANT}" >> "$SERVING_CSV"
-    for conc in "${concurrency_values[@]}"; do
-        printf "\t" >> "$SERVING_CSV"
-    done
-    echo "" >> "$SERVING_CSV"
 
     echo "[online] Structured CSV initialized at ${SERVING_CSV}"
 }
 
-# Function to calculate estimated KV cache size
-calculate_kv_cache_size() {
-    local num_tokens=$1
-    local concurrency=$2
 
-    # DeepSeek-V3 parameters for KV cache calculation
-    # Assuming: 64 layers, 2 heads per layer (K,V), 16 heads, head_dim=128, fp16 (2 bytes)
-    # KV cache size ≈ 2 * num_layers * num_heads * head_dim * sequence_length * batch_size * sizeof(fp16)
-    local num_layers=64
-    local num_heads=16
-    local head_dim=128
-    local bytes_per_element=2  # fp16
-
-    if [ -z "$num_tokens" ] || [ "$num_tokens" = "0" ] || [ "$num_tokens" = "NA" ]; then
-        echo "NA"
-        return
-    fi
-
-    # Calculate KV cache size in bytes
-    # Formula: 2 (K,V) * layers * heads * head_dim * tokens * concurrency * 2 bytes
-    local kv_size_bytes=$(awk -v layers="$num_layers" -v heads="$num_heads" -v head_dim="$head_dim" \
-                             -v tokens="$num_tokens" -v conc="$concurrency" -v bytes="$bytes_per_element" \
-                             'BEGIN { print 2 * layers * heads * head_dim * tokens * conc * bytes }')
-
-    # Convert to GB
-    local kv_size_gb=$(awk -v size="$kv_size_bytes" 'BEGIN { printf "%.2f", size / (1024*1024*1024) }')
-    echo "$kv_size_gb"
-}
 
 # Update CSV with results for a specific concurrency
 update_serving_csv_for_concurrency() {
@@ -597,31 +540,12 @@ update_serving_csv_for_concurrency() {
     # Get metrics for this concurrency
     read e2e ttft itl output_throughput < <(get_best_metrics "$concurrency")
 
-    # Calculate total tokens processed (input + output tokens)
-    local num_tokens="NA"
-    if [ "$output_throughput" != "NA" ] && [ -n "$output_throughput" ]; then
-        # Determine prompts used based on concurrency level
-        local prompts_used
-        if [ "$concurrency" -le 16 ]; then
-            prompts_used=128
-        else
-            prompts_used=500
-        fi
-        # Estimate based on benchmark parameters: prompts * (3200 input + 800 output) tokens
-        num_tokens=$((prompts_used * (3200 + 800)))
-    fi
-
-    # Calculate KV cache size
-    local kv_size=$(calculate_kv_cache_size "$num_tokens" "$concurrency")
-
     # Store metrics
     best_e2e_metrics[$concurrency]="$e2e"
     best_ttft_metrics[$concurrency]="$ttft"
     best_itl_metrics[$concurrency]="$itl"
-    best_num_tokens[$concurrency]="$num_tokens"
-    best_kv_size[$concurrency]="$kv_size"
 
-    echo "[online] Updating CSV for concurrency ${concurrency}: E2E=${e2e}ms, TTFT=${ttft}ms, ITL=${itl}ms, Tokens=${num_tokens}, KV=${kv_size}GB"
+    echo "[online] Updating CSV for concurrency ${concurrency}: E2E=${e2e}ms, TTFT=${ttft}ms, ITL=${itl}ms"
 
     # Rebuild the entire CSV with current data
     {
@@ -669,36 +593,6 @@ update_serving_csv_for_concurrency() {
         printf "${MODEL_NAME}-${MODEL_VARIANT}"
         for conc in "${concurrency_values[@]}"; do
             printf "\t%s" "${best_itl_metrics[$conc]:-}"
-        done
-        echo ""
-        echo ""
-
-        # Number of tokens section
-        echo "Total Tokens Processed"
-        printf "concurrency"
-        for conc in "${concurrency_values[@]}"; do
-            printf "\t%s" "$conc"
-        done
-        echo ""
-
-        printf "${MODEL_NAME}-${MODEL_VARIANT}"
-        for conc in "${concurrency_values[@]}"; do
-            printf "\t%s" "${best_num_tokens[$conc]:-}"
-        done
-        echo ""
-        echo ""
-
-        # KV Cache size section
-        echo "Estimated KV Cache Size (GB)"
-        printf "concurrency"
-        for conc in "${concurrency_values[@]}"; do
-            printf "\t%s" "$conc"
-        done
-        echo ""
-
-        printf "${MODEL_NAME}-${MODEL_VARIANT}"
-        for conc in "${concurrency_values[@]}"; do
-            printf "\t%s" "${best_kv_size[$conc]:-}"
         done
         echo ""
     } > "$SERVING_CSV"
@@ -826,7 +720,32 @@ check_all_logs_complete() {
     local all_complete=true
     local missing_runs=0
     local total_runs=0
+    local gsm8k_complete=true
 
+    # Check GSM8K logs if GSM8K is not skipped
+    if [ "$SKIP_GSM8K" = "false" ]; then
+        echo "Checking GSM8K log status..."
+        if [ ! -f "$GSM8K_LOG_FILE" ]; then
+            echo "Missing: GSM8K log file ($GSM8K_LOG_FILE)"
+            gsm8k_complete=false
+        elif [ ! -s "$GSM8K_LOG_FILE" ]; then
+            echo "Empty: GSM8K log file ($GSM8K_LOG_FILE)"
+            gsm8k_complete=false
+        else
+            # Check if GSM8K test completed successfully by looking for the final summary
+            if grep -q "Average Accuracy over 5 runs:" "$GSM8K_LOG_FILE" && grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$GSM8K_LOG_FILE"; then
+                echo "✅ GSM8K log file is complete with final accuracy summary"
+            else
+                echo "Incomplete: GSM8K log file missing final accuracy summary ($GSM8K_LOG_FILE)"
+                gsm8k_complete=false
+            fi
+        fi
+    else
+        echo "GSM8K benchmark is skipped - not checking GSM8K logs"
+    fi
+
+    # Check serving benchmark logs
+    echo "Checking serving benchmark logs..."
     for concurrency in "${concurrency_values[@]}"; do
         for run_number in {1..3}; do
             total_runs=$((total_runs + 1))
@@ -855,11 +774,18 @@ check_all_logs_complete() {
 
     echo "Scan complete: ${total_runs} total runs needed, ${missing_runs} missing/incomplete"
 
-    if [ "$all_complete" = true ]; then
-        echo "✅ All benchmark logs are present and complete! No server startup needed."
+    # All benchmarks are complete only if both serving logs AND GSM8K logs (if required) are complete
+    if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
+        echo "✅ All benchmark logs (serving + GSM8K) are present and complete! No server startup needed."
         return 0
     else
-        echo "❌ Missing ${missing_runs} benchmark runs. Server startup required."
+        if [ "$all_complete" = false ]; then
+            echo "❌ Missing ${missing_runs} serving benchmark runs."
+        fi
+        if [ "$gsm8k_complete" = false ] && [ "$SKIP_GSM8K" = "false" ]; then
+            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
+        fi
+        echo "Server startup required."
         return 1
     fi
 }
@@ -881,7 +807,9 @@ if check_all_logs_complete; then
     echo "✅ CSV generated from existing logs successfully."
     echo "Serving benchmark results written to ${SERVING_CSV}"
     if [ "$SKIP_GSM8K" = "false" ]; then
-        echo "Note: GSM8K benchmark was skipped (not needed when all serving logs exist)"
+        echo "Note: Both GSM8K and serving benchmarks were already complete"
+    else
+        echo "Note: Only serving benchmarks processed (GSM8K was skipped)"
     fi
 
     serving_benchmark_start_time=$(date +%s)
