@@ -10,6 +10,7 @@
 #   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 #   bash deepseek_perf_online_csv.sh --gsm8k-script=/path/to/bench_sglang.py
+#   bash deepseek_perf_online_csv.sh --skip-gsm8k
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -555,7 +556,7 @@ SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
 declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics best_num_tokens best_kv_size
 
 # Concurrency levels for organized output
-concurrency_values=(128 64 32 16 8 4 2 1)
+concurrency_values=(128 64 16 4 1)
 
 # Initialize CSV with structured format like grok
 init_serving_csv() {
@@ -683,8 +684,15 @@ update_serving_csv_for_concurrency() {
     # Calculate total tokens processed (input + output tokens)
     local num_tokens="NA"
     if [ "$output_throughput" != "NA" ] && [ -n "$output_throughput" ]; then
-        # Estimate based on benchmark parameters: 500 prompts * (3200 input + 800 output) tokens
-        num_tokens=$((500 * (3200 + 800)))
+        # Determine prompts used based on concurrency level
+        local prompts_used
+        if [ "$concurrency" -le 16 ]; then
+            prompts_used=128
+        else
+            prompts_used=500
+        fi
+        # Estimate based on benchmark parameters: prompts * (3200 input + 800 output) tokens
+        num_tokens=$((prompts_used * (3200 + 800)))
     fi
 
     # Calculate KV cache size
@@ -789,16 +797,43 @@ run_single_concurrency_benchmark() {
     local timestamp=$3
     local concurrency_log_file="${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run${run_number}_${timestamp}.log"
 
-    echo "Running serving benchmark with concurrency ${concurrency} (Run ${run_number})..."
+    # Check if log already exists and completed successfully using glob pattern
+    existing_log=""
+    for log_file in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run${run_number}"_*.log; do
+        if [[ -f "$log_file" ]]; then
+            # Check if the run completed successfully by looking for completion marker
+            if grep -q "Run completed at:" "$log_file"; then
+                existing_log="$log_file"
+                break
+            else
+                echo "Found incomplete log file: $log_file - will re-run this benchmark"
+            fi
+        fi
+    done
+    if [ -n "$existing_log" ]; then
+        echo "Log for concurrency ${concurrency}, run ${run_number} already exists and completed successfully. Skipping."
+        return 0
+    fi
+
+    # Determine number of prompts based on concurrency level
+    local num_prompts
+    if [ "$concurrency" -le 16 ]; then
+        num_prompts=128
+    else
+        num_prompts=500
+    fi
+
+    echo "Running serving benchmark with concurrency ${concurrency} (Run ${run_number}) - ${num_prompts} prompts..."
     local run_start_time=$(date +%s)
     echo "Run started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" > "$concurrency_log_file"
+    echo "Using ${num_prompts} prompts for concurrency ${concurrency}" >> "$concurrency_log_file"
 
     # Run bench_serving and capture output
     local output=$(python3 -m sglang.bench_serving \
         --backend sglang \
         --dataset-name random \
         --random-range-ratio 1 \
-        --num-prompts 500 \
+        --num-prompts "${num_prompts}" \
         --random-input-len 3200 \
         --random-output-len 800 \
         --max-concurrency "${concurrency}" \
