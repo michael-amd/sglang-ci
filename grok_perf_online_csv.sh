@@ -32,7 +32,6 @@ DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
 DEFAULT_NODE="${DEFAULT_NODE_NAME:-dell300x-pla-t10-23}"
 DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.8}"
-DEFAULT_SKIP_GSM8K="${DEFAULT_SKIP_GSM8K:-false}"
 
 # Container configuration
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
@@ -70,7 +69,6 @@ OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 NODE=""
 THRESHOLD=""
-SKIP_GSM8K=""
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -112,10 +110,6 @@ for arg in "$@"; do
       THRESHOLD="${arg#*=}"
       shift
       ;;
-    --skip-gsm8k=*)
-      SKIP_GSM8K="${arg#*=}"
-      shift
-      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -127,7 +121,6 @@ for arg in "$@"; do
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
-      echo "  --skip-gsm8k=VALUE     Skip GSM8K test (default: $DEFAULT_SKIP_GSM8K)"
       echo "  --help                 Show this help message"
       exit 0
       ;;
@@ -142,7 +135,6 @@ OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 NODE="${NODE:-$DEFAULT_NODE}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
-SKIP_GSM8K="${SKIP_GSM8K:-$DEFAULT_SKIP_GSM8K}"
 
 docker_image="${docker_image:-${1:-$DEFAULT_IMAGE}}"
 
@@ -209,8 +201,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --output-dir="${OUTPUT_DIR}" \
            --gsm8k-script="${GSM8K_SCRIPT}" \
            --node="${NODE}" \
-           --threshold="${THRESHOLD}" \
-           --skip-gsm8k="${SKIP_GSM8K}"
+           --threshold="${THRESHOLD}"
     exit 0
   fi
 fi
@@ -800,15 +791,10 @@ run_client_benchmark() {
 echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
 launch_server
 
-if [ "$SKIP_GSM8K" = "true" ]; then
-    echo "Skipping GSM8K test as requested (--skip-gsm8k=true)"
+if run_client_gsm8k "${ATTENTION_BACKEND}"; then
     run_client_benchmark "${ATTENTION_BACKEND}"
 else
-    if run_client_gsm8k "${ATTENTION_BACKEND}"; then
-        run_client_benchmark "${ATTENTION_BACKEND}"
-    else
-        echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
-    fi
+    echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
 fi
 
 shutdown_server
