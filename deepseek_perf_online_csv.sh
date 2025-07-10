@@ -9,7 +9,6 @@
 #   bash deepseek_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.8-rocm630
 #   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
-#   bash deepseek_perf_online_csv.sh --skip-gsm8k
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -103,7 +102,6 @@ OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
 DOWNLOAD_MODEL="false"
-SKIP_GSM8K="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -149,10 +147,6 @@ for arg in "$@"; do
       DOWNLOAD_MODEL="true"
       shift
       ;;
-    --skip-gsm8k)
-      SKIP_GSM8K="true"
-      shift
-      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -165,7 +159,6 @@ for arg in "$@"; do
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --download-model       Download model if not present (default: false)"
-      echo "  --skip-gsm8k           Skip GSM8K accuracy test and go straight to serving benchmarks"
       echo "  --help                 Show this help message"
       echo ""
       echo "Environment Variables:"
@@ -244,8 +237,7 @@ manage_container() {
                 --output-dir="${OUTPUT_DIR}" \
                 --gsm8k-script="${GSM8K_SCRIPT}" \
                 --threshold="${THRESHOLD}" \
-                $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
-                $([ "$SKIP_GSM8K" = "true" ] && echo "--skip-gsm8k")
+                $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model")
         exit 0
     fi
 }
@@ -347,10 +339,10 @@ validate_parameters() {
         errors=$((errors + 1))
     fi
 
-    # Check if GSM8K script exists when not skipping GSM8K
-    if [ "$SKIP_GSM8K" = "false" ] && [ ! -f "$GSM8K_SCRIPT" ]; then
+    # Check if GSM8K script exists
+    if [ ! -f "$GSM8K_SCRIPT" ]; then
         echo "ERROR: GSM8K script not found at: $GSM8K_SCRIPT" >&2
-        echo "       Use --skip-gsm8k to skip GSM8K benchmark or provide correct path with --gsm8k-script" >&2
+        echo "       Provide correct path with --gsm8k-script" >&2
         errors=$((errors + 1))
     fi
 
@@ -920,26 +912,22 @@ check_all_logs_complete() {
     local total_runs=0
     local gsm8k_complete=true
 
-    # Check GSM8K logs if GSM8K is not skipped
-    if [ "$SKIP_GSM8K" = "false" ]; then
-        echo "Checking GSM8K log status..."
-        if [ ! -f "$GSM8K_LOG_FILE" ]; then
-            echo "Missing: GSM8K log file ($GSM8K_LOG_FILE)"
-            gsm8k_complete=false
-        elif [ ! -s "$GSM8K_LOG_FILE" ]; then
-            echo "Empty: GSM8K log file ($GSM8K_LOG_FILE)"
-            gsm8k_complete=false
-        else
-            # Check if GSM8K test completed successfully by looking for the final summary
-            if grep -q "Average Accuracy over $GSM8K_RUNS runs:" "$GSM8K_LOG_FILE" && grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$GSM8K_LOG_FILE"; then
-                echo "✅ GSM8K log file is complete with final accuracy summary"
-            else
-                echo "Incomplete: GSM8K log file missing final accuracy summary ($GSM8K_LOG_FILE)"
-                gsm8k_complete=false
-            fi
-        fi
+    # Check GSM8K logs
+    echo "Checking GSM8K log status..."
+    if [ ! -f "$GSM8K_LOG_FILE" ]; then
+        echo "Missing: GSM8K log file ($GSM8K_LOG_FILE)"
+        gsm8k_complete=false
+    elif [ ! -s "$GSM8K_LOG_FILE" ]; then
+        echo "Empty: GSM8K log file ($GSM8K_LOG_FILE)"
+        gsm8k_complete=false
     else
-        echo "GSM8K benchmark is skipped - not checking GSM8K logs"
+        # Check if GSM8K test completed successfully by looking for the final summary
+        if grep -q "Average Accuracy over $GSM8K_RUNS runs:" "$GSM8K_LOG_FILE" && grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$GSM8K_LOG_FILE"; then
+            echo "✅ GSM8K log file is complete with final accuracy summary"
+        else
+            echo "Incomplete: GSM8K log file missing final accuracy summary ($GSM8K_LOG_FILE)"
+            gsm8k_complete=false
+        fi
     fi
 
     # Check serving benchmark logs
@@ -980,7 +968,7 @@ check_all_logs_complete() {
         if [ "$all_complete" = false ]; then
             echo "❌ Missing ${missing_runs} serving benchmark runs."
         fi
-        if [ "$gsm8k_complete" = false ] && [ "$SKIP_GSM8K" = "false" ]; then
+        if [ "$gsm8k_complete" = false ]; then
             echo "❌ GSM8K benchmark is missing, empty, or incomplete."
         fi
         echo "Server startup required."
@@ -1004,11 +992,7 @@ if check_all_logs_complete; then
 
     echo "✅ CSV generated from existing logs successfully."
     echo "Serving benchmark results written to ${SERVING_CSV}"
-    if [ "$SKIP_GSM8K" = "false" ]; then
-        echo "Note: Both GSM8K and serving benchmarks were already complete"
-    else
-        echo "Note: Only serving benchmarks processed (GSM8K was skipped)"
-    fi
+    echo "Note: Both GSM8K and serving benchmarks were already complete"
 
     serving_start_time=$(date +%s)
     serving_end_time=$(date +%s)
@@ -1017,46 +1001,36 @@ if check_all_logs_complete; then
 else
     # Not all logs complete - proceed with normal server startup and benchmarking
     echo "Clearing previous logs..."
-    if [ "$SKIP_GSM8K" = "false" ]; then
-        > "$GSM8K_LOG_FILE" # Clear/truncate the GSM8K log file
-    fi
+    > "$GSM8K_LOG_FILE" # Clear/truncate the GSM8K log file
     > "$SERVER_LOG_FILE" # Clear/truncate the server log file
 
-    if [ "$SKIP_GSM8K" = "true" ]; then
-        echo "Starting SGLang server for serving benchmarks (GSM8K skipped)..."
-    else
-        echo "Starting SGLang server for online GSM8K benchmark..."
-    fi
+    echo "Starting SGLang server for online GSM8K benchmark..."
 
     start_sglang_server
 
-    # Run GSM8K benchmark if not skipped
-    if [ "$SKIP_GSM8K" = "false" ]; then
-        # Initialize GSM8K CSV with structured format
-        echo "GSM8K Accuracy Test - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
-        echo "" >> "$OUTPUT_CSV"
-        echo "Test Configuration" >> "$OUTPUT_CSV"
-        echo "TP\t${TP}" >> "$OUTPUT_CSV"
-        echo "Questions\t${GSM8K_NUM_QUESTIONS}" >> "$OUTPUT_CSV"
-        echo "Parallel\t${GSM8K_PARALLEL}" >> "$OUTPUT_CSV"
-        echo "Shots\t${GSM8K_NUM_SHOTS}" >> "$OUTPUT_CSV"
-        echo "Runs\t${GSM8K_RUNS}" >> "$OUTPUT_CSV"
-        echo "" >> "$OUTPUT_CSV"
+    # Run GSM8K benchmark
+    # Initialize GSM8K CSV with structured format
+    echo "GSM8K Accuracy Test - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
+    echo "" >> "$OUTPUT_CSV"
+    echo "Test Configuration" >> "$OUTPUT_CSV"
+    echo "TP\t${TP}" >> "$OUTPUT_CSV"
+    echo "Questions\t${GSM8K_NUM_QUESTIONS}" >> "$OUTPUT_CSV"
+    echo "Parallel\t${GSM8K_PARALLEL}" >> "$OUTPUT_CSV"
+    echo "Shots\t${GSM8K_NUM_SHOTS}" >> "$OUTPUT_CSV"
+    echo "Runs\t${GSM8K_RUNS}" >> "$OUTPUT_CSV"
+    echo "" >> "$OUTPUT_CSV"
 
-        echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
+    echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
 
-        # Run the main GSM8K benchmark
-        if run_gsm8k_benchmark; then
-            echo "✅ GSM8K benchmark completed successfully."
-            echo "Results written to ${OUTPUT_CSV}"
-            echo "GSM8K log saved to ${GSM8K_LOG_FILE}"
-            echo "Server log saved to ${SERVER_LOG_FILE}"
-        else
-            echo "❌ GSM8K benchmark failed or accuracy below threshold."
-            exit 1
-        fi
+    # Run the main GSM8K benchmark
+    if run_gsm8k_benchmark; then
+        echo "✅ GSM8K benchmark completed successfully."
+        echo "Results written to ${OUTPUT_CSV}"
+        echo "GSM8K log saved to ${GSM8K_LOG_FILE}"
+        echo "Server log saved to ${SERVER_LOG_FILE}"
     else
-        echo "GSM8K benchmark skipped as requested."
+        echo "❌ GSM8K benchmark failed or accuracy below threshold."
+        exit 1
     fi
 
     echo "Starting serving benchmark tests with different concurrency levels..."
@@ -1099,9 +1073,7 @@ for conc in "${concurrency_values[@]}"; do
     echo "" >> "$TIMING_LOG"
 done
 
-if [ "$SKIP_GSM8K" = "false" ]; then
-    echo "GSM8K accuracy results written to ${OUTPUT_CSV}"
-fi
+echo "GSM8K accuracy results written to ${OUTPUT_CSV}"
 
 ###############################################################################
 # Final Cleanup - Shutdown Server
