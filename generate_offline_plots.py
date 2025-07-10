@@ -25,201 +25,438 @@
 #################################################################################
 
 import os
+import argparse
+
+import matplotlib
 import pandas as pd
-import matplotlib.pyplot as plt
+
+matplotlib.use("Agg")  # Use non-interactive backend
 from datetime import datetime
-import re
+
+import matplotlib.pyplot as plt
+
 
 class OfflineGraphPlotter:
-    def __init__(self, batch_dir, plot_dir, model_name):
-        self.batch_dir = batch_dir
+    def __init__(self, summary_csv_path, plot_dir, model_name_in_plot):
+        self.summary_csv_path = summary_csv_path
         self.plot_dir = plot_dir
-        self.model_name = model_name
-        self.batch_files=[]
+        self.model_name_in_plot = model_name_in_plot
+        self.df = None
         os.makedirs(self.plot_dir, exist_ok=True)
+        self.expected_batch_sizes = {1, 2, 4, 8, 16, 32, 64, 128, 256}
 
-    def get_batch_files(self):
+    def read_summary_csv(self):
         """
-        Get all CSV files for the batches
+        Reads the summary CSV file into a pandas DataFrame.
         """
         try:
-            if not os.path.exists(self.batch_dir):
-                print(f"Error: Batch directory not found: {self.batch_dir}")
-                self.batch_files = []
+            if not os.path.exists(self.summary_csv_path):
+                print(f"Error: Summary CSV file not found: {self.summary_csv_path}")
+                self.df = pd.DataFrame()
                 return
-                
-            self.batch_files = [f for f in os.listdir(self.batch_dir) if f.endswith(".csv")]
-            if not self.batch_files:
-                print(f"Warning: No CSV files found in {self.batch_dir}")
-                return
-                
-            self.batch_files = sorted(self.batch_files, key=lambda f: int(re.search(r'_(\d+)', f).group(1)))
-        except AttributeError as e:
-            print(f"Error: CSV files do not match expected naming pattern (expecting _<number>): {e}")
-            self.batch_files = []
-        except Exception as e:
-            print(f"Error accessing batch directory {self.batch_dir}: {e}")
-            self.batch_files = []
 
-    def read_csv(self, file_path):
-        """
-        Reads a CSV file into a pandas DataFrame
-        """
-        try:
-            if not os.path.exists(file_path):
-                print(f"Error: CSV file not found: {file_path}")
-                return pd.DataFrame()
-                
-            df = pd.read_csv(file_path)
-            
-            if df.empty:
-                print(f"Warning: CSV file is empty: {file_path}")
-                return df
-                
+            self.df = pd.read_csv(self.summary_csv_path)
+
+            if self.df.empty:
+                print(f"Warning: Summary CSV file is empty: {self.summary_csv_path}")
+                return
+
             # Check for required columns
-            required_columns = ['date']
-            missing_columns = [col for col in required_columns if col not in df.columns]
+            required_columns = [
+                "date",
+                "batch_size",
+                "E2E_Latency(s)",
+                "E2E_Throughput(token/s)",
+            ]
+            missing_columns = [
+                col for col in required_columns if col not in self.df.columns
+            ]
             if missing_columns:
-                print(f"Error: Missing required columns {missing_columns} in {file_path}")
-                return pd.DataFrame()
-                
-            df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
-            return df.sort_values('date')
+                print(
+                    f"Error: Missing required columns {missing_columns} in {self.summary_csv_path}"
+                )
+                self.df = pd.DataFrame()
+                return
+
+            # Convert date to datetime
+            self.df["date"] = pd.to_datetime(self.df["date"], format="%Y%m%d")
+            # Ensure batch_size is integer
+            self.df["batch_size"] = self.df["batch_size"].astype(int)
+            # Sort by date and batch_size
+            self.df = self.df.sort_values(["date", "batch_size"])
+
         except pd.errors.EmptyDataError:
-            print(f"Error: CSV file is empty or corrupted: {file_path}")
-            return pd.DataFrame()
+            print(f"Error: CSV file is empty or corrupted: {self.summary_csv_path}")
+            self.df = pd.DataFrame()
         except pd.errors.ParserError as e:
-            print(f"Error parsing CSV file {file_path}: {e}")
-            return pd.DataFrame()
+            print(f"Error parsing CSV file {self.summary_csv_path}: {e}")
+            self.df = pd.DataFrame()
         except Exception as e:
-            print(f"Error reading CSV file {file_path}: {e}")
-            return pd.DataFrame()
+            print(
+                f"Error reading or processing summary CSV {self.summary_csv_path}: {e}"
+            )
+            self.df = pd.DataFrame()
 
-    def plot_latency_vs_date(self, output_file):
+    def filter_complete_dates(self):
         """
-        Create a latency-date subplot for each batch size (labeling x-axis as Image name)
+        Filters dataframe to only keep dates that have data for all expected batch sizes.
         """
-        total_files = len(self.batch_files)
-        fig, axes = plt.subplots(total_files, 1, figsize=(10, 4 * total_files), sharex=True)
-        
-        if total_files == 1:
+        if self.df.empty:
+            print("No data to filter.")
+            return
+
+        print(
+            f"Filtering for dates with all required batch sizes: {sorted(list(self.expected_batch_sizes))}"
+        )
+
+        # Group by date and check which dates have the required batch sizes
+        date_completeness = self.df.groupby("date")["batch_size"].apply(set)
+
+        complete_dates = date_completeness[
+            date_completeness.apply(lambda x: x.issuperset(self.expected_batch_sizes))
+        ].index
+
+        # Log incomplete dates for user feedback
+        incomplete_dates = date_completeness[
+            ~date_completeness.index.isin(complete_dates)
+        ].index
+        for date in incomplete_dates:
+            present_bs = date_completeness[date]
+            missing_bs = self.expected_batch_sizes - present_bs
+            if missing_bs:
+                print(
+                    f"Date {date.strftime('%Y-%m-%d')}: Incomplete data. Missing batch sizes: {sorted(list(missing_bs))}"
+                )
+
+        if len(complete_dates) == 0:
+            print("\nNo dates found with complete data for all required batch sizes.")
+            self.df = pd.DataFrame()
+        else:
+            self.df = self.df[self.df["date"].isin(complete_dates)]
+            print(
+                f"\nFound {len(complete_dates)} dates with complete data: {[d.strftime('%Y-%m-%d') for d in sorted(complete_dates)]}"
+            )
+
+    def _setup_subplot_axis(
+        self, ax, batch_size, metric_label, ilen, olen, backend=None
+    ):
+        """Helper method to set up common axis properties for subplots."""
+        backend_text = f" [{backend}]" if backend and backend != "unknown" else ""
+        ax.set_title(
+            f"{metric_label} vs Image name for Batch Size {batch_size} (ILEN={ilen}, OLEN={olen}){backend_text}"
+        )
+        ax.set_ylabel(metric_label)
+        ax.grid(True)
+        ax.legend()
+
+    def _plot_metric_for_batch_sizes(self, metric_col, metric_label, output_file):
+        """
+        Create subplot for each batch size showing metric vs date.
+        X-axis shows all available dates without gaps.
+        """
+        if self.df.empty:
+            print("No data available to plot.")
+            return
+
+        # Get unique dates from the entire dataframe to create a unified x-axis
+        all_unique_dates = sorted(self.df["date"].unique())
+        date_to_idx = {date: i for i, date in enumerate(all_unique_dates)}
+
+        # Get unique batch sizes
+        batch_sizes = sorted(self.df["batch_size"].unique())
+        total_subplots = len(batch_sizes)
+
+        if total_subplots == 0:
+            print("No batch sizes found in data.")
+            return
+
+        # Create subplots
+        fig, axes = plt.subplots(
+            total_subplots, 1, figsize=(12, 5 * total_subplots), sharex=True
+        )
+
+        if total_subplots == 1:
             axes = [axes]
 
-        for i, csv_file in enumerate(self.batch_files):
-            csv_path = os.path.join(self.batch_dir, csv_file)
-            filename_part = csv_file.split('.')[0]
-            model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
-            
-            df = self.read_csv(csv_path)
-            
-            # Skip if dataframe is empty
-            if df.empty:
-                axes[i].text(0.5, 0.5, f'No data available for Batch Size {numeric_batch_size}', 
-                           ha='center', va='center', transform=axes[i].transAxes)
-                axes[i].set_title(f"Latency vs Image name for Batch Size {numeric_batch_size} (No Data)")
+        for i, batch_size in enumerate(batch_sizes):
+            ax = axes[i]
+
+            # Filter data for this batch size
+            batch_data = self.df[self.df["batch_size"] == batch_size].copy()
+
+            if batch_data.empty:
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"No data available for Batch Size {batch_size}",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                )
+                ax.set_title(
+                    f"{metric_label} vs Image name for Batch Size {batch_size} (No Data)"
+                )
                 continue
-                
-            # Get ILEN and OLEN from the first row (assuming they are constant for the file)
-            ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
-            olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
 
-            axes[i].plot(df['date'], df['E2E_Latency(s)'], marker='o', label=f'Batch Size {numeric_batch_size}')
-            axes[i].set_title(f"Latency vs Image name for Batch Size {numeric_batch_size} (ILEN={ilen}, OLEN={olen}, {model_prefix})")
-            axes[i].set_ylabel("E2E_Latency(s)")
-            axes[i].grid(True)
-            axes[i].legend()
+            # Sort by date
+            batch_data = batch_data.sort_values("date")
 
+            # Get ILEN and OLEN (should be constant, but use mean to be safe)
+            ilen = (
+                int(batch_data["ILEN"].mean())
+                if "ILEN" in batch_data.columns
+                else "N/A"
+            )
+            olen = (
+                int(batch_data["OLEN"].mean())
+                if "OLEN" in batch_data.columns
+                else "N/A"
+            )
+
+            # Get backend (should be constant for a batch size, use mode to be safe)
+            backend = None
+            if "backend" in batch_data.columns:
+                backend = (
+                    batch_data["backend"].mode()[0]
+                    if not batch_data["backend"].empty
+                    else "unknown"
+                )
+
+            # Map dates to indices for plotting
+            x_indices = batch_data["date"].map(date_to_idx)
+
+            # Plot the metric using indices
+            ax.plot(
+                x_indices,
+                batch_data[metric_col],
+                marker="o",
+                linestyle="-",
+                label=f"Batch Size {batch_size}",
+            )
+
+            # Add value annotations on data points
+            for idx, row in batch_data.iterrows():
+                x_pos = date_to_idx[row["date"]]
+                ax.annotate(
+                    f"{row[metric_col]:.2f}",
+                    (x_pos, row[metric_col]),
+                    textcoords="offset points",
+                    xytext=(0, 7),
+                    ha="center",
+                    fontsize="x-small",
+                )
+
+            # Setup axis
+            self._setup_subplot_axis(ax, batch_size, metric_label, ilen, olen, backend)
+
+        # Set common x-label
         axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
-        plt.xticks(rotation=45)
+
+        # Set x-ticks and labels for the shared axis to show dates without gaps
+        plt.xticks(
+            ticks=range(len(all_unique_dates)),
+            labels=[d.strftime("%Y-%m-%d") for d in all_unique_dates],
+            rotation=45,
+            ha="right",
+        )
+
+        # Adjust layout
         plt.tight_layout()
-        
+
+        # Save plot
         try:
-            # Ensure the directory exists
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
-            plt.savefig(output_file)
-            print(f"Plot figure saved to: {output_file}")
+            plt.savefig(output_file, dpi=150, bbox_inches="tight")
+            print(f"Plot saved to: {output_file}")
         except Exception as e:
             print(f"Error saving plot to {output_file}: {e}")
         finally:
             plt.close()
 
-    
-    def plot_throughput_vs_date(self, output_file):
+    def plot_latency_vs_date(self):
+        """Create latency vs date plot for all batch sizes."""
+        print("Generating latency plot...")
+        current_date_str = datetime.now().strftime("%Y%m%d")
+        output_file = os.path.join(
+            self.plot_dir,
+            f"latency_vs_image_plots_{self.model_name_in_plot}_{current_date_str}.png",
+        )
+        self._plot_metric_for_batch_sizes(
+            "E2E_Latency(s)", "E2E Latency (s)", output_file
+        )
+
+    def plot_throughput_vs_date(self):
+        """Create throughput vs date plot for all batch sizes."""
+        print("Generating throughput plot...")
+        current_date_str = datetime.now().strftime("%Y%m%d")
+        output_file = os.path.join(
+            self.plot_dir,
+            f"throughput_vs_image_plots_{self.model_name_in_plot}_{current_date_str}.png",
+        )
+        self._plot_metric_for_batch_sizes(
+            "E2E_Throughput(token/s)", "E2E Throughput (token/s)", output_file
+        )
+
+    def plot_combined_metrics(self):
         """
-        Create a throughput-date subplot for each batch size (labeling x-axis as Image name)
+        Create a combined plot showing both latency and throughput trends for all batch sizes.
+        X-axis shows all available dates without gaps.
         """
-        total_files = len(self.batch_files)
-        fig, axes = plt.subplots(total_files, 1, figsize=(10, 4 * total_files), sharex=True)
-        
-        if total_files == 1:
-            axes = [axes]
+        print("Generating combined metrics plot...")
+        if self.df.empty:
+            print("No data available to plot.")
+            return
 
-        for i, csv_file in enumerate(self.batch_files):
-            csv_path = os.path.join(self.batch_dir, csv_file)
-            filename_part = csv_file.split('.')[0]
-            model_prefix, numeric_batch_size = filename_part.rsplit('_', 1)
-            
-            df = self.read_csv(csv_path)
-            
-            # Skip if dataframe is empty
-            if df.empty:
-                axes[i].text(0.5, 0.5, f'No data available for Batch Size {numeric_batch_size}', 
-                           ha='center', va='center', transform=axes[i].transAxes)
-                axes[i].set_title(f"Throughput vs Image name for Batch Size {numeric_batch_size} (No Data)")
-                continue
-                
-            # Get ILEN and OLEN from the first row
-            ilen = df['ILEN'].iloc[0] if 'ILEN' in df.columns and not df.empty else 'N/A'
-            olen = df['OLEN'].iloc[0] if 'OLEN' in df.columns and not df.empty else 'N/A'
+        # Get unique dates from the entire dataframe to create a unified x-axis
+        all_unique_dates = sorted(self.df["date"].unique())
+        date_to_idx = {date: i for i, date in enumerate(all_unique_dates)}
 
-            axes[i].plot(df['date'], df['E2E_Throughput(token/s)'], marker='o', label=f'Batch Size {numeric_batch_size}')
-            axes[i].set_title(f"Throughput vs Image name for Batch Size {numeric_batch_size} (ILEN={ilen}, OLEN={olen}, {model_prefix})")
-            axes[i].set_ylabel("E2E_Throughput(token/s)")
-            axes[i].grid(True)
-            axes[i].legend()
+        # Get unique batch sizes
+        batch_sizes = sorted(self.df["batch_size"].unique())
 
-        axes[-1].set_xlabel("Image name (rocm/sgl-dev)")
-        plt.xticks(rotation=45)
+        # Create figure with two subplots side by side
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+
+        # Plot latency trends
+        for batch_size in batch_sizes:
+            batch_data = self.df[self.df["batch_size"] == batch_size].copy()
+            if not batch_data.empty:
+                batch_data = batch_data.sort_values("date")
+                # Calculate mean latency per date (in case of duplicates)
+                latency_by_date = batch_data.groupby("date")["E2E_Latency(s)"].mean()
+
+                # Map dates to indices for plotting
+                x_indices = [date_to_idx[d] for d in latency_by_date.index]
+                ax1.plot(
+                    x_indices,
+                    latency_by_date.values,
+                    marker="o",
+                    linestyle="-",
+                    label=f"BS={batch_size}",
+                )
+
+        ax1.set_title(f"E2E Latency Trends - {self.model_name_in_plot}")
+        ax1.set_xlabel("Date")
+        ax1.set_ylabel("E2E Latency (s)")
+        ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax1.grid(True, alpha=0.3)
+        ax1.set_xticks(range(len(all_unique_dates)))
+        ax1.set_xticklabels(
+            [d.strftime("%Y-%m-%d") for d in all_unique_dates], rotation=45, ha="right"
+        )
+
+        # Plot throughput trends
+        for batch_size in batch_sizes:
+            batch_data = self.df[self.df["batch_size"] == batch_size].copy()
+            if not batch_data.empty:
+                batch_data = batch_data.sort_values("date")
+                # Calculate mean throughput per date
+                throughput_by_date = batch_data.groupby("date")[
+                    "E2E_Throughput(token/s)"
+                ].mean()
+
+                # Map dates to indices for plotting
+                x_indices = [date_to_idx[d] for d in throughput_by_date.index]
+                ax2.plot(
+                    x_indices,
+                    throughput_by_date.values,
+                    marker="o",
+                    linestyle="-",
+                    label=f"BS={batch_size}",
+                )
+
+        ax2.set_title(f"E2E Throughput Trends - {self.model_name_in_plot}")
+        ax2.set_xlabel("Date")
+        ax2.set_ylabel("E2E Throughput (token/s)")
+        ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax2.grid(True, alpha=0.3)
+        ax2.set_xticks(range(len(all_unique_dates)))
+        ax2.set_xticklabels(
+            [d.strftime("%Y-%m-%d") for d in all_unique_dates], rotation=45, ha="right"
+        )
+
+        # Adjust layout
         plt.tight_layout()
-        
+
+        # Save plot
+        current_date_str = datetime.now().strftime("%Y%m%d")
+        output_file = os.path.join(
+            self.plot_dir,
+            f"combined_metrics_{self.model_name_in_plot}_{current_date_str}.png",
+        )
         try:
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
-            plt.savefig(output_file)
-            print(f"Plot figure saved to: {output_file}")
+            plt.savefig(output_file, dpi=150, bbox_inches="tight")
+            print(f"Combined plot saved to: {output_file}")
         except Exception as e:
-            print(f"Error saving plot to {output_file}: {e}")
+            print(f"Error saving combined plot to {output_file}: {e}")
         finally:
             plt.close()
 
-
-    def generate_and_save_plot(self):
+    def generate_and_save_plots(self):
         """
-        Function to process the batch data, generate the plot with subplots for each batch size
+        Main method to orchestrate reading data and generating plots.
         """
-        self.get_batch_files()
-
-        current_date_str = datetime.now().strftime('%Y%m%d')
-        op_latency_file=f"latency_vs_image_plots_{self.model_name}_{current_date_str}.png"
-        op_latency_file = os.path.join(self.plot_dir, op_latency_file)
-
-        op_throughput_file=f"throughput_vs_image_plots_{self.model_name}_{current_date_str}.png"
-        op_throughput_file = os.path.join(self.plot_dir, op_throughput_file)
-
-        self.plot_latency_vs_date(op_latency_file)
-
-        self.plot_throughput_vs_date(op_throughput_file)
+        self.read_summary_csv()
+        if not self.df.empty:
+            self.filter_complete_dates()  # Filter for complete data
+            if not self.df.empty:
+                self.plot_latency_vs_date()
+                self.plot_throughput_vs_date()
+                self.plot_combined_metrics()
+        else:
+            print("No data to plot. Please check the summary CSV file.")
 
 
-# Generate the plots, call main
 if __name__ == "__main__":
-    batch_dir = "/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1"  # Dir where CSVs are located
-    plot_dir = "/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline"# Centralized plot directory
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Generate plots from offline benchmark summary CSV",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
-    model_name="GROK1_MOE-I4F8_offline"
-    plotter = OfflineGraphPlotter(batch_dir, plot_dir, model_name)
+    # Default values from environment variables
+    default_summary_csv = os.environ.get(
+        'OFFLINE_SUMMARY_CSV',
+        '/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1/GROK1_MOE-I4F8_offline_summary.csv'
+    )
+    default_plot_dir = os.environ.get(
+        'OFFLINE_PLOT_DIR',
+        '/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline'
+    )
+    default_model_name = os.environ.get(
+        'OFFLINE_MODEL_NAME',
+        'GROK1_MOE-I4F8_offline'
+    )
 
-    # Generate and save the subplots for latency, throughput for the model
-    plotter.generate_and_save_plot()
+    parser.add_argument(
+        '--summary-csv',
+        type=str,
+        default=default_summary_csv,
+        help='Path to the aggregated summary CSV file'
+    )
 
+    parser.add_argument(
+        '--plot-dir',
+        type=str,
+        default=default_plot_dir,
+        help='Directory where the plots will be saved'
+    )
 
+    parser.add_argument(
+        '--model-name',
+        type=str,
+        default=default_model_name,
+        help='Model name to be used in plot titles'
+    )
+
+    args = parser.parse_args()
+
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Summary CSV: {args.summary_csv}")
+    print(f"  Plot directory: {args.plot_dir}")
+    print(f"  Model name: {args.model_name}")
+    print()
+
+    plotter = OfflineGraphPlotter(args.summary_csv, args.plot_dir, args.model_name)
+    plotter.generate_and_save_plots()
