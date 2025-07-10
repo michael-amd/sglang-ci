@@ -293,7 +293,6 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - `--gsm8k-script=PATH`: Path to GSM8K benchmark script (configurable via environment variables)
   - `--node=NAME`: Node name for reporting (configurable via environment variables)
   - `--threshold=VALUE`: GSM8K accuracy threshold (default: 0.8)
-  - `--skip-gsm8k=VALUE`: Skip GSM8K test (default: false)
   - `--help`: Show help message
 - **Workflow:**
   1. **Container Management:**
@@ -344,9 +343,6 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --work-dir=$WORK_DIR \
     --output-dir=$OUTPUT_DIR \
     --gsm8k-script=$GSM8K_SCRIPT_PATH
-
-  # Skip GSM8K accuracy test
-  bash grok_perf_online_csv.sh --skip-gsm8k=true
   ```
 
 #### Online Data Processing
@@ -641,7 +637,6 @@ The generated markdown reports include:
 
 The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `crontab_rules.txt`.
 
-- **Offline Benchmark:** Runs daily at 7 PM PT.
-- **Online Benchmark:** Runs daily at 8 PM PT.
+- **Online and Offline Benchmark:** Runs daily at 12 AM PT.
 
 To apply these rules, run: `crontab $WORK_DIR/crontab_rules.txt`
