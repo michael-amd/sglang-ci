@@ -5,12 +5,9 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250430
-#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.6.post3-rocm630
-#   bash deepseek_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
+#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash deepseek_perf_offline_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
 #   bash deepseek_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
-#   bash deepseek_perf_offline_csv.sh --gsm8k-script=/path/to/bench_sglang.py
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -19,7 +16,7 @@ set -euo pipefail
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:20250430}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 
 # Default paths - can be overridden
@@ -252,6 +249,57 @@ if [ -n "${INSIDE_CONTAINER}" ] && [ "$DOWNLOAD_MODEL" = "true" ]; then # Only r
 fi
 # ---- End model download ----
 
+# ---------------------------
+# GSM8K Accuracy Check (Local)
+# ---------------------------
+# Check for GSM8K results from online benchmark before proceeding
+check_gsm8k_results() {
+    local online_folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    local gsm8k_log_pattern1="${online_folder}/sglang_client_log_${MODEL_NAME}_gsm8k_*.log"
+    local gsm8k_log_pattern2="${online_folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log"
+
+    echo "[csv] Checking for local GSM8K results in: ${online_folder}"
+
+    # Check both patterns - with and without backend suffix
+    local found_logs=false
+    local success_found=false
+
+    # Check pattern with backend suffix (e.g., _aiter.log)
+    if compgen -G "${gsm8k_log_pattern1}" > /dev/null 2>&1; then
+        found_logs=true
+        if grep -lq "Average accuracy meets threshold" ${gsm8k_log_pattern1} 2>/dev/null; then
+            success_found=true
+        fi
+    fi
+
+    # Check pattern without backend suffix (.log)
+    if [[ -f "${gsm8k_log_pattern2}" ]]; then
+        found_logs=true
+        if grep -q "Average accuracy meets threshold" "${gsm8k_log_pattern2}" 2>/dev/null; then
+            success_found=true
+        fi
+    fi
+
+    if [[ "$found_logs" == "true" ]]; then
+        if [[ "$success_found" == "true" ]]; then
+            echo "[csv] Found GSM8K success message in log file(s). Proceeding with offline benchmark."
+            return 0
+        else
+            echo "[csv] GSM8K log files found but accuracy threshold not met. Skipping offline benchmark."
+            return 1
+        fi
+    else
+        echo "[csv] No GSM8K log files found. Proceeding with offline benchmark (assuming first run or standalone execution)."
+        return 0
+    fi
+}
+
+# Perform GSM8K check
+if ! check_gsm8k_results; then
+    echo "[csv] Exiting due to GSM8K accuracy check failure."
+    exit 0
+fi
+
 ## 2.  Run-folder bookkeeping ---------------------------------------------------
 folder="${OUTPUT_DIR}/offline/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
 mkdir -p "$folder"
@@ -283,17 +331,32 @@ fi
 
 echo "[DEBUG] Using environment variable: ${aiter_env_var}"
 
-out=$(
-  env RCCL_MSCCL_ENABLE=0 ${aiter_env_var}=1 SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
-  python3 -m sglang.bench_one_batch \
-    --model "${MODEL}" \
-    --tp "${TP}" \
-    --batch-size "${BS}" \
-    --input "${ILEN}" \
-    --output "${OLEN}" \
-    --disable-radix-cache \
-    --trust-remote-code 2>&1 | tee "${LOG_FILE}"
-)
+# Build the command with explicit environment variable setting
+if [[ "$aiter_env_var" == "SGLANG_AITER_MOE" ]]; then
+  out=$(
+    env RCCL_MSCCL_ENABLE=0 SGLANG_AITER_MOE=1 SGLANG_INT4_WEIGHT=0 \
+    python3 -m sglang.bench_one_batch \
+      --model "${MODEL}" \
+      --tp "${TP}" \
+      --batch-size "${BS}" \
+      --input "${ILEN}" \
+      --output "${OLEN}" \
+      --disable-radix-cache \
+      --trust-remote-code 2>&1 | tee "${LOG_FILE}"
+  )
+else
+  out=$(
+    env RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 \
+    python3 -m sglang.bench_one_batch \
+      --model "${MODEL}" \
+      --tp "${TP}" \
+      --batch-size "${BS}" \
+      --input "${ILEN}" \
+      --output "${OLEN}" \
+      --disable-radix-cache \
+      --trust-remote-code 2>&1 | tee "${LOG_FILE}"
+  )
+fi
 
 ## 5.  Parse metrics and append CSV --------------------------------------------
 # Isolate the section after the literal "Benchmark ..."

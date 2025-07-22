@@ -31,6 +31,13 @@ DEEPSEEK_IMAGE_REPO="${DEEPSEEK_IMAGE_REPO:-rocm/sgl-dev}"
 DEEPSEEK_IMAGE_TAG="${DEEPSEEK_IMAGE_TAG:-v0.4.8-rocm630}"
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
 
+# New Docker image format configuration
+# Format: v{VERSION}-rocm{ROCM_VERSION}-{HARDWARE}-{DATE}
+# Example: v0.4.9.post2-rocm630-mi30x-20250715
+IMAGE_VERSION="${IMAGE_VERSION:-v0.4.9.post2}"
+ROCM_VERSION="${ROCM_VERSION:-rocm630}"
+HARDWARE_IDENTIFIER="${HARDWARE_IDENTIFIER:-mi30x}"
+
 # Model configuration - will be set based on --model parameter
 GROK_MODEL_NAME="${GROK_MODEL_NAME:-GROK1}"
 GROK_MODEL_VARIANT="${GROK_MODEL_VARIANT:-MOE-I4F8}"
@@ -51,11 +58,19 @@ GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_c
 DEEPSEEK_OFFLINE_SCRIPT="${DEEPSEEK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_offline_csv.sh}"
 DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_online_csv.sh}"
 
-# Python scripts for processing
-PROCESS_OFFLINE_CSV_SCRIPT="${PROCESS_OFFLINE_CSV_SCRIPT:-${BENCHMARK_CI_DIR}/process_offline_csv.py}"
-GENERATE_OFFLINE_PLOTS_SCRIPT="${GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/generate_offline_plots.py}"
-PROCESS_ONLINE_CSV_SCRIPT="${PROCESS_ONLINE_CSV_SCRIPT:-${BENCHMARK_CI_DIR}/process_online_csv.py}"
-GENERATE_ONLINE_PLOTS_SCRIPT="${GENERATE_ONLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/generate_online_plots.py}"
+# Python scripts for processing and plotting (combined)
+PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/process_and_generate_offline_plots.py}"
+PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/process_and_generate_online_plots.py}"
+
+# Teams notification script
+TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/send_teams_notification.py}"
+
+# Teams configuration
+TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
+ENABLE_TEAMS_NOTIFICATIONS="${ENABLE_TEAMS_NOTIFICATIONS:-true}"
+PLOT_SERVER_HOST="${PLOT_SERVER_HOST:-}"
+PLOT_SERVER_PORT="${PLOT_SERVER_PORT:-8000}"
+PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL:-}"
 
 # Output directories
 OFFLINE_OUTPUT_DIR="${OFFLINE_OUTPUT_DIR:-${BENCHMARK_CI_DIR}/offline}"
@@ -102,6 +117,52 @@ ensure_gpu_idle() {
       echo "[nightly] GPU is idle. Proceeding..."
   else
       echo "[nightly] WARN: GPU may still be busy, but proceeding as requested."
+  fi
+}
+
+###############################################################################
+# Teams notification function
+###############################################################################
+send_teams_notification() {
+  local model="$1"
+  local mode="$2"
+
+  # Check if Teams notifications are enabled
+  if [[ "$ENABLE_TEAMS_NOTIFICATIONS" != "true" ]]; then
+    echo "[nightly] Teams notifications disabled (ENABLE_TEAMS_NOTIFICATIONS != true)"
+    return 0
+  fi
+
+  # Check if webhook URL is configured
+  if [[ -z "$TEAMS_WEBHOOK_URL" ]]; then
+    echo "[nightly] WARN: Teams webhook URL not configured (TEAMS_WEBHOOK_URL empty)"
+    return 0
+  fi
+
+  # Check if notification script exists
+  if [[ ! -f "$TEAMS_NOTIFICATION_SCRIPT" ]]; then
+    echo "[nightly] WARN: Teams notification script not found: $TEAMS_NOTIFICATION_SCRIPT"
+    return 0
+  fi
+
+  echo "[nightly] Sending Teams notification for ${model} ${mode} plots..."
+
+  # Execute Teams notification inside the container
+  TEAMS_EXIT_CODE=0
+  docker exec \
+    -e INSIDE_CONTAINER=1 \
+    -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+    -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
+    -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
+    -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
+    "${CONTAINER_NAME}" \
+    bash -c "pip install requests > /dev/null 2>&1 && \
+             python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}'" || TEAMS_EXIT_CODE=$?
+
+  if [ $TEAMS_EXIT_CODE -eq 0 ]; then
+    echo "[nightly] Teams notification sent successfully for ${model} ${mode}"
+  else
+    echo "[nightly] WARN: Teams notification failed for ${model} ${mode} (exit code: $TEAMS_EXIT_CODE)"
   fi
 }
 
@@ -172,15 +233,27 @@ date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 SELECTED_TAG=""
 if [[ "$USE_DATED_TAG" == "true" ]]; then
-  # Try dated tags (today and yesterday)
+  # Try dated tags (today and yesterday) with new format first, then fallback to old format
   for offset in 0 1; do
-    tag=$(date_pst "$offset")
-    echo "[nightly] Trying ${IMAGE_REPO}:${tag} ..."
-    if docker pull "${IMAGE_REPO}:${tag}" >/dev/null 2>&1; then
-      SELECTED_TAG="$tag"; break
+    date_suffix=$(date_pst "$offset")
+
+    # Try new format first: v{VERSION}-rocm{ROCM_VERSION}-{HARDWARE}-{DATE}
+    # Example: v0.4.9.post2-rocm630-mi30x-20250715
+    new_format_tag="${IMAGE_VERSION}-${ROCM_VERSION}-${HARDWARE_IDENTIFIER}-${date_suffix}"
+    echo "[nightly] Trying new format ${IMAGE_REPO}:${new_format_tag} ..."
+    if docker pull "${IMAGE_REPO}:${new_format_tag}" >/dev/null 2>&1; then
+      SELECTED_TAG="$new_format_tag"
+      break
+    fi
+
+    # Fallback to old format: just the date (YYYYMMDD)
+    echo "[nightly] Trying old format ${IMAGE_REPO}:${date_suffix} ..."
+    if docker pull "${IMAGE_REPO}:${date_suffix}" >/dev/null 2>&1; then
+      SELECTED_TAG="$date_suffix"
+      break
     fi
   done
-  [[ -n "$SELECTED_TAG" ]] || { echo "[nightly] No nightly image found for $MODEL"; exit 1; }
+  [[ -n "$SELECTED_TAG" ]] || { echo "[nightly] No nightly image found for $MODEL (tried both new and old formats)"; exit 1; }
 else
   # This branch is currently unused as both models use dated tags
   SELECTED_TAG="$FIXED_TAG"
@@ -228,11 +301,7 @@ if [[ "$MODES_TO_RUN" == "online offline" ]]; then
 fi
 
 for MODE_TO_RUN in $MODES_TO_RUN; do
-  # Skip offline if we're in all mode and online failed
-  if [[ "$MODE_TO_RUN" == "offline" && "$RUNNING_ALL_MODES" == "true" && "$ONLINE_SUCCEEDED" == "false" ]]; then
-    echo "[nightly] === Skipping offline benchmark because online GSM8K failed or accuracy below threshold ==="
-    continue
-  fi
+  # Note: Offline benchmark now handles GSM8K checking internally, so we always attempt it
 
   echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
 
@@ -275,52 +344,46 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
   if [[ "$MODE_TO_RUN" == "online" && "$RUNNING_ALL_MODES" == "true" ]]; then
     if [ $BENCHMARK_EXIT_CODE -eq 0 ]; then
       ONLINE_SUCCEEDED=true
-      echo "[nightly] === Online benchmark succeeded, offline benchmark will proceed ==="
+      echo "[nightly] === Online benchmark script finished successfully, offline benchmark will proceed ==="
     else
       ONLINE_SUCCEEDED=false
-      echo "[nightly] === Online benchmark failed (exit code: $BENCHMARK_EXIT_CODE), offline benchmark will be skipped ==="
+      echo "[nightly] === Online benchmark script failed (exit code: $BENCHMARK_EXIT_CODE). Offline benchmark will still be attempted (GSM8K check moved to offline script). ==="
     fi
   fi
 
-  # Process CSV and Generate Plots
+  # Process CSV and Generate Plots (Combined)
   if [ "$MODE_TO_RUN" == "offline" ]; then
     # Construct the path to the log folder for offline benchmarks
     BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
 
-    PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_offline_csv.log"
-    GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_offline_plots.log"
+    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_offline_plots.log"
 
-    echo "[nightly] Processing offline CSV data... Logs will be saved to ${PROCESS_CSV_LOG_FILE}"
+    echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${PROCESS_OFFLINE_CSV_SCRIPT}' > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
+               python3 '${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT}' --model '${MODEL}' > '${COMBINED_LOG_FILE}' 2>&1"
 
-    echo "[nightly] Generating offline plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
-    docker exec \
-      -e INSIDE_CONTAINER=1 \
-      "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_OFFLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+    # Send Teams notification for offline plots
+    send_teams_notification "${MODEL}" "offline"
   fi
 
   if [ "$MODE_TO_RUN" == "online" ]; then
     # Construct the path to the log folder for online benchmarks
     BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
 
-    PROCESS_CSV_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_online_csv.log"
-    GENERATE_PLOTS_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/generate_online_plots.log"
+    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_online_plots.log"
 
-    echo "[nightly] Processing online CSV data... Logs will be saved to ${PROCESS_CSV_LOG_FILE}"
+    echo "[nightly] Processing online CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${PROCESS_ONLINE_CSV_SCRIPT}' > '${PROCESS_CSV_LOG_FILE}' 2>&1"
+      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
+               python3 '${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT}' --model '${MODEL}' > '${COMBINED_LOG_FILE}' 2>&1"
 
-    echo "[nightly] Generating online plots... Logs will be saved to ${GENERATE_PLOTS_LOG_FILE}"
-    docker exec \
-      -e INSIDE_CONTAINER=1 \
-      "${CONTAINER_NAME}" \
-      bash -c "pip install pandas matplotlib > /dev/null 2>&1 && python3 '${GENERATE_ONLINE_PLOTS_SCRIPT}' > '${GENERATE_PLOTS_LOG_FILE}' 2>&1"
+    # Send Teams notification for online plots
+    send_teams_notification "${MODEL}" "online"
   fi
 
   echo "[nightly] === ${MODE_TO_RUN^} benchmark dispatched for ${MODEL^^}; check logs in ${CONTAINER_NAME} ==="
