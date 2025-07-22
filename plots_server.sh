@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # plots_server.sh
-#   Launches the custom HTTP server to serve GROK1 benchmark plots.
+#   Launches the custom HTTP server to serve benchmark plots.
 #   Serves plots from the centralized plots_server directory.
 #
 # USAGE:
@@ -21,7 +21,7 @@ set -euo pipefail
 DEFAULT_PORT="${HTTP_SERVER_PORT:-8000}"
 DEFAULT_PLOTS_DIR="${PLOTS_SERVER_DIR:-/mnt/raid/michael/sgl_benchmark_ci/plots_server}"
 DEFAULT_BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
-DEFAULT_MODEL_DIRS="${PLOTS_MODEL_DIRS:-GROK1}"  # Space-separated list
+DEFAULT_MODEL_DIRS="${PLOTS_MODEL_DIRS:-"GROK1 DeepSeek-V3-0324"}"  # Space-separated list
 
 # Server configuration
 HTTP_SERVER_SCRIPT="${HTTP_SERVER_SCRIPT:-${DEFAULT_BENCHMARK_CI_DIR}/custom_http_server.py}"

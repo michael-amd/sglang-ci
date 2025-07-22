@@ -5,8 +5,7 @@
 # Offline Grok-1 benchmark.  Supports --docker_image=<image[:tag]> override.
 #
 # USAGE:
-#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250612
-#   bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
+#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
 #   bash grok_perf_offline_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
@@ -233,6 +232,57 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 # ---------------------------
+# GSM8K Accuracy Check (Local)
+# ---------------------------
+# Check for GSM8K results from online benchmark before proceeding
+check_gsm8k_results() {
+    local online_folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    local gsm8k_log_pattern1="${online_folder}/sglang_client_log_${MODEL_NAME}_gsm8k_*.log"
+    local gsm8k_log_pattern2="${online_folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log"
+
+    echo "[csv] Checking for local GSM8K results in: ${online_folder}"
+
+    # Check both patterns - with and without backend suffix
+    local found_logs=false
+    local success_found=false
+
+    # Check pattern with backend suffix (e.g., _aiter.log)
+    if compgen -G "${gsm8k_log_pattern1}" > /dev/null 2>&1; then
+        found_logs=true
+        if grep -lq "Average accuracy meets threshold" ${gsm8k_log_pattern1} 2>/dev/null; then
+            success_found=true
+        fi
+    fi
+
+    # Check pattern without backend suffix (.log)
+    if [[ -f "${gsm8k_log_pattern2}" ]]; then
+        found_logs=true
+        if grep -q "Average accuracy meets threshold" "${gsm8k_log_pattern2}" 2>/dev/null; then
+            success_found=true
+        fi
+    fi
+
+    if [[ "$found_logs" == "true" ]]; then
+        if [[ "$success_found" == "true" ]]; then
+            echo "[csv] Found GSM8K success message in log file(s). Proceeding with offline benchmark."
+            return 0
+        else
+            echo "[csv] GSM8K log files found but accuracy threshold not met. Skipping offline benchmark."
+            return 1
+        fi
+    else
+        echo "[csv] No GSM8K log files found. Proceeding with offline benchmark (assuming first run or standalone execution)."
+        return 0
+    fi
+}
+
+# Perform GSM8K check
+if ! check_gsm8k_results; then
+    echo "[csv] Exiting due to GSM8K accuracy check failure."
+    exit 0
+fi
+
+# ---------------------------
 # Mode-specific Configuration
 # ---------------------------
 # Set mode suffix for folder/file names
@@ -275,33 +325,8 @@ mkdir -p "$folder"
 echo "{\"docker\": \"${docker_image}\"}" > "${folder}/config.json"
 echo "Wrote config.json to ${folder}/config.json"
 
-# Determine attention backend based on image and date (matching online script logic)
-# Default to triton for older images, aiter for newer ones
-ATTENTION_BACKEND="triton"
-
-if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-  # For rocm/sgl-dev images, check date to determine default backend
-  if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-    tag_date="${BASH_REMATCH[1]}"
-    # Since 20250521, default attention backend changed to aiter
-    if [[ "$tag_date" -ge "20250521" ]]; then
-      ATTENTION_BACKEND="aiter"
-    fi
-  fi
-elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
-  # For lmsysorg/sglang images, determine backend based on version
-  major="${BASH_REMATCH[1]}"
-  minor="${BASH_REMATCH[2]}"
-  patch="${BASH_REMATCH[3]}"
-
-  # Assume newer versions (>= v0.4.7) use aiter by default
-  if [[ "$major" -gt 0 ]] || [[ "$major" -eq 0 && "$minor" -gt 4 ]] || [[ "$major" -eq 0 && "$minor" -eq 4 && "$patch" -ge 7 ]]; then
-    ATTENTION_BACKEND="aiter"
-  fi
-else
-  # Default for other images: use aiter
-  ATTENTION_BACKEND="aiter"
-fi
+# All supported images use aiter backend
+ATTENTION_BACKEND="aiter"
 
 echo "Using attention backend: ${ATTENTION_BACKEND}"
 
@@ -325,153 +350,42 @@ for tp in "${TP_VALUES[@]}"; do
       # Select command variant depending on mode and backend
       # -----------------------------------------------------------------------
       if [[ "$mode" == "dummy" ]]; then
-        # Dummy mode command
-        if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then
-          # Use aiter backend with appropriate env vars
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=1" SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --load-format dummy \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend aiter \
-              --torch-compile-max-bs 4 \
-              --quantization fp8 \
-              --trust-remote-code \
-              --enable-torch-compile 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        else
-          # Use triton backend
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=0" SGLANG_INT4_WEIGHT=0 SGLANG_MOE_PADDING=0 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --load-format dummy \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend triton \
-              --quantization fp8 \
-              --trust-remote-code 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        fi
+        # Dummy mode command - always use aiter backend
+        out=$(
+          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 \
+          python3 -m sglang.bench_one_batch \
+            --model "${MODEL}" \
+            --load-format dummy \
+            --tokenizer-path "${TOKENIZER}" \
+            --tp "${tp}" \
+            --batch-size "${bs}" \
+            --input "${ilen}" \
+            --output "${OLEN}" \
+            --attention-backend aiter \
+            --torch-compile-max-bs 4 \
+            --quantization fp8 \
+            --trust-remote-code \
+            --enable-torch-compile 2>&1 | tee "${log_file}"
+        )
+        cmd_exit_status=${PIPESTATUS[0]}
       elif [[ "$mode" == "long_context" ]]; then
-        # Long context mode command
-        if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then
-          # Use aiter backend
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=1" SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend aiter \
-              --quantization fp8 \
-              --trust-remote-code 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        else
-          # Use triton backend
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=0" SGLANG_MOE_PADDING=0 SGLANG_INT4_WEIGHT=1 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend triton \
-              --quantization fp8 \
-              --trust-remote-code 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        fi
+        # Long context mode command - always use aiter backend
+        out=$(
+          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 \
+          python3 -m sglang.bench_one_batch \
+            --model "${MODEL}" \
+            --tokenizer-path "${TOKENIZER}" \
+            --tp "${tp}" \
+            --batch-size "${bs}" \
+            --input "${ilen}" \
+            --output "${OLEN}" \
+            --attention-backend aiter \
+            --quantization fp8 \
+            --trust-remote-code 2>&1 | tee "${log_file}"
+        )
+        cmd_exit_status=${PIPESTATUS[0]}
       else
-        # Normal mode
+        # Normal mode - always use aiter backend
         mem_fraction_arg=""
         if [[ "$bs" -eq 128 ]]; then
           mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_128_MEM_FRACTION"
@@ -479,79 +393,22 @@ for tp in "${TP_VALUES[@]}"; do
           mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_256_MEM_FRACTION"
         fi
 
-        if [[ "$ATTENTION_BACKEND" == "aiter" ]]; then
-          # Use aiter backend
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=1" SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend aiter \
-              --sampling-backend pytorch \
-              --quantization fp8 \
-              --trust-remote-code \
-              --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        else
-          # Use triton backend
-          # Determine which environment variables to use
-          aiter_env_var="SGLANG_USE_AITER"
-          if [[ "$docker_image" =~ rocm/sgl-dev ]]; then
-            if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-              tag_date="${BASH_REMATCH[1]}"
-              if [[ "$tag_date" -lt "20250606" ]]; then
-                aiter_env_var="SGLANG_AITER_MOE"
-              fi
-            fi
-          elif [[ "$docker_image" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-            major="${BASH_REMATCH[1]}"
-            minor="${BASH_REMATCH[2]}"
-            patch="${BASH_REMATCH[3]}"
-            if [[ "$major" -eq 0 ]] && [[ "$minor" -lt 4 || ("$minor" -eq 4 && "$patch" -lt 7) ]]; then
-              aiter_env_var="SGLANG_AITER_MOE"
-            fi
-          fi
-
-          out=$(
-            env "${aiter_env_var}=0" SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0 \
-            python3 -m sglang.bench_one_batch \
-              --model "${MODEL}" \
-              --tokenizer-path "${TOKENIZER}" \
-              --tp "${tp}" \
-              --batch-size "${bs}" \
-              --input "${ilen}" \
-              --output "${OLEN}" \
-              --attention-backend triton \
-              --sampling-backend pytorch \
-              --quantization fp8 \
-              --trust-remote-code \
-              --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
-          )
-          cmd_exit_status=${PIPESTATUS[0]}
-        fi
+        out=$(
+          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 \
+          python3 -m sglang.bench_one_batch \
+            --model "${MODEL}" \
+            --tokenizer-path "${TOKENIZER}" \
+            --tp "${tp}" \
+            --batch-size "${bs}" \
+            --input "${ilen}" \
+            --output "${OLEN}" \
+            --attention-backend aiter \
+            --sampling-backend pytorch \
+            --quantization fp8 \
+            --trust-remote-code \
+            --cuda-graph-max-bs 1024${mem_fraction_arg} 2>&1 | tee "${log_file}"
+        )
+        cmd_exit_status=${PIPESTATUS[0]}
       fi
 
       # Check if the command failed due to OOM

@@ -1,30 +1,53 @@
-# SGLang Benchmark CI
+# SGLang CI and toolkit
 
-This repository contains a collection of benchmarking scripts designed for SGL performance testing of GROK and DeepSeek models. The benchmarks are split into two main modes: **offline** and **online**. Each mode is implemented in separate scripts, which can be run independently to evaluate different configurations, input lengths, and performance metrics.
+This repository provides a comprehensive benchmarking and continuous integration toolkit for SGLang, designed for rigorous performance evaluation and accuracy testing of large language models, specifically GROK and DeepSeek models. The toolkit offers a complete end-to-end solution for model performance analysis, from automated benchmark execution to data visualization and comparison.
 
-The scripts have been updated to support command-line parameters, eliminating the need to manually edit scripts for different configurations. All paths, model names, and other settings can now be specified via command-line arguments.
+## Key Features
+
+**🚀 Comprehensive Benchmarking Modes:**
+- **Offline Mode:** Batch processing benchmarks measuring throughput and latency across various configurations, batch sizes, and context lengths
+- **Online Mode:** Real-time serving performance evaluation with concurrent request handling and interactive latency metrics
+
+**🔧 Automated Infrastructure:**
+- **Docker Integration:** Full support for ROCm SGLang development images and LMSYS SGLang images with automatic container management
+- **Nightly Automation:** Scheduled benchmarking with `perf_nightly.sh` for continuous performance monitoring
+- **Resource Management:** Intelligent GPU utilization checks and container lifecycle management
+
+**📊 Advanced Analytics & Visualization:**
+- **Performance Metrics:** Captures prefill/decode latency, end-to-end throughput, TTFT (Time-To-First-Token), and ITL (Inter-Token Latency)
+- **GSM8K Accuracy Testing:** Integrated mathematical reasoning benchmarks with configurable accuracy thresholds
+- **Data Processing Pipeline:** Automated consolidation of results across multiple benchmark runs with trend analysis
+- **Interactive Plot Server:** Web-based visualization server for exploring performance trends and comparisons
+
+**⚡ Flexible Configuration:**
+- **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
+- **Multi-Model Support:** Specialized configurations for GROK1 MOE and DeepSeek V3 models with FP8 quantization
+- **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
+
+**🔍 Advanced Comparison Tools:**
+- **Performance Regression Detection:** Automated comparison between benchmark runs with configurable thresholds
+- **Statistical Analysis:** GSM8K accuracy significance testing and performance change quantification
+- **Report Generation:** Markdown reports with color-coded performance indicators and detailed metrics breakdown
+
+The toolkit is designed for both development teams conducting regular performance validation and researchers requiring detailed model performance analysis across different configurations and deployment scenarios.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Supported Docker Images](#supported-docker-images)
 - [Benchmark Modes](#benchmark-modes)
   - [Offline Mode](#offline-mode)
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
     - [deepseek_perf_offline_csv.sh](#deepseek_perf_offline_csvsh)
-    - [Offline Data Processing](#offline-data-processing)
-    - [Viewing Offline Plots](#viewing-offline-plots)
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
-    - [Online Data Processing](#online-data-processing)
-    - [Viewing Online Plots](#viewing-online-plots)
+    - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
 - [Automated Nightly Benchmarking](#automated-nightly-benchmarking)
-    - [grok_perf_nightly.sh](#grok_perf_nightlysh)
+  - [perf_nightly.sh](#perf_nightlysh)
 - [Data Processing and Visualization](#data-processing-and-visualization)
-  - [Processing Scripts](#processing-scripts)
-  - [Plotting Scripts](#plotting-scripts)
+  - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
+  - [Plot Server](#plot-server)
 - [Benchmark Comparison](#benchmark-comparison)
   - [compare_csv_results.py](#compare_csv_resultspy)
 - [Requirements](#requirements)
@@ -33,21 +56,15 @@ The scripts have been updated to support command-line parameters, eliminating th
 
 ---
 
-## Overview
-
-The SGL Benchmark CI repository is intended to evaluate the performance of GROK and DeepSeek models on various configurations and use cases. The scripts provided in this repository capture critical metrics such as latency and throughput for both offline and online benchmarking. Results are output as CSV files for easy analysis and archival.
-
----
-
 ## Supported Docker Images
 
 The benchmark scripts support Docker images from multiple sources:
 
 1. **ROCm SGLang Development Images:** Available at <https://hub.docker.com/r/rocm/sgl-dev>
-   - Example: `rocm/sgl-dev:20250623` (nightly build)
+   - Example: `rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716` (nightly build)
 
 2. **LMSYS SGLang Images:** Available at <https://hub.docker.com/r/lmsysorg/sglang/tags>
-   - Example: `lmsysorg/sglang:v0.4.7-rocm630`
+   - Example: `lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x`
 
 3. **Pre-built Images via Helper Script:**
    **Recommended approach:** Use the provided helper script to pull pre-built SGLang images from DockerHub:
@@ -66,32 +83,11 @@ The benchmark scripts support Docker images from multiple sources:
    - This is a workaround until aiter build becomes faster in the future
 
    **Manual Build Alternative:**
-   If you need to build from source (e.g., for PRs with version changes), you can manually build:
+   If you need to build from source (e.g., for PRs with version changes), please refer to the official SGLang repository for the latest build instructions:
 
-   ```bash
-   # Clone the sglang repository
-   git clone https://github.com/sgl-project/sglang.git
-   cd sglang
-
-   # Build the Docker image (adjust ROCm version as needed)
-   docker build -t my-sglang:custom-rocm630 -f docker/Dockerfile.rocm \
-     --build-arg ROCM_VERSION=6.3.0 \
-     --build-arg PYTHON_VERSION=3.10 .
-
-   # Or build with specific commit/branch
-   git checkout <specific-branch-or-commit>
-   docker build -t my-sglang:dev-$(git rev-parse --short HEAD)-rocm630 \
-     -f docker/Dockerfile.rocm .
-   ```
+   **📋 Latest Build Instructions:** https://github.com/sgl-project/sglang/blob/main/docker/Dockerfile.rocm
 
    **Note:** When building from source in the future, remember to rebuild sgl_kernel inside the Docker image after PR checkout.
-
-   Then use your image with the benchmark scripts:
-
-   ```bash
-   bash grok_perf_offline_csv.sh --docker_image=my-sglang:custom-rocm630
-   bash grok_perf_online_csv.sh --docker_image=my-sglang:dev-abc1234-rocm630
-   ```
 
 **Important:** You must provide the full Docker image name including the registry/organization prefix.
 
@@ -107,7 +103,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
 - **Purpose:** Benchmarks the GROK model with multiple test modes (normal, long_context, dummy).
 - **Parameters:**
-  - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
+  - `--docker_image=IMAGE`: Docker image to use
   - `--mode=MODE`: Test mode - normal, long_context, or dummy (default: normal)
   - `--model=PATH`: Model path (configurable via environment variables)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
@@ -115,14 +111,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   - `--work-dir=PATH`: Working directory (configurable via environment variables)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
   - `--help`: Show help message
-- **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
-  - For `rocm/sgl-dev` images:
-    - Dates >= 20250521 use `aiter` backend
-    - Dates < 20250521 use `triton` backend
-  - For `lmsysorg/sglang` images:
-    - Versions >= v0.4.7 use `aiter` backend
-    - Versions < v0.4.7 use `triton` backend
-  - Other images default to `aiter` backend
+- **Automatic Backend Selection:** The script automatically uses the `aiter` backend for all supported images (`rocm/sgl-dev` and `lmsysorg/sglang`).
 - **Configuration by Mode:**
   - **Normal Mode:**
     - TP: 8, Batch Sizes: 1, 2, 4, 8, 16, 32, 64, 128, 256
@@ -152,9 +141,8 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   bash grok_perf_offline_csv.sh
 
   # Using specific Docker images
-  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250520  # Uses triton
-  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:20250521  # Uses aiter
-  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630  # Uses aiter
+  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x
 
   # Custom model and tokenizer
   bash grok_perf_offline_csv.sh \
@@ -173,64 +161,11 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
     --output-dir=$OUTPUT_DIR
   ```
 
-#### Offline Data Processing
-
-- **Purpose:** Process raw offline benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
-- **Script:** `process_offline_csv.py`
-- **Functionality:**
-  - Scans the last 30 days of benchmark results
-  - Aggregates data from all batch sizes and dates
-  - Extracts backend information from CSV files (if Backend column exists) or config.json
-  - Handles both old format (without Backend column) and new format (with Backend column)
-  - Creates a single summary CSV sorted by date, batch_size, and backend
-  - Automatically cleans up old individual batch size CSV files
-- **Output:** `GROK1_MOE-I4F8_offline_summary.csv` containing all benchmark data with backend information
-- **Usage:**
-
-  ```bash
-  python3 process_offline_csv.py
-  ```
-
-#### Viewing Offline Plots
-
-The `generate_offline_plots.py` script generates visualization plots from the consolidated summary CSV created by `process_offline_csv.py`.
-
-- **Purpose:** Create visual representations of offline benchmark performance trends
-- **Script:** `generate_offline_plots.py`
-- **Functionality:**
-  - Reads from the consolidated summary CSV
-  - Displays backend information (aiter/triton) in plot titles when available
-  - Generates three types of plots:
-    - **Latency vs Date:** Shows E2E latency trends for each batch size with backend info
-    - **Throughput vs Date:** Shows E2E throughput trends for each batch size with backend info
-    - **Combined Metrics:** Shows both latency and throughput trends on a single plot
-- **Output:** PNG files saved to the configured plots directory
-- **Usage:**
-
-  ```bash
-  cd $WORK_DIR
-  python3 generate_offline_plots.py
-  ```
-
-To view these plots via a web browser, use the provided plot server:
-
-1. **Start the server:**
-
-   ```bash
-   bash $WORK_DIR/plots_server.sh
-   ```
-
-   This serves files from the plots directory on port 8000.
-
-2. **Access the plots:**
-   Open a web browser and navigate to `http://<server-ip>:8000/`
-   Navigate to the `GROK1/offline/` directory to view the plots.
-
 #### deepseek_perf_offline_csv.sh
 
-- **Purpose:** Benchmarks the DeepSeek V3 model with FP8 quantization.
+- **Purpose:** Benchmarks the DeepSeek model with FP8 quantization.
 - **Parameters:**
-  - `--docker_image=IMAGE`: Docker image to use (default: rocm/sgl-dev:20250430)
+  - `--docker_image=IMAGE`: Docker image to use
   - `--model=PATH`: Model path (configurable via environment variables)
   - `--model-name=NAME`: Model name for output files (default: DeepSeek-V3-0324)
   - `--hf-model-id=ID`: HuggingFace model ID for download (default: deepseek-ai/DeepSeek-V3-0324)
@@ -285,7 +220,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 
 - **Purpose:** Benchmarks the online serving performance, capturing both server startup and response latencies.
 - **Parameters:**
-  - `--docker_image=IMAGE`: Docker image to use (default: lmsysorg/sglang:v0.4.7-rocm630)
+  - `--docker_image=IMAGE`: Docker image to use
   - `--model=PATH`: Model path (configurable via environment variables)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
   - `--work-dir=PATH`: Working directory (configurable via environment variables)
@@ -302,18 +237,10 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
      - Creates a folder named
        `<TAG>_GROK1_MOE-I4F8_online`.
   3. **Server Launch & Client Benchmark:**
-     - **Automatic Backend Selection:** The script automatically determines the attention backend based on the Docker image:
-       - For `rocm/sgl-dev` images:
-         - Dates >= 20250521 use `aiter` backend
-         - Dates < 20250521 use `triton` backend
-       - For `lmsysorg/sglang` images:
-         - Versions >= v0.4.7 use `aiter` backend
-         - Versions < v0.4.7 use `triton` backend
-       - Other images default to `aiter` backend
-     - Sets appropriate environment variables based on image version:
-       - For SGLang v0.4.7+: `SGLANG_USE_AITER=1` (when using aiter)
-       - For SGLang v0.4.6 and earlier: `SGLANG_AITER_MOE=1` (when using aiter)
-       - Always sets: `SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0`
+     - **Automatic Backend Selection:** The script uses the `aiter` backend for all supported images.
+     - Sets appropriate environment variables for the `aiter` backend:
+       - `SGLANG_USE_AITER=1`
+       - `SGLANG_INT4_WEIGHT=1`
      - Runs client benchmarks at multiple request rates.
      - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
   4. **Results Aggregation:**
@@ -332,7 +259,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 
   # Custom configuration
   bash grok_perf_online_csv.sh \
-    --docker_image=lmsysorg/sglang:v0.4.7-rocm630 \
+    --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 \
     --model=$MODEL_PATH \
     --tokenizer=$TOKENIZER_NAME \
     --node=$NODE_NAME \
@@ -345,75 +272,69 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --gsm8k-script=$GSM8K_SCRIPT_PATH
   ```
 
-#### Online Data Processing
+#### deepseek_perf_online_csv.sh
 
-- **Purpose:** Process raw online benchmark CSV files from multiple dates and consolidate them into a single summary CSV.
-- **Script:** `process_online_csv.py`
-- **Functionality:**
-  - Scans the last 30 days of benchmark results
-  - Extracts metrics from three sections: E2E Latency, TTFT, and ITL
-  - Dynamically extracts backend modes (aiter, triton) from CSV row labels
-  - Parses KV cache information from server log files
-  - Key features:
-    - Compiled regex patterns for efficient log parsing
-    - Handles multiple backend modes dynamically
-    - Supports both legacy (e.g., MI300x-aiter (prefill+decode)) and new formats (e.g., MI300x-aiter, MI300x-triton)
-    - Robust parsing with fallbacks for missing data
-  - Creates a single summary CSV sorted by date, mode, and request_rate
-- **Output:** `GROK1_MOE-I4F8_online_summary.csv` containing all benchmark data
+- **Purpose:** Benchmarks the online serving performance of the DeepSeek model. The script first runs a GSM8K accuracy test, then proceeds with a load test using various concurrency levels to measure latency and throughput.
+- **Parameters:**
+  - `--docker_image=IMAGE`: Docker image to use
+  - `--model=PATH`: Path to the DeepSeek model (configurable via environment variables).
+  - `--model-name=NAME`: A specific name for the model, used in output file and folder names (default: `DeepSeek-V3-0324`).
+  - `--hf-model-id=ID`: The HuggingFace model ID for automated downloading (default: `deepseek-ai/DeepSeek-V3-0324`).
+  - `--work-dir=PATH`: The working directory for the benchmark (configurable via environment variables).
+  - `--output-dir=PATH`: Directory to save benchmark results (defaults to the working directory).
+  - `--gsm8k-script=PATH`: Path to the GSM8K benchmark script (configurable via environment variables).
+  - `--threshold=VALUE`: The minimum GSM8K accuracy required for the warm-up test to pass (default: `0.93`).
+  - `--download-model`: A flag to enable automatic model download if it's not found locally.
+  - `--help`: Displays the help message with all available options.
+- **Workflow:**
+  1. **Container Management:** Automatically manages the Docker container lifecycle, re-invoking itself inside a container if run on a host machine.
+  2. **Model Download:** If the `--download-model` flag is present, it uses `huggingface-cli` to download the model.
+  3. **Server Launch:** Starts the SGLang server with the specified DeepSeek model and a tensor-parallel size of 8.
+  4. **GSM8K Warm-up Test:** Runs an initial benchmark using the GSM8K script to validate model accuracy against the threshold.
+  5. **Serving Benchmark:** Executes a series of load tests using `sglang.bench_serving` across multiple concurrency levels (e.g., 128, 64, 16, 4, 1).
+- **Metrics Captured:**
+  - **GSM8K Test:** Average accuracy, throughput, and latency.
+  - **Serving Test:** For each concurrency level, it captures the best results from multiple runs for Median End-to-End (E2E) Latency, Median Time-To-First-Token (TTFT), and Median Inter-Token Latency (ITL).
+- **Output:**
+  A dedicated run folder is created, which includes:
+  - Server logs (`sglang_server.log`) and client logs for both GSM8K and serving benchmarks.
+  - A CSV file summarizing the initial GSM8K test results.
+  - A separate, structured CSV file for the serving benchmark, detailing E2E, TTFT, and ITL metrics against concurrency levels.
 - **Usage:**
 
   ```bash
-  cd $WORK_DIR
-  python3 process_online_csv.py
+  # Basic usage with default parameters
+  bash deepseek_perf_online_csv.sh
+
+  # Using a specific Docker image
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+
+  # Custom model and a different accuracy threshold
+  bash deepseek_perf_online_csv.sh \
+    --model=$MODEL_PATH \
+    --model-name=DeepSeek-Custom \
+    --threshold=0.90
   ```
-
-#### Viewing Online Plots
-
-The `generate_online_plots.py` script generates visualization plots from the consolidated summary CSV created by `process_online_csv.py`.
-
-- **Purpose:** Create visual representations of online benchmark performance trends
-- **Script:** `generate_online_plots.py`
-- **Functionality:**
-  - Reads from the consolidated summary CSV
-  - Generates a comprehensive plot with 5 subplots:
-    - **E2E Latency:** Shows trends for different request rates and backend modes (aiter, triton)
-    - **TTFT (Time to First Token):** First token generation latency across modes
-    - **ITL (Inter-Token Latency):** Latency between tokens for each backend
-    - **Number of Tokens:** KV cache allocation at server startup per backend mode
-    - **KV Cache Usage:** Memory usage in GB (bar chart) for each backend
-  - Automatically handles multiple backend modes in the data
-  - Differentiates modes with distinct colors and labels in plots
-- **Output:** PNG file saved to the configured plots directory
-- **Usage:**
-
-  ```bash
-  cd $WORK_DIR
-  python3 generate_online_plots.py
-  ```
-
-To view the plots, use the same plot server as for offline plots.
 
 ---
 
 ## Automated Nightly Benchmarking
 
-The `grok_perf_nightly.sh` script provides automated orchestration for running nightly benchmarks with the latest Docker images. This script is designed to be run via cron jobs and handles the complete workflow from Docker image management to benchmark execution and data processing.
+The `perf_nightly.sh` script provides automated orchestration for running nightly benchmarks for both GROK and DeepSeek. This script is designed to be run via cron jobs and handles the complete workflow from Docker image management to benchmark execution and data processing.
 
-### grok_perf_nightly.sh
+### perf_nightly.sh
 
 - **Purpose:** Automated nightly benchmark orchestration that pulls the latest `rocm/sgl-dev` Docker image and runs benchmarks with proper resource management.
 - **Key Features:**
   - **Automatic Image Selection:** Pulls the latest `rocm/sgl-dev` image for the current PST date (with fallback to previous day)
   - **GPU Resource Management:** Checks GPU idle status and stops running containers if needed
   - **Container Management:** Creates/manages persistent containers with proper mounts and configuration
-  - **Comprehensive Workflow:** Runs benchmarks, processes CSV data, and generates plots automatically
-  - **Flexible Mode Selection:** Supports running offline-only, online-only, or both benchmarks
+  - **Comprehensive Workflow:** Runs benchmarks and then immediately processes CSV data and generates plots.
+  - **Flexible Model and Mode Selection:** Supports `grok` and `deepseek` models, and can run `offline`-only, `online`-only, or `all` benchmarks.
 - **Parameters:**
-  - `--mode=MODE`: Specify which benchmarks to run:
-    - `offline`: Run offline benchmarks only
-    - `online`: Run online benchmarks only
-    - `all`: Run both offline and online benchmarks (default)
+  - `--model=MODEL`: The model to run. Options: `grok` (default), `deepseek`.
+  - `--mode=MODE`: Which benchmarks to run. Options: `all` (default), `offline`, `online`.
 - **Environment Variables:** All configuration can be customized via environment variables:
   - `BENCHMARK_CI_DIR`: Base directory for benchmark scripts (default: `/mnt/raid/michael/sgl_benchmark_ci`)
   - `MOUNT_DIR`: Directory to mount in container (default: `/mnt/raid/`)
@@ -427,26 +348,22 @@ The `grok_perf_nightly.sh` script provides automated orchestration for running n
   2. **Image Management:** Pulls latest `rocm/sgl-dev:YYYYMMDD` image for current PST date
   3. **Container Setup:** Creates/starts container with proper mounts and privileges
   4. **Benchmark Execution:** Runs selected benchmark scripts inside container
-  5. **Data Processing:** Automatically processes CSV data and generates plots
+  5. **Data Processing & Plotting:** Automatically runs the combined script to process data and generate plots.
   6. **Logging:** Saves processing logs to benchmark output folders
 - **Output:**
   - Benchmark results in standard output folders
-  - Processing logs: `process_offline_csv.log`, `generate_offline_plots.log` (for offline mode)
-  - Processing logs: `process_online_csv.log`, `generate_online_plots.log` (for online mode)
+  - Processing logs: `process_and_generate_offline_plots.log` or `process_and_generate_online_plots.log`
 - **Usage:**
 
   ```bash
-  # Run both offline and online benchmarks (default)
-  bash grok_perf_nightly.sh
+  # Run GROK online and offline benchmarks (default)
+  bash perf_nightly.sh
 
-  # Run offline benchmarks only
-  bash grok_perf_nightly.sh --mode=offline
+  # Run GROK offline only
+  bash perf_nightly.sh --model=grok --mode=offline
 
-  # Run online benchmarks only
-  bash grok_perf_nightly.sh --mode=online
-
-  # Run all benchmarks (explicit)
-  bash grok_perf_nightly.sh --mode=all
+  # Run DeepSeek online only
+  bash perf_nightly.sh --model=deepseek --mode=online
   ```
 
 **Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
@@ -455,58 +372,42 @@ The `grok_perf_nightly.sh` script provides automated orchestration for running n
 
 ## Data Processing and Visualization
 
-The benchmark CI includes automated data processing and visualization scripts that consolidate results from multiple benchmark runs and generate performance trend plots.
+The benchmark CI includes unified scripts that handle both data processing and plot generation. These scripts consolidate results from multiple benchmark runs and generate performance trend plots, supporting both `grok` and `deepseek` models via a `--model` flag.
 
-### Processing Scripts
+### Processing and Plotting Scripts
 
-These scripts process raw benchmark outputs and create consolidated summary CSV files:
+These scripts process raw benchmark outputs, create consolidated summary CSV files, and generate plots.
 
-- **process_offline_csv.py**
-  - Processes offline benchmark results from dated folders
-  - Consolidates data from all batch sizes into a single summary CSV
-  - Handles multiple date formats (YYYYMMDD and YYYYMMDDrc)
-  - Automatically cleans up old per-batch CSV files
-  - Key features:
-    - Robust error handling for missing or corrupted files
-    - Aggregates using mean values when multiple data points exist
-    - Maintains ILEN/OLEN configuration data
+- **`process_and_generate_offline_plots.py`**
+  - **Purpose:** Process raw offline data and create visual representations of performance trends.
+  - **Functionality:**
+    - Consolidates data from multiple dates into a single summary CSV.
+    - Generates plots for latency and throughput vs. date, with backend information.
+  - **Usage:**
+    ```bash
+    # For GROK
+    python3 process_and_generate_offline_plots.py --model grok
 
-- **process_online_csv.py**
-  - Processes online benchmark results with complex multi-table CSV format
-  - Extracts metrics from three sections: E2E Latency, TTFT, and ITL
-  - Dynamically extracts backend modes (aiter, triton) from CSV row labels
-  - Parses KV cache information from server log files
-  - Key features:
-    - Compiled regex patterns for efficient log parsing
-    - Handles multiple backend modes dynamically
-    - Supports both legacy (e.g., MI300x-aiter (prefill+decode)) and new formats (e.g., MI300x-aiter, MI300x-triton)
-    - Robust parsing with fallbacks for missing data
+    # For DeepSeek
+    python3 process_and_generate_offline_plots.py --model deepseek
+    ```
 
-### Plotting Scripts
+- **`process_and_generate_online_plots.py`**
+  - **Purpose:** Process raw online data and create visual representations of performance trends for both GROK and DeepSeek.
+  - **Functionality:**
+    - Consolidates data from multiple dates into a single summary CSV.
+    - Supports model-specific configurations for `grok` and `deepseek`.
+    - Handles different load metrics (`request_rate` for grok, `concurrency` for deepseek).
+    - Generates a comprehensive plot with subplots for E2E Latency, TTFT, ITL, and, if available, Token/KV Cache data.
+  - **Usage:**
+    ```bash
+    cd $WORK_DIR
+    # For GROK
+    python3 process_and_generate_online_plots.py --model grok
 
-These scripts generate visualization plots from the consolidated summary CSVs:
-
-- **generate_offline_plots.py**
-  - Creates three types of visualizations:
-    - Individual subplots for each batch size showing latency trends
-    - Individual subplots for each batch size showing throughput trends
-    - Combined plot showing all batch sizes on single latency/throughput charts
-  - Features:
-    - Automatic date formatting on x-axis
-    - Value annotations on data points
-    - Handles missing data gracefully
-
-- **generate_online_plots.py**
-  - Creates a comprehensive multi-subplot figure showing:
-    - E2E Latency trends for different request rates and backend modes (aiter, triton)
-    - TTFT (Time to First Token) performance
-    - ITL (Inter-Token Latency) metrics
-    - Number of tokens allocated for KV cache
-    - KV Cache memory usage (as bar chart)
-  - Features:
-    - Intelligent annotation overlap detection
-    - Separate handling for performance metrics vs. resource metrics
-    - Explanatory notes for technical metrics
+    # For DeepSeek
+    python3 process_and_generate_online_plots.py --model deepseek
+    ```
 
 ### Plot Server
 
@@ -517,7 +418,6 @@ A simple HTTP server is provided to view generated plots:
 bash plots_server.sh
 
 # Access plots at http://<server-ip>:8000/
-# Navigate to GROK1/offline/ or GROK1/online/ directories
 ```
 
 The server uses `custom_http_server.py` to serve files with proper directory listings.
@@ -630,6 +530,35 @@ The generated markdown reports include:
   Use command-line parameters to specify model paths, tokenizer paths, or benchmark parameters instead of modifying scripts directly. Run any script with `--help` to see available options.
 - **Resource Management:**
   Ensure that no other processes are consuming critical GPU resources to avoid memory capacity errors.
+
+---
+
+## Model Configuration Details
+
+### Torch.Compile Settings
+
+The benchmark scripts use different torch.compile configurations that affect performance results:
+
+- **Dummy Mode (grok_perf_offline_csv.sh):**
+  - Uses `--enable-torch-compile` with `--torch-compile-max-bs 4`
+  - **Note:** Torch.compile introduces compilation overhead on first run, which may affect timing measurements
+  - Performance plots should account for this configuration when comparing results
+
+- **Normal and Long Context Modes:**
+  - Torch.compile is not enabled by default
+  - Uses standard CUDA graphs with `--cuda-graph-max-bs 1024`
+
+### GSM8K Accuracy Thresholds
+
+The benchmark scripts use GSM8K accuracy testing as a warm-up validation step with the following default thresholds:
+
+- **GROK-1 Model:**
+  - **Online Mode:** 0.8 (80% accuracy threshold)
+
+- **DeepSeek V3-0324 Model:**
+  - **Online Mode:** 0.93 (93% accuracy threshold)
+
+These thresholds can be customized using the `--threshold` parameter in online modes. If GSM8K accuracy falls below the threshold, the benchmark will skip performance testing to avoid reporting results from a potentially misconfigured model.
 
 ---
 

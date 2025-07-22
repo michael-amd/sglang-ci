@@ -4,8 +4,7 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250625
-#   bash grok_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.7-rocm630
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
@@ -26,7 +25,7 @@ MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
 # Default paths - can be overridden
 DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
-DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-Xenova/grok-1-tokenizer}"
+DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
@@ -240,72 +239,11 @@ launch_server() {
   SERVER_LOG="${folder}/server_output_aiter.log"
   rm -f "$SERVER_LOG"
 
-  # Determine attention backend based on image and date
-  # Default to triton for older images, aiter for newer ones
-  attn_backend="triton"
-
-  if [[ "$FULL_IMAGE" =~ rocm/sgl-dev ]]; then
-    # For rocm/sgl-dev images, check date to determine default backend
-    if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-      tag_date="${BASH_REMATCH[1]}"
-      # Since 20250521, default attention backend changed to aiter
-      if [[ "$tag_date" -ge "20250521" ]]; then
-        attn_backend="aiter"
-      fi
-    fi
-
-    # Determine which environment variables to use based on date
-    aiter_env_var="SGLANG_AITER_MOE"
-    if [[ "$LATEST_TAG" =~ ^([0-9]{8}) ]]; then
-      tag_date="${BASH_REMATCH[1]}"
-      if [[ "$tag_date" -ge "20250606" ]]; then
-        aiter_env_var="SGLANG_USE_AITER"
-      fi
-    fi
-
-    # Set environment based on which backend we're using
-    if [[ "$attn_backend" == "aiter" ]]; then
-      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    else
-      env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    fi
-    extra_flags=""
-
-  elif [[ "$FULL_IMAGE" =~ lmsysorg/sglang:v([0-9]+)\.([0-9]+)\.([0-9]+)(\.post[0-9]+)? ]]; then
-    # For lmsysorg/sglang images, determine backend based on version
-    major="${BASH_REMATCH[1]}"
-    minor="${BASH_REMATCH[2]}"
-    patch="${BASH_REMATCH[3]}"
-
-    # Assume newer versions (>= v0.4.7) use aiter by default
-    if [[ "$major" -gt 0 ]] || [[ "$major" -eq 0 && "$minor" -gt 4 ]] || [[ "$major" -eq 0 && "$minor" -eq 4 && "$patch" -ge 7 ]]; then
-      attn_backend="aiter"
-    fi
-
-    # Determine environment variable name
-    aiter_env_var="SGLANG_USE_AITER"
-    # Use SGLANG_AITER_MOE for versions before v0.4.7
-    if [[ "$major" -eq 0 ]]; then
-      if [[ "$minor" -lt 4 ]] || [[ "$minor" -eq 4 && "$patch" -lt 7 ]]; then
-        aiter_env_var="SGLANG_AITER_MOE"
-      fi
-    fi
-
-    # Set environment based on which backend we're using
-    if [[ "$attn_backend" == "aiter" ]]; then
-      env_prefix="${aiter_env_var}=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    else
-      env_prefix="SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    fi
-    extra_flags=""
-
-  else
-    # Default for other images: use aiter with new env vars
-    attn_backend="aiter"
-    aiter_env_var="SGLANG_USE_AITER"
-    env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
-    extra_flags=""
-  fi
+  # All supported images use aiter backend with SGLANG_USE_AITER
+  attn_backend="aiter"
+  aiter_env_var="SGLANG_USE_AITER"
+  env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+  extra_flags=""
 
   # Store the backend globally for CSV output
   ATTENTION_BACKEND="$attn_backend"
@@ -315,9 +253,9 @@ launch_server() {
 
   # Build command with proper env handling
   if [[ "$attn_backend" == "aiter" ]]; then
-    cmd="env '${aiter_env_var}=1' SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    cmd="env '${aiter_env_var}=1' SGLANG_INT4_WEIGHT=1"
   else
-    cmd="env SGLANG_INT4_WEIGHT=1 SGLANG_MOE_PADDING=0"
+    cmd="env SGLANG_INT4_WEIGHT=1"
   fi
 
   cmd="${cmd} python3 -m sglang.launch_server \
@@ -332,7 +270,7 @@ launch_server() {
   SERVER_PID=$!
 
   # Wait for server to be ready with timeout
-  local timeout=300  # 5 minutes timeout
+  local timeout=600  # 10 minutes timeout
   local elapsed=0
   echo "[online] Waiting for server to be ready (timeout: ${timeout}s)..."
   while ! grep -q "The server is fired up and ready to roll!" "$SERVER_LOG"; do

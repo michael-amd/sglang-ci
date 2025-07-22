@@ -5,8 +5,7 @@
 # Online-throughput benchmark for DeepSeek on TP=8 MI300x using GSM8K.
 #
 # USAGE:
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:20250707
-#   bash deepseek_perf_online_csv.sh --docker_image=lmsysorg/sglang:v0.4.8-rocm630
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
@@ -20,7 +19,7 @@ export TZ='America/Los_Angeles'
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:20250430}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 
 # Default paths - can be overridden
