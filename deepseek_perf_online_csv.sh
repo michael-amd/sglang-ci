@@ -28,7 +28,7 @@ DEFAULT_MODEL_NAME="${DEFAULT_MODEL_NAME:-DeepSeek-V3-0324}"
 DEFAULT_HF_MODEL_ID="${DEFAULT_HF_MODEL_ID:-deepseek-ai/DeepSeek-V3-0324}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
+DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
 DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.93}"
 
 # Container configuration

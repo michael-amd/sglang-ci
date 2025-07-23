@@ -244,7 +244,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
      - Runs client benchmarks at multiple request rates.
      - Captures logs and parses median end-to-end latency (E2E), time-to-first-token (TTFT), and inter-token latency (ITL).
   4. **Results Aggregation:**
-     - Aggregates metrics and compares them with reference H100 values.
+     - Aggregates metrics for performance analysis.
      - Generates a CSV summary with dynamic backend labeling (e.g., MI300x-aiter or MI300x-triton).
 - **Output:**
   A run folder containing:
