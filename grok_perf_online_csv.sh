@@ -5,8 +5,8 @@
 #
 # USAGE:
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash grok_perf_online_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
-#   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
+#   bash grok_perf_online_csv.sh --model=/path/to/model
+#   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
@@ -24,11 +24,11 @@ MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
 # Default paths - can be overridden
-DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
-DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
+DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
+DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
-DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/mnt/raid/michael/sgl-project/sglang/benchmark/gsm8k/bench_sglang.py}"
+DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
 DEFAULT_NODE="${DEFAULT_NODE_NAME:-dell300x-pla-t10-23}"
 DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.8}"
 
@@ -50,10 +50,7 @@ PROMPTS_PER_RATE_MULTIPLIER="${PROMPTS_PER_RATE_MULTIPLIER:-300}"
 # Request rates for benchmarking
 REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
 
-# H100 baseline data (can be overridden via environment)
-H100_E2E_VALUES="${H100_E2E_VALUES:-13209 13874 16613 44918 85049}"
-H100_TTFT_VALUES="${H100_TTFT_VALUES:-99.1 102.0 113.4 170.7 520.9}"
-H100_ITL_VALUES="${H100_ITL_VALUES:-23.0 24.4 25.9 63.9 108.6}"
+# Baseline data variables removed
 
 ###############################################################################
 # 0. Parse CLI flags
@@ -186,7 +183,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        -v "${MOUNT_DIR}:${MOUNT_DIR}" -v "${WORK_DIR}:${WORK_DIR}" --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
@@ -463,23 +460,12 @@ get_best_metrics() {
 # Global arrays for storing metrics
 declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 
-# H100 baseline data - convert from environment variables to arrays
+# Request rates array
 read -ra REQ_RATES <<< "$REQUEST_RATES"
-read -ra H100_E2E <<< "$H100_E2E_VALUES"
-read -ra H100_TTFT <<< "$H100_TTFT_VALUES"
-read -ra H100_ITL <<< "$H100_ITL_VALUES"
 
-compute_ratio() {
-    local ref=$1
-    local meas=$2
-    if [[ "$meas" == "NA" || "$meas" == "0" ]]; then
-        echo "NA"
-    else
-        awk -v r="$ref" -v m="$meas" 'BEGIN { printf "%d", (r/m)*100 }'
-    fi
-}
+# Compute ratio function removed since H100 baseline data is no longer used
 
-# Initialize the CSV with headers and baseline data
+# Initialize the CSV with headers
 init_csv() {
     echo "Online mode - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
     echo "" >> "$OUTPUT_CSV"
@@ -492,21 +478,8 @@ init_csv() {
     done
     echo "" >> "$OUTPUT_CSV"
 
-    printf "H100" >> "$OUTPUT_CSV"
-    for val in "${H100_E2E[@]}"; do
-        printf "\t%s" "$val" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
-    for rate in "${REQ_RATES[@]}"; do
-        printf "\t" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
-    # Placeholder for ratios
-    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
@@ -521,21 +494,8 @@ init_csv() {
     done
     echo "" >> "$OUTPUT_CSV"
 
-    printf "H100" >> "$OUTPUT_CSV"
-    for val in "${H100_TTFT[@]}"; do
-        printf "\t%s" "$val" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
-    for rate in "${REQ_RATES[@]}"; do
-        printf "\t" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
-    # Placeholder for ratios
-    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
@@ -550,21 +510,8 @@ init_csv() {
     done
     echo "" >> "$OUTPUT_CSV"
 
-    printf "H100" >> "$OUTPUT_CSV"
-    for val in "${H100_ITL[@]}"; do
-        printf "\t%s" "$val" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
     # Placeholder for MI300x results
     printf "MI300x-${ATTENTION_BACKEND}, $NODE" >> "$OUTPUT_CSV"
-    for rate in "${REQ_RATES[@]}"; do
-        printf "\t" >> "$OUTPUT_CSV"
-    done
-    echo "" >> "$OUTPUT_CSV"
-
-    # Placeholder for ratios
-    printf "H100/MI300x-${ATTENTION_BACKEND}" >> "$OUTPUT_CSV"
     for rate in "${REQ_RATES[@]}"; do
         printf "\t" >> "$OUTPUT_CSV"
     done
@@ -598,27 +545,9 @@ update_csv_for_rate() {
         done
         echo ""
 
-        printf "H100"
-        for val in "${H100_E2E[@]}"; do
-            printf "\t%s" "$val"
-        done
-        echo ""
-
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_e2e_aiter[$r]:-}"
-        done
-        echo ""
-
-        printf "H100/MI300x-${ATTENTION_BACKEND}"
-        for idx in "${!REQ_RATES[@]}"; do
-            r=${REQ_RATES[$idx]}
-            if [ -n "${best_e2e_aiter[$r]:-}" ]; then
-                ratio=$(compute_ratio "${H100_E2E[$idx]}" "${best_e2e_aiter[$r]}")
-                printf "\t%s%%" "$ratio"
-            else
-                printf "\t"
-            fi
         done
         echo ""
         echo ""
@@ -631,27 +560,9 @@ update_csv_for_rate() {
         done
         echo ""
 
-        printf "H100"
-        for val in "${H100_TTFT[@]}"; do
-            printf "\t%s" "$val"
-        done
-        echo ""
-
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_ttft_aiter[$r]:-}"
-        done
-        echo ""
-
-        printf "H100/MI300x-${ATTENTION_BACKEND}"
-        for idx in "${!REQ_RATES[@]}"; do
-            r=${REQ_RATES[$idx]}
-            if [ -n "${best_ttft_aiter[$r]:-}" ]; then
-                ratio=$(compute_ratio "${H100_TTFT[$idx]}" "${best_ttft_aiter[$r]}")
-                printf "\t%s%%" "$ratio"
-            else
-                printf "\t"
-            fi
         done
         echo ""
         echo ""
@@ -664,27 +575,9 @@ update_csv_for_rate() {
         done
         echo ""
 
-        printf "H100"
-        for val in "${H100_ITL[@]}"; do
-            printf "\t%s" "$val"
-        done
-        echo ""
-
         printf "MI300x-${ATTENTION_BACKEND}, $NODE"
         for r in "${REQ_RATES[@]}"; do
             printf "\t%s" "${best_itl_aiter[$r]:-}"
-        done
-        echo ""
-
-        printf "H100/MI300x-${ATTENTION_BACKEND}"
-        for idx in "${!REQ_RATES[@]}"; do
-            r=${REQ_RATES[$idx]}
-            if [ -n "${best_itl_aiter[$r]:-}" ]; then
-                ratio=$(compute_ratio "${H100_ITL[$idx]}" "${best_itl_aiter[$r]}")
-                printf "\t%s%%" "$ratio"
-            else
-                printf "\t"
-            fi
         done
         echo ""
     } > "$OUTPUT_CSV"
