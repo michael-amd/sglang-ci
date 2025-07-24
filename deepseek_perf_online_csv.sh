@@ -870,7 +870,14 @@ run_concurrency_benchmark() {
     # Run benchmark runs for this concurrency
     for i in $(seq 1 "$BENCHMARK_RUNS_PER_CONCURRENCY"); do
         run_single_concurrency_benchmark "$concurrency" "$i" "$timestamp"
-        sleep "$BENCHMARK_SLEEP_BETWEEN_RUNS"  # Brief pause between runs
+
+        # Add additional sleep between runs for high concurrency levels to avoid memory access faults
+        if [ "$concurrency" -ge 8 ] && [ "$i" -lt "$BENCHMARK_RUNS_PER_CONCURRENCY" ]; then
+            echo "Sleeping 10 seconds between runs for concurrency ${concurrency} to avoid memory access faults..."
+            sleep 10
+        else
+            sleep "$BENCHMARK_SLEEP_BETWEEN_RUNS"  # Brief pause between runs
+        fi
     done
 
     # Get best metrics from the benchmark runs
@@ -1044,8 +1051,18 @@ else
     echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 
     # Run benchmark with different concurrency values (largest to smallest)
+    concurrency_count=0
+    total_concurrency_levels=${#concurrency_values[@]}
+
     for concurrency in "${concurrency_values[@]}"; do
+        concurrency_count=$((concurrency_count + 1))
         run_concurrency_benchmark "$concurrency"
+
+        # Add 3 second sleep between different concurrency levels (except after the last one)
+        if [ "$concurrency_count" -lt "$total_concurrency_levels" ]; then
+            echo "Sleeping 3 seconds before next concurrency level..."
+            sleep 3
+        fi
     done
 fi
 
