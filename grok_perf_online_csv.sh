@@ -407,6 +407,12 @@ run_single_rate_benchmark() {
 
         # Log to timing summary
         echo "  Rate ${RATE}, Run ${i}: ${run_duration} seconds" >> "$TIMING_LOG"
+
+        # Add 10 second sleep between runs to avoid memory access faults (except after the last run)
+        if [ "$i" -lt 3 ]; then
+            echo "Sleeping 10 seconds between runs to avoid memory access faults..."
+            sleep 10
+        fi
     done
 
     # Calculate total time for this rate
@@ -601,10 +607,20 @@ run_client_benchmark() {
     echo "Client Benchmark Results:" >> "$TIMING_LOG"
     echo "  Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 
+    local rate_count=0
+    local total_rates=${#REQUEST_RATES_ARRAY[@]}
+
     for RATE in "${REQUEST_RATES_ARRAY[@]}"; do
+        rate_count=$((rate_count + 1))
         run_single_rate_benchmark "$mode" "$RATE" "$TIMESTAMP"
         # Update CSV after each rate completes all runs
         update_csv_for_rate "$RATE"
+
+        # Add 3 second sleep between different request rates (except after the last rate)
+        if [ "$rate_count" -lt "$total_rates" ]; then
+            echo "Sleeping 3 seconds before next request rate..."
+            sleep 3
+        fi
     done
 
     local benchmark_end_time=$(date +%s)
