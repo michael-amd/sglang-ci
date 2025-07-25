@@ -10,7 +10,7 @@ Usage Examples:
    python3 compare_csv_results.py --csv1 offline/GROK1/20250624_GROK1_MOE-I4F8_offline --csv2 offline/GROK1/20250626_GROK1_MOE-I4F8_offline --mode offline --model grok1
 
 2. Online GROK1 comparison:
-   python3 compare_csv_results.py --csv1 online/GROK1/20250624_GROK1_MOE-I4F8_online --csv2 online/GROK1/20250626_GROK1_MOE-I4F8_online --mode online --model grok1
+   python3 compare_csv_results.py --csv1 online/GROK1/v0.4.9.post3-rocm630-mi30x-20250724_GROK1_MOE-I4F8_online --csv2 online/GROK1/sglang-pr7135_GROK1_MOE-I4F8_online --mode online --model grok1
 
 3. Offline DeepSeek-V3 comparison:
    python3 compare_csv_results.py --csv1 offline/DeepSeek-V3-0324/20250515_DeepSeek-V3-0324_FP8_offline --csv2 offline/DeepSeek-V3-0324/20250516_DeepSeek-V3-0324_FP8_offline --mode offline --model DeepSeek-V3-0324
@@ -187,7 +187,19 @@ def parse_online_csv(filepath: str) -> Dict[str, pd.DataFrame]:
             if rows:
                 # Create DataFrame
                 headers = data[header_idx].split("\t")
-                df = pd.DataFrame(rows, columns=headers)
+
+                # Pad rows to match header length (handle missing values)
+                padded_rows = []
+                for row in rows:
+                    if len(row) < len(headers):
+                        # Pad with empty strings for missing values
+                        row = row + [''] * (len(headers) - len(row))
+                    elif len(row) > len(headers):
+                        # Truncate if somehow longer
+                        row = row[:len(headers)]
+                    padded_rows.append(row)
+
+                df = pd.DataFrame(padded_rows, columns=headers)
                 dataframes[section_name] = df
 
         return dataframes
@@ -391,6 +403,9 @@ def compare_online_results(
 
 
 def main():
+    # Update global thresholds with command-line arguments
+    global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
+
     parser = argparse.ArgumentParser(
         description="Compare SGLang benchmark CSV results",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -439,7 +454,6 @@ def main():
     args = parser.parse_args()
 
     # Update global thresholds with command-line arguments
-    global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
     GSM8K_ACCURACY_THRESHOLD = args.gsm8k_threshold
     PERFORMANCE_THRESHOLD = args.performance_threshold
 
