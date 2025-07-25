@@ -34,6 +34,7 @@ SGL_BRANCH="${SGL_BRANCH:-main}"
 PR_NUMBER=""
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 CONTAINER_NAME="sglang-pr-build"
+OVERRIDE_DOCKER_IMAGE=""
 
 # Function to check if python3 and requests are available
 check_python_requirements() {
@@ -133,8 +134,13 @@ extract_image_tag_from_usage() {
     local usage_line=$(curl -s "$dockerfile_url" | grep -E "docker build.*-t.*-f Dockerfile.rocm" | head -1)
 
     if [ -z "$usage_line" ]; then
-        echo "Error: Could not find usage example in Dockerfile" >&2
-        return 1
+        echo "Warning: Could not find usage example in Dockerfile, using MI300 default" >&2
+        if [ "$SGL_BRANCH" = "main" ]; then
+            echo "v0.4.9.post2-rocm630-mi30x"
+        else
+            echo "$SGL_BRANCH-rocm630-mi30x"
+        fi
+        return 0
     fi
 
     echo "Found usage example: $usage_line" >&2
@@ -143,8 +149,24 @@ extract_image_tag_from_usage() {
     local image_tag=$(echo "$usage_line" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
 
     if [ -z "$image_tag" ]; then
-        echo "Error: Could not extract image tag from usage example" >&2
-        return 1
+        echo "Warning: Could not extract image tag from usage example, using MI300 default" >&2
+        if [ "$SGL_BRANCH" = "main" ]; then
+            echo "v0.4.9.post2-rocm630-mi30x"
+        else
+            echo "$SGL_BRANCH-rocm630-mi30x"
+        fi
+        return 0
+    fi
+
+    # If the extracted tag doesn't have MI300 ROCm info, default to MI300
+    if [[ "$image_tag" != *"rocm"*"mi"* ]]; then
+        echo "Warning: Extracted tag '$image_tag' doesn't specify ROCm/MI300, using MI300 default" >&2
+        if [ "$SGL_BRANCH" = "main" ]; then
+            echo "v0.4.9.post2-rocm630-mi30x"
+        else
+            echo "$SGL_BRANCH-rocm630-mi30x"
+        fi
+        return 0
     fi
 
     echo "$image_tag"
@@ -157,37 +179,65 @@ pull_base_image() {
     echo "STEP 1: PULLING PRE-BUILT DOCKER IMAGE"
     echo "============================================================"
 
-    # For specific branches/versions, modify the URL
-    local dockerfile_url="$GITHUB_DOCKERFILE_URL"
-    if [ "$SGL_BRANCH" != "main" ]; then
-        if [[ "$SGL_BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # For version tags, use the tag in the URL
-            dockerfile_url="https://raw.githubusercontent.com/sgl-project/sglang/$SGL_BRANCH/docker/Dockerfile.rocm"
-            echo "Using branch-specific Dockerfile URL: $dockerfile_url"
+    # Check if user provided override
+    if [ -n "$OVERRIDE_DOCKER_IMAGE" ]; then
+        BASE_IMAGE="$OVERRIDE_DOCKER_IMAGE"
+        echo "Using override Docker image: $BASE_IMAGE"
+    else
+        # For specific branches/versions, modify the URL
+        local dockerfile_url="$GITHUB_DOCKERFILE_URL"
+        if [ "$SGL_BRANCH" != "main" ]; then
+            if [[ "$SGL_BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+                # For version tags, use the tag in the URL
+                dockerfile_url="https://raw.githubusercontent.com/sgl-project/sglang/$SGL_BRANCH/docker/Dockerfile.rocm"
+                echo "Using branch-specific Dockerfile URL: $dockerfile_url"
+            fi
         fi
-    fi
 
-    # Extract the image tag from the Dockerfile usage example
-    local image_tag=$(extract_image_tag_from_usage "$dockerfile_url")
+        # Extract the image tag from the Dockerfile usage example
+        local image_tag=$(extract_image_tag_from_usage "$dockerfile_url")
 
-    if [ $? -ne 0 ]; then
-        echo "Failed to extract image tag. Using default..."
-        if [ "$SGL_BRANCH" = "main" ]; then
-            image_tag="latest"
-        else
-            image_tag="$SGL_BRANCH"
+        if [ $? -ne 0 ]; then
+            echo "Failed to extract image tag. Using MI300 default..."
+            if [ "$SGL_BRANCH" = "main" ]; then
+                image_tag="v0.4.9.post2-rocm630-mi30x"
+            else
+                image_tag="$SGL_BRANCH-rocm630-mi30x"
+            fi
         fi
-    fi
 
-    BASE_IMAGE="lmsysorg/sglang:$image_tag"
-    echo "Target Docker image: $BASE_IMAGE"
+        BASE_IMAGE="lmsysorg/sglang:$image_tag"
+        echo "Target Docker image: $BASE_IMAGE"
+    fi
 
     # Check if image exists on DockerHub
     echo "Checking if image exists on DockerHub..."
     if docker manifest inspect "$BASE_IMAGE" >/dev/null 2>&1; then
         echo "✓ Image exists on DockerHub"
     else
-        echo "⚠ Warning: Image may not exist on DockerHub, but will attempt to pull anyway"
+        echo "⚠ Warning: Image $BASE_IMAGE may not exist on DockerHub"
+
+        # Try fallback images in order of preference (prioritize ROCm images for MI300X)
+        local fallback_images=(
+            "lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x"
+        )
+
+        local found_fallback=""
+        for fallback in "${fallback_images[@]}"; do
+            echo "Trying fallback image: $fallback"
+            if docker manifest inspect "$fallback" >/dev/null 2>&1; then
+                echo "✓ Fallback image $fallback exists on DockerHub"
+                found_fallback="$fallback"
+                break
+            fi
+        done
+
+        if [ -n "$found_fallback" ]; then
+            echo "Using fallback image: $found_fallback"
+            BASE_IMAGE="$found_fallback"
+        else
+            echo "⚠ No suitable fallback image found, will attempt to pull original anyway"
+        fi
     fi
 
     # Pull the Docker image
@@ -478,6 +528,10 @@ while [[ $# -gt 0 ]]; do
             CONTAINER_NAME="${1#*=}"
             shift
             ;;
+        --docker-image=*)
+            OVERRIDE_DOCKER_IMAGE="${1#*=}"
+            shift
+            ;;
         --help)
             echo "Usage: ./build_sglang_docker.sh [options]"
             echo ""
@@ -487,6 +541,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --pr=NUMBER                  Pull base image and update with PR code"
             echo "  --github-token=TOKEN         GitHub personal access token"
             echo "  --container-name=NAME        Container name for PR workflow (default: sglang-pr-build)"
+            echo "  --docker-image=IMAGE         Override base Docker image to pull (e.g., lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x)"
             echo "  --help                       Show this help message"
             echo ""
             echo "Examples:"
@@ -570,20 +625,27 @@ echo "Logging all output to $LOG_FILE"
             DOCKERFILE_URL="$GITHUB_DOCKERFILE_URL"
         fi
 
-        # Extract the image tag from the Dockerfile usage example
-        IMAGE_TAG=$(extract_image_tag_from_usage "$DOCKERFILE_URL")
+        # Check if user provided override
+        if [ -n "$OVERRIDE_DOCKER_IMAGE" ]; then
+            DOCKER_IMAGE="$OVERRIDE_DOCKER_IMAGE"
+            IMAGE_TAG=$(echo "$DOCKER_IMAGE" | cut -d':' -f2)
+            echo "Using override Docker image: $DOCKER_IMAGE"
+        else
+            # Extract the image tag from the Dockerfile usage example
+            IMAGE_TAG=$(extract_image_tag_from_usage "$DOCKERFILE_URL")
 
-        if [ $? -ne 0 ]; then
-            echo "Failed to extract image tag. Falling back to latest tag..."
-            # Fallback: use latest tag for main branch or branch name for others
-            if [ "$SGL_BRANCH" = "main" ]; then
-                IMAGE_TAG="latest"
-            else
-                IMAGE_TAG="$SGL_BRANCH"
+            if [ $? -ne 0 ]; then
+                echo "Failed to extract image tag. Falling back to MI300 default..."
+                # Fallback: use MI300 tag for main branch or branch name with MI300 for others
+                if [ "$SGL_BRANCH" = "main" ]; then
+                    IMAGE_TAG="v0.4.9.post2-rocm630-mi30x"
+                else
+                    IMAGE_TAG="$SGL_BRANCH-rocm630-mi30x"
+                fi
             fi
-        fi
 
-        DOCKER_IMAGE="lmsysorg/sglang:$IMAGE_TAG"
+            DOCKER_IMAGE="lmsysorg/sglang:$IMAGE_TAG"
+        fi
 
         echo ""
         echo "Target Docker image: $DOCKER_IMAGE"
@@ -595,7 +657,30 @@ echo "Logging all output to $LOG_FILE"
         if docker manifest inspect "$DOCKER_IMAGE" >/dev/null 2>&1; then
             echo "✓ Image exists on DockerHub"
         else
-            echo "⚠ Warning: Image may not exist on DockerHub, but will attempt to pull anyway"
+            echo "⚠ Warning: Image $DOCKER_IMAGE may not exist on DockerHub"
+
+            # Try fallback images in order of preference (prioritize ROCm images for MI300X)
+            fallback_images=(
+                "lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x"
+            )
+
+            found_fallback=""
+            for fallback in "${fallback_images[@]}"; do
+                echo "Trying fallback image: $fallback"
+                if docker manifest inspect "$fallback" >/dev/null 2>&1; then
+                    echo "✓ Fallback image $fallback exists on DockerHub"
+                    found_fallback="$fallback"
+                    break
+                fi
+            done
+
+            if [ -n "$found_fallback" ]; then
+                echo "Using fallback image: $found_fallback"
+                DOCKER_IMAGE="$found_fallback"
+                IMAGE_TAG=$(echo "$found_fallback" | cut -d':' -f2)
+            else
+                echo "⚠ No suitable fallback image found, will attempt to pull original anyway"
+            fi
         fi
 
         # Pull the Docker image
