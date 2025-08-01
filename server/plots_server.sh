@@ -9,6 +9,7 @@
 #   bash plots_server.sh 8080         # Serve on port 8080
 #   bash plots_server.sh --port=8001  # Alternative syntax
 #   bash plots_server.sh --plots-dir=/custom/path --port=9000
+#   bash plots_server.sh --server-script=/path/to/custom_server.py
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -23,8 +24,9 @@ DEFAULT_PLOTS_DIR="${PLOTS_SERVER_DIR:-/mnt/raid/michael/sgl_benchmark_ci/plots_
 DEFAULT_BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_MODEL_DIRS="${PLOTS_MODEL_DIRS:-"GROK1 DeepSeek-V3-0324"}"  # Space-separated list
 
-# Server configuration
-HTTP_SERVER_SCRIPT="${HTTP_SERVER_SCRIPT:-${DEFAULT_BENCHMARK_CI_DIR}/custom_http_server.py}"
+# Server configuration - HTTP server script defaults to same directory as this script
+SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+HTTP_SERVER_SCRIPT="${HTTP_SERVER_SCRIPT:-${SCRIPT_DIR}/custom_http_server.py}"
 
 # Alternative ports to suggest if default is busy
 ALTERNATIVE_PORTS="${ALTERNATIVE_PORTS:-8001 8080 8888 9000}"
@@ -35,6 +37,7 @@ ALTERNATIVE_PORTS="${ALTERNATIVE_PORTS:-8001 8080 8888 9000}"
 
 PORT=""
 PLOTS_DIR=""
+SERVER_SCRIPT=""
 SHOW_HELP=false
 
 # Parse arguments
@@ -46,6 +49,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --plots-dir=*)
             PLOTS_DIR="${1#*=}"
+            shift
+            ;;
+        --server-script=*)
+            SERVER_SCRIPT="${1#*=}"
             shift
             ;;
         --help|-h)
@@ -78,6 +85,7 @@ if [[ "$SHOW_HELP" == true ]]; then
     echo "Options:"
     echo "  --port=PORT         Port number (default: $DEFAULT_PORT, can be set via HTTP_SERVER_PORT env var)"
     echo "  --plots-dir=DIR     Plots directory (default: $DEFAULT_PLOTS_DIR, can be set via PLOTS_SERVER_DIR env var)"
+    echo "  --server-script=PATH HTTP server script path (default: same directory as this script)"
     echo "  --help, -h          Show this help message"
     echo ""
     echo "Environment Variables:"
@@ -93,12 +101,14 @@ if [[ "$SHOW_HELP" == true ]]; then
     echo "  $0 8080             # Use port 8080"
     echo "  $0 --port=8001      # Use port 8001"
     echo "  $0 --plots-dir=/custom/plots --port=9000"
+    echo "  $0 --server-script=/path/to/custom_server.py --port=8080"
     exit 0
 fi
 
 # Set defaults if not provided
 PORT="${PORT:-$DEFAULT_PORT}"
 PLOTS_DIR="${PLOTS_DIR:-$DEFAULT_PLOTS_DIR}"
+SERVER_SCRIPT="${SERVER_SCRIPT:-$HTTP_SERVER_SCRIPT}"
 
 ###############################################################################
 # Validation and setup
@@ -147,9 +157,9 @@ if [ ! -d "$PLOTS_DIR" ]; then
 fi
 
 # Check if HTTP server script exists
-if [ ! -f "$HTTP_SERVER_SCRIPT" ]; then
-    echo "Error: HTTP server script not found: $HTTP_SERVER_SCRIPT"
-    echo "Please check the HTTP_SERVER_SCRIPT environment variable or BENCHMARK_CI_DIR"
+if [ ! -f "$SERVER_SCRIPT" ]; then
+    echo "Error: HTTP server script not found: $SERVER_SCRIPT"
+    echo "Please check the --server-script option or HTTP_SERVER_SCRIPT environment variable"
     exit 1
 fi
 
@@ -160,7 +170,7 @@ fi
 # Change to the plots directory and start the server
 cd "$PLOTS_DIR"
 echo "Serving plots from: $PLOTS_DIR"
-echo "Using HTTP server script: $HTTP_SERVER_SCRIPT"
+echo "Using HTTP server script: $SERVER_SCRIPT"
 echo ""
 echo "Navigate to:"
 echo "  - http://$(hostname -I | awk '{print $1}'):$PORT/ to browse all plots"
@@ -177,4 +187,4 @@ done
 echo ""
 echo "Starting HTTP server on port $PORT..."
 echo "Press Ctrl+C to stop the server"
-python3 "$HTTP_SERVER_SCRIPT" "$PORT"
+python3 "$SERVER_SCRIPT" "$PORT"

@@ -125,7 +125,15 @@ done
 
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
-TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+
+# If a custom model was provided but no tokenizer, use the model path as tokenizer path
+# This avoids issues with the default tokenizer path containing problematic characters
+if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}" ]]; then
+    TOKENIZER="${MODEL}"
+    echo "[online] Using custom model path as tokenizer path: ${TOKENIZER}"
+else
+    TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+fi
 WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
@@ -155,8 +163,36 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     echo "[online] Docker image    ${FULL_IMAGE}"
 
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-      docker start "${CONTAINER_NAME}" >/dev/null || true
-    else
+      if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        echo "[online] Container already running."
+        # Check if script and model are accessible inside the container
+        if ! docker exec "${CONTAINER_NAME}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+          echo "[online] Script not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        elif ! docker exec "${CONTAINER_NAME}" test -d "${MODEL}" 2>/dev/null; then
+          echo "[online] Model directory not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        fi
+      else
+        echo "[online] Starting existing container ..."
+        docker start "${CONTAINER_NAME}" >/dev/null || true
+        # Check if script and model are accessible inside the container after starting
+        if ! docker exec "${CONTAINER_NAME}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+          echo "[online] Script not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        elif ! docker exec "${CONTAINER_NAME}" test -d "${MODEL}" 2>/dev/null; then
+          echo "[online] Model directory not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        fi
+      fi
+    fi
+    
+    # Create container if it doesn't exist or was removed due to validation failure
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       echo "[online] Checking if image exists locally ..."
       # Check if image exists locally
       if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FULL_IMAGE}$"; then
@@ -180,10 +216,51 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       fi
 
       echo "[online] Creating container ..."
+      
+      # Get the directory containing the script
+      script_dir="$(dirname "${SCRIPT_PATH}")"
+      
+      # Create mount arguments - always mount MOUNT_DIR, and also mount script directory if different
+      mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+      
+      # If script directory is not under MOUNT_DIR, mount it separately
+      if [[ "$script_dir" != "${MOUNT_DIR}"* ]]; then
+          echo "[online] Script directory ${script_dir} is not under ${MOUNT_DIR}, mounting separately..."
+          mount_args="${mount_args} -v ${script_dir}:${script_dir}"
+      fi
+      
+      # If work directory is not under MOUNT_DIR or script directory, mount it separately
+      if [[ "${WORK_DIR}" != "${MOUNT_DIR}"* ]] && [[ "${WORK_DIR}" != "$script_dir"* ]]; then
+          echo "[online] Work directory ${WORK_DIR} is not under ${MOUNT_DIR}, mounting separately..."
+          mount_args="${mount_args} -v ${WORK_DIR}:${WORK_DIR}"
+      fi
+      
+      # If model directory is not under MOUNT_DIR, mount its parent directory
+      model_dir="$(dirname "${MODEL}")"
+      if [[ "$model_dir" != "${MOUNT_DIR}"* ]] && [[ "$model_dir" != "$script_dir"* ]]; then
+          # For paths like /data/vmiriyal/model, mount /data
+          mount_root=""
+          if [[ "$MODEL" == /data/* ]]; then
+              mount_root="/data"
+          elif [[ "$MODEL" == /mnt/* ]]; then
+              mount_root="/mnt"
+          elif [[ "$MODEL" == /home/* ]]; then
+              mount_root="/home"
+          else
+              # Fallback: mount the parent directory
+              mount_root="$model_dir"
+          fi
+          
+          if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
+              echo "[online] Model directory ${MODEL} requires mounting ${mount_root}..."
+              mount_args="${mount_args} -v ${mount_root}:${mount_root}"
+          fi
+      fi
+      
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v "${MOUNT_DIR}:${MOUNT_DIR}" -v "${WORK_DIR}:${WORK_DIR}" --group-add video --privileged \
+        ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
@@ -383,6 +460,8 @@ run_single_rate_benchmark() {
         done
         if [ -n "$existing_log" ]; then
             echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+            # Update progress even for skipped runs
+            update_progress "$RATE" "$i"
             continue
         fi
 
@@ -395,9 +474,12 @@ run_single_rate_benchmark() {
         NUM_PROMPTS=$(( PROMPTS_PER_RATE_MULTIPLIER * RATE ))
         [ "$NUM_PROMPTS" -gt "$MAX_NUM_PROMPTS" ] && NUM_PROMPTS="$MAX_NUM_PROMPTS"
 
-        CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input $RANDOM_INPUT_LENGTH --random-output $RANDOM_OUTPUT_LENGTH --num-prompts $NUM_PROMPTS --request-rate $RATE --output-file online_${RATE}.jsonl"
+        CMD="python3 -m sglang.bench_serving --backend sglang --tokenizer \"${TOKENIZER}\" --dataset-name random --random-input $RANDOM_INPUT_LENGTH --random-output $RANDOM_OUTPUT_LENGTH --num-prompts $NUM_PROMPTS --request-rate $RATE"
         echo "Executing: $CMD" | tee -a "$LOGFILE"
         eval "$CMD" 2>&1 | tee -a "$LOGFILE"
+
+        # Clean up any accidentally generated JSONL files
+        rm -f online_*.jsonl result.jsonl *.jsonl 2>/dev/null || true
 
         local run_end_time=$(date +%s)
         local run_duration=$((run_end_time - run_start_time))
@@ -407,6 +489,9 @@ run_single_rate_benchmark() {
 
         # Log to timing summary
         echo "  Rate ${RATE}, Run ${i}: ${run_duration} seconds" >> "$TIMING_LOG"
+
+        # Update progress after each run completes
+        update_progress "$RATE" "$i"
 
         # Add 10 second sleep between runs to avoid memory access faults (except after the last run)
         if [ "$i" -lt 3 ]; then
@@ -468,6 +553,53 @@ declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 
 # Request rates array
 read -ra REQ_RATES <<< "$REQUEST_RATES"
+
+# ---------------------------
+# 6c. Progress Tracking
+# ---------------------------
+# Global variables for progress tracking
+TOTAL_RUNS=0
+CURRENT_RUN=0
+
+# Function to calculate total number of runs
+calculate_total_runs() {
+    local rates_array
+    read -ra rates_array <<< "$REQUEST_RATES"
+    TOTAL_RUNS=$((${#rates_array[@]} * 3))  # 3 runs per rate
+    echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS}"
+}
+
+# Function to display progress bar
+show_progress() {
+    local current=$1
+    local total=$2
+    local width=50
+    local percentage=$((current * 100 / total))
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+
+    printf "\r[progress] ["
+    printf "%*s" "$filled" | tr ' ' '='
+    printf "%*s" "$empty" | tr ' ' '-'
+    printf "] %d/%d (%d%%) " "$current" "$total" "$percentage"
+
+    if [ "$current" -eq "$total" ]; then
+        echo "✅ Complete!"
+    fi
+}
+
+# Function to update progress with optional run details
+update_progress() {
+    local rate=${1:-}
+    local run_num=${2:-}
+    CURRENT_RUN=$((CURRENT_RUN + 1))
+    show_progress "$CURRENT_RUN" "$TOTAL_RUNS"
+    if [ -n "$rate" ] && [ -n "$run_num" ]; then
+        echo " | Rate: $rate, Run: $run_num"
+    elif [ "$CURRENT_RUN" -lt "$TOTAL_RUNS" ]; then
+        echo ""  # New line for next progress update
+    fi
+}
 
 # Compute ratio function removed since H100 baseline data is no longer used
 
@@ -597,6 +729,12 @@ run_client_benchmark() {
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     read -ra REQUEST_RATES_ARRAY <<< "$REQUEST_RATES"
     echo "Starting client benchmark for mode ${mode} at: $(date '+%Y-%m-%d %H:%M:%S %Z')..."
+
+    # Initialize progress tracking
+    calculate_total_runs
+    CURRENT_RUN=0
+    show_progress 0 "$TOTAL_RUNS"
+    echo ""
 
     # Initialize CSV at the start
     init_csv
