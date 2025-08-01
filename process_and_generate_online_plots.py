@@ -126,9 +126,12 @@ class OnlineDataProcessor:
         ]
 
         # Compile regex pattern for KV cache info parsing (used repeatedly)
-        # Updated to handle format: "KV size: 63.62 GB" instead of separate K and V sizes
-        self.kv_cache_pattern = re.compile(
+        # Handle both formats: "KV size: 63.62 GB" and "K size: 70.03 GB, V size: 70.03 GB"
+        self.kv_cache_pattern_combined = re.compile(
             r"#tokens: (\d+), KV size: ([\d\.]+) GB"
+        )
+        self.kv_cache_pattern_separate = re.compile(
+            r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB"
         )
 
         # Expected request rates for complete data
@@ -174,23 +177,29 @@ class OnlineDataProcessor:
                 with open(log_path, "r") as f:
                     for line in f:
                         if "KV Cache is allocated." in line and "#tokens:" in line:
-                            match = self.kv_cache_pattern.search(line)
+                            # Try combined format first: "KV size: 63.62 GB"
+                            match = self.kv_cache_pattern_combined.search(line)
                             if match:
                                 try:
                                     num_tokens = int(match.group(1))
                                     kv_size_gb = float(match.group(2))
-                                    return (
-                                        num_tokens,
-                                        kv_size_gb,
-                                    )  # Found values, return early
+                                    return (num_tokens, kv_size_gb)
                                 except ValueError:
-                                    print(
-                                        f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}"
-                                    )
+                                    print(f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}")
                             else:
-                                print(
-                                    f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}"
-                                )
+                                # Try separate format: "K size: 70.03 GB, V size: 70.03 GB"  
+                                match = self.kv_cache_pattern_separate.search(line)
+                                if match:
+                                    try:
+                                        num_tokens = int(match.group(1))
+                                        k_size_gb = float(match.group(2))
+                                        v_size_gb = float(match.group(3))
+                                        kv_size_gb = k_size_gb + v_size_gb  # Total KV size
+                                        return (num_tokens, kv_size_gb)
+                                    except ValueError:
+                                        print(f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}")
+                                else:
+                                    print(f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}")
             except Exception as e:
                 print(f"Error reading server log {log_path}: {e}")
 
