@@ -6,7 +6,8 @@
 #
 # USAGE:
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250718
+#   bash deepseek_perf_online_csv.sh --model=/path/to/model --model-name=DeepSeek-V3-0324
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
 set -euo pipefail
@@ -250,9 +251,37 @@ ensure_container_exists() {
     if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
         if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
             echo "[csv] Container already running."
+            # Check if script and model are accessible inside the container
+            if ! docker exec "${container_name}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+                echo "[csv] Script not accessible in existing container. Recreating container..."
+                docker stop "${container_name}" >/dev/null 2>&1
+                docker rm "${container_name}" >/dev/null 2>&1
+                ensure_image_available "$image_with_tag" "$repo"
+                create_container "$container_name"
+            elif [ "$DOWNLOAD_MODEL" = "false" ] && ! docker exec "${container_name}" test -d "${MODEL}" 2>/dev/null; then
+                echo "[csv] Model directory not accessible in existing container. Recreating container..."
+                docker stop "${container_name}" >/dev/null 2>&1
+                docker rm "${container_name}" >/dev/null 2>&1
+                ensure_image_available "$image_with_tag" "$repo"
+                create_container "$container_name"
+            fi
         else
             echo "[csv] Starting existing container ..."
             docker start "${container_name}"
+            # Check if script and model are accessible inside the container after starting
+            if ! docker exec "${container_name}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+                echo "[csv] Script not accessible in existing container. Recreating container..."
+                docker stop "${container_name}" >/dev/null 2>&1
+                docker rm "${container_name}" >/dev/null 2>&1
+                ensure_image_available "$image_with_tag" "$repo"
+                create_container "$container_name"
+            elif [ "$DOWNLOAD_MODEL" = "false" ] && ! docker exec "${container_name}" test -d "${MODEL}" 2>/dev/null; then
+                echo "[csv] Model directory not accessible in existing container. Recreating container..."
+                docker stop "${container_name}" >/dev/null 2>&1
+                docker rm "${container_name}" >/dev/null 2>&1
+                ensure_image_available "$image_with_tag" "$repo"
+                create_container "$container_name"
+            fi
         fi
     else
         ensure_image_available "$image_with_tag" "$repo"
@@ -292,10 +321,45 @@ create_container() {
     local container_name=$1
 
     echo "[csv] Creating container ..."
+    
+    # Get the directory containing the script
+    local script_dir="$(dirname "${SCRIPT_PATH}")"
+    
+    # Create mount arguments - always mount MOUNT_DIR, and also mount script directory if different
+    local mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+    
+    # If script directory is not under MOUNT_DIR, mount it separately
+    if [[ "$script_dir" != "${MOUNT_DIR}"* ]]; then
+        echo "[csv] Script directory ${script_dir} is not under ${MOUNT_DIR}, mounting separately..."
+        mount_args="${mount_args} -v ${script_dir}:${script_dir}"
+    fi
+    
+    # If model directory is not under MOUNT_DIR, mount its parent directory
+    local model_dir="$(dirname "${MODEL}")"
+    if [[ "$model_dir" != "${MOUNT_DIR}"* ]] && [[ "$model_dir" != "$script_dir"* ]]; then
+        # For paths like /data/vmiriyal/deepseek-v3, mount /data
+        local mount_root=""
+        if [[ "$MODEL" == /data/* ]]; then
+            mount_root="/data"
+        elif [[ "$MODEL" == /mnt/* ]]; then
+            mount_root="/mnt"
+        elif [[ "$MODEL" == /home/* ]]; then
+            mount_root="/home"
+        else
+            # Fallback: mount the parent directory
+            mount_root="$model_dir"
+        fi
+        
+        if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
+            echo "[csv] Model directory ${MODEL} requires mounting ${mount_root}..."
+            mount_args="${mount_args} -v ${mount_root}:${mount_root}"
+        fi
+    fi
+    
     docker run -d --name "${container_name}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
 }
 
@@ -558,6 +622,9 @@ run_gsm8k_benchmark() {
          echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
          total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
          run_count=$((run_count+1))
+
+         # Update progress after each GSM8K run completes
+         update_progress "GSM8K" "Run $i"
     done
 
     local avg_accuracy
@@ -692,6 +759,55 @@ declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics
 # Concurrency levels for organized output
 read -a concurrency_values <<< "$BENCHMARK_CONCURRENCY_LEVELS"
 
+# ---------------------------
+# Progress Tracking
+# ---------------------------
+# Global variables for progress tracking
+TOTAL_RUNS=0
+CURRENT_RUN=0
+
+# Function to calculate total number of runs
+calculate_total_runs() {
+    local gsm8k_runs=$GSM8K_RUNS
+    local concurrency_levels
+    read -ra concurrency_levels <<< "$BENCHMARK_CONCURRENCY_LEVELS"
+    local serving_runs=$((${#concurrency_levels[@]} * BENCHMARK_RUNS_PER_CONCURRENCY))
+    TOTAL_RUNS=$((gsm8k_runs + serving_runs))
+    echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs})"
+}
+
+# Function to display progress bar
+show_progress() {
+    local current=$1
+    local total=$2
+    local width=50
+    local percentage=$((current * 100 / total))
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+
+    printf "\r[progress] ["
+    printf "%*s" "$filled" | tr ' ' '='
+    printf "%*s" "$empty" | tr ' ' '-'
+    printf "] %d/%d (%d%%) " "$current" "$total" "$percentage"
+
+    if [ "$current" -eq "$total" ]; then
+        echo "✅ Complete!"
+    fi
+}
+
+# Function to update progress with optional run details
+update_progress() {
+    local run_type=${1:-}
+    local run_info=${2:-}
+    CURRENT_RUN=$((CURRENT_RUN + 1))
+    show_progress "$CURRENT_RUN" "$TOTAL_RUNS"
+    if [ -n "$run_type" ] && [ -n "$run_info" ]; then
+        echo " | ${run_type}: ${run_info}"
+    elif [ "$CURRENT_RUN" -lt "$TOTAL_RUNS" ]; then
+        echo ""  # New line for next progress update
+    fi
+}
+
 # Helper function to generate CSV content
 #
 # This function generates the complete CSV content for serving benchmark results
@@ -811,6 +927,8 @@ run_single_concurrency_benchmark() {
     done
     if [ -n "$existing_log" ]; then
         echo "Log for concurrency ${concurrency}, run ${run_number} already exists and completed successfully. Skipping."
+        # Update progress even for skipped runs
+        update_progress "Serving" "C${concurrency} R${run_number}"
         return 0
     fi
 
@@ -855,6 +973,9 @@ run_single_concurrency_benchmark() {
 
     # Log to timing summary
     echo "  Concurrency ${concurrency}, Run ${run_number}: ${run_duration} seconds" >> "$TIMING_LOG"
+
+    # Update progress after each serving benchmark run completes
+    update_progress "Serving" "C${concurrency} R${run_number}"
 
     return 0
 }
@@ -1027,6 +1148,12 @@ else
     echo "" >> "$OUTPUT_CSV"
 
     echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
+
+    # Initialize progress tracking
+    calculate_total_runs
+    CURRENT_RUN=0
+    show_progress 0 "$TOTAL_RUNS"
+    echo ""
 
     # Run the main GSM8K benchmark
     if run_gsm8k_benchmark; then
