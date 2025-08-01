@@ -1,0 +1,9 @@
+# machine is at CT time
+# NOTE: Teams notifications are configured via --teams-webhook-url parameter
+# Webhook URL is passed directly in the command line for both grok and deepseek jobs
+
+# 12 AM PT (2 AM CT) - Grok online and offline benchmark with gating logic + Teams notifications
+0 2 * * * cd /mnt/raid/michael/sgl_benchmark_ci && bash perf_nightly.sh --model=grok --mode=all --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
+
+# 3 AM PT (5 AM CT) - DeepSeek online serving benchmark + Teams notifications
+0 5 * * * cd /mnt/raid/michael/sgl_benchmark_ci && bash perf_nightly.sh --model=deepseek --mode=online --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1

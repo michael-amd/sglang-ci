@@ -1,0 +1,10 @@
+model/*
+online/*
+offline/*
+plots_server/*
+cron/cron_log/*
+
+*.jsonl
+*.csv
+*.html
+*.png

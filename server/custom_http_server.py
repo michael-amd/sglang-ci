@@ -82,6 +82,40 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return f
 
+    def handle(self):
+        """Handle a single HTTP request with better error handling."""
+        try:
+            super().handle()
+        except ConnectionResetError:
+            # Client closed connection - this is normal, don't log the full traceback
+            self.log_message("Connection reset by %s", self.client_address[0])
+        except (ConnectionAbortedError, BrokenPipeError):
+            # Other common connection issues - log briefly
+            self.log_message("Connection aborted by %s", self.client_address[0])
+        except Exception as e:
+            # Log other unexpected errors with more detail (always shown)
+            self.log_error("Unexpected error from %s: %s", self.client_address[0], str(e))
+
+    def log_error(self, format, *args):
+        """Log an error with better formatting."""
+        # Only log the error message, not the full traceback for connection issues
+        if any(err in str(args) for err in ['Connection reset', 'Connection aborted', 'Broken pipe']):
+            self.log_message("Network error from %s: %s", self.client_address[0], format % args)
+        else:
+            # For other errors, use the default behavior
+            super().log_error(format, *args)
+
+    def log_message(self, format, *args):
+        """Log a message with timestamp and client info."""
+        import time
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+        message = format % args
+        print(f"[{timestamp}] {message}")
+
+
+class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
 
 if __name__ == "__main__":
     import argparse
@@ -124,7 +158,7 @@ if __name__ == "__main__":
     Handler = CustomHTTPRequestHandler
 
     # Bind to specified address to make it accessible from other machines on the network
-    with socketserver.TCPServer((args.bind, port_to_use), Handler) as httpd:
+    with ThreadingTCPServer((args.bind, port_to_use), Handler) as httpd:
         print(
             f"Serving HTTP on {args.bind} port {port_to_use} from directory '{os.getcwd()}'..."
         )

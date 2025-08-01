@@ -151,11 +151,34 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         echo "[csv] Container already running."
+        # Check if script and model are accessible inside the container
+        if ! docker exec "${CONTAINER_NAME}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+          echo "[csv] Script not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        elif [ "$DOWNLOAD_MODEL" = "false" ] && ! docker exec "${CONTAINER_NAME}" test -d "${MODEL}" 2>/dev/null; then
+          echo "[csv] Model directory not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        fi
       else
         echo "[csv] Starting existing container ..."
         docker start "${CONTAINER_NAME}"
+        # Check if script and model are accessible inside the container after starting
+        if ! docker exec "${CONTAINER_NAME}" test -f "${SCRIPT_PATH}" 2>/dev/null; then
+          echo "[csv] Script not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        elif [ "$DOWNLOAD_MODEL" = "false" ] && ! docker exec "${CONTAINER_NAME}" test -d "${MODEL}" 2>/dev/null; then
+          echo "[csv] Model directory not accessible in existing container. Recreating container..."
+          docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
+          docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+        fi
       fi
-    else
+    fi
+    
+    # Create container if it doesn't exist or was removed due to validation failure
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       echo "[csv] Checking if image exists locally ..."
       # Check if image exists locally
       if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FULL_IMAGE}$"; then
@@ -179,10 +202,45 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       fi
 
       echo "[csv] Creating container ..."
+      
+      # Get the directory containing the script
+      script_dir="$(dirname "${SCRIPT_PATH}")"
+      
+      # Create mount arguments - always mount MOUNT_DIR, and also mount script directory if different
+      mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+      
+      # If script directory is not under MOUNT_DIR, mount it separately
+      if [[ "$script_dir" != "${MOUNT_DIR}"* ]]; then
+          echo "[csv] Script directory ${script_dir} is not under ${MOUNT_DIR}, mounting separately..."
+          mount_args="${mount_args} -v ${script_dir}:${script_dir}"
+      fi
+      
+      # If model directory is not under MOUNT_DIR, mount its parent directory
+      model_dir="$(dirname "${MODEL}")"
+      if [[ "$model_dir" != "${MOUNT_DIR}"* ]] && [[ "$model_dir" != "$script_dir"* ]]; then
+          # For paths like /data/vmiriyal/deepseek-v3, mount /data
+          mount_root=""
+          if [[ "$MODEL" == /data/* ]]; then
+              mount_root="/data"
+          elif [[ "$MODEL" == /mnt/* ]]; then
+              mount_root="/mnt"
+          elif [[ "$MODEL" == /home/* ]]; then
+              mount_root="/home"
+          else
+              # Fallback: mount the parent directory
+              mount_root="$model_dir"
+          fi
+          
+          if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
+              echo "[csv] Model directory ${MODEL} requires mounting ${mount_root}..."
+              mount_args="${mount_args} -v ${mount_root}:${mount_root}"
+          fi
+      fi
+      
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-        -v "${MOUNT_DIR}:${MOUNT_DIR}" --group-add video --privileged \
+        ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
@@ -358,6 +416,9 @@ else
   )
 fi
 
+# Clean up any accidentally generated JSONL files
+rm -f result.jsonl *.jsonl 2>/dev/null || true
+
 ## 5.  Parse metrics and append CSV --------------------------------------------
 # Isolate the section after the literal "Benchmark ..."
 last_section=$(printf '%s\n' "$out" | awk '/^\s*Benchmark[. ]/{flag=1;next} flag')
@@ -387,10 +448,7 @@ fi
 
 echo "${TP},${BS},${ILEN},${OLEN},${prefill_lat},${decode_lat},${total_lat},${prefill_tp},${decode_tp},${total_tp}" >> "$OUTPUT_CSV"
 
-# Save raw JSONL if bench_one_batch produced one
-if [ -f result.jsonl ]; then
-  mv result.jsonl "${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline.jsonl"
-fi
+# Note: JSONL output has been disabled to prevent unnecessary file generation
 
 echo "✅  Results written to ${OUTPUT_CSV}"
 echo "Full log saved to ${LOG_FILE}"

@@ -368,6 +368,158 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
 
 **Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
 
+### Microsoft Teams Integration
+
+The nightly benchmark script includes built-in Microsoft Teams integration to automatically send plot notifications to Teams channels and group chats when benchmarks complete. **Teams notifications are disabled by default** and require explicit configuration to enable.
+
+All Teams-related components are organized in the `team_alert/` folder.
+
+#### Features
+
+- **🔕 Disabled by Default**: Teams notifications require explicit webhook URL configuration
+- **📱 Multi-Target Support**: Send to Teams channels (Incoming Webhooks) or group chats (Power Automate)
+- **🎯 Intelligent Analysis**: Automated GSM8K accuracy checking and performance regression detection
+- **📝 Text-Only Notifications**: Optimized adaptive cards with plot links
+- **🔗 Direct Plot Access**: Includes links to view/download generated plots and browse dashboard
+- **⚙️ Flexible Configuration**: Command-line options, environment variables, or config files
+- **🧪 Comprehensive Testing**: Built-in test suite and validation tools
+
+#### Quick Start
+
+```bash
+# Enable Teams notifications with webhook URL
+bash perf_nightly.sh --teams-webhook-url="https://your-webhook-url"
+
+# Run specific model/mode with Teams notifications
+bash perf_nightly.sh --model=grok --mode=online --teams-webhook-url="https://..."
+
+# Run with intelligent analysis (GSM8K accuracy + performance regression detection)
+bash perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=7
+
+# Run with plots only (skip analysis for faster notifications)
+bash perf_nightly.sh --teams-webhook-url="..." --teams-skip-analysis
+
+# Direct script usage with custom directories
+python3 team_alert/send_teams_notification.py --model grok --mode online \
+  --webhook-url "https://your-webhook-url" \
+  --plot-dir "/custom/plot/directory" \
+  --benchmark-dir "/custom/benchmark/directory"
+```
+
+
+
+#### Intelligent Analysis & Alerts
+
+The Teams integration includes **automatic benchmark health monitoring** with intelligent alerts:
+
+**🎯 GSM8K Accuracy Monitoring**
+- **GROK**: Alerts if accuracy falls below 80%
+- **DeepSeek**: Alerts if accuracy falls below 93%
+- Automatically parses GSM8K results from benchmark logs
+
+**📈 Performance Regression Detection**
+- Monitors online benchmark metrics: **E2E Latency**, **TTFT**, **ITL**
+- Compares current results with recent history (configurable lookback period)
+- Alerts on **>5% performance degradation** (latency increases)
+- Supports historical comparison up to 7 days back (configurable)
+
+**🚨 Alert Levels**
+- ✅ **Good**: No accuracy or performance issues detected
+- ⚠️ **Warning**: Performance regression detected
+- ❌ **Error**: GSM8K accuracy failure or critical issues
+
+**⚙️ Analysis Control**
+```bash
+# Enable analysis with custom lookback period
+bash perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=14
+
+# Skip analysis for faster notifications (plots only)
+bash perf_nightly.sh --teams-webhook-url="..." --teams-skip-analysis
+
+# Configure via environment variables
+export TEAMS_SKIP_ANALYSIS="false"
+export TEAMS_ANALYSIS_DAYS="7"
+```
+
+#### Getting Webhook URLs
+
+**For Teams Channels (Incoming Webhook)**
+1. Go to your Teams channel
+2. Click "..." menu → "Connectors" or "Workflows"
+3. Add "Incoming Webhook" connector
+4. Configure name and optional image
+5. Copy the generated webhook URL: `https://outlook.office.com/webhook/...`
+
+**For Teams Group Chats (Power Automate)**
+1. Go to [flow.microsoft.com](https://flow.microsoft.com)
+2. Create flow with "When a HTTP request is received" trigger
+3. Add "Post message in a chat or channel" action
+4. Configure to post to your group chat
+5. Copy the HTTP POST URL: `https://prod-XX.westus.logic.azure.com:443/workflows/...`
+
+#### Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TEAMS_WEBHOOK_URL` | Teams webhook URL (**required to enable**) | Empty (disabled) |
+| `TEAMS_SKIP_ANALYSIS` | Skip GSM8K accuracy and performance analysis | `false` |
+| `TEAMS_ANALYSIS_DAYS` | Days to look back for performance comparison | `7` |
+| `PLOT_SERVER_HOST` | Plot server hostname | Auto-detected via `hostname -I` |
+| `PLOT_SERVER_PORT` | Plot server port | `8000` |
+| `PLOT_SERVER_BASE_URL` | Full server URL override | - |
+| `BENCHMARK_BASE_DIR` | Base directory for benchmark data | `/mnt/raid/michael/sgl_benchmark_ci` |
+
+#### Command Line Options
+
+The Teams notification script supports these additional command line options:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--model` | Model name (`grok`, `deepseek`) | **Required** |
+| `--mode` | Benchmark mode (`online`, `offline`) | **Required** |
+| `--webhook-url` | Teams webhook URL (overrides `TEAMS_WEBHOOK_URL`) | - |
+| `--plot-dir` | Base directory where plots are stored | `/mnt/raid/michael/sgl_benchmark_ci/plots_server` |
+| `--benchmark-dir` | Base benchmark directory (overrides `BENCHMARK_BASE_DIR`) | `/mnt/raid/michael/sgl_benchmark_ci` |
+| `--check-server` | Check plot server accessibility before sending | `false` |
+| `--skip-analysis` | Skip GSM8K accuracy and performance analysis | `false` |
+| `--analysis-days` | Days to look back for performance comparison | `7` |
+
+
+#### Teams Message Content
+
+When benchmarks complete, Teams receives text-only adaptive cards containing:
+- 🎯 **Intelligent Summary Alert**: GSM8K accuracy status and performance regression detection
+  - ✅ **Good**: No accuracy or performance issues detected
+  - ⚠️ **Warning**: Performance regression detected (>5% increase in E2E/TTFT/ITL latency)
+  - ❌ **Error**: GSM8K accuracy failure or significant performance issues
+- 🚀 **Benchmark Info**: Model name, mode, and generation timestamp (San Francisco time)
+- 📊 **Plot Summary**: Number of plots found and clickable file names
+- 🔗 **Direct Plot Links**: Text links to view/download individual plots at full resolution
+- 🌐 **Dashboard Access**: Browse all plots via web interface
+- 📅 **Status Updates**: Success/failure notifications with context
+
+#### Disabling Teams Notifications
+
+```bash
+# Run without Teams (default behavior - no webhook URL configured)
+bash perf_nightly.sh
+
+# Temporarily disable when webhook is configured via environment
+unset TEAMS_WEBHOOK_URL
+bash perf_nightly.sh
+
+
+```
+
+#### Troubleshooting
+
+- **"Teams notifications disabled"**: No webhook URL configured - use `--teams-webhook-url` or set `TEAMS_WEBHOOK_URL` environment variable
+- **HTTP 202 responses**: Normal for Power Automate flows (asynchronous processing)
+- **Plot server not accessible**: Check `PLOT_SERVER_HOST`/`PLOT_SERVER_PORT` and ensure plot server is running, or use `--check-server` to test connectivity
+- **Permission issues**: Ensure webhook URL has proper Teams permissions
+- **Missing analysis data**: Check `BENCHMARK_BASE_DIR` environment variable or use `--benchmark-dir` to specify custom benchmark directory
+- **Plot files not found**: Verify `--plot-dir` path to ensure plots exist with expected naming pattern
+
 ---
 
 ## Data Processing and Visualization
@@ -415,12 +567,12 @@ A simple HTTP server is provided to view generated plots:
 
 ```bash
 # Start the plot server
-bash plots_server.sh
+bash server/plots_server.sh
 
 # Access plots at http://<server-ip>:8000/
 ```
 
-The server uses `custom_http_server.py` to serve files with proper directory listings.
+The server uses `server/custom_http_server.py` to serve files with proper directory listings.
 
 ---
 
@@ -564,8 +716,9 @@ These thresholds can be customized using the `--threshold` parameter in online m
 
 ## Cron Schedule
 
-The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `crontab_rules.txt`.
+The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `cron/crontab_rules.txt`.
 
-- **Online and Offline Benchmark:** Runs daily at 12 AM PT.
+- **GROK Online and Offline Benchmark:** Runs daily at 12 AM PT (2 AM CT) with Teams notifications
+- **DeepSeek Online Benchmark:** Runs daily at 3 AM PT (5 AM CT) with Teams notifications
 
-To apply these rules, run: `crontab $WORK_DIR/crontab_rules.txt`
+To apply these rules, run: `crontab cron/crontab_rules.txt`

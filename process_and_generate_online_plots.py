@@ -32,30 +32,31 @@ and generating performance plots from the processed data.
 
 USAGE EXAMPLES:
 
-1. Process and plot with default settings:
-   python process_and_generate_online_plots.py
+1. Process and plot GROK1 model with default settings:
+   python process_and_generate_online_plots.py --model grok
 
-2. Process only (skip plotting):
-   python process_and_generate_online_plots.py --process-only
+2. Process and plot DeepSeek model with default settings:
+   python process_and_generate_online_plots.py --model deepseek
 
-3. Plot only (skip processing, use existing summary CSV):
-   python process_and_generate_online_plots.py --plot-only
+3. Process only (skip plotting):
+   python process_and_generate_online_plots.py --model grok --process-only
 
-4. Custom configuration:
+4. Plot only (skip processing, use existing summary CSV):
+   python process_and_generate_online_plots.py --model grok --plot-only
+
+5. Custom configuration with overrides:
    python process_and_generate_online_plots.py \
+     --model grok \
      --data-dir /path/to/data \
-     --output-prefix "GROK1_MOE-I4F8_online" \
      --plot-dir /path/to/plots \
-     --model-name "GROK1 MOE-I4F8 Online" \
      --mode-filter aiter \
      --split-request-rates
 
-5. Process data and generate split request rate plots:
+6. Process DeepSeek data with split request rate plots:
    python process_and_generate_online_plots.py \
-     --data-dir /mnt/raid/michael/sgl_benchmark_ci/online/GROK1 \
-     --output-prefix GROK1_MOE-I4F8_online \
-     --plot-dir /mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/online \
-     --model-name "GROK1 MOE-I4F8 Online" \
+     --model deepseek \
+     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3-0324 \
+     --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
      --mode-filter aiter \
      --split-request-rates
 
@@ -125,8 +126,9 @@ class OnlineDataProcessor:
         ]
 
         # Compile regex pattern for KV cache info parsing (used repeatedly)
+        # Updated to handle format: "KV size: 63.62 GB" instead of separate K and V sizes
         self.kv_cache_pattern = re.compile(
-            r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB"
+            r"#tokens: (\d+), KV size: ([\d\.]+) GB"
         )
 
         # Expected request rates for complete data
@@ -176,9 +178,7 @@ class OnlineDataProcessor:
                             if match:
                                 try:
                                     num_tokens = int(match.group(1))
-                                    k_size = float(match.group(2))
-                                    v_size = float(match.group(3))
-                                    kv_size_gb = k_size + v_size
+                                    kv_size_gb = float(match.group(2))
                                     return (
                                         num_tokens,
                                         kv_size_gb,
@@ -407,13 +407,14 @@ class OnlineDataProcessor:
                         values_str = parts[1:]
                         for i, rr in enumerate(request_rates):
                             try:
-                                value = float(values_str[i])
+                                if i < len(values_str) and values_str[i].strip():
+                                    value = float(values_str[i])
+                                else:
+                                    value = pd.NA
+                                    print(f"Warning: Missing data for {mode}, {metric_df_name}, {self.load_metric_name} {rr}")
                             except (ValueError, IndexError):
                                 value = pd.NA
-                                if IndexError:
-                                    print(
-                                        f"Warning: Index out of bounds for {mode} data, {metric_type_label}, rate {rr}"
-                                    )
+                                print(f"Warning: Could not parse value for {mode}, {metric_df_name}, {self.load_metric_name} {rr}: '{values_str[i] if i < len(values_str) else 'INDEX_OUT_OF_BOUNDS'}'")
                             metrics_data[(mode, rr)] = value
 
                 except StopIteration:
@@ -759,8 +760,53 @@ class OnlineDataProcessor:
             return output_file
 
         except PermissionError:
-            print(f"Error: Permission denied writing to {output_file}")
-            return None
+            # Try to make the directory writable first
+            try:
+                import stat
+                dir_path = os.path.dirname(output_file)
+                current_permissions = os.stat(dir_path).st_mode
+                os.chmod(dir_path, current_permissions | stat.S_IWUSR | stat.S_IWGRP)
+                print(f"Made directory writable: {dir_path}")
+                
+                # Try writing again after changing permissions
+                summary_df.to_csv(output_file, index=False)
+                print(f"Online summary CSV saved to: {output_file}")
+                
+                # Print summary of processed modes
+                if self.modes_to_process is None:
+                    print("Processed all modes")
+                else:
+                    print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
+
+                # Show unique modes found in the data
+                unique_modes = summary_df["mode"].unique()
+                print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
+
+                return output_file
+                
+            except Exception as chmod_e:
+                print(f"Could not make directory writable: {chmod_e}")
+                # Fall back to current directory if making writable fails
+                fallback_output_file = f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
+                try:
+                    summary_df.to_csv(fallback_output_file, index=False)
+                    print(f"Permission denied for {output_file}")
+                    print(f"Online summary CSV saved to fallback location: {fallback_output_file}")
+                    
+                    # Print summary of processed modes
+                    if self.modes_to_process is None:
+                        print("Processed all modes")
+                    else:
+                        print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
+
+                    # Show unique modes found in the data
+                    unique_modes = summary_df["mode"].unique()
+                    print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
+
+                    return fallback_output_file
+                except Exception as fallback_e:
+                    print(f"Error: Could not write to fallback location {fallback_output_file}: {fallback_e}")
+                    return None
         except Exception as e:
             print(f"Error saving summary CSV to {output_file}: {e}")
             return None
@@ -808,7 +854,34 @@ class OnlineGraphPlotter:
         self.mode_filter = mode_filter
         self.split_request_rates = split_request_rates
         self.load_metric_name = load_metric_name
-        os.makedirs(self.plot_dir, exist_ok=True)
+        
+        # Try to create plot directory, attempt to make writable first if permission denied
+        try:
+            os.makedirs(self.plot_dir, exist_ok=True)
+        except PermissionError:
+            print(f"Permission denied creating plot directory: {self.plot_dir}")
+            # Try to make parent directory writable
+            try:
+                import stat
+                parent_dir = os.path.dirname(self.plot_dir)
+                if os.path.exists(parent_dir):
+                    current_permissions = os.stat(parent_dir).st_mode
+                    os.chmod(parent_dir, current_permissions | stat.S_IWUSR | stat.S_IWGRP)
+                    print(f"Made parent directory writable: {parent_dir}")
+                    # Try creating again
+                    os.makedirs(self.plot_dir, exist_ok=True)
+                    print(f"Successfully created plot directory: {self.plot_dir}")
+                else:
+                    raise Exception(f"Parent directory does not exist: {parent_dir}")
+            except Exception as chmod_e:
+                print(f"Could not make parent directory writable: {chmod_e}")
+                self.plot_dir = "."  # Use current directory as fallback
+                print(f"Using fallback plot directory: {self.plot_dir}")
+        except Exception as e:
+            print(f"Error creating plot directory {self.plot_dir}: {e}")
+            self.plot_dir = "."  # Use current directory as fallback
+            print(f"Using fallback plot directory: {self.plot_dir}")
+            
         self.df = None
 
         # Expected request rates for complete data

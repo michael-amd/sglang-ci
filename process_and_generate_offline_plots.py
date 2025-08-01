@@ -32,30 +32,31 @@ and generating performance plots from the processed data.
 
 USAGE EXAMPLES:
 
-1. Process and plot with default settings:
-   python process_and_generate_offline_plots.py
+1. Process and plot GROK1 model with default settings:
+   python process_and_generate_offline_plots.py --model grok
 
-2. Process only (skip plotting):
-   python process_and_generate_offline_plots.py --process-only
+2. Process and plot DeepSeek model with default settings:
+   python process_and_generate_offline_plots.py --model deepseek
 
-3. Plot only (skip processing, use existing summary CSV):
-   python process_and_generate_offline_plots.py --plot-only
+3. Process only (skip plotting):
+   python process_and_generate_offline_plots.py --model grok --process-only
 
-4. Custom configuration:
+4. Plot only (skip processing, use existing summary CSV):
+   python process_and_generate_offline_plots.py --model grok --plot-only
+
+5. Custom configuration with overrides:
    python process_and_generate_offline_plots.py \
+     --model grok \
      --data-dir /path/to/data \
-     --output-prefix "GROK1_MOE-I4F8_offline" \
      --plot-dir /path/to/plots \
-     --model-name "GROK1_MOE-I4F8_offline" \
      --ilen 1024 \
      --olen 128
 
-5. Process data with custom parameters:
+6. Process DeepSeek data with custom parameters:
    python process_and_generate_offline_plots.py \
-     --data-dir /mnt/raid/michael/sgl_benchmark_ci/offline/GROK1 \
-     --output-prefix GROK1_MOE-I4F8_offline \
-     --plot-dir /mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline \
-     --model-name "GROK1_MOE-I4F8_offline" \
+     --model deepseek \
+     --data-dir /home/michaezh/sgl_benchmark_ci/offline/DeepSeek-V3-0324 \
+     --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
      --ilen 1024 \
      --olen 128 \
      --days 5
@@ -632,81 +633,63 @@ def main():
     """
     Main function that orchestrates both data processing and plot generation.
     """
+    MODEL_CONFIGS = {
+        'grok': {
+            'variant_name': 'GROK1',
+            'output_prefix_template': '{variant_name}_MOE-I4F8_offline',
+            'model_name_template': '{variant_name}_MOE-I4F8_offline',
+            'ilen': 1024,
+            'olen': 128,
+        },
+        'deepseek': {
+            'variant_name': 'DeepSeek-V3-0324',
+            'output_prefix_template': '{variant_name}_FP8_offline',
+            'model_name_template': '{variant_name}_FP8_offline',
+            'ilen': 1024,
+            'olen': 128,
+        }
+    }
+
     parser = argparse.ArgumentParser(
         description="Process offline benchmark CSV files and generate plots",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # Default values from environment variables
-    default_data_dir = os.environ.get(
-        'OFFLINE_DATA_DIR',
-        '/mnt/raid/michael/sgl_benchmark_ci/offline/GROK1'
-    )
-    default_output_prefix = os.environ.get(
-        'OFFLINE_OUTPUT_PREFIX',
-        'GROK1_MOE-I4F8_offline'
-    )
-    default_plot_dir = os.environ.get(
-        'OFFLINE_PLOT_DIR',
-        '/mnt/raid/michael/sgl_benchmark_ci/plots_server/GROK1/offline'
-    )
-    default_model_name = os.environ.get(
-        'OFFLINE_MODEL_NAME',
-        'GROK1_MOE-I4F8_offline'
-    )
-    default_ilen = int(os.environ.get('OFFLINE_ILEN', '1024'))
-    default_olen = int(os.environ.get('OFFLINE_OLEN', '128'))
-    default_days = int(os.environ.get('OFFLINE_DAYS_TO_PROCESS', '30'))
-
-    # Data processing arguments
+    # Simplified model selection
     parser.add_argument(
-        '--data-dir',
+        "-m", "--model",
         type=str,
-        default=default_data_dir,
-        help='Path to the directory containing dated run folders'
+        default='grok',
+        choices=MODEL_CONFIGS.keys(),
+        help="The model to process. Options: 'grok', 'deepseek'."
     )
 
-    parser.add_argument(
-        '--output-prefix',
-        type=str,
-        default=default_output_prefix,
-        help='Prefix for the output summary CSV file'
-    )
+    # Arguments for paths and names (default to None, will be set from config)
+    parser.add_argument("--data-dir", type=str, default=None, help="Override data directory path.")
+    parser.add_argument("--output-prefix", type=str, default=None, help="Override output CSV file prefix.")
+    parser.add_argument("--plot-dir", type=str, default=None, help="Override plot directory path.")
+    parser.add_argument("--model-name", type=str, default=None, help="Override model name in plot titles.")
 
+    # Other arguments
     parser.add_argument(
         '--ilen',
         type=int,
-        default=default_ilen,
-        help='Input length for records'
+        default=None,
+        help='Input length for records. Overrides model-specific defaults.'
     )
 
     parser.add_argument(
         '--olen',
         type=int,
-        default=default_olen,
-        help='Output length for records'
+        default=None,
+        help='Output length for records. Overrides model-specific defaults.'
     )
 
     parser.add_argument(
         '--days',
         type=int,
-        default=default_days,
+        default=30,
         help='Number of days to look back for processing'
-    )
-
-    # Plot generation arguments
-    parser.add_argument(
-        '--plot-dir',
-        type=str,
-        default=default_plot_dir,
-        help='Directory where the plots will be saved'
-    )
-
-    parser.add_argument(
-        '--model-name',
-        type=str,
-        default=default_model_name,
-        help='Model name to be used in plot titles'
     )
 
     # Control arguments
@@ -728,15 +711,33 @@ def main():
         help='Path to existing summary CSV file (for --plot-only mode)'
     )
 
-    # Parse arguments
     args = parser.parse_args()
+
+    # --- Configuration Setup ---
+    config = MODEL_CONFIGS[args.model]
+    variant_name = config['variant_name']
+
+    # Set values from config, allowing overrides from command line
+    if args.data_dir is None:
+        args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/offline/{variant_name}'
+    if args.output_prefix is None:
+        args.output_prefix = config['output_prefix_template'].format(variant_name=variant_name)
+    if args.plot_dir is None:
+        args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/offline'
+    if args.model_name is None:
+        args.model_name = config['model_name_template'].format(variant_name=variant_name)
+    if args.ilen is None:
+        args.ilen = config['ilen']
+    if args.olen is None:
+        args.olen = config['olen']
 
     # Validate mutually exclusive options
     if args.process_only and args.plot_only:
         parser.error("--process-only and --plot-only are mutually exclusive")
 
     # Print configuration
-    print(f"=== CONFIGURATION ===")
+    print("=== CONFIGURATION ===")
+    print(f"Model: {args.model} (variant: {variant_name})")
     print(f"Data directory: {args.data_dir}")
     print(f"Output prefix: {args.output_prefix}")
     print(f"Plot directory: {args.plot_dir}")
