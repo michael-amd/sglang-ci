@@ -37,6 +37,7 @@
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
 #   --download-model=REPO  Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]
+#   --continue-run-days=N    Run benchmarks for last N days' images [default: 1]
 #   --teams-webhook-url=URL  Enable Teams notifications with webhook URL
 #   --teams-skip-analysis    Skip GSM8K accuracy and performance analysis
 #   --teams-analysis-days=N  Days to look back for performance comparison [default: 7]
@@ -52,6 +53,7 @@
 #   perf_nightly.sh --work-dir=/tmp/benchmark-workspace       # Custom work directory
 #   perf_nightly.sh --model=deepseek \                        # Combined custom paths
 #     --model-path=/data/models/deepseek-v3 --work-dir=/home/user/workspace
+#   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -339,36 +341,40 @@ CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
+CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
 
 for arg in "$@"; do
   case $arg in
     --mode=*)
       MODE="${arg#*=}"
-      shift ;;
+      ;;
     --model=*)
       MODEL="${arg#*=}"
-      shift ;;
+      ;;
     --model-path=*)
       CLI_MODEL_PATH="${arg#*=}"
-      shift ;;
+      ;;
     --work-dir=*)
       CLI_WORK_DIR="${arg#*=}"
-      shift ;;
+      ;;
     --hardware=*)
       HARDWARE_TYPE="${arg#*=}"
-      shift ;;
+      ;;
     --download-model=*)
       CLI_DOWNLOAD_MODEL="${arg#*=}"
-      shift ;;
+      ;;
+    --continue-run-days=*)
+      CLI_CONTINUE_RUN_DAYS="${arg#*=}"
+      ;;
     --teams-webhook-url=*)
       CLI_TEAMS_WEBHOOK_URL="${arg#*=}"
-      shift ;;
+      ;;
     --teams-skip-analysis)
       CLI_TEAMS_SKIP_ANALYSIS="true"
-      shift ;;
+      ;;
     --teams-analysis-days=*)
       TEAMS_ANALYSIS_DAYS="${arg#*=}"
-      shift ;;
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
@@ -381,6 +387,7 @@ for arg in "$@"; do
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
       echo "  --download-model=REPO            Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]"
+      echo "  --continue-run-days=DAYS         Run benchmarks for last N days' images [default: 1]"
       echo "  --teams-webhook-url=URL          Teams webhook URL to enable notifications [default: disabled]"
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
@@ -396,6 +403,7 @@ for arg in "$@"; do
       echo "  $0 --work-dir=/tmp/benchmark-run            # Use custom work directory"
       echo "  $0 --model=deepseek --work-dir=/home/user/workspace  # Auto-download to work-dir/models/"
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
+      echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -442,6 +450,18 @@ HF_MODEL_REPO="$DEFAULT_HF_MODEL_REPO"
 if [[ -n "$CLI_DOWNLOAD_MODEL" ]]; then
   HF_MODEL_REPO="$CLI_DOWNLOAD_MODEL"
   echo "[nightly] HuggingFace model repository provided: $HF_MODEL_REPO"
+fi
+
+# Process continue run days option
+CONTINUE_RUN_DAYS=1  # Default to 1 day (current behavior)
+if [[ -n "$CLI_CONTINUE_RUN_DAYS" ]]; then
+  CONTINUE_RUN_DAYS="$CLI_CONTINUE_RUN_DAYS"
+  # Validate that it's a positive integer
+  if ! [[ "$CONTINUE_RUN_DAYS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "[nightly] ERROR: --continue-run-days must be a positive integer (got: $CONTINUE_RUN_DAYS)"
+    exit 1
+  fi
+  echo "[nightly] Will run benchmarks for last $CONTINUE_RUN_DAYS days' images"
 fi
 
 # Set script paths after CLI parameter processing (so custom work directory is used)
@@ -548,9 +568,9 @@ find_image_for_date() {
   return 1
 }
 
-# Find and pull the latest non-SRT Docker image
-echo "[nightly] Searching for the latest non-SRT image for $MODEL..."
-SELECTED_TAG=""
+# Find and pull Docker images for the last N days
+echo "[nightly] Searching for non-SRT images for $MODEL for the last $CONTINUE_RUN_DAYS days..."
+SELECTED_TAGS=()
 
 # Check curl availability once
 if ! command -v curl &> /dev/null; then
@@ -558,37 +578,105 @@ if ! command -v curl &> /dev/null; then
   exit 1
 fi
 
-# Try today, then yesterday
-for offset in 0 1; do
+# Try each day from today going back CONTINUE_RUN_DAYS
+for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
-  echo "[nightly] Found candidate tag: ${candidate_tag}"
+  echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
   echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
 
   if docker pull "${IMAGE_REPO}:${candidate_tag}" >/dev/null 2>&1; then
-    SELECTED_TAG="$candidate_tag"
-    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${SELECTED_TAG}"
-    break
+    SELECTED_TAGS+=("$candidate_tag")
+    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
   else
     echo "[nightly] WARN: Failed to pull candidate tag ${candidate_tag}. It may be private or invalid."
   fi
 done
 
-[[ -z "$SELECTED_TAG" ]] && {
-  echo "[nightly] ERROR: Could not find and pull a valid non-SRT image for the last 2 days."
+[[ ${#SELECTED_TAGS[@]} -eq 0 ]] && {
+  echo "[nightly] ERROR: Could not find and pull any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
   exit 1
 }
 
-DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-# Generate container name (replace special chars for Docker compatibility)
-CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
-
-echo "[nightly] Using Docker image: $DOCKER_IMAGE"
-echo "[nightly] Container name: $CONTAINER_NAME"
+echo "[nightly] Found ${#SELECTED_TAGS[@]} valid image(s) to run benchmarks on:"
+for tag in "${SELECTED_TAGS[@]}"; do
+  echo "[nightly]   - ${IMAGE_REPO}:${tag}"
+done
 
 ###############################################################################
-# 2. Ensure container is running
+# 2. Loop through each selected tag and run benchmarks
+###############################################################################
+
+for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
+  echo ""
+  echo "[nightly] =========================================="
+  echo "[nightly] Starting benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+  echo "[nightly] =========================================="
+  
+  DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
+  # Generate container name (replace special chars for Docker compatibility)
+  CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
+
+  # Check if all runs for the specified modes are already complete for this image
+  all_modes_complete=true
+  if [[ -z "$MODES_TO_RUN" ]]; then
+    all_modes_complete=false
+  fi
+
+  for mode_to_check in $MODES_TO_RUN; do
+    # Define expected number of runs based on model and mode
+    expected_runs=0
+    if [[ "$mode_to_check" == "online" ]]; then
+      if [[ "$MODEL" == "grok" || "$MODEL" == "deepseek" ]]; then
+        expected_runs=15 # Based on 5 request rates * 3 runs per rate
+      fi
+    fi
+    # NOTE: Offline completion check is not implemented as log format is unknown.
+    # It will be treated as incomplete, preventing premature skipping of tags.
+
+    if [[ "$expected_runs" -eq 0 ]]; then
+      echo "[nightly] INFO: No completion check defined for mode '${mode_to_check}'. Assuming not complete."
+      all_modes_complete=false
+      break
+    fi
+
+    # Determine output folder for the mode
+    BENCHMARK_OUTPUT_FOLDER=""
+    if [[ "$mode_to_check" == "online" ]]; then
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    else
+      # Should not happen due to expected_runs check, but as a safeguard:
+      all_modes_complete=false
+      break
+    fi
+
+    # Count actual completed runs
+    actual_runs=0
+    if [[ -d "$BENCHMARK_OUTPUT_FOLDER" ]]; then
+      # Count client benchmark logs, excluding the initial GSM8K accuracy log
+      actual_runs=$(find "$BENCHMARK_OUTPUT_FOLDER" -type f -name "sglang_client_log_*.log" ! -name "*gsm8k*" 2>/dev/null | wc -l)
+    fi
+
+    if [[ "$actual_runs" -lt "$expected_runs" ]]; then
+      echo "[nightly] INFO: Found ${actual_runs}/${expected_runs} completed runs for ${DOCKER_IMAGE} (${mode_to_check}). Proceeding with benchmarks."
+      all_modes_complete=false
+      break
+    else
+      echo "[nightly] INFO: All ${expected_runs} runs for ${DOCKER_IMAGE} (${mode_to_check}) are already complete."
+    fi
+  done
+
+  if [[ "$all_modes_complete" == "true" ]]; then
+    echo "[nightly] SKIP: All runs for all requested modes are complete for ${DOCKER_IMAGE}. Skipping to next tag."
+    continue
+  fi
+  
+  echo "[nightly] Using Docker image: $DOCKER_IMAGE"
+  echo "[nightly] Container name: $CONTAINER_NAME"
+
+###############################################################################
+# 2.1. Ensure container is running
 ###############################################################################
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "[nightly] Reusing container ${CONTAINER_NAME}"
@@ -730,20 +818,20 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
   BENCHMARK_EXIT_CODE=0
   
   # Build common parameters
-  SCRIPT_ARGS="--docker_image=\"${DOCKER_IMAGE}\""
+  SCRIPT_ARGS="--docker_image='${DOCKER_IMAGE}'"
   
   # Add custom work directory if provided
   if [[ -n "$CLI_WORK_DIR" ]]; then
-    SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir=\"${CLI_WORK_DIR}\""
+    SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir='${CLI_WORK_DIR}'"
   fi
   
   # Add custom model path if provided
   if [[ -n "$CLI_MODEL_PATH" ]]; then
     if [[ "$MODEL" == "deepseek" ]]; then
-      SCRIPT_ARGS="${SCRIPT_ARGS} --model=\"${CLI_MODEL_PATH}\""
+      SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     else
       # For Grok
-      SCRIPT_ARGS="${SCRIPT_ARGS} --model=\"${CLI_MODEL_PATH}\""
+      SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     fi
   fi
   
@@ -755,7 +843,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash -c "$SCRIPT $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
+      bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   else
     # For Grok, use the existing command structure
     docker exec \
@@ -763,7 +851,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       "${CONTAINER_NAME}" \
-      bash -c "$SCRIPT $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
+      bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   fi
 
   # Track success of online benchmark for gating offline
@@ -779,19 +867,20 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
   # Process CSV and Generate Plots (Combined)
   if [ "$MODE_TO_RUN" == "offline" ]; then
-    # Construct the path to the log folder for offline benchmarks
-    BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
-
-    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_offline_plots.log"
-
-    echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
-    
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
     if [[ -n "$CLI_WORK_DIR" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/offline/${MODEL_NAME}'"
-      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/offline'"
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server'"
+      # Use custom work directory for log file as well
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/offline/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
+    else
+      # Use default directories
+      BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
     fi
+    
+    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_offline_plots.log"
+    echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     
     # Ensure log directory exists before redirecting output
     docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
@@ -807,19 +896,20 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
   fi
 
   if [ "$MODE_TO_RUN" == "online" ]; then
-    # Construct the path to the log folder for online benchmarks
-    BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
-
-    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_online_plots.log"
-
-    echo "[nightly] Processing online CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
-    
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
     if [[ -n "$CLI_WORK_DIR" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${MODEL_NAME}'"
-      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/online'"
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server'"
+      # Use custom work directory for log file as well
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    else
+      # Use default directories
+      BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
     fi
+    
+    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_online_plots.log"
+    echo "[nightly] Processing online CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     
     # Ensure log directory exists before redirecting output
     docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
@@ -836,3 +926,12 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
   echo "[nightly] === ${MODE_TO_RUN^} benchmark dispatched for ${MODEL^^}; check logs in ${CONTAINER_NAME} ==="
 done
+
+  echo "[nightly] =========================================="
+  echo "[nightly] Completed benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+  echo "[nightly] =========================================="
+done
+
+echo "[nightly] =========================================="
+echo "[nightly] All benchmarks completed for ${#SELECTED_TAGS[@]} image(s)"
+echo "[nightly] =========================================="

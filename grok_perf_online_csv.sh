@@ -76,35 +76,27 @@ for arg in "$@"; do
   case $arg in
     --docker_image=*|--docker-image=*)
       docker_image="${arg#*=}"
-      shift
       ;;
     --model=*)
       MODEL="${arg#*=}"
-      shift
       ;;
     --tokenizer=*)
       TOKENIZER="${arg#*=}"
-      shift
       ;;
     --work-dir=*)
       WORK_DIR="${arg#*=}"
-      shift
       ;;
     --output-dir=*)
       OUTPUT_DIR="${arg#*=}"
-      shift
       ;;
     --gsm8k-script=*)
       GSM8K_SCRIPT="${arg#*=}"
-      shift
       ;;
     --node=*)
       NODE="${arg#*=}"
-      shift
       ;;
     --threshold=*)
       THRESHOLD="${arg#*=}"
-      shift
       ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
@@ -545,6 +537,74 @@ get_best_metrics() {
     fi
 }
 
+# Function to check if all benchmark runs and GSM8K test are complete
+check_all_logs_complete() {
+    echo "Scanning existing logs to check if all benchmarks are already complete..."
+    local all_complete=true
+    local gsm8k_complete=true
+
+    # 1. Check GSM8K log completion
+    echo "Checking GSM8K log status..."
+    local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${ATTENTION_BACKEND}.log"
+    if [ ! -f "$gsm8k_log" ]; then
+        echo "Missing: GSM8K log file ($gsm8k_log)"
+        gsm8k_complete=false
+    elif [ ! -s "$gsm8k_log" ]; then
+        echo "Empty: GSM8K log file ($gsm8k_log)"
+        gsm8k_complete=false
+    else
+        # Check if GSM8K test completed successfully
+        if grep -q "Average Accuracy over $GSM8K_RUNS runs for mode ${ATTENTION_BACKEND}" "$gsm8k_log" && \
+           grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
+            echo "✅ GSM8K log file is complete."
+        else
+            echo "Incomplete: GSM8K log file missing final summary ($gsm8k_log)"
+            gsm8k_complete=false
+        fi
+    fi
+
+    # 2. Check client benchmark logs completion
+    echo "Checking client benchmark logs..."
+    local expected_runs_per_rate=3
+    local total_expected_logs=$((${#REQ_RATES[@]} * expected_runs_per_rate))
+    local actual_completed_logs=0
+
+    for rate in "${REQ_RATES[@]}"; do
+        for i in $(seq 1 $expected_runs_per_rate); do
+            local log_found=false
+            for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${ATTENTION_BACKEND}_${rate}_run${i}"_*.log; do
+                if [ -f "$log_file" ] && grep -q "Run completed at:" "$log_file"; then
+                    log_found=true
+                    break
+                fi
+            done
+            if [ "$log_found" = true ]; then
+                actual_completed_logs=$((actual_completed_logs + 1))
+            fi
+        done
+    done
+
+    echo "Scan complete: ${actual_completed_logs}/${total_expected_logs} client benchmark runs are complete."
+
+    if [ "$actual_completed_logs" -lt "$total_expected_logs" ]; then
+        all_complete=false
+    fi
+
+    if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
+        echo "✅ All benchmark logs (client + GSM8K) are present and complete! No server startup needed."
+        return 0 # Success
+    else
+        if [ "$all_complete" = false ]; then
+            echo "❌ Missing or incomplete client benchmark runs."
+        fi
+        if [ "$gsm8k_complete" = false ]; then
+            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
+        fi
+        echo "Server startup required."
+        return 1 # Failure
+    fi
+}
+
 # ---------------------------
 # 6b. CSV Generation Functions
 # ---------------------------
@@ -773,16 +833,32 @@ run_client_benchmark() {
 # ---------------------------
 # 7. Run Benchmarks for Each Mode
 # ---------------------------
-echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
-launch_server
+ATTENTION_BACKEND="aiter" # Set backend before log check
 
-if run_client_gsm8k "${ATTENTION_BACKEND}"; then
-    run_client_benchmark "${ATTENTION_BACKEND}"
+if check_all_logs_complete; then
+    echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
+    echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
+    
+    # Initialize and populate CSV from existing logs
+    init_csv
+    for rate in "${REQ_RATES[@]}"; do
+        update_csv_for_rate "$rate"
+    done
+    
+    echo "✅ CSV generated from existing logs successfully."
+
 else
-    echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
+    echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
+    launch_server
+    
+    if run_client_gsm8k "${ATTENTION_BACKEND}"; then
+        run_client_benchmark "${ATTENTION_BACKEND}"
+    else
+        echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
+    fi
+    
+    shutdown_server
 fi
-
-shutdown_server
 
 # ---------------------------
 # 8. Parse Logs and Generate CSV Summary (with Ratio Rows)
