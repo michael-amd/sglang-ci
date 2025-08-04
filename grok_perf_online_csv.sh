@@ -442,16 +442,23 @@ run_single_rate_benchmark() {
 
     echo "Processing request rate ${RATE} for mode ${mode}..."
     for i in {1..3}; do
-        # Check if log already exists using glob pattern
+        # Check if log already exists and is complete using glob pattern
         existing_log=""
         for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log; do
             if [[ -f "$log_file" ]]; then
-                existing_log="$log_file"
-                break
+                # Check if the run actually completed by looking for "Run completed at:" in the log
+                if grep -q "Run completed at:" "$log_file"; then
+                    existing_log="$log_file"
+                    break
+                else
+                    echo "Found incomplete log file: $log_file (missing 'Run completed at:' marker)"
+                    echo "Removing incomplete log and re-running..."
+                    rm -f "$log_file"
+                fi
             fi
         done
         if [ -n "$existing_log" ]; then
-            echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+            echo "Complete log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
             # Update progress even for skipped runs
             update_progress "$RATE" "$i"
             continue

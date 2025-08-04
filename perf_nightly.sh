@@ -614,6 +614,10 @@ for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
   echo "[nightly] Starting benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
   echo "[nightly] =========================================="
   
+  # Ensure GPU is idle before starting benchmarks for this image
+  echo "[nightly] Checking GPU status before starting benchmarks for ${IMAGE_REPO}:${SELECTED_TAG}..."
+  ensure_gpu_idle
+  
   DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
   # Generate container name (replace special chars for Docker compatibility)
   CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
@@ -651,11 +655,14 @@ for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
       break
     fi
 
-    # Count actual completed runs
+    # Count actual completed runs (not just existing log files)
     actual_runs=0
     if [[ -d "$BENCHMARK_OUTPUT_FOLDER" ]]; then
-      # Count client benchmark logs, excluding the initial GSM8K accuracy log
-      actual_runs=$(find "$BENCHMARK_OUTPUT_FOLDER" -type f -name "sglang_client_log_*.log" ! -name "*gsm8k*" 2>/dev/null | wc -l)
+      echo "[nightly] Checking benchmark completion in: $BENCHMARK_OUTPUT_FOLDER"
+      # Use simpler approach - count files that contain "Run completed at:"
+      # Exclude GSM8K logs and only count logs that actually finished
+      actual_runs=$(find "$BENCHMARK_OUTPUT_FOLDER" -type f -name "sglang_client_log_*.log" ! -name "*gsm8k*" -exec grep -l "Run completed at:" {} \; 2>/dev/null | wc -l)
+      echo "[nightly] Found ${actual_runs} completed benchmark runs"
     fi
 
     if [[ "$actual_runs" -lt "$expected_runs" ]]; then
@@ -883,7 +890,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     
     # Ensure log directory exists before redirecting output
-    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
+    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
     
     docker exec \
       -e INSIDE_CONTAINER=1 \
@@ -912,7 +919,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     echo "[nightly] Processing online CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
     
     # Ensure log directory exists before redirecting output
-    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
+    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
     
     docker exec \
       -e INSIDE_CONTAINER=1 \
@@ -929,6 +936,8 @@ done
 
   echo "[nightly] =========================================="
   echo "[nightly] Completed benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+  echo "[nightly] Stopping container ${CONTAINER_NAME} to release resources..."
+  docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
   echo "[nightly] =========================================="
 done
 
