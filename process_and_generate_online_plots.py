@@ -38,13 +38,16 @@ USAGE EXAMPLES:
 2. Process and plot DeepSeek model with default settings:
    python process_and_generate_online_plots.py --model deepseek
 
-3. Process only (skip plotting):
+3. Process and plot DeepSeek-V3 model with default settings:
+   python process_and_generate_online_plots.py --model DeepSeek-V3
+
+4. Process only (skip plotting):
    python process_and_generate_online_plots.py --model grok --process-only
 
-4. Plot only (skip processing, use existing summary CSV):
+5. Plot only (skip processing, use existing summary CSV):
    python process_and_generate_online_plots.py --model grok --plot-only
 
-5. Custom configuration with overrides:
+6. Custom configuration with overrides:
    python process_and_generate_online_plots.py \
      --model grok \
      --data-dir /path/to/data \
@@ -52,10 +55,10 @@ USAGE EXAMPLES:
      --mode-filter aiter \
      --split-request-rates
 
-6. Process DeepSeek data with split request rate plots:
+7. Process DeepSeek-V3 data with split request rate plots:
    python process_and_generate_online_plots.py \
-     --model deepseek \
-     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3-0324 \
+     --model DeepSeek-V3 \
+     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3 \
      --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
      --mode-filter aiter \
      --split-request-rates
@@ -620,7 +623,7 @@ class OnlineDataProcessor:
     def filter_complete_dates(self):
         """
         Filters records to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
-        Valid data means at least one performance metric (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        Valid data means ALL performance metrics (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) are not NA.
         """
         if not self.all_records:
             return
@@ -675,19 +678,19 @@ class OnlineDataProcessor:
                         )
                         break
 
-                    # Check if at least one performance metric has valid data
-                    has_valid_data = False
+                    # Check if ALL performance metrics have valid data
+                    has_valid_data = True
                     for metric in metric_columns:
-                        if metric in rr_df.columns and not pd.isna(
+                        if metric not in rr_df.columns or pd.isna(
                             rr_df[metric].iloc[0]
                         ):
-                            has_valid_data = True
+                            has_valid_data = False
                             break
 
                     if not has_valid_data:
                         is_complete = False
                         print(
-                            f"Date {date}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: No valid performance metrics (all NA)"
+                            f"Date {date}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
                         )
                         break
 
@@ -993,7 +996,7 @@ class OnlineGraphPlotter:
     def filter_complete_dates(self):
         """
         Filters dataframe to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
-        Valid data means at least one performance metric (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        Valid data means ALL performance metrics (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) are not NA.
         """
         if self.df.empty:
             return
@@ -1045,17 +1048,17 @@ class OnlineGraphPlotter:
                         )
                         break
 
-                    # Check if at least one performance metric has valid data
-                    has_valid_data = False
+                    # Check if ALL performance metrics have valid data
+                    has_valid_data = True
                     for metric in metric_columns:
-                        if metric in rr_df.columns and rr_df[metric].notna().any():
-                            has_valid_data = True
+                        if metric not in rr_df.columns or not rr_df[metric].notna().any():
+                            has_valid_data = False
                             break
 
                     if not has_valid_data:
                         is_complete = False
                         print(
-                            f"Date {date.strftime('%Y%m%d')}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: No valid performance metrics (all NA)"
+                            f"Date {date.strftime('%Y%m%d')}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
                         )
                         break
 
@@ -1702,6 +1705,13 @@ def main():
             'model_name_template': '{variant_name} FP8 Online',
             'expected_rates': [1, 4, 16, 64, 128],
             'load_metric_name': 'concurrency',
+        },
+        'DeepSeek-V3': {
+            'variant_name': 'DeepSeek-V3',
+            'output_prefix_template': '{variant_name}_FP8_online',
+            'model_name_template': '{variant_name} FP8 Online',
+            'expected_rates': [1, 4, 16, 64, 128],
+            'load_metric_name': 'concurrency',
         }
     }
 
@@ -1716,7 +1726,7 @@ def main():
         type=str,
         default='grok',
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'."
+        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'."
     )
 
     # Arguments for paths and names (default to None, will be set from config)
@@ -1761,11 +1771,19 @@ def main():
 
     # Set values from config, allowing overrides from command line
     if args.data_dir is None:
-        args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/online/{variant_name}'
+        # For DeepSeek-V3, use the correct directory name
+        if args.model == 'DeepSeek-V3':
+            args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/online/DeepSeek-V3'
+        else:
+            args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/online/{variant_name}'
     if args.output_prefix is None:
         args.output_prefix = config['output_prefix_template'].format(variant_name=variant_name)
     if args.plot_dir is None:
-        args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/online'
+        # For DeepSeek-V3, use the correct directory name
+        if args.model == 'DeepSeek-V3':
+            args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/DeepSeek-V3/online'
+        else:
+            args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/online'
     if args.model_name is None:
         args.model_name = config['model_name_template'].format(variant_name=variant_name)
 

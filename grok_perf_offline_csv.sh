@@ -8,7 +8,7 @@
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
-#   bash grok_perf_offline_csv.sh --model=/path/to/model --tokenizer=tokenizer-name
+#   bash grok_perf_offline_csv.sh --model-path=/raid/grok-1-W4A8KV8 --tokenizer=/raid/grok-1-W4A8KV8
 #   bash grok_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ for arg in "$@"; do
       mode="${arg#*=}"
       shift
       ;;
-    --model=*)
+    --model=*|--model-path=*)
       MODEL="${arg#*=}"
       shift
       ;;

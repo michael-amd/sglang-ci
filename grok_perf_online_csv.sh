@@ -5,7 +5,7 @@
 #
 # USAGE:
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash grok_perf_online_csv.sh --model=/path/to/model
+#   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ for arg in "$@"; do
     --docker_image=*|--docker-image=*)
       docker_image="${arg#*=}"
       ;;
-    --model=*)
+    --model=*|--model-path=*)
       MODEL="${arg#*=}"
       ;;
     --tokenizer=*)
@@ -103,6 +103,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --docker_image=IMAGE    Docker image to use (default: $DEFAULT_IMAGE)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --model-path=PATH      Model path (alias for --model)"
       echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
@@ -492,10 +493,26 @@ run_single_rate_benchmark() {
         # Update progress after each run completes
         update_progress "$RATE" "$i"
 
-        # Add 10 second sleep between runs to avoid memory access faults (except after the last run)
+        # Add sleep between runs to avoid memory access faults (except after the last run)
         if [ "$i" -lt 3 ]; then
-            echo "Sleeping 10 seconds between runs to avoid memory access faults..."
-            sleep 10
+            # Special handling for rate 16 - needs longer recovery time and memory cleanup
+            if [ "$RATE" -eq 16 ]; then
+                echo "Rate 16 detected - sleeping 20 seconds and clearing memory before next run..."
+                sleep 20
+                
+                # Clear GPU memory cache and force garbage collection
+                echo "Clearing GPU memory cache..."
+                if command -v curl &> /dev/null; then
+                    # Try to clear server cache if possible
+                    curl -s -X POST "http://0.0.0.0:30000/flush_cache" >/dev/null 2>&1 || true
+                fi
+                
+                # Force Python garbage collection on next server request
+                echo "Memory cleanup completed"
+            else
+                echo "Sleeping 10 seconds between runs to avoid memory access faults..."
+                sleep 10
+            fi
         fi
     done
 

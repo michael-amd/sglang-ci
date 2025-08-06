@@ -31,7 +31,7 @@
 #   perf_nightly.sh [OPTIONS]
 #
 # OPTIONS:
-#   --model=MODEL        Model to benchmark: grok, deepseek [default: grok]
+#   --model=MODEL        Model to benchmark: grok, deepseek, DeepSeek-V3 [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
@@ -46,13 +46,14 @@
 # EXAMPLES:
 #   perf_nightly.sh                                    # Grok online+offline (mi30x)
 #   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
+#   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
 #   perf_nightly.sh --model=grok --mode=all \          # Grok with Teams alerts
 #     --teams-webhook-url="https://prod-99.westus.logic.azure.com/..."
 #   perf_nightly.sh --model-path=/data/models/custom-deepseek  # Custom model path
 #   perf_nightly.sh --work-dir=/tmp/benchmark-workspace       # Custom work directory
-#   perf_nightly.sh --model=deepseek \                        # Combined custom paths
-#     --model-path=/data/models/deepseek-v3 --work-dir=/home/user/workspace
+#   perf_nightly.sh --model=DeepSeek-V3 \                     # Combined custom paths
+#     --model-path=/raid/deepseek-ai/DeepSeek-V3 --work-dir=/home/user/workspace
 #   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -381,7 +382,7 @@ for arg in "$@"; do
       echo "Run SGL nightly benchmarks with optional Teams notifications"
       echo ""
       echo "Options:"
-      echo "  --model=MODEL                    Model to benchmark (grok, deepseek) [default: grok]"
+      echo "  --model=MODEL                    Model to benchmark (grok, deepseek, DeepSeek-V3) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
@@ -396,6 +397,7 @@ for arg in "$@"; do
       echo "Examples:"
       echo "  $0                                          # Run grok online+offline, no Teams (mi30x)"
       echo "  $0 --model=deepseek --mode=online           # Run deepseek online only, no Teams (mi30x)"
+      echo "  $0 --model=DeepSeek-V3 --mode=online        # Run DeepSeek-V3 online only, no Teams (mi30x)"
       echo "  $0 --hardware=mi35x --mode=all              # Run grok on mi35x hardware"
       echo "  $0 --model=grok --mode=all \\                # Run grok with Teams notifications"
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
@@ -478,8 +480,8 @@ PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SC
 TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/team_alert/send_teams_notification.py}"
 
 # Validate model parameter
-if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" ]]; then
-    echo "[nightly] ERROR: Invalid --model value. Must be 'grok' or 'deepseek'."
+if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" ]]; then
+    echo "[nightly] ERROR: Invalid --model value. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
     exit 1
 fi
 
@@ -501,14 +503,14 @@ case "$MODEL" in
         OFFLINE_SCRIPT="$GROK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$GROK_ONLINE_SCRIPT"
         ;;
-    "deepseek")
+    "deepseek"|"DeepSeek-V3")
         MODEL_NAME="$DEEPSEEK_MODEL_NAME"
         MODEL_VARIANT="$DEEPSEEK_MODEL_VARIANT"
         OFFLINE_SCRIPT="$DEEPSEEK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
         ;;
     *)
-        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok' or 'deepseek'."
+        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
         exit 1
         ;;
 esac
@@ -905,14 +907,21 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
   if [ "$MODE_TO_RUN" == "online" ]; then
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    # Determine the correct directory name for DeepSeek-V3
+    if [[ "$MODEL" == "DeepSeek-V3" ]]; then
+      DIRECTORY_NAME="DeepSeek-V3"
+    else
+      DIRECTORY_NAME="${MODEL_NAME}"
+    fi
+    
     if [[ -n "$CLI_WORK_DIR" ]]; then
-      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${MODEL_NAME}'"
+      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${DIRECTORY_NAME}'"
       PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server'"
       # Use custom work directory for log file as well
-      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
     else
       # Use default directories
-      BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${MODEL_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+      BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
     fi
     
     COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_online_plots.log"
