@@ -140,11 +140,16 @@ ensure_gpu_idle() {
   if ! check_gpu_idle; then
     echo "[nightly] GPU is busy. Attempting to stop running Docker containers..."
     # Stop all running containers, ignoring errors if some are already stopped.
-    if [[ -n "$(docker ps -q)" ]]; then
-        echo "[nightly] Stopping running containers: $(docker ps -q | tr '\\n' ' ')"
-        docker stop $(docker ps -q) >/dev/null 2>&1 || true
-    else
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+      running_ids="$(docker ps -q 2>/dev/null || true)"
+      if [[ -n "$running_ids" ]]; then
+        echo "[nightly] Stopping running containers: $(echo "$running_ids" | tr '\\n' ' ')"
+        docker stop $running_ids >/dev/null 2>&1 || true
+      else
         echo "[nightly] No running containers to stop."
+      fi
+    else
+      echo "[nightly] WARN: Docker not accessible (missing or permission denied); skipping container stop."
     fi
     echo "[nightly] Waiting ${GPU_IDLE_WAIT_TIME}s for GPU to become idle..."
     sleep "$GPU_IDLE_WAIT_TIME"
@@ -595,6 +600,24 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
     echo "[nightly] WARN: Failed to pull candidate tag ${candidate_tag}. It may be private or invalid."
   fi
 done
+
+if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
+  echo "[nightly] No image found for today. Checking yesterday as a fallback..."
+  date_suffix=$(date_pst 1)
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
+  if [[ -n "$candidate_tag" ]]; then
+    echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
+    echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+    if docker pull "${IMAGE_REPO}:${candidate_tag}" >/dev/null 2>&1; then
+      SELECTED_TAGS+=("$candidate_tag")
+      echo "[nightly] Successfully pulled fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+    else
+      echo "[nightly] WARN: Failed to pull fallback tag ${candidate_tag}. It may be private or invalid."
+    fi
+  else
+    echo "[nightly] No fallback image found for yesterday either."
+  fi
+fi
 
 [[ ${#SELECTED_TAGS[@]} -eq 0 ]] && {
   echo "[nightly] ERROR: Could not find and pull any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
