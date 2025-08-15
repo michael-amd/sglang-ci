@@ -321,19 +321,19 @@ create_container() {
     local container_name=$1
 
     echo "[csv] Creating container ..."
-    
+
     # Get the directory containing the script
     local script_dir="$(dirname "${SCRIPT_PATH}")"
-    
+
     # Create mount arguments - always mount MOUNT_DIR, and also mount script directory if different
     local mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
-    
+
     # If script directory is not under MOUNT_DIR, mount it separately
     if [[ "$script_dir" != "${MOUNT_DIR}"* ]]; then
         echo "[csv] Script directory ${script_dir} is not under ${MOUNT_DIR}, mounting separately..."
         mount_args="${mount_args} -v ${script_dir}:${script_dir}"
     fi
-    
+
     # If model directory is not under MOUNT_DIR, mount its parent directory
     local model_dir="$(dirname "${MODEL}")"
     if [[ "$model_dir" != "${MOUNT_DIR}"* ]] && [[ "$model_dir" != "$script_dir"* ]]; then
@@ -349,13 +349,13 @@ create_container() {
             # Fallback: mount the parent directory
             mount_root="$model_dir"
         fi
-        
+
         if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
             echo "[csv] Model directory ${MODEL} requires mounting ${mount_root}..."
             mount_args="${mount_args} -v ${mount_root}:${mount_root}"
         fi
     fi
-    
+
     docker run -d --name "${container_name}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \

@@ -6,11 +6,8 @@ import sys
 from http import HTTPStatus
 
 # Configuration variables - can be overridden via environment variables
-DEFAULT_PORT = int(os.environ.get('HTTP_SERVER_PORT', '8000'))
-SERVER_TITLE = os.environ.get(
-    'HTTP_SERVER_TITLE',
-    'SGL Benchmark Plots Server'
-)
+DEFAULT_PORT = int(os.environ.get("HTTP_SERVER_PORT", "8000"))
+SERVER_TITLE = os.environ.get("HTTP_SERVER_TITLE", "SGL Benchmark Plots Server")
 
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -94,13 +91,20 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.log_message("Connection aborted by %s", self.client_address[0])
         except Exception as e:
             # Log other unexpected errors with more detail (always shown)
-            self.log_error("Unexpected error from %s: %s", self.client_address[0], str(e))
+            self.log_error(
+                "Unexpected error from %s: %s", self.client_address[0], str(e)
+            )
 
     def log_error(self, format, *args):
         """Log an error with better formatting."""
         # Only log the error message, not the full traceback for connection issues
-        if any(err in str(args) for err in ['Connection reset', 'Connection aborted', 'Broken pipe']):
-            self.log_message("Network error from %s: %s", self.client_address[0], format % args)
+        if any(
+            err in str(args)
+            for err in ["Connection reset", "Connection aborted", "Broken pipe"]
+        ):
+            self.log_message(
+                "Network error from %s: %s", self.client_address[0], format % args
+            )
         else:
             # For other errors, use the default behavior
             super().log_error(format, *args)
@@ -108,7 +112,8 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         """Log a message with timestamp and client info."""
         import time
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         message = format % args
         print(f"[{timestamp}] {message}")
 
@@ -126,25 +131,25 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        'port',
+        "port",
         type=int,
-        nargs='?',
+        nargs="?",
         default=DEFAULT_PORT,
-        help=f'Port to serve on (default: {DEFAULT_PORT}, can be set via HTTP_SERVER_PORT env var)'
+        help=f"Port to serve on (default: {DEFAULT_PORT}, can be set via HTTP_SERVER_PORT env var)",
     )
 
     parser.add_argument(
-        '--title',
+        "--title",
         type=str,
         default=SERVER_TITLE,
-        help=f'Server title (default: {SERVER_TITLE}, can be set via HTTP_SERVER_TITLE env var)'
+        help=f"Server title (default: {SERVER_TITLE}, can be set via HTTP_SERVER_TITLE env var)",
     )
 
     parser.add_argument(
-        '--bind',
+        "--bind",
         type=str,
-        default=os.environ.get('HTTP_SERVER_BIND', '0.0.0.0'),
-        help='Address to bind to (default: 0.0.0.0, can be set via HTTP_SERVER_BIND env var)'
+        default=os.environ.get("HTTP_SERVER_BIND", "0.0.0.0"),
+        help="Address to bind to (default: 0.0.0.0, can be set via HTTP_SERVER_BIND env var)",
     )
 
     args = parser.parse_args()
@@ -153,7 +158,6 @@ if __name__ == "__main__":
     SERVER_TITLE = args.title
 
     port_to_use = args.port
-
 
     Handler = CustomHTTPRequestHandler
 

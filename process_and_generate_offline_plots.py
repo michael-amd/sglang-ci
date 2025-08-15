@@ -101,7 +101,14 @@ import matplotlib.pyplot as plt
 
 
 class OfflineDataProcessor:
-    def __init__(self, data_dir, output_model_name_prefix, ilen=None, olen=None, days_to_process=None):
+    def __init__(
+        self,
+        data_dir,
+        output_model_name_prefix,
+        ilen=None,
+        olen=None,
+        days_to_process=None,
+    ):
         """
         Initializes the OfflineDataProcessor class with the directory path where CSV files are stored.
         Args:
@@ -120,7 +127,8 @@ class OfflineDataProcessor:
         # Generate list of dates for specified number of days excluding today
         days_back = days_to_process or 30
         self.date_prefixes = [
-            (current_date - timedelta(days=i)).strftime("%Y%m%d") for i in range(1, days_back + 1)
+            (current_date - timedelta(days=i)).strftime("%Y%m%d")
+            for i in range(1, days_back + 1)
         ]
 
     def _extract_date_from_name(self, name):
@@ -133,7 +141,7 @@ class OfflineDataProcessor:
         Returns: date string (YYYYMMDD) or None if not found
         """
         # Use regex to find 8-digit date pattern (YYYYMMDD)
-        date_match = re.search(r'(\d{8})', name)
+        date_match = re.search(r"(\d{8})", name)
         if date_match:
             return date_match.group(1)
 
@@ -291,7 +299,9 @@ class OfflineDataProcessor:
                 # New format: v0.4.9.post2-rocm630-mi30x-YYYYMMDD_MODEL_VARIANT_offline
                 normalized_folder_date = self._extract_date_from_name(folder_name)
 
-                if normalized_folder_date and any(normalized_folder_date == dp for dp in self.date_prefixes):
+                if normalized_folder_date and any(
+                    normalized_folder_date == dp for dp in self.date_prefixes
+                ):
                     date_folders.append((folder_name, folder_path))
 
         return date_folders
@@ -315,7 +325,9 @@ class OfflineDataProcessor:
                     date_str = self._extract_date_from_name(file_name)
 
                     if not date_str:
-                        print(f"Skipping file with no extractable date in name: {file_name}")
+                        print(
+                            f"Skipping file with no extractable date in name: {file_name}"
+                        )
                         continue
 
                     # Validate date format
@@ -509,12 +521,6 @@ class OfflineGraphPlotter:
                 f"\nFound {len(complete_dates)} dates with complete data: {[d.strftime('%Y-%m-%d') for d in sorted(complete_dates)]}"
             )
 
-
-
-
-
-
-
     def plot_combined_metrics(self):
         """
         Create a combined plot showing both latency and throughput trends for all batch sizes.
@@ -601,7 +607,7 @@ class OfflineGraphPlotter:
 
         # Extract just the base model name for filename (e.g. GROK1 from GROK1_MOE-I4F8_offline)
         # Generate filename format: YYYYMMDD_MODEL_offline.png (e.g. 20250617_GROK1_offline.png)
-        base_model_name = self.model_name_in_plot.split('_')[0]
+        base_model_name = self.model_name_in_plot.split("_")[0]
 
         output_file = os.path.join(
             self.plot_dir,
@@ -634,20 +640,20 @@ def main():
     Main function that orchestrates both data processing and plot generation.
     """
     MODEL_CONFIGS = {
-        'grok': {
-            'variant_name': 'GROK1',
-            'output_prefix_template': '{variant_name}_MOE-I4F8_offline',
-            'model_name_template': '{variant_name}_MOE-I4F8_offline',
-            'ilen': 1024,
-            'olen': 128,
+        "grok": {
+            "variant_name": "GROK1",
+            "output_prefix_template": "{variant_name}_MOE-I4F8_offline",
+            "model_name_template": "{variant_name}_MOE-I4F8_offline",
+            "ilen": 1024,
+            "olen": 128,
         },
-        'deepseek': {
-            'variant_name': 'DeepSeek-V3-0324',
-            'output_prefix_template': '{variant_name}_FP8_offline',
-            'model_name_template': '{variant_name}_FP8_offline',
-            'ilen': 1024,
-            'olen': 128,
-        }
+        "deepseek": {
+            "variant_name": "DeepSeek-V3-0324",
+            "output_prefix_template": "{variant_name}_FP8_offline",
+            "model_name_template": "{variant_name}_FP8_offline",
+            "ilen": 1024,
+            "olen": 128,
+        },
     }
 
     parser = argparse.ArgumentParser(
@@ -657,79 +663,100 @@ def main():
 
     # Simplified model selection
     parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         type=str,
-        default='grok',
+        default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'."
+        help="The model to process. Options: 'grok', 'deepseek'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
-    parser.add_argument("--data-dir", type=str, default=None, help="Override data directory path.")
-    parser.add_argument("--output-prefix", type=str, default=None, help="Override output CSV file prefix.")
-    parser.add_argument("--plot-dir", type=str, default=None, help="Override plot directory path.")
-    parser.add_argument("--model-name", type=str, default=None, help="Override model name in plot titles.")
+    parser.add_argument(
+        "--data-dir", type=str, default=None, help="Override data directory path."
+    )
+    parser.add_argument(
+        "--output-prefix",
+        type=str,
+        default=None,
+        help="Override output CSV file prefix.",
+    )
+    parser.add_argument(
+        "--plot-dir", type=str, default=None, help="Override plot directory path."
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Override model name in plot titles.",
+    )
 
     # Other arguments
     parser.add_argument(
-        '--ilen',
+        "--ilen",
         type=int,
         default=None,
-        help='Input length for records. Overrides model-specific defaults.'
+        help="Input length for records. Overrides model-specific defaults.",
     )
 
     parser.add_argument(
-        '--olen',
+        "--olen",
         type=int,
         default=None,
-        help='Output length for records. Overrides model-specific defaults.'
+        help="Output length for records. Overrides model-specific defaults.",
     )
 
     parser.add_argument(
-        '--days',
+        "--days",
         type=int,
         default=30,
-        help='Number of days to look back for processing'
+        help="Number of days to look back for processing",
     )
 
     # Control arguments
     parser.add_argument(
-        '--process-only',
-        action='store_true',
-        help='Only process CSV files, skip plot generation'
+        "--process-only",
+        action="store_true",
+        help="Only process CSV files, skip plot generation",
     )
 
     parser.add_argument(
-        '--plot-only',
-        action='store_true',
-        help='Only generate plots, skip CSV processing (requires existing summary CSV)'
+        "--plot-only",
+        action="store_true",
+        help="Only generate plots, skip CSV processing (requires existing summary CSV)",
     )
 
     parser.add_argument(
-        '--summary-csv',
+        "--summary-csv",
         type=str,
-        help='Path to existing summary CSV file (for --plot-only mode)'
+        help="Path to existing summary CSV file (for --plot-only mode)",
     )
 
     args = parser.parse_args()
 
     # --- Configuration Setup ---
     config = MODEL_CONFIGS[args.model]
-    variant_name = config['variant_name']
+    variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
     if args.data_dir is None:
-        args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/offline/{variant_name}'
+        args.data_dir = f"/mnt/raid/michael/sgl_benchmark_ci/offline/{variant_name}"
     if args.output_prefix is None:
-        args.output_prefix = config['output_prefix_template'].format(variant_name=variant_name)
+        args.output_prefix = config["output_prefix_template"].format(
+            variant_name=variant_name
+        )
     if args.plot_dir is None:
-        args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/offline'
+        args.plot_dir = (
+            f"/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/offline"
+        )
     if args.model_name is None:
-        args.model_name = config['model_name_template'].format(variant_name=variant_name)
+        args.model_name = config["model_name_template"].format(
+            variant_name=variant_name
+        )
     if args.ilen is None:
-        args.ilen = config['ilen']
+        args.ilen = config["ilen"]
     if args.olen is None:
-        args.olen = config['olen']
+        args.olen = config["olen"]
 
     # Validate mutually exclusive options
     if args.process_only and args.plot_only:
@@ -754,11 +781,7 @@ def main():
     # Phase 1: Data Processing
     if not args.plot_only:
         processor = OfflineDataProcessor(
-            args.data_dir,
-            args.output_prefix,
-            args.ilen,
-            args.olen,
-            args.days
+            args.data_dir, args.output_prefix, args.ilen, args.olen, args.days
         )
         summary_csv_path = processor.process_and_save()
 
@@ -787,11 +810,7 @@ def main():
             return 1
 
         # Create plotter and generate plots
-        plotter = OfflineGraphPlotter(
-            summary_csv_path,
-            args.plot_dir,
-            args.model_name
-        )
+        plotter = OfflineGraphPlotter(summary_csv_path, args.plot_dir, args.model_name)
         plotter.generate_and_save_plots()
 
     print("=== COMPLETE ===")
