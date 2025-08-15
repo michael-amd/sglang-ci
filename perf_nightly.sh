@@ -160,22 +160,22 @@ ensure_gpu_idle() {
 check_disk_space() {
   local target_dir="$1"
   local required_gb="${2:-50}"  # Default 50GB minimum
-  
+
   # Get the parent directory for space check (in case target doesn't exist yet)
   local check_dir="$target_dir"
   while [[ ! -d "$check_dir" ]]; do
     check_dir="$(dirname "$check_dir")"
   done
-  
+
   echo "[nightly] Checking available disk space at: ${check_dir}"
-  
+
   # Get available space in GB using df
   local available_space_gb
   if command -v df &> /dev/null; then
     # Use df to get available space in 1K blocks, then convert to GB
     available_space_gb=$(df -P "$check_dir" | awk 'NR==2 {printf "%.1f", $4/1024/1024}')
     echo "[nightly] Available disk space: ${available_space_gb}GB"
-    
+
     # Compare using awk for floating point comparison
     if awk "BEGIN {exit !($available_space_gb >= $required_gb)}"; then
       echo "[nightly] Sufficient disk space available (${available_space_gb}GB >= ${required_gb}GB)"
@@ -197,16 +197,16 @@ download_hf_model() {
   local hf_repo="$1"
   local target_dir="$2"
   local model_type="${3:-unknown}"  # Optional model type parameter
-  
+
   echo "[nightly] Downloading model from HuggingFace: ${hf_repo}"
   echo "[nightly] Target directory: ${target_dir}"
-  
+
   # Check if target directory already exists and has content
   if [[ -d "$target_dir" && -n "$(ls -A "$target_dir" 2>/dev/null)" ]]; then
     echo "[nightly] Model directory already exists and is not empty: ${target_dir}"
     return 0
   fi
-  
+
   # Determine required disk space based on model type
   local required_space_gb=100  # Default for unknown models
   case "$model_type" in
@@ -228,20 +228,20 @@ download_hf_model() {
       fi
       ;;
   esac
-  
+
   # Check available disk space before downloading
   if ! check_disk_space "$target_dir" "$required_space_gb"; then
     echo "[nightly] ERROR: Insufficient disk space for ${model_type} model download (requires ${required_space_gb}GB)"
     return 1
   fi
-  
+
   # Create target directory if it doesn't exist
   mkdir -p "$target_dir"
-  
+
   # Download model using huggingface-cli with resume capability
   echo "[nightly] Installing huggingface_hub and downloading model with resume support..."
   DOWNLOAD_EXIT_CODE=0
-  
+
   docker exec \
     -e INSIDE_CONTAINER=1 \
     "${CONTAINER_NAME}" \
@@ -252,7 +252,7 @@ download_hf_model() {
                --local-dir-use-symlinks False \
                --resume-download && \
              echo '[download] Model download completed successfully'" || DOWNLOAD_EXIT_CODE=$?
-  
+
   if [ $DOWNLOAD_EXIT_CODE -eq 0 ]; then
     echo "[nightly] Model downloaded successfully to: ${target_dir}"
     return 0
@@ -593,7 +593,7 @@ echo "[nightly] Container name: $CONTAINER_NAME"
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "[nightly] Reusing container ${CONTAINER_NAME}"
   docker start "${CONTAINER_NAME}" >/dev/null || true
-  
+
   # Check if benchmark CI directory is accessible inside the container
   if ! docker exec "${CONTAINER_NAME}" test -d "${BENCHMARK_CI_DIR}" 2>/dev/null; then
     echo "[nightly] Benchmark CI directory not accessible in existing container. Recreating container..."
@@ -610,16 +610,16 @@ fi
 # Create container if it doesn't exist or was removed due to validation failure
 if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "[nightly] Creating container ${CONTAINER_NAME}"
-  
+
   # Create mount arguments - always mount MOUNT_DIR, and also mount benchmark CI directory if different
   mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
-  
+
   # If benchmark CI directory is not under MOUNT_DIR, mount it separately
   if [[ "${BENCHMARK_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
       echo "[nightly] Benchmark CI directory ${BENCHMARK_CI_DIR} is not under ${MOUNT_DIR}, mounting separately..."
       mount_args="${mount_args} -v ${BENCHMARK_CI_DIR}:${BENCHMARK_CI_DIR}"
   fi
-  
+
   # If custom model path is provided and not under existing mounts, mount its parent directory
   if [[ -n "$CLI_MODEL_PATH" ]]; then
       model_dir="$(dirname "${CLI_MODEL_PATH}")"
@@ -638,14 +638,14 @@ if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
               # Fallback: mount the parent directory
               mount_root="$model_dir"
           fi
-          
+
           if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
               echo "[nightly] Custom model path ${CLI_MODEL_PATH} requires mounting ${mount_root}..."
               mount_args="${mount_args} -v ${mount_root}:${mount_root}"
           fi
       fi
   fi
-  
+
   docker run -d --name "${CONTAINER_NAME}" \
     --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
     --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
@@ -661,20 +661,20 @@ if [[ -z "$CLI_MODEL_PATH" ]]; then
   # Only attempt download if no custom model path is provided
   # Extract model name from HF repo for directory naming
   MODEL_DIR_NAME=$(basename "$HF_MODEL_REPO")
-  
+
   # Use the benchmark CI directory (work-dir) for model storage when provided
   if [[ -n "$CLI_WORK_DIR" ]]; then
     DOWNLOADED_MODEL_PATH="${BENCHMARK_CI_DIR}/models/${MODEL_DIR_NAME}"
   else
     DOWNLOADED_MODEL_PATH="${WORK_DIR}/models/${MODEL_DIR_NAME}"
   fi
-  
+
   # Check if model directory exists and is not empty
   if ! docker exec "${CONTAINER_NAME}" test -d "${DOWNLOADED_MODEL_PATH}" 2>/dev/null || \
      [[ -z "$(docker exec "${CONTAINER_NAME}" ls -A "${DOWNLOADED_MODEL_PATH}" 2>/dev/null)" ]]; then
-    
+
     echo "[nightly] Model not found at ${DOWNLOADED_MODEL_PATH}, attempting download from HuggingFace..."
-    
+
     # Ensure models directory exists - create it locally first, then in container if needed
     if [[ -n "$CLI_WORK_DIR" ]]; then
       mkdir -p "${BENCHMARK_CI_DIR}/models"
@@ -682,7 +682,7 @@ if [[ -z "$CLI_MODEL_PATH" ]]; then
     else
       docker exec "${CONTAINER_NAME}" mkdir -p "${WORK_DIR}/models"
     fi
-    
+
     # Download the model
     if download_hf_model "$HF_MODEL_REPO" "$DOWNLOADED_MODEL_PATH" "$MODEL"; then
       echo "[nightly] Model downloaded successfully, using path: ${DOWNLOADED_MODEL_PATH}"
@@ -728,15 +728,15 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
   # Execute the benchmark script and capture exit code
   BENCHMARK_EXIT_CODE=0
-  
+
   # Build common parameters
   SCRIPT_ARGS="--docker_image=\"${DOCKER_IMAGE}\""
-  
+
   # Add custom work directory if provided
   if [[ -n "$CLI_WORK_DIR" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir=\"${CLI_WORK_DIR}\""
   fi
-  
+
   # Add custom model path if provided
   if [[ -n "$CLI_MODEL_PATH" ]]; then
     if [[ "$MODEL" == "deepseek" ]]; then
@@ -746,7 +746,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       SCRIPT_ARGS="${SCRIPT_ARGS} --model=\"${CLI_MODEL_PATH}\""
     fi
   fi
-  
+
   if [[ "$MODEL" == "deepseek" ]]; then
     # For DeepSeek, pass additional parameters if needed
     docker exec \
@@ -785,17 +785,17 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_offline_plots.log"
 
     echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
-    
+
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
     if [[ -n "$CLI_WORK_DIR" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/offline/${MODEL_NAME}'"
       PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/offline'"
     fi
-    
+
     # Ensure log directory exists before redirecting output
     docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
-    
+
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
@@ -813,17 +813,17 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_online_plots.log"
 
     echo "[nightly] Processing online CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
-    
+
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
     if [[ -n "$CLI_WORK_DIR" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${MODEL_NAME}'"
       PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/online'"
     fi
-    
+
     # Ensure log directory exists before redirecting output
     docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
-    
+
     docker exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \

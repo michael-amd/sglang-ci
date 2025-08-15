@@ -28,30 +28,28 @@ Configuration:
 """
 
 import argparse
-import os
-import sys
-import re
 import glob
+import os
+import re
+import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
 
 # Configuration variables - can be overridden via environment variables
 DEFAULT_OUTPUT_DIR = os.environ.get(
-    'COMPARISON_OUTPUT_DIR',
-    '/mnt/raid/michael/sgl_benchmark_ci/comparison_results'
+    "COMPARISON_OUTPUT_DIR", "/mnt/raid/michael/sgl_benchmark_ci/comparison_results"
 )
-GSM8K_ACCURACY_THRESHOLD = float(os.environ.get('GSM8K_ACCURACY_THRESHOLD', '0.001'))
-PERFORMANCE_THRESHOLD = float(os.environ.get('PERFORMANCE_THRESHOLD', '5.0'))
+GSM8K_ACCURACY_THRESHOLD = float(os.environ.get("GSM8K_ACCURACY_THRESHOLD", "0.001"))
+PERFORMANCE_THRESHOLD = float(os.environ.get("PERFORMANCE_THRESHOLD", "5.0"))
 
 # GSM8K log file patterns (configurable via environment)
 GSM8K_LOG_PATTERNS = os.environ.get(
-    'GSM8K_LOG_PATTERNS',
-    '*gsm8k*.log;*GSM8K*.log;sglang_client_log_*_gsm8k*.log'
-).split(';')
+    "GSM8K_LOG_PATTERNS", "*gsm8k*.log;*GSM8K*.log;sglang_client_log_*_gsm8k*.log"
+).split(";")
 
 
 def find_csv_files(directory: str, model: Optional[str] = None) -> List[Path]:
@@ -70,7 +68,9 @@ def find_csv_files(directory: str, model: Optional[str] = None) -> List[Path]:
     return csv_files
 
 
-def extract_gsm8k_accuracy(directory: str, model: Optional[str] = None) -> Optional[float]:
+def extract_gsm8k_accuracy(
+    directory: str, model: Optional[str] = None
+) -> Optional[float]:
     """Extract GSM8K accuracy from log files in the directory."""
     dir_path = Path(directory)
     if not dir_path.exists():
@@ -87,10 +87,12 @@ def extract_gsm8k_accuracy(directory: str, model: Optional[str] = None) -> Optio
 
     for log_file in log_files:
         try:
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 content = f.read()
                 # Look for all average accuracy lines and take the last one
-                matches = re.findall(r'Average Accuracy over \d+ runs.*?:\s*([\d.]+)', content)
+                matches = re.findall(
+                    r"Average Accuracy over \d+ runs.*?:\s*([\d.]+)", content
+                )
                 if matches:
                     # Return the last (most recent) accuracy value
                     return float(matches[-1])
@@ -104,16 +106,16 @@ def extract_gsm8k_accuracy(directory: str, model: Optional[str] = None) -> Optio
 def detect_benchmark_mode(csv_path: str) -> str:
     """Detect if CSV is from online or offline benchmark based on headers."""
     try:
-        with open(csv_path, 'r') as f:
+        with open(csv_path, "r") as f:
             content = f.read()
-            if 'E2E Latency' in content and 'request rate' in content:
-                return 'online'
-            elif 'batch_size' in content and 'Prefill_latency' in content:
-                return 'offline'
+            if "E2E Latency" in content and "request rate" in content:
+                return "online"
+            elif "batch_size" in content and "Prefill_latency" in content:
+                return "offline"
             else:
-                return 'unknown'
+                return "unknown"
     except Exception:
-        return 'unknown'
+        return "unknown"
 
 
 def parse_offline_csv(filepath: str) -> pd.DataFrame:
@@ -196,33 +198,53 @@ def parse_online_csv(filepath: str) -> Dict[str, pd.DataFrame]:
         return {}
 
 
-def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
-                            main_info: Dict = None, pr_info: Dict = None) -> List[str]:
+def compare_offline_results(
+    main_df: pd.DataFrame,
+    pr_df: pd.DataFrame,
+    main_info: Dict = None,
+    pr_info: Dict = None,
+) -> List[str]:
     """Compare offline benchmark results and generate markdown."""
     output = []
 
     # Add GSM8K accuracy information if available
-    if main_info and main_info.get('gsm8k_accuracy') is not None:
-        output.append(f"**Main GSM8K Accuracy**: {main_info['gsm8k_accuracy']:.3f} ({main_info['gsm8k_accuracy']*100:.1f}%)\n")
-    if pr_info and pr_info.get('gsm8k_accuracy') is not None:
-        output.append(f"**PR GSM8K Accuracy**: {pr_info['gsm8k_accuracy']:.3f} ({pr_info['gsm8k_accuracy']*100:.1f}%)\n")
+    if main_info and main_info.get("gsm8k_accuracy") is not None:
+        output.append(
+            f"**Main GSM8K Accuracy**: {main_info['gsm8k_accuracy']:.3f} ({main_info['gsm8k_accuracy']*100:.1f}%)\n"
+        )
+    if pr_info and pr_info.get("gsm8k_accuracy") is not None:
+        output.append(
+            f"**PR GSM8K Accuracy**: {pr_info['gsm8k_accuracy']:.3f} ({pr_info['gsm8k_accuracy']*100:.1f}%)\n"
+        )
 
     # GSM8K comparison
-    if (main_info and main_info.get('gsm8k_accuracy') is not None and
-            pr_info and pr_info.get('gsm8k_accuracy') is not None):
-        main_acc = main_info['gsm8k_accuracy']
-        pr_acc = pr_info['gsm8k_accuracy']
+    if (
+        main_info
+        and main_info.get("gsm8k_accuracy") is not None
+        and pr_info
+        and pr_info.get("gsm8k_accuracy") is not None
+    ):
+        main_acc = main_info["gsm8k_accuracy"]
+        pr_acc = pr_info["gsm8k_accuracy"]
         acc_diff = pr_acc - main_acc
         if abs(acc_diff) >= GSM8K_ACCURACY_THRESHOLD:
             if acc_diff > 0:
-                output.append(f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n")
+                output.append(
+                    f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n"
+                )
             else:
-                output.append(f"**GSM8K Change**: {acc_diff:.3f} ({acc_diff*100:.1f}%) 🔴\n")
+                output.append(
+                    f"**GSM8K Change**: {acc_diff:.3f} ({acc_diff*100:.1f}%) 🔴\n"
+                )
         else:
             output.append("**GSM8K Change**: No significant change\n")
 
-    if (main_info and main_info.get('gsm8k_accuracy') is not None or
-            pr_info and pr_info.get('gsm8k_accuracy') is not None):
+    if (
+        main_info
+        and main_info.get("gsm8k_accuracy") is not None
+        or pr_info
+        and pr_info.get("gsm8k_accuracy") is not None
+    ):
         output.append("\n")
 
     # Check if either dataframe has empty values
@@ -232,18 +254,31 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
     if not main_has_data and not pr_has_data:
         return output + ["❌ Both CSV files contain no benchmark data.\n", "\n"]
     elif not main_has_data:
-        return (output + ["❌ Main CSV contains no benchmark data. Cannot perform comparison.\n", "\n",
-                          "**PR CSV Summary:**\n", pr_df.to_string(index=False) + "\n", "\n"])
+        return output + [
+            "❌ Main CSV contains no benchmark data. Cannot perform comparison.\n",
+            "\n",
+            "**PR CSV Summary:**\n",
+            pr_df.to_string(index=False) + "\n",
+            "\n",
+        ]
     elif not pr_has_data:
-        return (output + ["❌ PR CSV contains no benchmark data. Cannot perform comparison.\n", "\n",
-                          "**Main CSV Summary:**\n", main_df.to_string(index=False) + "\n", "\n"])
+        return output + [
+            "❌ PR CSV contains no benchmark data. Cannot perform comparison.\n",
+            "\n",
+            "**Main CSV Summary:**\n",
+            main_df.to_string(index=False) + "\n",
+            "\n",
+        ]
 
     # Merge dataframes on common columns
     merge_cols = ["TP", "batch_size", "IL", "OL"]
     merged = pd.merge(main_df, pr_df, on=merge_cols, suffixes=("_main", "_pr"))
 
     if merged.empty:
-        return output + ["No common configurations found between main and PR results.\n", "\n"]
+        return output + [
+            "No common configurations found between main and PR results.\n",
+            "\n",
+        ]
 
     # Only compare E2E metrics
     metrics = [
@@ -256,8 +291,8 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
     output.append("|------------|--------|------|----|---------|\n")
 
     # Group by batch size
-    for batch_size in sorted(merged['batch_size'].unique()):
-        batch_rows = merged[merged['batch_size'] == batch_size]
+    for batch_size in sorted(merged["batch_size"].unique()):
+        batch_rows = merged[merged["batch_size"] == batch_size]
 
         for _, row in batch_rows.iterrows():
             for metric, better_direction in metrics:
@@ -292,44 +327,71 @@ def compare_offline_results(main_df: pd.DataFrame, pr_df: pd.DataFrame,
                                 f"| {batch_size} | {metric_name} | {main_val:.2f} | {pr_val:.2f} | {change_str} |\n"
                             )
                     except (ValueError, KeyError, TypeError, ZeroDivisionError) as e:
-                        print(f"Warning: Failed to process {metric} for batch_size {batch_size}: {e}", file=sys.stderr)
+                        print(
+                            f"Warning: Failed to process {metric} for batch_size {batch_size}: {e}",
+                            file=sys.stderr,
+                        )
                         # Add a row indicating missing data
-                        metric_name = metric.replace("(token/s)", "").replace("(s)", "").replace("_", " ")
-                        output.append(f"| {batch_size} | {metric_name} | N/A | N/A | Error |\n")
+                        metric_name = (
+                            metric.replace("(token/s)", "")
+                            .replace("(s)", "")
+                            .replace("_", " ")
+                        )
+                        output.append(
+                            f"| {batch_size} | {metric_name} | N/A | N/A | Error |\n"
+                        )
 
     output.append("\n")  # Add empty line at the end
     return output
 
 
 def compare_online_results(
-    main_data: Dict[str, pd.DataFrame], pr_data: Dict[str, pd.DataFrame],
-    main_info: Dict = None, pr_info: Dict = None
+    main_data: Dict[str, pd.DataFrame],
+    pr_data: Dict[str, pd.DataFrame],
+    main_info: Dict = None,
+    pr_info: Dict = None,
 ) -> List[str]:
     """Compare online benchmark results and generate markdown."""
     output = []
 
     # Add GSM8K accuracy information if available
-    if main_info and main_info.get('gsm8k_accuracy') is not None:
-        output.append(f"**Main GSM8K Accuracy**: {main_info['gsm8k_accuracy']:.3f} ({main_info['gsm8k_accuracy']*100:.1f}%)\n")
-    if pr_info and pr_info.get('gsm8k_accuracy') is not None:
-        output.append(f"**PR GSM8K Accuracy**: {pr_info['gsm8k_accuracy']:.3f} ({pr_info['gsm8k_accuracy']*100:.1f}%)\n")
+    if main_info and main_info.get("gsm8k_accuracy") is not None:
+        output.append(
+            f"**Main GSM8K Accuracy**: {main_info['gsm8k_accuracy']:.3f} ({main_info['gsm8k_accuracy']*100:.1f}%)\n"
+        )
+    if pr_info and pr_info.get("gsm8k_accuracy") is not None:
+        output.append(
+            f"**PR GSM8K Accuracy**: {pr_info['gsm8k_accuracy']:.3f} ({pr_info['gsm8k_accuracy']*100:.1f}%)\n"
+        )
 
     # GSM8K comparison
-    if (main_info and main_info.get('gsm8k_accuracy') is not None and
-            pr_info and pr_info.get('gsm8k_accuracy') is not None):
-        main_acc = main_info['gsm8k_accuracy']
-        pr_acc = pr_info['gsm8k_accuracy']
+    if (
+        main_info
+        and main_info.get("gsm8k_accuracy") is not None
+        and pr_info
+        and pr_info.get("gsm8k_accuracy") is not None
+    ):
+        main_acc = main_info["gsm8k_accuracy"]
+        pr_acc = pr_info["gsm8k_accuracy"]
         acc_diff = pr_acc - main_acc
         if abs(acc_diff) >= GSM8K_ACCURACY_THRESHOLD:
             if acc_diff > 0:
-                output.append(f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n")
+                output.append(
+                    f"**GSM8K Improvement**: +{acc_diff:.3f} ({acc_diff*100:+.1f}%) 🟢\n"
+                )
             else:
-                output.append(f"**GSM8K Change**: {acc_diff:.3f} ({acc_diff*100:.1f}%) 🔴\n")
+                output.append(
+                    f"**GSM8K Change**: {acc_diff:.3f} ({acc_diff*100:.1f}%) 🔴\n"
+                )
         else:
             output.append("**GSM8K Change**: No significant change\n")
 
-    if (main_info and main_info.get('gsm8k_accuracy') is not None or
-            pr_info and pr_info.get('gsm8k_accuracy') is not None):
+    if (
+        main_info
+        and main_info.get("gsm8k_accuracy") is not None
+        or pr_info
+        and pr_info.get("gsm8k_accuracy") is not None
+    ):
         output.append("\n")
 
     for metric_type in ["E2E", "TTFT", "ITL"]:
@@ -380,8 +442,17 @@ def compare_online_results(
                     output.append(
                         f"| {rate} | {main_val:.1f} | {pr_val:.1f} | {change_str} |\n"
                     )
-                except (ValueError, KeyError, TypeError, IndexError, ZeroDivisionError) as e:
-                    print(f"Warning: Failed to process request rate column {i} for {metric_type}: {e}", file=sys.stderr)
+                except (
+                    ValueError,
+                    KeyError,
+                    TypeError,
+                    IndexError,
+                    ZeroDivisionError,
+                ) as e:
+                    print(
+                        f"Warning: Failed to process request rate column {i} for {metric_type}: {e}",
+                        file=sys.stderr,
+                    )
                     # Skip this column and continue
 
         # Add empty line between sections
@@ -395,45 +466,40 @@ def main():
         description="Compare SGLang benchmark CSV results",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "--csv1", required=True, help="Path to first CSV directory"
-    )
+    parser.add_argument("--csv1", required=True, help="Path to first CSV directory")
     parser.add_argument("--csv2", required=True, help="Path to second CSV directory")
     parser.add_argument(
-        "--mode", choices=["offline", "online", "auto"], default="auto",
-        help="Benchmark mode (auto-detect if not specified)"
+        "--mode",
+        choices=["offline", "online", "auto"],
+        default="auto",
+        help="Benchmark mode (auto-detect if not specified)",
     )
     parser.add_argument(
         "--model", help="Model name to filter CSV files (for same model comparisons)"
     )
+    parser.add_argument("--model1", help="Model name for first directory")
+    parser.add_argument("--model2", help="Model name for second directory")
     parser.add_argument(
-        "--model1", help="Model name for first directory"
-    )
-    parser.add_argument(
-        "--model2", help="Model name for second directory"
-    )
-    parser.add_argument(
-        "--output-md", help="Path to output markdown file (optional, auto-generated if not provided)"
+        "--output-md",
+        help="Path to output markdown file (optional, auto-generated if not provided)",
     )
     parser.add_argument(
         "--output-dir",
         default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR}, can be set via COMPARISON_OUTPUT_DIR env var)"
+        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR}, can be set via COMPARISON_OUTPUT_DIR env var)",
     )
-    parser.add_argument(
-        "--append", action="store_true", help="Append to existing file"
-    )
+    parser.add_argument("--append", action="store_true", help="Append to existing file")
     parser.add_argument(
         "--gsm8k-threshold",
         type=float,
         default=GSM8K_ACCURACY_THRESHOLD,
-        help=f"GSM8K accuracy threshold for significance (default: {GSM8K_ACCURACY_THRESHOLD}, can be set via GSM8K_ACCURACY_THRESHOLD env var)"
+        help=f"GSM8K accuracy threshold for significance (default: {GSM8K_ACCURACY_THRESHOLD}, can be set via GSM8K_ACCURACY_THRESHOLD env var)",
     )
     parser.add_argument(
         "--performance-threshold",
         type=float,
         default=PERFORMANCE_THRESHOLD,
-        help=f"Performance change threshold for highlighting (default: {PERFORMANCE_THRESHOLD}%%, can be set via PERFORMANCE_THRESHOLD env var)"
+        help=f"Performance change threshold for highlighting (default: {PERFORMANCE_THRESHOLD}%%, can be set via PERFORMANCE_THRESHOLD env var)",
     )
 
     args = parser.parse_args()
@@ -479,8 +545,12 @@ def main():
         if main_mode == pr_mode and main_mode != "unknown":
             mode = main_mode
         else:
-            print(f"Warning: Different benchmark modes detected (main: {main_mode}, pr: {pr_mode})")
-            print("Proceeding with comparison but results may not be directly comparable")
+            print(
+                f"Warning: Different benchmark modes detected (main: {main_mode}, pr: {pr_mode})"
+            )
+            print(
+                "Proceeding with comparison but results may not be directly comparable"
+            )
             mode = main_mode if main_mode != "unknown" else pr_mode
     else:
         mode = args.mode
@@ -488,8 +558,8 @@ def main():
     # Always extract GSM8K accuracy
     main_info = {}
     pr_info = {}
-    main_info['gsm8k_accuracy'] = extract_gsm8k_accuracy(args.csv1, model1)
-    pr_info['gsm8k_accuracy'] = extract_gsm8k_accuracy(args.csv2, model2)
+    main_info["gsm8k_accuracy"] = extract_gsm8k_accuracy(args.csv1, model1)
+    pr_info["gsm8k_accuracy"] = extract_gsm8k_accuracy(args.csv2, model2)
 
     # Generate output directory and filename if not provided
     if not args.output_md:
@@ -527,7 +597,9 @@ def main():
     output_lines.append(f"**Mode**: {mode}\n\n")
     output_lines.append(f"**Main CSV**: `{main_csv.name}`\n\n")
     output_lines.append(f"**PR CSV**: `{pr_csv.name}`\n\n")
-    output_lines.append(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+    output_lines.append(
+        f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    )
     output_lines.append("### Results\n\n")
 
     if mode == "offline":

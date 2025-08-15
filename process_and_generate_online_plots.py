@@ -99,7 +99,15 @@ import pandas as pd
 
 
 class OnlineDataProcessor:
-    def __init__(self, data_dir, output_model_name_prefix, mode_filter="aiter", days=30, expected_rates=None, load_metric_name="request_rate"):
+    def __init__(
+        self,
+        data_dir,
+        output_model_name_prefix,
+        mode_filter="aiter",
+        days=30,
+        expected_rates=None,
+        load_metric_name="request_rate",
+    ):
         """
         Initializes the OnlineDataProcessor.
         Args:
@@ -122,14 +130,13 @@ class OnlineDataProcessor:
         current_date = datetime.today().date()
         # Generate list of dates for last N days including today
         self.date_prefixes = [
-            (current_date - timedelta(days=i)).strftime("%Y%m%d") for i in range(0, days)
+            (current_date - timedelta(days=i)).strftime("%Y%m%d")
+            for i in range(0, days)
         ]
 
         # Compile regex pattern for KV cache info parsing (used repeatedly)
         # Updated to handle format: "KV size: 63.62 GB" instead of separate K and V sizes
-        self.kv_cache_pattern = re.compile(
-            r"#tokens: (\d+), KV size: ([\d\.]+) GB"
-        )
+        self.kv_cache_pattern = re.compile(r"#tokens: (\d+), KV size: ([\d\.]+) GB")
 
         # Expected request rates for complete data
         if expected_rates is None:
@@ -233,7 +240,9 @@ class OnlineDataProcessor:
             return gsm8k_accuracy
 
         # Look for GSM8K log files (pattern: sglang_client_log_*_gsm8k_*.log)
-        gsm8k_log_files = [f for f in file_list if "gsm8k" in f.lower() and f.endswith(".log")]
+        gsm8k_log_files = [
+            f for f in file_list if "gsm8k" in f.lower() and f.endswith(".log")
+        ]
 
         for log_file in gsm8k_log_files:
             log_path = os.path.join(csv_dir, log_file)
@@ -261,7 +270,9 @@ class OnlineDataProcessor:
                             mode = last_part  # Last part should be the mode
 
                 if not mode:
-                    print(f"Warning: Could not determine mode from GSM8K log file: {log_file}, will use default")
+                    print(
+                        f"Warning: Could not determine mode from GSM8K log file: {log_file}, will use default"
+                    )
 
                 # Read the log file and find the average accuracy
                 with open(log_path, "r") as f:
@@ -274,14 +285,20 @@ class OnlineDataProcessor:
                                 accuracy = float(accuracy_str)
                                 if mode:
                                     gsm8k_accuracy[mode] = accuracy
-                                    print(f"Found GSM8K accuracy for mode {mode}: {accuracy}")
+                                    print(
+                                        f"Found GSM8K accuracy for mode {mode}: {accuracy}"
+                                    )
                                 else:
                                     # Store with a generic key, will be mapped later
                                     gsm8k_accuracy["_default"] = accuracy
-                                    print(f"Found GSM8K accuracy (no mode specified): {accuracy}")
+                                    print(
+                                        f"Found GSM8K accuracy (no mode specified): {accuracy}"
+                                    )
                                 break
                             except (ValueError, IndexError) as e:
-                                print(f"Warning: Could not parse GSM8K accuracy from line: {line.strip()} in {log_path}: {e}")
+                                print(
+                                    f"Warning: Could not parse GSM8K accuracy from line: {line.strip()} in {log_path}: {e}"
+                                )
 
                         # Alternative pattern: Just "Accuracy: 0.813" from individual runs
                         elif line.strip().startswith("Accuracy:"):
@@ -292,7 +309,9 @@ class OnlineDataProcessor:
                                 mode_key = mode if mode else "_default"
                                 if mode_key not in gsm8k_accuracy:
                                     gsm8k_accuracy[mode_key] = accuracy
-                                    print(f"Found GSM8K accuracy (single run) for mode {mode_key}: {accuracy}")
+                                    print(
+                                        f"Found GSM8K accuracy (single run) for mode {mode_key}: {accuracy}"
+                                    )
                             except (ValueError, IndexError):
                                 continue
 
@@ -325,7 +344,10 @@ class OnlineDataProcessor:
                     ]
                 ):
                     req_rate_line_candidate = next(temp_iter)  # The line after header
-                    if "request rate" in req_rate_line_candidate or "concurrency" in req_rate_line_candidate:
+                    if (
+                        "request rate" in req_rate_line_candidate
+                        or "concurrency" in req_rate_line_candidate
+                    ):
                         parts = req_rate_line_candidate.strip().split("\t")
                         if len(parts) > 1:
                             # Filter out non-integer values from parts
@@ -385,7 +407,11 @@ class OnlineDataProcessor:
 
                         # Case 1: Handle specific MI300x modes
                         if "MI300x-aiter" in first_part:
-                            mode = "aiter_decode" if "aiter_decode" in first_part else "aiter"
+                            mode = (
+                                "aiter_decode"
+                                if "aiter_decode" in first_part
+                                else "aiter"
+                            )
                         elif "MI300x-triton" in first_part:
                             mode = "triton"
                         # Case 2: General MI300x mode extraction
@@ -401,7 +427,9 @@ class OnlineDataProcessor:
                             # If no mode could be determined, use the first part as a fallback
                             # and print a warning. This ensures data is still processed.
                             mode = first_part.split(",")[0].strip()
-                            print(f"Warning: Could not determine standard mode from line: '{first_part}'. Using fallback mode: '{mode}'")
+                            print(
+                                f"Warning: Could not determine standard mode from line: '{first_part}'. Using fallback mode: '{mode}'"
+                            )
 
                         # Parse values
                         values_str = parts[1:]
@@ -411,10 +439,14 @@ class OnlineDataProcessor:
                                     value = float(values_str[i])
                                 else:
                                     value = pd.NA
-                                    print(f"Warning: Missing data for {mode}, {metric_df_name}, {self.load_metric_name} {rr}")
+                                    print(
+                                        f"Warning: Missing data for {mode}, {metric_df_name}, {self.load_metric_name} {rr}"
+                                    )
                             except (ValueError, IndexError):
                                 value = pd.NA
-                                print(f"Warning: Could not parse value for {mode}, {metric_df_name}, {self.load_metric_name} {rr}: '{values_str[i] if i < len(values_str) else 'INDEX_OUT_OF_BOUNDS'}'")
+                                print(
+                                    f"Warning: Could not parse value for {mode}, {metric_df_name}, {self.load_metric_name} {rr}: '{values_str[i] if i < len(values_str) else 'INDEX_OUT_OF_BOUNDS'}'"
+                                )
                             metrics_data[(mode, rr)] = value
 
                 except StopIteration:
@@ -481,7 +513,9 @@ class OnlineDataProcessor:
             found_modes = set(mode for (mode, rate) in metrics_map.keys())
             for mode in found_modes:
                 gsm8k_accuracy[mode] = gsm8k_acc_from_csv
-                print(f"Mapped GSM8K accuracy from CSV to mode {mode}: {gsm8k_acc_from_csv}")
+                print(
+                    f"Mapped GSM8K accuracy from CSV to mode {mode}: {gsm8k_acc_from_csv}"
+                )
 
         # Handle case where GSM8K accuracy was found in logs but with "_default" key
         if "_default" in gsm8k_accuracy and gsm8k_acc_from_csv is None:
@@ -491,7 +525,9 @@ class OnlineDataProcessor:
             found_modes = set(mode for (mode, rate) in metrics_map.keys())
             for mode in found_modes:
                 gsm8k_accuracy[mode] = default_accuracy
-                print(f"Mapped default GSM8K accuracy to mode {mode}: {default_accuracy}")
+                print(
+                    f"Mapped default GSM8K accuracy to mode {mode}: {default_accuracy}"
+                )
 
         # Build records from metrics_map
         for (mode, rate), metrics in metrics_map.items():
@@ -527,7 +563,7 @@ class OnlineDataProcessor:
         Returns: date string (YYYYMMDD) or None if not found
         """
         # Use regex to find 8-digit date pattern (YYYYMMDD)
-        date_match = re.search(r'(\d{8})', name)
+        date_match = re.search(r"(\d{8})", name)
         if date_match:
             return date_match.group(1)
 
@@ -571,7 +607,9 @@ class OnlineDataProcessor:
                 # New format: v0.4.9.post2-rocm630-mi30x-YYYYMMDD_MODEL_VARIANT_online
                 normalized_folder_date = self._extract_date_from_name(folder_name)
 
-                if normalized_folder_date and any(normalized_folder_date == dp for dp in self.date_prefixes):
+                if normalized_folder_date and any(
+                    normalized_folder_date == dp for dp in self.date_prefixes
+                ):
                     try:
                         file_list = os.listdir(folder_path)
                     except Exception as e:
@@ -727,7 +765,9 @@ class OnlineDataProcessor:
 
         # Sort by date, then mode, then request_rate for consistent output
         try:
-            summary_df = summary_df.sort_values(by=["date", "mode", self.load_metric_name])
+            summary_df = summary_df.sort_values(
+                by=["date", "mode", self.load_metric_name]
+            )
         except KeyError as e:
             print(f"Error: Missing expected columns for sorting: {e}")
             # Try to save anyway without sorting
@@ -763,41 +803,50 @@ class OnlineDataProcessor:
             # Try to make the directory writable first
             try:
                 import stat
+
                 dir_path = os.path.dirname(output_file)
                 current_permissions = os.stat(dir_path).st_mode
                 os.chmod(dir_path, current_permissions | stat.S_IWUSR | stat.S_IWGRP)
                 print(f"Made directory writable: {dir_path}")
-                
+
                 # Try writing again after changing permissions
                 summary_df.to_csv(output_file, index=False)
                 print(f"Online summary CSV saved to: {output_file}")
-                
+
                 # Print summary of processed modes
                 if self.modes_to_process is None:
                     print("Processed all modes")
                 else:
-                    print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
+                    print(
+                        f"Processed modes: {', '.join(sorted(self.modes_to_process))}"
+                    )
 
                 # Show unique modes found in the data
                 unique_modes = summary_df["mode"].unique()
                 print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
 
                 return output_file
-                
+
             except Exception as chmod_e:
                 print(f"Could not make directory writable: {chmod_e}")
                 # Fall back to current directory if making writable fails
-                fallback_output_file = f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
+                fallback_output_file = (
+                    f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
+                )
                 try:
                     summary_df.to_csv(fallback_output_file, index=False)
                     print(f"Permission denied for {output_file}")
-                    print(f"Online summary CSV saved to fallback location: {fallback_output_file}")
-                    
+                    print(
+                        f"Online summary CSV saved to fallback location: {fallback_output_file}"
+                    )
+
                     # Print summary of processed modes
                     if self.modes_to_process is None:
                         print("Processed all modes")
                     else:
-                        print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
+                        print(
+                            f"Processed modes: {', '.join(sorted(self.modes_to_process))}"
+                        )
 
                     # Show unique modes found in the data
                     unique_modes = summary_df["mode"].unique()
@@ -805,7 +854,9 @@ class OnlineDataProcessor:
 
                     return fallback_output_file
                 except Exception as fallback_e:
-                    print(f"Error: Could not write to fallback location {fallback_output_file}: {fallback_e}")
+                    print(
+                        f"Error: Could not write to fallback location {fallback_output_file}: {fallback_e}"
+                    )
                     return None
         except Exception as e:
             print(f"Error saving summary CSV to {output_file}: {e}")
@@ -854,7 +905,7 @@ class OnlineGraphPlotter:
         self.mode_filter = mode_filter
         self.split_request_rates = split_request_rates
         self.load_metric_name = load_metric_name
-        
+
         # Try to create plot directory, attempt to make writable first if permission denied
         try:
             os.makedirs(self.plot_dir, exist_ok=True)
@@ -863,10 +914,13 @@ class OnlineGraphPlotter:
             # Try to make parent directory writable
             try:
                 import stat
+
                 parent_dir = os.path.dirname(self.plot_dir)
                 if os.path.exists(parent_dir):
                     current_permissions = os.stat(parent_dir).st_mode
-                    os.chmod(parent_dir, current_permissions | stat.S_IWUSR | stat.S_IWGRP)
+                    os.chmod(
+                        parent_dir, current_permissions | stat.S_IWUSR | stat.S_IWGRP
+                    )
                     print(f"Made parent directory writable: {parent_dir}")
                     # Try creating again
                     os.makedirs(self.plot_dir, exist_ok=True)
@@ -881,7 +935,7 @@ class OnlineGraphPlotter:
             print(f"Error creating plot directory {self.plot_dir}: {e}")
             self.plot_dir = "."  # Use current directory as fallback
             print(f"Using fallback plot directory: {self.plot_dir}")
-            
+
         self.df = None
 
         # Expected request rates for complete data
@@ -1176,7 +1230,9 @@ class OnlineGraphPlotter:
                 ]
                 if not subset.empty:
                     plotted_dates.update(subset["date"])
-                    label_prefix = "Conc" if self.load_metric_name == "concurrency" else "RR"
+                    label_prefix = (
+                        "Conc" if self.load_metric_name == "concurrency" else "RR"
+                    )
                     plot_data_collections.append(
                         {
                             "dates": subset["date"],
@@ -1396,7 +1452,8 @@ class OnlineGraphPlotter:
                     plot_data_collections.append(
                         {
                             "dates": data_by_date.index,
-                            "values": data_by_date.values * 100,  # Convert to percentage
+                            "values": data_by_date.values
+                            * 100,  # Convert to percentage
                             "label": f"{mode} - GSM8K Accuracy",
                         }
                     )
@@ -1438,7 +1495,9 @@ class OnlineGraphPlotter:
 
         # Set y-axis to show percentages in a reasonable range
         y_min = min([min(item["values"]) for item in plot_data_collections]) - 2
-        y_max = min(100, max([max(item["values"]) for item in plot_data_collections]) + 2)
+        y_max = min(
+            100, max([max(item["values"]) for item in plot_data_collections]) + 2
+        )
         ax.set_ylim(max(0, y_min), y_max)
 
     def plot_metrics_vs_date(self):
@@ -1468,9 +1527,16 @@ class OnlineGraphPlotter:
 
     def _create_single_plot(self, unique_modes, unique_load_values):
         """Create a single plot with all request rates."""
-        has_token_data = "num_tokens" in self.df.columns and self.df["num_tokens"].notna().any()
-        has_kv_data = "KV_size_GB" in self.df.columns and self.df["KV_size_GB"].notna().any()
-        has_gsm8k_data = "GSM8K_Accuracy" in self.df.columns and self.df["GSM8K_Accuracy"].notna().any()
+        has_token_data = (
+            "num_tokens" in self.df.columns and self.df["num_tokens"].notna().any()
+        )
+        has_kv_data = (
+            "KV_size_GB" in self.df.columns and self.df["KV_size_GB"].notna().any()
+        )
+        has_gsm8k_data = (
+            "GSM8K_Accuracy" in self.df.columns
+            and self.df["GSM8K_Accuracy"].notna().any()
+        )
 
         # Use 2x2 layout if both token and KV cache data are empty, otherwise use 3x2
         if not has_token_data and not has_kv_data:
@@ -1488,7 +1554,9 @@ class OnlineGraphPlotter:
         if has_gsm8k_data:
             self._plot_gsm8k_accuracy(axes[plot_idx], unique_modes)
         else:
-            axes[plot_idx].set_title(f"GSM8K Accuracy vs. Date for {self.model_name_in_plot} (No Data)")
+            axes[plot_idx].set_title(
+                f"GSM8K Accuracy vs. Date for {self.model_name_in_plot} (No Data)"
+            )
             axes[plot_idx].set_xticks([])
             axes[plot_idx].set_yticks([])
         plot_idx += 1
@@ -1518,7 +1586,9 @@ class OnlineGraphPlotter:
             if has_token_data:
                 self._plot_num_tokens(axes[plot_idx], unique_modes)
             else:
-                axes[plot_idx].set_title(f"# Tokens vs. Date for {self.model_name_in_plot} (No Data)")
+                axes[plot_idx].set_title(
+                    f"# Tokens vs. Date for {self.model_name_in_plot} (No Data)"
+                )
                 axes[plot_idx].set_xticks([])
                 axes[plot_idx].set_yticks([])
             plot_idx += 1
@@ -1526,12 +1596,16 @@ class OnlineGraphPlotter:
             if has_kv_data:
                 self._plot_kv_cache_usage(axes[plot_idx], unique_modes)
             else:
-                axes[plot_idx].set_title(f"KV Cache Usage vs. Date for {self.model_name_in_plot} (No Data)")
+                axes[plot_idx].set_title(
+                    f"KV Cache Usage vs. Date for {self.model_name_in_plot} (No Data)"
+                )
                 axes[plot_idx].set_xticks([])
                 axes[plot_idx].set_yticks([])
 
         # Adjust layout with reduced horizontal spacing and space for notes below
-        plt.tight_layout(rect=[0, 0.08, 0.95, 1], w_pad=1.0)  # Reduced horizontal padding, increased bottom space, reduced right margin
+        plt.tight_layout(
+            rect=[0, 0.08, 0.95, 1], w_pad=1.0
+        )  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot
         current_date_str = datetime.now().strftime("%Y%m%d")
@@ -1561,7 +1635,9 @@ class OnlineGraphPlotter:
         # Extract base model name for filename (e.g. GROK1 from "GROK1 MOE-I4F8 Online")
         base_model_name = self.model_name_in_plot.split()[0]
 
-        print(f"\nCreating combined plot with low {self.load_metric_name}: {low_rr} and high {self.load_metric_name}: {high_rr}")
+        print(
+            f"\nCreating combined plot with low {self.load_metric_name}: {low_rr} and high {self.load_metric_name}: {high_rr}"
+        )
 
         # Create figure with 3 rows and 3 columns
         fig, axes = plt.subplots(3, 3, figsize=(30, 24))
@@ -1611,9 +1687,16 @@ class OnlineGraphPlotter:
                 axes[1, i].set_yticks([])
 
         # Third row: num_tokens (left), KV cache usage (center), GSM8K accuracy (right)
-        has_token_data = "num_tokens" in self.df.columns and self.df["num_tokens"].notna().any()
-        has_kv_data = "KV_size_GB" in self.df.columns and self.df["KV_size_GB"].notna().any()
-        has_gsm8k_data = "GSM8K_Accuracy" in self.df.columns and self.df["GSM8K_Accuracy"].notna().any()
+        has_token_data = (
+            "num_tokens" in self.df.columns and self.df["num_tokens"].notna().any()
+        )
+        has_kv_data = (
+            "KV_size_GB" in self.df.columns and self.df["KV_size_GB"].notna().any()
+        )
+        has_gsm8k_data = (
+            "GSM8K_Accuracy" in self.df.columns
+            and self.df["GSM8K_Accuracy"].notna().any()
+        )
 
         # Only show token plot if data exists
         if has_token_data:
@@ -1633,12 +1716,16 @@ class OnlineGraphPlotter:
         if has_gsm8k_data:
             self._plot_gsm8k_accuracy(axes[2, 2], unique_modes)
         else:
-            axes[2, 2].set_title(f"GSM8K Accuracy vs. Date for {self.model_name_in_plot} (No Data)")
+            axes[2, 2].set_title(
+                f"GSM8K Accuracy vs. Date for {self.model_name_in_plot} (No Data)"
+            )
             axes[2, 2].set_xticks([])
             axes[2, 2].set_yticks([])
 
         # Adjust layout with reduced horizontal spacing and space for notes below
-        plt.tight_layout(rect=[0, 0.08, 0.95, 1], w_pad=1.0)  # Reduced horizontal padding, increased bottom space, reduced right margin
+        plt.tight_layout(
+            rect=[0, 0.08, 0.95, 1], w_pad=1.0
+        )  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot with split request rates filename format
         plot_filename = f"{current_date_str}_{base_model_name}_online_split.png"
@@ -1648,7 +1735,9 @@ class OnlineGraphPlotter:
             plt.savefig(output_file_path)
             print(f"Split {self.load_metric_name} plot saved to: {output_file_path}")
         except Exception as e:
-            print(f"Error saving split {self.load_metric_name} plot to {output_file_path}: {e}")
+            print(
+                f"Error saving split {self.load_metric_name} plot to {output_file_path}: {e}"
+            )
         plt.close()
 
     def generate_and_save_plots(self):
@@ -1680,20 +1769,20 @@ def main():
     Main function that orchestrates both data processing and plot generation.
     """
     MODEL_CONFIGS = {
-        'grok': {
-            'variant_name': 'GROK1',
-            'output_prefix_template': '{variant_name}_MOE-I4F8_online',
-            'model_name_template': '{variant_name} MOE-I4F8 Online',
-            'expected_rates': [1, 2, 4, 8, 16],
-            'load_metric_name': 'request_rate',
+        "grok": {
+            "variant_name": "GROK1",
+            "output_prefix_template": "{variant_name}_MOE-I4F8_online",
+            "model_name_template": "{variant_name} MOE-I4F8 Online",
+            "expected_rates": [1, 2, 4, 8, 16],
+            "load_metric_name": "request_rate",
         },
-        'deepseek': {
-            'variant_name': 'DeepSeek-V3-0324',
-            'output_prefix_template': '{variant_name}_FP8_online',
-            'model_name_template': '{variant_name} FP8 Online',
-            'expected_rates': [1, 4, 16, 64, 128],
-            'load_metric_name': 'concurrency',
-        }
+        "deepseek": {
+            "variant_name": "DeepSeek-V3-0324",
+            "output_prefix_template": "{variant_name}_FP8_online",
+            "model_name_template": "{variant_name} FP8 Online",
+            "expected_rates": [1, 4, 16, 64, 128],
+            "load_metric_name": "concurrency",
+        },
     }
 
     parser = argparse.ArgumentParser(
@@ -1703,18 +1792,33 @@ def main():
 
     # Simplified model selection
     parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         type=str,
-        default='grok',
+        default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'."
+        help="The model to process. Options: 'grok', 'deepseek'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
-    parser.add_argument("--data-dir", type=str, default=None, help="Override data directory path.")
-    parser.add_argument("--output-prefix", type=str, default=None, help="Override output CSV file prefix.")
-    parser.add_argument("--plot-dir", type=str, default=None, help="Override plot directory path.")
-    parser.add_argument("--model-name", type=str, default=None, help="Override model name in plot titles.")
+    parser.add_argument(
+        "--data-dir", type=str, default=None, help="Override data directory path."
+    )
+    parser.add_argument(
+        "--output-prefix",
+        type=str,
+        default=None,
+        help="Override output CSV file prefix.",
+    )
+    parser.add_argument(
+        "--plot-dir", type=str, default=None, help="Override plot directory path."
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Override model name in plot titles.",
+    )
 
     # Other arguments
     parser.add_argument(
@@ -1737,39 +1841,59 @@ def main():
     parser.add_argument(
         "--mode-filter",
         type=str,
-        default='aiter',
+        default="aiter",
         help="Mode(s) to process/plot. Options: 'all', 'aiter', 'triton', or comma-separated list like 'aiter,triton'",
     )
-    parser.add_argument("--process-only", action="store_true", help="Only process CSV files, skip plot generation")
-    parser.add_argument("--plot-only", action="store_true", help="Only generate plots, skip CSV processing (requires existing summary CSV)")
-    parser.add_argument("--summary-csv", type=str, help="Path to existing summary CSV file (for --plot-only mode)")
+    parser.add_argument(
+        "--process-only",
+        action="store_true",
+        help="Only process CSV files, skip plot generation",
+    )
+    parser.add_argument(
+        "--plot-only",
+        action="store_true",
+        help="Only generate plots, skip CSV processing (requires existing summary CSV)",
+    )
+    parser.add_argument(
+        "--summary-csv",
+        type=str,
+        help="Path to existing summary CSV file (for --plot-only mode)",
+    )
 
     args = parser.parse_args()
 
     # --- Configuration Setup ---
     config = MODEL_CONFIGS[args.model]
-    variant_name = config['variant_name']
+    variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
     if args.data_dir is None:
-        args.data_dir = f'/mnt/raid/michael/sgl_benchmark_ci/online/{variant_name}'
+        args.data_dir = f"/mnt/raid/michael/sgl_benchmark_ci/online/{variant_name}"
     if args.output_prefix is None:
-        args.output_prefix = config['output_prefix_template'].format(variant_name=variant_name)
+        args.output_prefix = config["output_prefix_template"].format(
+            variant_name=variant_name
+        )
     if args.plot_dir is None:
-        args.plot_dir = f'/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/online'
+        args.plot_dir = (
+            f"/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/online"
+        )
     if args.model_name is None:
-        args.model_name = config['model_name_template'].format(variant_name=variant_name)
+        args.model_name = config["model_name_template"].format(
+            variant_name=variant_name
+        )
 
     # Determine expected request rates and load metric name
     if args.request_rates:
         try:
-            expected_rates = sorted([int(r.strip()) for r in args.request_rates.split(',')])
+            expected_rates = sorted(
+                [int(r.strip()) for r in args.request_rates.split(",")]
+            )
         except (ValueError, AttributeError):
             parser.error("--request-rates must be a comma-separated list of integers.")
     else:
-        expected_rates = config['expected_rates']
+        expected_rates = config["expected_rates"]
 
-    load_metric_name = config['load_metric_name']
+    load_metric_name = config["load_metric_name"]
 
     # Validate mutually exclusive options
     if args.process_only and args.plot_only:
@@ -1799,9 +1923,12 @@ def main():
     # Phase 1: Data Processing
     if not args.plot_only:
         processor = OnlineDataProcessor(
-            args.data_dir, args.output_prefix, mode_filter, args.days,
+            args.data_dir,
+            args.output_prefix,
+            mode_filter,
+            args.days,
             expected_rates=expected_rates,
-            load_metric_name=load_metric_name
+            load_metric_name=load_metric_name,
         )
         summary_csv_path = processor.process_and_save()
 
