@@ -65,6 +65,7 @@ OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 NODE=""
 THRESHOLD=""
+CURRENT_DIR=""  # New parameter for current/script directory
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -98,6 +99,9 @@ for arg in "$@"; do
     --threshold=*)
       THRESHOLD="${arg#*=}"
       ;;
+    --current-dir=*)
+      CURRENT_DIR="${arg#*=}"
+      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -110,11 +114,18 @@ for arg in "$@"; do
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
+      echo "  --current-dir=PATH     Current directory to use for script resolution and work dir override"
       echo "  --help                 Show this help message"
       exit 0
       ;;
   esac
 done
+
+# Override script path if current directory is provided
+if [[ -n "${CURRENT_DIR}" ]]; then
+    SCRIPT_PATH="${CURRENT_DIR}/$(basename "$0")"
+    echo "[online] Using current directory for script path: ${SCRIPT_PATH}"
+fi
 
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
@@ -127,7 +138,15 @@ if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}"
 else
     TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
 fi
-WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+
+# Override default work directory if current directory is provided and work_dir is not set
+if [[ -n "${CURRENT_DIR}" && -z "${WORK_DIR:-}" ]]; then
+    WORK_DIR="${CURRENT_DIR}"
+    echo "[online] Using current directory as work directory: ${WORK_DIR}"
+else
+    WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+fi
+
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 NODE="${NODE:-$DEFAULT_NODE}"
@@ -183,7 +202,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
         fi
       fi
     fi
-    
+
     # Create container if it doesn't exist or was removed due to validation failure
     if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       echo "[online] Checking if image exists locally ..."
@@ -209,25 +228,25 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       fi
 
       echo "[online] Creating container ..."
-      
+
       # Get the directory containing the script
       script_dir="$(dirname "${SCRIPT_PATH}")"
-      
+
       # Create mount arguments - always mount MOUNT_DIR, and also mount script directory if different
       mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
-      
+
       # If script directory is not under MOUNT_DIR, mount it separately
       if [[ "$script_dir" != "${MOUNT_DIR}"* ]]; then
           echo "[online] Script directory ${script_dir} is not under ${MOUNT_DIR}, mounting separately..."
           mount_args="${mount_args} -v ${script_dir}:${script_dir}"
       fi
-      
+
       # If work directory is not under MOUNT_DIR or script directory, mount it separately
       if [[ "${WORK_DIR}" != "${MOUNT_DIR}"* ]] && [[ "${WORK_DIR}" != "$script_dir"* ]]; then
           echo "[online] Work directory ${WORK_DIR} is not under ${MOUNT_DIR}, mounting separately..."
           mount_args="${mount_args} -v ${WORK_DIR}:${WORK_DIR}"
       fi
-      
+
       # If model directory is not under MOUNT_DIR, mount its parent directory
       model_dir="$(dirname "${MODEL}")"
       if [[ "$model_dir" != "${MOUNT_DIR}"* ]] && [[ "$model_dir" != "$script_dir"* ]]; then
@@ -243,13 +262,13 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
               # Fallback: mount the parent directory
               mount_root="$model_dir"
           fi
-          
+
           if [[ "$mount_root" != "${MOUNT_DIR%/}" ]]; then
               echo "[online] Model directory ${MODEL} requires mounting ${mount_root}..."
               mount_args="${mount_args} -v ${mount_root}:${mount_root}"
           fi
       fi
-      
+
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
@@ -257,17 +276,17 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
+    # Build arguments to pass to the container
+    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --node=\"${NODE}\" --threshold=\"${THRESHOLD}\""
+    
+    # Add current directory if it was provided
+    if [[ -n "${CURRENT_DIR}" ]]; then
+      CONTAINER_ARGS="${CONTAINER_ARGS} --current-dir=\"${CURRENT_DIR}\""
+    fi
+    
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash "${SCRIPT_PATH}" \
-           --docker_image="${FULL_IMAGE}" \
-           --model="${MODEL}" \
-           --tokenizer="${TOKENIZER}" \
-           --work-dir="${WORK_DIR}" \
-           --output-dir="${OUTPUT_DIR}" \
-           --gsm8k-script="${GSM8K_SCRIPT}" \
-           --node="${NODE}" \
-           --threshold="${THRESHOLD}"
+      bash "${SCRIPT_PATH}" ${CONTAINER_ARGS}
     exit 0
   fi
 fi

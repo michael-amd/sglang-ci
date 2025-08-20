@@ -8,3 +8,4 @@ cron/cron_log/*
 *.csv
 *.html
 *.png
+tmp_output_srt.txt
