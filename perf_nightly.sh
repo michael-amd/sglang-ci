@@ -425,7 +425,7 @@ for arg in "$@"; do
       echo "  See team_alert/README.md for detailed setup instructions."
       exit 0 ;;
     *)
-      echo "Unknown argument: $1"
+      echo "Unknown argument: $arg"
       echo "Use --help for usage information"
       exit 1 ;;
   esac
