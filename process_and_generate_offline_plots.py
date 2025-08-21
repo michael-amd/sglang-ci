@@ -648,13 +648,22 @@ def main():
             "olen": 128,
         },
         "deepseek": {
-            "variant_name": "DeepSeek-V3-0324",
+            "variant_name": "DeepSeek",
+            "output_prefix_template": "{variant_name}_FP8_offline",
+            "model_name_template": "{variant_name}_FP8_offline",
+            "ilen": 1024,
+            "olen": 128,
+        },
+        "DeepSeek-V3": {
+            "variant_name": "DeepSeek-V3",
             "output_prefix_template": "{variant_name}_FP8_offline",
             "model_name_template": "{variant_name}_FP8_offline",
             "ilen": 1024,
             "olen": 128,
         },
     }
+
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
     parser = argparse.ArgumentParser(
         description="Process offline benchmark CSV files and generate plots",
@@ -668,15 +677,34 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'.",
+        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
-    parser.add_argument("--base-dir", type=str, default="/mnt/raid/michael/sgl_benchmark_ci", help="Base directory for default paths (can be overridden by specific path arguments).")
-    parser.add_argument("--data-dir", type=str, default=None, help="Override data directory path.")
-    parser.add_argument("--output-prefix", type=str, default=None, help="Override output CSV file prefix.")
-    parser.add_argument("--plot-dir", type=str, default=None, help="Override plot directory path.")
-    parser.add_argument("--model-name", type=str, default=None, help="Override model name in plot titles.")
+    parser.add_argument(
+        "--base-dir",
+        type=str,
+        default=DEFAULT_BASE_DIR,
+        help="Base directory for default paths (can be overridden by specific path arguments).",
+    )
+    parser.add_argument(
+        "--data-dir", type=str, default=None, help="Override data directory path."
+    )
+    parser.add_argument(
+        "--output-prefix",
+        type=str,
+        default=None,
+        help="Override output CSV file prefix.",
+    )
+    parser.add_argument(
+        "--plot-dir", type=str, default=None, help="Override plot directory path."
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Override model name in plot titles.",
+    )
 
     # Other arguments
     parser.add_argument(
@@ -726,14 +754,22 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
+    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
     if args.data_dir is None:
-        args.data_dir = f'{args.base_dir}/offline/{variant_name}'
+        args.data_dir = os.path.join(args.base_dir, "offline", directory_name)
     if args.output_prefix is None:
         args.output_prefix = config["output_prefix_template"].format(
             variant_name=variant_name
         )
     if args.plot_dir is None:
-        args.plot_dir = f'{args.base_dir}/plots_server/{variant_name}/offline'
+        args.plot_dir = os.path.join(
+            args.base_dir, "plots_server", directory_name, "offline"
+        )
+    elif not args.plot_dir.endswith(("online", "offline")):
+        # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
+        # append the model-specific subdirectory structure for consistency
+        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        args.plot_dir = os.path.join(args.plot_dir, directory_name, "offline")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name

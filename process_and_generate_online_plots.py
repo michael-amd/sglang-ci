@@ -87,7 +87,7 @@ INPUT DATA FORMAT:
 
 OUTPUT:
 - Summary CSV: {output_prefix}_{mode_filter}_summary.csv
-- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_DeepSeek-V3-0324_online.png)
+- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_DeepSeek_online.png)
 """
 
 import argparse  # For command-line argument parsing
@@ -192,21 +192,29 @@ class OnlineDataProcessor:
                                     kv_size_gb = float(match.group(2))
                                     return (num_tokens, kv_size_gb)
                                 except ValueError:
-                                    print(f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}")
+                                    print(
+                                        f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}"
+                                    )
                             else:
-                                # Try separate format: "K size: 70.03 GB, V size: 70.03 GB"  
+                                # Try separate format: "K size: 70.03 GB, V size: 70.03 GB"
                                 match = self.kv_cache_pattern_separate.search(line)
                                 if match:
                                     try:
                                         num_tokens = int(match.group(1))
                                         k_size_gb = float(match.group(2))
                                         v_size_gb = float(match.group(3))
-                                        kv_size_gb = k_size_gb + v_size_gb  # Total KV size
+                                        kv_size_gb = (
+                                            k_size_gb + v_size_gb
+                                        )  # Total KV size
                                         return (num_tokens, kv_size_gb)
                                     except ValueError:
-                                        print(f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}")
+                                        print(
+                                            f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}"
+                                        )
                                 else:
-                                    print(f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}")
+                                    print(
+                                        f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}"
+                                    )
             except Exception as e:
                 print(f"Error reading server log {log_path}: {e}")
 
@@ -269,7 +277,7 @@ class OnlineDataProcessor:
                     # Fallback: extract mode from filename pattern
                     parts = log_file.replace(".log", "").split("_")
                     if len(parts) > 0:
-                        # For files like "sglang_client_log_DeepSeek-V3-0324_gsm8k.log"
+                        # For files like "sglang_client_log_DeepSeek-V3_gsm8k.log"
                         # where there's no explicit mode, we need to determine it differently
                         last_part = parts[-1]
                         if last_part == "gsm8k":
@@ -408,7 +416,7 @@ class OnlineDataProcessor:
                     # Format can be:
                     # - MI300x-aiter, node_name\t...
                     # - MI300x-triton, node_name\t...
-                    # - DeepSeek-V3-0324-FP8\t... (no mode specified, assume default)
+                    # - DeepSeek-V3-FP8\t... (no mode specified, assume default)
                     parts = line.split("\t")
                     if len(parts) > 1:
                         first_part = parts[0]
@@ -1102,7 +1110,10 @@ class OnlineGraphPlotter:
                     # Check if ALL performance metrics have valid data
                     has_valid_data = True
                     for metric in metric_columns:
-                        if metric not in rr_df.columns or not rr_df[metric].notna().any():
+                        if (
+                            metric not in rr_df.columns
+                            or not rr_df[metric].notna().any()
+                        ):
                             has_valid_data = False
                             break
 
@@ -1786,13 +1797,22 @@ def main():
             "load_metric_name": "request_rate",
         },
         "deepseek": {
-            "variant_name": "DeepSeek-V3-0324",
+            "variant_name": "DeepSeek-V3",
+            "output_prefix_template": "{variant_name}_FP8_online",
+            "model_name_template": "{variant_name} FP8 Online",
+            "expected_rates": [1, 4, 16, 64, 128],
+            "load_metric_name": "concurrency",
+        },
+        "DeepSeek-V3": {
+            "variant_name": "DeepSeek-V3",
             "output_prefix_template": "{variant_name}_FP8_online",
             "model_name_template": "{variant_name} FP8 Online",
             "expected_rates": [1, 4, 16, 64, 128],
             "load_metric_name": "concurrency",
         },
     }
+
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
     parser = argparse.ArgumentParser(
         description="Process online benchmark CSV files and generate plots",
@@ -1806,15 +1826,34 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'.",
+        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
-    parser.add_argument("--base-dir", type=str, default="/mnt/raid/michael/sgl_benchmark_ci", help="Base directory for default paths (can be overridden by specific path arguments).")
-    parser.add_argument("--data-dir", type=str, default=None, help="Override data directory path.")
-    parser.add_argument("--output-prefix", type=str, default=None, help="Override output CSV file prefix.")
-    parser.add_argument("--plot-dir", type=str, default=None, help="Override plot directory path.")
-    parser.add_argument("--model-name", type=str, default=None, help="Override model name in plot titles.")
+    parser.add_argument(
+        "--base-dir",
+        type=str,
+        default=DEFAULT_BASE_DIR,
+        help="Base directory for default paths (can be overridden by specific path arguments).",
+    )
+    parser.add_argument(
+        "--data-dir", type=str, default=None, help="Override data directory path."
+    )
+    parser.add_argument(
+        "--output-prefix",
+        type=str,
+        default=None,
+        help="Override output CSV file prefix.",
+    )
+    parser.add_argument(
+        "--plot-dir", type=str, default=None, help="Override plot directory path."
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Override model name in plot titles.",
+    )
 
     # Other arguments
     parser.add_argument(
@@ -1863,22 +1902,22 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
+    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
     if args.data_dir is None:
-        # For DeepSeek-V3, use the correct directory name
-        if args.model == 'DeepSeek-V3':
-            args.data_dir = f'{args.base_dir}/online/DeepSeek-V3'
-        else:
-            args.data_dir = f'{args.base_dir}/online/{variant_name}'
+        args.data_dir = os.path.join(args.base_dir, "online", directory_name)
     if args.output_prefix is None:
         args.output_prefix = config["output_prefix_template"].format(
             variant_name=variant_name
         )
     if args.plot_dir is None:
-        # For DeepSeek-V3, use the correct directory name
-        if args.model == 'DeepSeek-V3':
-            args.plot_dir = f'{args.base_dir}/plots_server/DeepSeek-V3/online'
-        else:
-            args.plot_dir = f'{args.base_dir}/plots_server/{variant_name}/online'
+        args.plot_dir = os.path.join(
+            args.base_dir, "plots_server", directory_name, "online"
+        )
+    elif not args.plot_dir.endswith(("online", "offline")):
+        # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
+        # append the model-specific subdirectory structure for consistency
+        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        args.plot_dir = os.path.join(args.plot_dir, directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name
