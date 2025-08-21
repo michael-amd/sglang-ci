@@ -3,7 +3,10 @@
 # Webhook URL is passed directly in the command line for both grok and deepseek jobs
 
 # 12 AM PT (2 AM CT) - Grok online and offline benchmark with gating logic + Teams notifications
-0 2 * * * cd /mnt/raid/michael/sgl_benchmark_ci && bash perf_nightly.sh --model=grok --mode=all --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
+0 2 * * * cd /home/michaezh/sgl_benchmark_ci && bash perf_nightly.sh --model=grok --model-path=/raid/grok-1-W4A8KV8 --mode=online --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
 
 # 3 AM PT (5 AM CT) - DeepSeek online serving benchmark + Teams notifications
-0 5 * * * cd /mnt/raid/michael/sgl_benchmark_ci && bash perf_nightly.sh --model=deepseek --mode=online --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+0 5 * * * cd /home/michaezh/sgl_benchmark_ci && bash perf_nightly.sh --model=deepseek --model-path=/raid/deepseek-ai/DeepSeek-V3 --mode=online --teams-webhook-url="$TEAMS_WEBHOOK_URL" >> cron/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+
+# 11 AM PT (1 PM CT) - Docker image availability check with Teams notifications
+0 13 * * * cd /home/michaezh/sgl_benchmark_ci && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh >> cron/cron_log/docker_image_check_$(date +\%Y\%m\%d).log 2>&1

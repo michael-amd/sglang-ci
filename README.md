@@ -5,26 +5,31 @@ This repository provides a comprehensive benchmarking and continuous integration
 ## Key Features
 
 **🚀 Comprehensive Benchmarking Modes:**
+
 - **Offline Mode:** Batch processing benchmarks measuring throughput and latency across various configurations, batch sizes, and context lengths
 - **Online Mode:** Real-time serving performance evaluation with concurrent request handling and interactive latency metrics
 
 **🔧 Automated Infrastructure:**
+
 - **Docker Integration:** Full support for ROCm SGLang development images and LMSYS SGLang images with automatic container management
 - **Nightly Automation:** Scheduled benchmarking with `perf_nightly.sh` for continuous performance monitoring
 - **Resource Management:** Intelligent GPU utilization checks and container lifecycle management
 
 **📊 Advanced Analytics & Visualization:**
+
 - **Performance Metrics:** Captures prefill/decode latency, end-to-end throughput, TTFT (Time-To-First-Token), and ITL (Inter-Token Latency)
 - **GSM8K Accuracy Testing:** Integrated mathematical reasoning benchmarks with configurable accuracy thresholds
 - **Data Processing Pipeline:** Automated consolidation of results across multiple benchmark runs with trend analysis
 - **Interactive Plot Server:** Web-based visualization server for exploring performance trends and comparisons
 
 **⚡ Flexible Configuration:**
+
 - **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
 - **Multi-Model Support:** Specialized configurations for GROK1 MOE and DeepSeek V3 models with FP8 quantization
 - **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
 
 **🔍 Advanced Comparison Tools:**
+
 - **Performance Regression Detection:** Automated comparison between benchmark runs with configurable thresholds
 - **Statistical Analysis:** GSM8K accuracy significance testing and performance change quantification
 - **Report Generation:** Markdown reports with color-coded performance indicators and detailed metrics breakdown
@@ -45,6 +50,8 @@ The toolkit is designed for both development teams conducting regular performanc
     - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
 - [Automated Nightly Benchmarking](#automated-nightly-benchmarking)
   - [perf_nightly.sh](#perf_nightlysh)
+- [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
+  - [nightly_image_check.sh](#nightly_image_checksh)
 - [Data Processing and Visualization](#data-processing-and-visualization)
   - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
   - [Plot Server](#plot-server)
@@ -85,7 +92,7 @@ The benchmark scripts support Docker images from multiple sources:
    **Manual Build Alternative:**
    If you need to build from source (e.g., for PRs with version changes), please refer to the official SGLang repository for the latest build instructions:
 
-   **📋 Latest Build Instructions:** https://github.com/sgl-project/sglang/blob/main/docker/Dockerfile.rocm
+   **📋 Latest Build Instructions:** <https://github.com/sgl-project/sglang/blob/main/docker/Dockerfile.rocm>
 
    **Note:** When building from source in the future, remember to rebuild sgl_kernel inside the Docker image after PR checkout.
 
@@ -406,29 +413,31 @@ python3 team_alert/send_teams_notification.py --model grok --mode online \
   --benchmark-dir "/custom/benchmark/directory"
 ```
 
-
-
 #### Intelligent Analysis & Alerts
 
 The Teams integration includes **automatic benchmark health monitoring** with intelligent alerts:
 
 **🎯 GSM8K Accuracy Monitoring**
+
 - **GROK**: Alerts if accuracy falls below 80%
 - **DeepSeek**: Alerts if accuracy falls below 93%
 - Automatically parses GSM8K results from benchmark logs
 
 **📈 Performance Regression Detection**
+
 - Monitors online benchmark metrics: **E2E Latency**, **TTFT**, **ITL**
 - Compares current results with recent history (configurable lookback period)
 - Alerts on **>5% performance degradation** (latency increases)
 - Supports historical comparison up to 7 days back (configurable)
 
 **🚨 Alert Levels**
+
 - ✅ **Good**: No accuracy or performance issues detected
 - ⚠️ **Warning**: Performance regression detected
 - ❌ **Error**: GSM8K accuracy failure or critical issues
 
 **⚙️ Analysis Control**
+
 ```bash
 # Enable analysis with custom lookback period
 bash perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=14
@@ -444,6 +453,7 @@ export TEAMS_ANALYSIS_DAYS="7"
 #### Getting Webhook URLs
 
 **For Teams Channels (Incoming Webhook)**
+
 1. Go to your Teams channel
 2. Click "..." menu → "Connectors" or "Workflows"
 3. Add "Incoming Webhook" connector
@@ -451,6 +461,7 @@ export TEAMS_ANALYSIS_DAYS="7"
 5. Copy the generated webhook URL: `https://outlook.office.com/webhook/...`
 
 **For Teams Group Chats (Power Automate)**
+
 1. Go to [flow.microsoft.com](https://flow.microsoft.com)
 2. Create flow with "When a HTTP request is received" trigger
 3. Add "Post message in a chat or channel" action
@@ -484,10 +495,10 @@ The Teams notification script supports these additional command line options:
 | `--skip-analysis` | Skip GSM8K accuracy and performance analysis | `false` |
 | `--analysis-days` | Days to look back for performance comparison | `7` |
 
-
 #### Teams Message Content
 
 When benchmarks complete, Teams receives text-only adaptive cards containing:
+
 - 🎯 **Intelligent Summary Alert**: GSM8K accuracy status and performance regression detection
   - ✅ **Good**: No accuracy or performance issues detected
   - ⚠️ **Warning**: Performance regression detected (>5% increase in E2E/TTFT/ITL latency)
@@ -522,6 +533,43 @@ bash perf_nightly.sh
 
 ---
 
+## Nightly Docker Image Monitoring
+
+Automated Docker image availability monitoring for mi30x and mi35x hardware types with optional Teams alerts.
+
+### nightly_image_check.sh
+
+Checks nightly Docker images (`rocm/sgl-dev`) for both hardware types using Docker Hub API.
+
+**Key Options:**
+
+- `--date=YYYYMMDD`: Check specific date (default: today PST)
+- `--days=N`: Check last N days (default: 1)
+- `--teams-webhook=URL`: Teams webhook URL for alerts (or set `TEAMS_WEBHOOK_URL`)
+
+**Usage:**
+
+```bash
+# Basic check
+./nightly_image_check.sh
+
+# Check with Teams alerts
+./nightly_image_check.sh --teams-webhook="https://your-webhook-url"
+
+# Check specific date with Teams alerts
+./nightly_image_check.sh --date=20250108 --teams-webhook="https://your-webhook-url"
+```
+
+**Teams Alert Features:**
+
+- ✅ **Success**: All images available (shows specific image tags)
+- ⚠️ **Warning**: Some images missing
+- ❌ **Error**: All images missing or critical issues
+- Includes links to GitHub workflow and Docker Hub for troubleshooting
+- Test mode: `python3 team_alert/send_docker_image_alert.py --test-mode`
+
+---
+
 ## Data Processing and Visualization
 
 The benchmark CI includes unified scripts that handle both data processing and plot generation. These scripts consolidate results from multiple benchmark runs and generate performance trend plots, supporting both `grok` and `deepseek` models via a `--model` flag.
@@ -536,6 +584,7 @@ These scripts process raw benchmark outputs, create consolidated summary CSV fil
     - Consolidates data from multiple dates into a single summary CSV.
     - Generates plots for latency and throughput vs. date, with backend information.
   - **Usage:**
+
     ```bash
     # For GROK
     python3 process_and_generate_offline_plots.py --model grok
@@ -552,6 +601,7 @@ These scripts process raw benchmark outputs, create consolidated summary CSV fil
     - Handles different load metrics (`request_rate` for grok, `concurrency` for deepseek).
     - Generates a comprehensive plot with subplots for E2E Latency, TTFT, ITL, and, if available, Token/KV Cache data.
   - **Usage:**
+
     ```bash
     cd $WORK_DIR
     # For GROK
@@ -585,6 +635,7 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 **Purpose:** Compare SGLang benchmark CSV results from different runs and generate comprehensive markdown reports with performance analysis.
 
 **Key Features:**
+
 - **Automatic Mode Detection:** Detects whether CSV files are from offline or online benchmarks
 - **GSM8K Accuracy Extraction:** Automatically extracts GSM8K accuracy from associated log files
 - **Performance Threshold Analysis:** Configurable thresholds for highlighting significant changes
@@ -592,6 +643,7 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 - **Multi-Model Support:** Handles different model comparisons (GROK1, DeepSeek-V3, etc.)
 
 **Parameters:**
+
 - `--csv1`: Path to first CSV directory (required)
 - `--csv2`: Path to second CSV directory (required)
 - `--mode`: Benchmark mode (`offline`, `online`, or `auto` for auto-detection)
@@ -605,24 +657,28 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 - `--performance-threshold`: Performance change threshold for highlighting (default: 5.0%)
 
 **Configuration via Environment Variables:**
+
 - `COMPARISON_OUTPUT_DIR`: Default output directory
 - `GSM8K_ACCURACY_THRESHOLD`: Default GSM8K accuracy threshold
 - `PERFORMANCE_THRESHOLD`: Default performance improvement threshold
 - `GSM8K_LOG_PATTERNS`: Patterns for GSM8K log files (semicolon-separated)
 
 **Offline Mode Comparison:**
+
 - Compares E2E throughput and latency across different batch sizes
 - Automatically merges results on common configurations (TP, batch_size, IL, OL)
 - Generates performance change percentages with color-coded improvements/regressions
 - Includes comprehensive GSM8K accuracy comparison
 
 **Online Mode Comparison:**
+
 - Compares E2E Latency, TTFT, and ITL metrics across different request rates
 - Focuses on MI300x performance data
 - Calculates percentage improvements for latency metrics (lower is better)
 - Provides detailed breakdown by request rate and metric type
 
 **Output Structure:**
+
 - Creates timestamped folders: `{date}_{csv1_dirname}_vs_{csv2_dirname}/`
 - Contains markdown report with same name as folder
 - Includes performance tables with color-coded change indicators:
@@ -654,6 +710,7 @@ python3 compare_csv_results.py \
 
 **Sample Output:**
 The generated markdown reports include:
+
 - Header with comparison details and generation timestamp
 - GSM8K accuracy comparison with significance testing
 - Performance comparison tables organized by batch size/request rate
