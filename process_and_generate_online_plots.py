@@ -277,7 +277,7 @@ class OnlineDataProcessor:
                     # Fallback: extract mode from filename pattern
                     parts = log_file.replace(".log", "").split("_")
                     if len(parts) > 0:
-                        # For files like "sglang_client_log_DeepSeek-V3_gsm8k.log"
+                        # For files like "sglang_client_log_DeepSeek_gsm8k.log"
                         # where there's no explicit mode, we need to determine it differently
                         last_part = parts[-1]
                         if last_part == "gsm8k":
@@ -416,7 +416,7 @@ class OnlineDataProcessor:
                     # Format can be:
                     # - MI300x-aiter, node_name\t...
                     # - MI300x-triton, node_name\t...
-                    # - DeepSeek-V3-FP8\t... (no mode specified, assume default)
+                    # - DeepSeek-FP8\t... (no mode specified, assume default)
                     parts = line.split("\t")
                     if len(parts) > 1:
                         first_part = parts[0]
