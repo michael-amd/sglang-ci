@@ -93,6 +93,7 @@ OUTPUT:
 import argparse  # For command-line argument parsing
 import os
 import re  # Import re for regular expressions
+import socket  # For hostname detection
 from collections import defaultdict  # For cleaner dictionary handling
 from datetime import datetime, timedelta
 
@@ -137,9 +138,14 @@ class OnlineDataProcessor:
             for i in range(0, days)
         ]
 
-        # Compile regex pattern for KV cache info parsing (used repeatedly)
+        # Compile regex patterns for KV cache info parsing (used repeatedly)
         # Updated to handle format: "KV size: 63.62 GB" instead of separate K and V sizes
-        self.kv_cache_pattern = re.compile(r"#tokens: (\d+), KV size: ([\d\.]+) GB")
+        self.kv_cache_pattern_combined = re.compile(
+            r"#tokens: (\d+), KV size: ([\d\.]+) GB"
+        )
+        self.kv_cache_pattern_separate = re.compile(
+            r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB"
+        )
 
         # Expected request rates for complete data
         if expected_rates is None:
@@ -159,6 +165,17 @@ class OnlineDataProcessor:
             raise ValueError(
                 f"Invalid mode_filter: {mode_filter}. Must be 'all', a string mode name, or a list of mode names."
             )
+
+        # Get hostname for node identification
+        self.hostname = self._get_hostname()
+
+    def _get_hostname(self):
+        """Get the hostname for node identification."""
+        try:
+            hostname = socket.gethostname()
+            return hostname if hostname else "unknown"
+        except Exception:
+            return "unknown"
 
     def _should_process_mode(self, mode):
         """Check if a mode should be processed based on the filter."""
@@ -559,6 +576,7 @@ class OnlineDataProcessor:
                 "date": date_str,
                 "mode": mode,
                 self.load_metric_name: rate,
+                "node_name": self.hostname,
                 "GSM8K_Accuracy": gsm8k_acc,
                 "E2E_Latency_ms": metrics.get("E2E_Latency_ms", pd.NA),
                 "TTFT_ms": metrics.get("TTFT_ms", pd.NA),
@@ -796,7 +814,8 @@ class OnlineDataProcessor:
             mode_suffix = "_all"
 
         output_file = os.path.join(
-            self.data_dir, f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
+            self.data_dir,
+            f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv",
         )
         try:
             # Ensure the directory exists
@@ -847,9 +866,7 @@ class OnlineDataProcessor:
             except Exception as chmod_e:
                 print(f"Could not make directory writable: {chmod_e}")
                 # Fall back to current directory if making writable fails
-                fallback_output_file = (
-                    f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
-                )
+                fallback_output_file = f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv"
                 try:
                     summary_df.to_csv(fallback_output_file, index=False)
                     print(f"Permission denied for {output_file}")
@@ -1998,8 +2015,15 @@ def main():
                 else:
                     mode_suffix = "_all"
 
+                # Get hostname for consistent naming with processor output
+                try:
+                    hostname = socket.gethostname()
+                except Exception:
+                    hostname = "unknown"
+
                 summary_csv_path = os.path.join(
-                    args.data_dir, f"{args.output_prefix}{mode_suffix}_summary.csv"
+                    args.data_dir,
+                    f"{args.output_prefix}{mode_suffix}_summary_{hostname}.csv",
                 )
 
         if not summary_csv_path or not os.path.exists(summary_csv_path):

@@ -20,7 +20,7 @@
 #   • Supports automatic model download from HuggingFace Hub
 #   • Downloads to <work-dir>/models/<model_name> when --work-dir is specified
 #   • Otherwise downloads to WORK_DIR/models/<model_name> inside container
-#   • Uses --download-model option with default: deepseek-ai/DeepSeek-V3-0324
+#   • Uses --download-model option (no default - must be explicitly specified)
 #   • Requires huggingface_hub library (automatically installed in container)
 #   • Only downloads when no custom --model-path is provided
 #   • DISK SPACE REQUIREMENTS: DeepSeek models need 685GB, Grok models need 200GB
@@ -36,7 +36,7 @@
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
-#   --download-model=REPO  Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]
+#   --download-model=REPO  Download model from HuggingFace if not exists (no default)
 #   --continue-run-days=N    Run benchmarks for last N days' images [default: 1]
 #   --teams-webhook-url=URL  Enable Teams notifications with webhook URL
 #   --teams-skip-analysis    Skip GSM8K accuracy and performance analysis
@@ -127,7 +127,7 @@ DEEPSEEK_MODEL_NAME="${DEEPSEEK_MODEL_NAME:-DeepSeek-V3-0324}"
 DEEPSEEK_MODEL_VARIANT="${DEEPSEEK_MODEL_VARIANT:-FP8}"
 
 # HuggingFace model download configuration
-DEFAULT_HF_MODEL_REPO="${DEFAULT_HF_MODEL_REPO:-deepseek-ai/DeepSeek-V3-0324}"
+# Note: No default model repository - downloads only when --download-model is explicitly specified
 
 # GPU monitoring thresholds
 GPU_USAGE_THRESHOLD="${GPU_USAGE_THRESHOLD:-15}"
@@ -470,7 +470,7 @@ for arg in "$@"; do
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
-      echo "  --download-model=REPO            Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]"
+      echo "  --download-model=REPO            Download model from HuggingFace if not exists (no default)"
       echo "  --continue-run-days=DAYS         Run benchmarks for last N days' images [default: 1]"
       echo "  --teams-webhook-url=URL          Teams webhook URL to enable notifications [default: disabled]"
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
@@ -486,7 +486,7 @@ for arg in "$@"; do
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
       echo "  $0 --model-path=/data/models/custom-grok    # Use custom model path"
       echo "  $0 --work-dir=/tmp/benchmark-run            # Use custom work directory"
-      echo "  $0 --model=deepseek --work-dir=/home/user/workspace  # Auto-download to work-dir/models/"
+      echo "  $0 --model=deepseek --work-dir=/home/user/workspace --download-model=deepseek-ai/DeepSeek-V3  # Download to work-dir/models/"
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
       echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo ""
@@ -531,10 +531,12 @@ if [[ -n "$CLI_MODEL_PATH" ]]; then
 fi
 
 # Process HuggingFace model download option
-HF_MODEL_REPO="$DEFAULT_HF_MODEL_REPO"
+# Only enable HuggingFace downloads when explicitly requested via --download-model
 if [[ -n "$CLI_DOWNLOAD_MODEL" ]]; then
   HF_MODEL_REPO="$CLI_DOWNLOAD_MODEL"
   echo "[nightly] HuggingFace model repository provided: $HF_MODEL_REPO"
+else
+  HF_MODEL_REPO=""  # No default HF downloads for any model - only when explicitly requested
 fi
 
 # Process continue run days option
@@ -863,8 +865,8 @@ fi
 # 3. Handle model download if needed
 ###############################################################################
 # Check if model needs to be downloaded from HuggingFace
-if [[ -z "$CLI_MODEL_PATH" ]]; then
-  # Only attempt download if no custom model path is provided
+if [[ -z "$CLI_MODEL_PATH" && -n "$HF_MODEL_REPO" ]]; then
+  # Only attempt download if no custom model path is provided AND HF repo is configured
   # Extract model name from HF repo for directory naming
   MODEL_DIR_NAME=$(basename "$HF_MODEL_REPO")
 
@@ -900,6 +902,8 @@ if [[ -z "$CLI_MODEL_PATH" ]]; then
     echo "[nightly] Model already exists at ${DOWNLOADED_MODEL_PATH}, using existing model"
     CLI_MODEL_PATH="$DOWNLOADED_MODEL_PATH"
   fi
+elif [[ -z "$CLI_MODEL_PATH" && -z "$HF_MODEL_REPO" ]]; then
+  echo "[nightly] No custom model path provided. Using default model path from benchmark script for $MODEL model."
 fi
 
 ###############################################################################

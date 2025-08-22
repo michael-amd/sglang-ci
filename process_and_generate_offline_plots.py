@@ -89,6 +89,7 @@ OUTPUT:
 import argparse
 import os
 import re  # Import re for regular expressions
+import socket  # For hostname detection
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -130,6 +131,17 @@ class OfflineDataProcessor:
             (current_date - timedelta(days=i)).strftime("%Y%m%d")
             for i in range(1, days_back + 1)
         ]
+
+        # Get hostname for node identification
+        self.hostname = self._get_hostname()
+
+    def _get_hostname(self):
+        """Get the hostname for node identification."""
+        try:
+            hostname = socket.gethostname()
+            return hostname if hostname else "unknown"
+        except Exception:
+            return "unknown"
 
     def _extract_date_from_name(self, name):
         """
@@ -245,6 +257,7 @@ class OfflineDataProcessor:
                     "date": date_str,
                     "batch_size": int(batch_size),
                     "backend": csv_backend,
+                    "node_name": self.hostname,
                     "E2E_Latency(s)": batch_data["E2E_Latency(s)"].mean(),
                     "E2E_Throughput(token/s)": batch_data[
                         "E2E_Throughput(token/s)"
@@ -373,7 +386,8 @@ class OfflineDataProcessor:
             # Try to save anyway without sorting
 
         output_file = os.path.join(
-            self.data_dir, f"{self.output_model_name_prefix}_summary.csv"
+            self.data_dir,
+            f"{self.output_model_name_prefix}_summary_{self.hostname}.csv",
         )
         try:
             # Ensure the directory exists
@@ -822,8 +836,14 @@ def main():
                 summary_csv_path = args.summary_csv
             else:
                 # Auto-generate path
+                # Get hostname for consistent naming with processor output
+                try:
+                    hostname = socket.gethostname()
+                except Exception:
+                    hostname = "unknown"
+
                 summary_csv_path = os.path.join(
-                    args.data_dir, f"{args.output_prefix}_summary.csv"
+                    args.data_dir, f"{args.output_prefix}_summary_{hostname}.csv"
                 )
 
         if not summary_csv_path or not os.path.exists(summary_csv_path):

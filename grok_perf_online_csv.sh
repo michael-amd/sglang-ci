@@ -29,7 +29,7 @@ DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--g
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
-DEFAULT_NODE="${DEFAULT_NODE_NAME:-dell300x-pla-t10-23}"
+# Node name will be read from hostname
 DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.8}"
 
 # Container configuration
@@ -63,7 +63,6 @@ TOKENIZER=""
 WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
-NODE=""
 THRESHOLD=""
 CURRENT_DIR=""  # New parameter for current/script directory
 SCRIPT_PATH="$0"  # Get the script path from how it was called
@@ -93,9 +92,6 @@ for arg in "$@"; do
     --gsm8k-script=*)
       GSM8K_SCRIPT="${arg#*=}"
       ;;
-    --node=*)
-      NODE="${arg#*=}"
-      ;;
     --threshold=*)
       THRESHOLD="${arg#*=}"
       ;;
@@ -112,7 +108,6 @@ for arg in "$@"; do
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
-      echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --current-dir=PATH     Current directory to use for script resolution and work dir override"
       echo "  --help                 Show this help message"
@@ -149,7 +144,7 @@ fi
 
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
-NODE="${NODE:-$DEFAULT_NODE}"
+NODE="$(hostname)"  # Get node name from hostname
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
 docker_image="${docker_image:-${1:-$DEFAULT_IMAGE}}"
@@ -277,13 +272,13 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     fi
 
     # Build arguments to pass to the container
-    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --node=\"${NODE}\" --threshold=\"${THRESHOLD}\""
-    
+    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --threshold=\"${THRESHOLD}\""
+
     # Add current directory if it was provided
     if [[ -n "${CURRENT_DIR}" ]]; then
       CONTAINER_ARGS="${CONTAINER_ARGS} --current-dir=\"${CURRENT_DIR}\""
     fi
-    
+
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
       bash "${SCRIPT_PATH}" ${CONTAINER_ARGS}
@@ -518,14 +513,14 @@ run_single_rate_benchmark() {
             if [ "$RATE" -eq 16 ]; then
                 echo "Rate 16 detected - sleeping 20 seconds and clearing memory before next run..."
                 sleep 20
-                
+
                 # Clear GPU memory cache and force garbage collection
                 echo "Clearing GPU memory cache..."
                 if command -v curl &> /dev/null; then
                     # Try to clear server cache if possible
                     curl -s -X POST "http://0.0.0.0:30000/flush_cache" >/dev/null 2>&1 || true
                 fi
-                
+
                 # Force Python garbage collection on next server request
                 echo "Memory cleanup completed"
             else
@@ -881,25 +876,25 @@ ATTENTION_BACKEND="aiter" # Set backend before log check
 if check_all_logs_complete; then
     echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
     echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
-    
+
     # Initialize and populate CSV from existing logs
     init_csv
     for rate in "${REQ_RATES[@]}"; do
         update_csv_for_rate "$rate"
     done
-    
+
     echo "✅ CSV generated from existing logs successfully."
 
 else
     echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
     launch_server
-    
+
     if run_client_gsm8k "${ATTENTION_BACKEND}"; then
         run_client_benchmark "${ATTENTION_BACKEND}"
     else
         echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
     fi
-    
+
     shutdown_server
 fi
 
