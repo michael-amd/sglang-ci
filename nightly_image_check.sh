@@ -327,6 +327,8 @@ send_teams_notification() {
 echo "[check] =========================================="
 echo "[check] SGL Nightly Docker Image Availability Check"
 echo "[check] =========================================="
+echo "[check] Run Date/Time: $(TZ="$TIME_ZONE" date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "[check] Machine: $(hostname)"
 echo "[check] Repository: $IMAGE_REPO"
 echo "[check] Hardware types: ${HARDWARE_TYPES[*]}"
 

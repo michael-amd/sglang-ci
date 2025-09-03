@@ -66,6 +66,7 @@ echo "[nightly] SGL Nightly Benchmark Started"
 echo "[nightly] =========================================="
 echo "[nightly] Command: $0 $*"
 echo "[nightly] Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "[nightly] Machine: $(hostname)"
 echo "[nightly] Working directory: $(pwd)"
 echo "[nightly] Script location: $(realpath "$0")"
 echo "[nightly] Process ID: $$"
@@ -112,7 +113,7 @@ IMAGE_REPO="${IMAGE_REPO:-rocm/sgl-dev}"  # Both models use same repo
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
 
 # Hardware configuration
-HARDWARE_TYPE="${HARDWARE_TYPE:-mi30x}"  # Default to mi30x, can be mi30x or mi35x
+HARDWARE_TYPE="${HARDWARE_TYPE:-mi35x}"  # Default to mi30x, can be mi30x or mi35x
 
 # ROCM version mapping based on hardware
 declare -A ROCM_VERSIONS=(

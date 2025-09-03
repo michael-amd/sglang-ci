@@ -36,6 +36,7 @@ import glob
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -758,6 +759,13 @@ class TeamsNotifier:
                     "type": "TextBlock",
                     "size": "Small",
                     "text": f"Generated on {current_date} at {current_time}",
+                    "isSubtle": True,
+                    "spacing": "None",
+                },
+                {
+                    "type": "TextBlock",
+                    "size": "Small",
+                    "text": f"Hostname: {socket.gethostname()}",
                     "isSubtle": True,
                     "spacing": "None",
                 },
