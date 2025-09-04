@@ -3,6 +3,7 @@ online/*
 offline/*
 plots_server/*
 cron/cron_log/*
+test/*
 
 *.jsonl
 *.csv
