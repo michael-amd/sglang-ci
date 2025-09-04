@@ -9,3 +9,6 @@ cron/cron_log/*
 *.html
 *.png
 tmp_output_srt.txt
+compare_pr/comparison_results/*
+comparison_results/*
+build_docker_log/*
