@@ -50,6 +50,8 @@ The toolkit is designed for both development teams conducting regular performanc
     - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
 - [Automated Nightly Benchmarking](#automated-nightly-benchmarking)
   - [perf_nightly.sh](#perf_nightlysh)
+- [Automated Nightly Unit Test](#automated-nightly-unit-test)
+  - [test_nightly.sh](#test_nightlysh)
 - [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
   - [nightly_image_check.sh](#nightly_image_checksh)
 - [Data Processing and Visualization](#data-processing-and-visualization)
@@ -60,6 +62,7 @@ The toolkit is designed for both development teams conducting regular performanc
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
+- [Contribution Guide](#contribution-guide)
 
 ---
 
@@ -374,6 +377,67 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
   ```
 
 **Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
+
+---
+
+## Automated Nightly Unit Test
+
+The automated nightly unit test system provides continuous validation of SGL functionality through automated unit test execution on the latest Docker images. This system runs unit tests from the [SGLang repository test directory](https://github.com/sgl-project/sglang/tree/main/test) to ensure code quality and compatibility across different hardware configurations (mi30x and mi35x) with intelligent resource management and Teams integration for immediate failure notifications.
+
+### test_nightly.sh
+
+- **Purpose:** Automated nightly unit test runner that discovers, pulls, and runs unit tests from the [SGLang repository](https://github.com/sgl-project/sglang/tree/main/test) on the latest Docker images for SGL with support for mi30x and mi35x hardware variants.
+- **Key Features:**
+  - **Automatic Image Discovery:** Uses Docker Hub API with pagination to find latest non-SRT images from today, then yesterday as fallback
+  - **Hardware Support:** Supports both mi30x and mi35x hardware variants
+  - **GPU Resource Management:** Intelligent GPU utilization checks and container lifecycle management with configurable thresholds
+  - **Unit Test Execution:** Runs `test_custom_allreduce.TestCustomAllReduce` unit test from the SGLang test suite
+  - **Teams Integration:** Optional Microsoft Teams notifications for test results with adaptive card alerts
+  - **Process Locking:** Prevents multiple instances from running simultaneously
+- **Parameters:**
+  - `--hardware=HW`: Hardware type - `mi30x` or `mi35x` (default: `mi30x`)
+  - `--teams-webhook-url=URL`: Teams webhook URL for test result notifications
+  - `--help`, `-h`: Show detailed help message
+- **Test Configuration:**
+  - **Unit Test:** `test_custom_allreduce.TestCustomAllReduce` from the [SGLang test suite](https://github.com/sgl-project/sglang/tree/main/test)
+  - **Test Directory:** `/sgl-workspace/sglang/test/srt`
+  - **Log Directory:** `${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/`
+- **Output:**
+  - **Log Files:** Structured logs with test metadata, execution output, and results summary
+  - **Teams Alerts:** Adaptive cards showing test status, runtime, hardware details, and Docker image info
+  - **Process Logs:** Console output with detailed workflow progress and container management
+- **Usage:**
+
+  ```bash
+  # Basic usage with default mi30x hardware
+  bash test_nightly.sh
+
+  # Test mi35x hardware
+  bash test_nightly.sh --hardware=mi35x
+
+  # Test with Teams notifications
+  bash test_nightly.sh --teams-webhook-url="https://your-webhook-url"
+
+  # Test mi35x with Teams notifications
+  bash test_nightly.sh --hardware=mi35x --teams-webhook-url="https://your-webhook-url"
+
+  # Show help
+  bash test_nightly.sh --help
+  ```
+
+**Teams Alert Content:**
+When Teams notifications are enabled, the script sends adaptive cards containing:
+- **unit-test-backend-8-gpu-CAR-amd:** section header
+- **Test detail:** test_custom_allreduce.TestCustomAllReduce from the [SGLang test suite](https://github.com/sgl-project/sglang/tree/main/test)
+- **Docker Image:** Full image name with tag
+- **Hostname:** Machine where test was executed
+- **Hardware:** Hardware type (mi30x or mi35x)
+- **Runtime:** Test execution time in human-readable format
+- **Status:** Pass/fail with appropriate icons and colors
+- **Error Details:** For failed tests, includes error information and troubleshooting steps
+- **Action Links:** GitHub repository and Docker Hub links for further investigation
+
+**Note:** This script is designed for automated execution via cron jobs and integrates seamlessly with CI/CD pipelines for continuous unit test validation across different hardware configurations and nightly Docker image builds.
 
 ### Microsoft Teams Integration
 
@@ -779,3 +843,25 @@ The benchmarks are scheduled to run daily via cron jobs. The schedule is defined
 - **DeepSeek Online Benchmark:** Runs daily at 3 AM PT (5 AM CT) with Teams notifications
 
 To apply these rules, run: `crontab cron/crontab_rules.txt`
+
+---
+
+## Contribution Guide
+
+We follow standard code quality practices to maintain consistency across the codebase. Please adhere to these guidelines when contributing.
+
+### Format code with pre-commit
+
+We use pre-commit to maintain consistent code style checks. Before pushing your changes, please run:
+
+```bash
+pip3 install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+- **`pre-commit run --all-files`** manually runs all configured checks, applying fixes if possible. If it fails the first time, re-run it to ensure lint errors are fully resolved. Make sure your code passes all checks **before** creating a Pull Request.
+
+- **Do not commit** directly to the `main` branch. Always create a new branch (e.g., `feature/my-new-feature`), push your changes, and open a PR from that branch.
+
+**Reference:** [SGLang Contribution Guide - Format code with pre-commit](https://docs.sglang.ai/developer_guide/contribution_guide.html#format-code-with-pre-commit)

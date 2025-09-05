@@ -129,7 +129,7 @@ date_pst() {
 # Find Docker image for a specific date and hardware type using Docker Hub API
 find_image_for_date_and_hardware() {
   local repo="$1" target_date="$2" hardware_type="$3"
-  
+
   # First, discover available ROCM versions for this hardware and date
   local available_rocm_versions
   if ! available_rocm_versions=$(discover_rocm_versions "$repo" "$target_date" "$hardware_type"); then
@@ -139,7 +139,7 @@ find_image_for_date_and_hardware() {
   # Try each discovered ROCM version until we find a valid image
   while IFS= read -r rocm_version; do
     [[ -z "$rocm_version" ]] && continue
-    
+
     local next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
     local use_jq=$(command -v jq &> /dev/null && echo "true" || echo "false")
     local search_pattern="-${rocm_version}-${hardware_type}-${target_date}"
@@ -170,7 +170,7 @@ find_image_for_date_and_hardware() {
       [[ -z "$next_url" || "$next_url" == "null" ]] && break
     done
   done <<< "$available_rocm_versions"
-  
+
   return 1
 }
 
