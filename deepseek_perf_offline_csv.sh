@@ -6,7 +6,7 @@
 #
 # USAGE:
 #   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash deepseek_perf_offline_csv.sh --model=/path/to/model --model-name=DeepSeek-V3
+#   bash deepseek_perf_offline_csv.sh --model-path=/raid/deepseek-v3 --model-name=DeepSeek-V3
 #   bash deepseek_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
 set -euo pipefail
@@ -65,7 +65,7 @@ for arg in "$@"; do
       docker_image="${arg#*=}"
       shift # Remove parsed argument
       ;;
-    --model=*)
+    --model=*|--model-path=*)
       MODEL="${arg#*=}"
       shift
       ;;
@@ -94,6 +94,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --docker_image=IMAGE    Docker image to use (default: $DOCKER_IMAGE_DEFAULT)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --model-path=PATH      Model path (alias for --model)"
       echo "  --model-name=NAME      Model name for output files (default: $DEFAULT_MODEL_NAME)"
       echo "  --hf-model-id=ID       HuggingFace model ID for download (default: $DEFAULT_HF_MODEL_ID)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
