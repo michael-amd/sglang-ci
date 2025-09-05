@@ -20,7 +20,7 @@
 #   • Supports automatic model download from HuggingFace Hub
 #   • Downloads to <work-dir>/models/<model_name> when --work-dir is specified
 #   • Otherwise downloads to WORK_DIR/models/<model_name> inside container
-#   • Uses --download-model option with default: deepseek-ai/DeepSeek-V3-0324
+#   • Uses --download-model option (no default - must be explicitly specified)
 #   • Requires huggingface_hub library (automatically installed in container)
 #   • Only downloads when no custom --model-path is provided
 #   • DISK SPACE REQUIREMENTS: DeepSeek models need 685GB, Grok models need 200GB
@@ -31,12 +31,13 @@
 #   perf_nightly.sh [OPTIONS]
 #
 # OPTIONS:
-#   --model=MODEL        Model to benchmark: grok, deepseek [default: grok]
+#   --model=MODEL        Model to benchmark: grok, deepseek, DeepSeek-V3 [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
-#   --download-model=REPO  Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]
+#   --download-model=REPO  Download model from HuggingFace if not exists (no default)
+#   --continue-run-days=N    Run benchmarks for last N days' images [default: 1]
 #   --teams-webhook-url=URL  Enable Teams notifications with webhook URL
 #   --teams-skip-analysis    Skip GSM8K accuracy and performance analysis
 #   --teams-analysis-days=N  Days to look back for performance comparison [default: 7]
@@ -45,22 +46,65 @@
 # EXAMPLES:
 #   perf_nightly.sh                                    # Grok online+offline (mi30x)
 #   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
+#   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
 #   perf_nightly.sh --model=grok --mode=all \          # Grok with Teams alerts
 #     --teams-webhook-url="https://prod-99.westus.logic.azure.com/..."
 #   perf_nightly.sh --model-path=/data/models/custom-deepseek  # Custom model path
 #   perf_nightly.sh --work-dir=/tmp/benchmark-workspace       # Custom work directory
-#   perf_nightly.sh --model=deepseek \                        # Combined custom paths
-#     --model-path=/data/models/deepseek-v3 --work-dir=/home/user/workspace
+#   perf_nightly.sh --model=DeepSeek-V3 \                     # Combined custom paths
+#     --model-path=/raid/deepseek-ai/DeepSeek-V3 --work-dir=/home/user/workspace
+#   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
 # ---------------------------------------------------------------------------
 set -euo pipefail
+
+###############################################################################
+# Command and execution logging
+###############################################################################
+echo "[nightly] =========================================="
+echo "[nightly] SGL Nightly Benchmark Started"
+echo "[nightly] =========================================="
+echo "[nightly] Command: $0 $*"
+echo "[nightly] Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "[nightly] Machine: $(hostname)"
+echo "[nightly] Working directory: $(pwd)"
+echo "[nightly] Script location: $(realpath "$0")"
+echo "[nightly] Process ID: $$"
+
+# Check for already running instances
+LOCKFILE="/tmp/perf_nightly.lock"
+if [ -f "$LOCKFILE" ]; then
+    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
+    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
+        echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
+        echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
+        exit 1
+    else
+        echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
+        rm -f "$LOCKFILE"
+    fi
+fi
+
+# Create lock file
+echo "$$" > "$LOCKFILE"
+echo "[nightly] Created process lock: $LOCKFILE"
+
+# Cleanup function
+cleanup() {
+    echo "[nightly] Cleaning up process lock..."
+    rm -f "$LOCKFILE"
+}
+trap cleanup EXIT
+
+echo "[nightly] =========================================="
+echo ""
 
 ###############################################################################
 # Configuration Variables - Override via environment variables if needed
 ###############################################################################
 
-# Base paths and directories
-BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+# Base paths and directories - default to current working directory if not set
+BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-$(pwd)}"
 MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/}"
 WORK_DIR="${WORK_DIR:-/sgl-workspace}"
 
@@ -69,7 +113,7 @@ IMAGE_REPO="${IMAGE_REPO:-rocm/sgl-dev}"  # Both models use same repo
 CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
 
 # Hardware configuration
-HARDWARE_TYPE="${HARDWARE_TYPE:-mi30x}"  # Default to mi30x, can be mi30x or mi35x
+HARDWARE_TYPE="${HARDWARE_TYPE:-mi35x}"  # Default to mi35x, can be mi30x or mi35x
 
 # ROCM version mapping based on hardware
 declare -A ROCM_VERSIONS=(
@@ -84,7 +128,7 @@ DEEPSEEK_MODEL_NAME="${DEEPSEEK_MODEL_NAME:-DeepSeek-V3-0324}"
 DEEPSEEK_MODEL_VARIANT="${DEEPSEEK_MODEL_VARIANT:-FP8}"
 
 # HuggingFace model download configuration
-DEFAULT_HF_MODEL_REPO="${DEFAULT_HF_MODEL_REPO:-deepseek-ai/DeepSeek-V3-0324}"
+# Note: No default model repository - downloads only when --download-model is explicitly specified
 
 # GPU monitoring thresholds
 GPU_USAGE_THRESHOLD="${GPU_USAGE_THRESHOLD:-15}"
@@ -137,11 +181,18 @@ ensure_gpu_idle() {
   if ! check_gpu_idle; then
     echo "[nightly] GPU is busy. Attempting to stop running Docker containers..."
     # Stop all running containers, ignoring errors if some are already stopped.
-    if [[ -n "$(docker ps -q)" ]]; then
-        echo "[nightly] Stopping running containers: $(docker ps -q | tr '\\n' ' ')"
-        docker stop $(docker ps -q) >/dev/null 2>&1 || true
-    else
+    if "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
+      running_ids="$("${DOCKER_CMD[@]}" ps -q 2>/dev/null || true)"
+      if [[ -n "$running_ids" ]]; then
+        echo "[nightly] Stopping running containers: $(echo "$running_ids" | tr '\\n' ' ')"
+        "${DOCKER_CMD[@]}" stop $running_ids >/dev/null 2>&1 || true
+      else
         echo "[nightly] No running containers to stop."
+      fi
+    else
+      echo "[nightly] WARN: Docker not accessible; skipping container stop."
+      echo "[nightly] Docker error details:"
+      "${DOCKER_CMD[@]}" info 2>&1 | sed 's/^/[nightly]   /' || true
     fi
     echo "[nightly] Waiting ${GPU_IDLE_WAIT_TIME}s for GPU to become idle..."
     sleep "$GPU_IDLE_WAIT_TIME"
@@ -242,7 +293,7 @@ download_hf_model() {
   echo "[nightly] Installing huggingface_hub and downloading model with resume support..."
   DOWNLOAD_EXIT_CODE=0
 
-  docker exec \
+  "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
     "${CONTAINER_NAME}" \
     bash -c "pip install huggingface_hub > /dev/null 2>&1 && \
@@ -294,13 +345,22 @@ send_teams_notification() {
   # Execute Teams notification inside the container
   TEAMS_EXIT_CODE=0
 
-  # Build the command with optional no-images flag
-  TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}'"
+  # Build the command with directory parameters to match where plots are actually created
+  PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
+  TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
 
-  # Add --no-images flag if configured
+  echo "[nightly] Teams notification using plot directory: ${PLOT_DIR_PATH}"
+
+  # Add GitHub upload if configured
   if [[ "$TEAMS_NO_IMAGES" == "true" ]]; then
-    TEAMS_CMD="${TEAMS_CMD} --no-images"
-    echo "[nightly] Using text-only mode (no embedded images)"
+    echo "[nightly] Using text-only mode (no embedded images) - no upload flags added"
+  elif [[ -n "${GITHUB_REPO:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --github-upload --github-repo '${GITHUB_REPO}' --github-token '${GITHUB_TOKEN}'"
+    echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
+    echo "[nightly] Images will be stored in plots branch with structure: /model/mode/filename.png"
+  else
+    echo "[nightly] No GitHub credentials configured - using plot server links only"
+    echo "[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables"
   fi
 
   # Add analysis parameters
@@ -312,7 +372,7 @@ send_teams_notification() {
     echo "[nightly] Including intelligent analysis (${TEAMS_ANALYSIS_DAYS} days lookback)"
   fi
 
-  docker exec \
+  "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
     -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
     -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
@@ -330,7 +390,34 @@ send_teams_notification() {
 }
 
 ###############################################################################
-# 0. Parse CLI flags
+# 0. Environment validation and CLI flags
+###############################################################################
+
+# Basic environment validation for cron issues
+echo "[nightly] Runtime Environment:"
+echo "[nightly] User: $(whoami) | Groups: $(id -nG | cut -d' ' -f1-3)... | Docker: $(which docker 2>/dev/null || echo 'not in PATH')"
+
+# Validate Docker access early
+DOCKER_CMD=(sudo /usr/bin/docker)  # Use absolute path for cron compatibility
+if [[ ! -x "/usr/bin/docker" ]]; then
+    echo "[nightly] ERROR: Docker executable not found at /usr/bin/docker"
+    exit 1
+fi
+
+echo "[nightly] Testing Docker daemon access..."
+if ! "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
+    echo "[nightly] ERROR: Cannot access Docker daemon. Please check:"
+    echo "[nightly]   1. Docker daemon is running"
+    echo "[nightly]   2. Current user is in 'docker' group: sudo usermod -aG docker \$(whoami)"
+    echo "[nightly]   3. If running via cron, ensure cron environment has docker group access"
+    echo "[nightly] Docker info output:"
+    "${DOCKER_CMD[@]}" info 2>&1 | sed 's/^/[nightly]   /'
+    exit 1
+fi
+echo "[nightly] Docker daemon accessible - proceeding..."
+
+###############################################################################
+# 1. Parse CLI flags
 ###############################################################################
 MODE="all" # Default to run both offline and online
 MODEL="grok" # Default to grok
@@ -339,48 +426,53 @@ CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
+CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
 
 for arg in "$@"; do
   case $arg in
     --mode=*)
       MODE="${arg#*=}"
-      shift ;;
+      ;;
     --model=*)
       MODEL="${arg#*=}"
-      shift ;;
+      ;;
     --model-path=*)
       CLI_MODEL_PATH="${arg#*=}"
-      shift ;;
+      ;;
     --work-dir=*)
       CLI_WORK_DIR="${arg#*=}"
-      shift ;;
+      ;;
     --hardware=*)
       HARDWARE_TYPE="${arg#*=}"
-      shift ;;
+      ;;
     --download-model=*)
       CLI_DOWNLOAD_MODEL="${arg#*=}"
-      shift ;;
+      ;;
+    --continue-run-days=*)
+      CLI_CONTINUE_RUN_DAYS="${arg#*=}"
+      ;;
     --teams-webhook-url=*)
       CLI_TEAMS_WEBHOOK_URL="${arg#*=}"
-      shift ;;
+      ;;
     --teams-skip-analysis)
       CLI_TEAMS_SKIP_ANALYSIS="true"
-      shift ;;
+      ;;
     --teams-analysis-days=*)
       TEAMS_ANALYSIS_DAYS="${arg#*=}"
-      shift ;;
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
       echo "Run SGL nightly benchmarks with optional Teams notifications"
       echo ""
       echo "Options:"
-      echo "  --model=MODEL                    Model to benchmark (grok, deepseek) [default: grok]"
+      echo "  --model=MODEL                    Model to benchmark (grok, deepseek, DeepSeek-V3) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
-      echo "  --download-model=REPO            Download model from HuggingFace if not exists [default: deepseek-ai/DeepSeek-V3-0324]"
+      echo "  --download-model=REPO            Download model from HuggingFace if not exists (no default)"
+      echo "  --continue-run-days=DAYS         Run benchmarks for last N days' images [default: 1]"
       echo "  --teams-webhook-url=URL          Teams webhook URL to enable notifications [default: disabled]"
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
@@ -389,13 +481,15 @@ for arg in "$@"; do
       echo "Examples:"
       echo "  $0                                          # Run grok online+offline, no Teams (mi30x)"
       echo "  $0 --model=deepseek --mode=online           # Run deepseek online only, no Teams (mi30x)"
+      echo "  $0 --model=DeepSeek-V3 --mode=online        # Run DeepSeek-V3 online only, no Teams (mi30x)"
       echo "  $0 --hardware=mi35x --mode=all              # Run grok on mi35x hardware"
       echo "  $0 --model=grok --mode=all \\                # Run grok with Teams notifications"
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
       echo "  $0 --model-path=/data/models/custom-grok    # Use custom model path"
       echo "  $0 --work-dir=/tmp/benchmark-run            # Use custom work directory"
-      echo "  $0 --model=deepseek --work-dir=/home/user/workspace  # Auto-download to work-dir/models/"
+      echo "  $0 --model=deepseek --work-dir=/home/user/workspace --download-model=deepseek-ai/DeepSeek-V3  # Download to work-dir/models/"
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
+      echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -410,7 +504,7 @@ for arg in "$@"; do
       echo "  See team_alert/README.md for detailed setup instructions."
       exit 0 ;;
     *)
-      echo "Unknown argument: $1"
+      echo "Unknown argument: $arg"
       echo "Use --help for usage information"
       exit 1 ;;
   esac
@@ -438,10 +532,24 @@ if [[ -n "$CLI_MODEL_PATH" ]]; then
 fi
 
 # Process HuggingFace model download option
-HF_MODEL_REPO="$DEFAULT_HF_MODEL_REPO"
+# Only enable HuggingFace downloads when explicitly requested via --download-model
 if [[ -n "$CLI_DOWNLOAD_MODEL" ]]; then
   HF_MODEL_REPO="$CLI_DOWNLOAD_MODEL"
   echo "[nightly] HuggingFace model repository provided: $HF_MODEL_REPO"
+else
+  HF_MODEL_REPO=""  # No default HF downloads for any model - only when explicitly requested
+fi
+
+# Process continue run days option
+CONTINUE_RUN_DAYS=1  # Default to 1 day (current behavior)
+if [[ -n "$CLI_CONTINUE_RUN_DAYS" ]]; then
+  CONTINUE_RUN_DAYS="$CLI_CONTINUE_RUN_DAYS"
+  # Validate that it's a positive integer
+  if ! [[ "$CONTINUE_RUN_DAYS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "[nightly] ERROR: --continue-run-days must be a positive integer (got: $CONTINUE_RUN_DAYS)"
+    exit 1
+  fi
+  echo "[nightly] Will run benchmarks for last $CONTINUE_RUN_DAYS days' images"
 fi
 
 # Set script paths after CLI parameter processing (so custom work directory is used)
@@ -458,8 +566,8 @@ PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SC
 TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/team_alert/send_teams_notification.py}"
 
 # Validate model parameter
-if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" ]]; then
-    echo "[nightly] ERROR: Invalid --model value. Must be 'grok' or 'deepseek'."
+if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" ]]; then
+    echo "[nightly] ERROR: Invalid --model value '$MODEL'. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
     exit 1
 fi
 
@@ -481,14 +589,14 @@ case "$MODEL" in
         OFFLINE_SCRIPT="$GROK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$GROK_ONLINE_SCRIPT"
         ;;
-    "deepseek")
+    "deepseek"|"DeepSeek-V3")
         MODEL_NAME="$DEEPSEEK_MODEL_NAME"
         MODEL_VARIANT="$DEEPSEEK_MODEL_VARIANT"
         OFFLINE_SCRIPT="$DEEPSEEK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
         ;;
     *)
-        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok' or 'deepseek'."
+        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
         exit 1
         ;;
 esac
@@ -548,9 +656,9 @@ find_image_for_date() {
   return 1
 }
 
-# Find and pull the latest non-SRT Docker image
-echo "[nightly] Searching for the latest non-SRT image for $MODEL..."
-SELECTED_TAG=""
+# Find and pull Docker images for the last N days
+echo "[nightly] Searching for non-SRT images for $MODEL for the last $CONTINUE_RUN_DAYS days..."
+SELECTED_TAGS=()
 
 # Check curl availability once
 if ! command -v curl &> /dev/null; then
@@ -558,57 +666,155 @@ if ! command -v curl &> /dev/null; then
   exit 1
 fi
 
-# Try today, then yesterday
-for offset in 0 1; do
+# Try each day from today going back CONTINUE_RUN_DAYS
+for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
-  echo "[nightly] Found candidate tag: ${candidate_tag}"
+  echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
   echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
 
-  if docker pull "${IMAGE_REPO}:${candidate_tag}" >/dev/null 2>&1; then
-    SELECTED_TAG="$candidate_tag"
-    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${SELECTED_TAG}"
-    break
+  if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+    SELECTED_TAGS+=("$candidate_tag")
+    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
   else
     echo "[nightly] WARN: Failed to pull candidate tag ${candidate_tag}. It may be private or invalid."
   fi
 done
 
-[[ -z "$SELECTED_TAG" ]] && {
-  echo "[nightly] ERROR: Could not find and pull a valid non-SRT image for the last 2 days."
+if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
+  echo "[nightly] No image found for today. Checking yesterday as a fallback..."
+  date_suffix=$(date_pst 1)
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
+  if [[ -n "$candidate_tag" ]]; then
+    echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
+    echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+    if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+      SELECTED_TAGS+=("$candidate_tag")
+      echo "[nightly] Successfully pulled fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+    else
+      echo "[nightly] WARN: Failed to pull fallback tag ${candidate_tag}. It may be private or invalid."
+    fi
+  else
+    echo "[nightly] No fallback image found for yesterday either."
+  fi
+fi
+
+if [[ ${#SELECTED_TAGS[@]} -eq 0 ]]; then
+  echo "[nightly] ERROR: Could not find and pull any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
   exit 1
-}
+fi
 
-DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-# Generate container name (replace special chars for Docker compatibility)
-CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
-
-echo "[nightly] Using Docker image: $DOCKER_IMAGE"
-echo "[nightly] Container name: $CONTAINER_NAME"
+echo "[nightly] Found ${#SELECTED_TAGS[@]} valid image(s) to run benchmarks on:"
+for tag in "${SELECTED_TAGS[@]}"; do
+  echo "[nightly]   - ${IMAGE_REPO}:${tag}"
+done
 
 ###############################################################################
-# 2. Ensure container is running
+# 2. Loop through each selected tag and run benchmarks
 ###############################################################################
-if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+
+for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
+  echo ""
+  echo "[nightly] =========================================="
+  echo "[nightly] Starting benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+  echo "[nightly] =========================================="
+
+  # Ensure GPU is idle before starting benchmarks for this image
+  echo "[nightly] Checking GPU status before starting benchmarks for ${IMAGE_REPO}:${SELECTED_TAG}..."
+  ensure_gpu_idle
+
+  DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
+  # Generate container name (replace special chars for Docker compatibility)
+  CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
+
+  # Check if all runs for the specified modes are already complete for this image
+  all_modes_complete=true
+  if [[ -z "$MODES_TO_RUN" ]]; then
+    all_modes_complete=false
+  fi
+
+  for mode_to_check in $MODES_TO_RUN; do
+    # Define expected number of runs based on model and mode
+    expected_runs=0
+    if [[ "$mode_to_check" == "online" ]]; then
+      if [[ "$MODEL" == "grok" || "$MODEL" == "deepseek" ]]; then
+        expected_runs=15 # Based on 5 request rates * 3 runs per rate
+      fi
+    fi
+    # NOTE: Offline completion check is not implemented as log format is unknown.
+    # It will be treated as incomplete, preventing premature skipping of tags.
+
+    if [[ "$expected_runs" -eq 0 ]]; then
+      echo "[nightly] INFO: No completion check defined for mode '${mode_to_check}'. Assuming not complete."
+      all_modes_complete=false
+      break
+    fi
+
+    # Determine output folder for the mode
+    BENCHMARK_OUTPUT_FOLDER=""
+    if [[ "$mode_to_check" == "online" ]]; then
+      # Determine the correct directory name for DeepSeek-V3
+      if [[ "$MODEL" == "DeepSeek-V3" ]]; then
+        check_directory_name="DeepSeek-V3"
+      else
+        check_directory_name="${MODEL_NAME}"
+      fi
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${check_directory_name}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    else
+      # Should not happen due to expected_runs check, but as a safeguard:
+      all_modes_complete=false
+      break
+    fi
+
+    # Count actual completed runs (not just existing log files)
+    actual_runs=0
+    if [[ -d "$BENCHMARK_OUTPUT_FOLDER" ]]; then
+      echo "[nightly] Checking benchmark completion in: $BENCHMARK_OUTPUT_FOLDER"
+      # Use simpler approach - count files that contain "Run completed at:"
+      # Exclude GSM8K logs and only count logs that actually finished
+      actual_runs=$(find "$BENCHMARK_OUTPUT_FOLDER" -type f -name "sglang_client_log_*.log" ! -name "*gsm8k*" -exec grep -l "Run completed at:" {} \; 2>/dev/null | wc -l)
+      echo "[nightly] Found ${actual_runs} completed benchmark runs"
+    fi
+
+    if [[ "$actual_runs" -lt "$expected_runs" ]]; then
+      echo "[nightly] INFO: Found ${actual_runs}/${expected_runs} completed runs for ${DOCKER_IMAGE} (${mode_to_check}). Proceeding with benchmarks."
+      all_modes_complete=false
+      break
+    else
+      echo "[nightly] INFO: All ${expected_runs} runs for ${DOCKER_IMAGE} (${mode_to_check}) are already complete."
+    fi
+  done
+
+  if [[ "$all_modes_complete" == "true" ]]; then
+    echo "[nightly] INFO: All runs for all requested modes are complete for ${DOCKER_IMAGE}. Skipping benchmark execution but proceeding with post-processing."
+  fi
+
+  echo "[nightly] Using Docker image: $DOCKER_IMAGE"
+  echo "[nightly] Container name: $CONTAINER_NAME"
+
+###############################################################################
+# 2.1. Ensure container is running
+###############################################################################
+if "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "[nightly] Reusing container ${CONTAINER_NAME}"
-  docker start "${CONTAINER_NAME}" >/dev/null || true
+  "${DOCKER_CMD[@]}" start "${CONTAINER_NAME}" >/dev/null || true
 
   # Check if benchmark CI directory is accessible inside the container
-  if ! docker exec "${CONTAINER_NAME}" test -d "${BENCHMARK_CI_DIR}" 2>/dev/null; then
+  if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${BENCHMARK_CI_DIR}" 2>/dev/null; then
     echo "[nightly] Benchmark CI directory not accessible in existing container. Recreating container..."
-    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
-    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
   # Check if custom model path is accessible inside the container (if provided)
-  elif [[ -n "$CLI_MODEL_PATH" ]] && ! docker exec "${CONTAINER_NAME}" test -d "${CLI_MODEL_PATH}" 2>/dev/null; then
+  elif [[ -n "$CLI_MODEL_PATH" ]] && ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${CLI_MODEL_PATH}" 2>/dev/null; then
     echo "[nightly] Custom model path not accessible in existing container. Recreating container..."
-    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1
-    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
   fi
 fi
 
 # Create container if it doesn't exist or was removed due to validation failure
-if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "[nightly] Creating container ${CONTAINER_NAME}"
 
   # Create mount arguments - always mount MOUNT_DIR, and also mount benchmark CI directory if different
@@ -646,7 +852,7 @@ if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       fi
   fi
 
-  docker run -d --name "${CONTAINER_NAME}" \
+  "${DOCKER_CMD[@]}" run -d --name "${CONTAINER_NAME}" \
     --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
     --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
     ${mount_args} --group-add video --privileged \
@@ -657,8 +863,8 @@ fi
 # 3. Handle model download if needed
 ###############################################################################
 # Check if model needs to be downloaded from HuggingFace
-if [[ -z "$CLI_MODEL_PATH" ]]; then
-  # Only attempt download if no custom model path is provided
+if [[ -z "$CLI_MODEL_PATH" && -n "$HF_MODEL_REPO" ]]; then
+  # Only attempt download if no custom model path is provided AND HF repo is configured
   # Extract model name from HF repo for directory naming
   MODEL_DIR_NAME=$(basename "$HF_MODEL_REPO")
 
@@ -670,17 +876,17 @@ if [[ -z "$CLI_MODEL_PATH" ]]; then
   fi
 
   # Check if model directory exists and is not empty
-  if ! docker exec "${CONTAINER_NAME}" test -d "${DOWNLOADED_MODEL_PATH}" 2>/dev/null || \
-     [[ -z "$(docker exec "${CONTAINER_NAME}" ls -A "${DOWNLOADED_MODEL_PATH}" 2>/dev/null)" ]]; then
+  if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${DOWNLOADED_MODEL_PATH}" 2>/dev/null || \
+     [[ -z "$("${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" ls -A "${DOWNLOADED_MODEL_PATH}" 2>/dev/null)" ]]; then
 
     echo "[nightly] Model not found at ${DOWNLOADED_MODEL_PATH}, attempting download from HuggingFace..."
 
     # Ensure models directory exists - create it locally first, then in container if needed
     if [[ -n "$CLI_WORK_DIR" ]]; then
       mkdir -p "${BENCHMARK_CI_DIR}/models"
-      docker exec "${CONTAINER_NAME}" mkdir -p "${BENCHMARK_CI_DIR}/models"
+      "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "${BENCHMARK_CI_DIR}/models"
     else
-      docker exec "${CONTAINER_NAME}" mkdir -p "${WORK_DIR}/models"
+      "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "${WORK_DIR}/models"
     fi
 
     # Download the model
@@ -694,10 +900,12 @@ if [[ -z "$CLI_MODEL_PATH" ]]; then
     echo "[nightly] Model already exists at ${DOWNLOADED_MODEL_PATH}, using existing model"
     CLI_MODEL_PATH="$DOWNLOADED_MODEL_PATH"
   fi
+elif [[ -z "$CLI_MODEL_PATH" && -z "$HF_MODEL_REPO" ]]; then
+  echo "[nightly] No custom model path provided. Using default model path from benchmark script for $MODEL model."
 fi
 
 ###############################################################################
-# 4. Run benchmarks for each mode
+# 4. Run benchmarks for each mode (only if not already complete)
 ###############################################################################
 ONLINE_SUCCEEDED=false
 RUNNING_ALL_MODES=false
@@ -707,7 +915,10 @@ if [[ "$MODES_TO_RUN" == "online offline" ]]; then
     RUNNING_ALL_MODES=true
 fi
 
-for MODE_TO_RUN in $MODES_TO_RUN; do
+# Only run benchmarks if they're not already complete
+if [[ "$all_modes_complete" != "true" ]]; then
+  echo "[nightly] === Starting benchmark execution ==="
+  for MODE_TO_RUN in $MODES_TO_RUN; do
   # Note: Offline benchmark now handles GSM8K checking internally, so we always attempt it
 
   echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
@@ -730,40 +941,43 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
   BENCHMARK_EXIT_CODE=0
 
   # Build common parameters
-  SCRIPT_ARGS="--docker_image=\"${DOCKER_IMAGE}\""
+  SCRIPT_ARGS="--docker_image='${DOCKER_IMAGE}'"
+
+  # Add current directory parameter (always pass it to override default paths)
+  SCRIPT_ARGS="${SCRIPT_ARGS} --current-dir='${BENCHMARK_CI_DIR}'"
 
   # Add custom work directory if provided
   if [[ -n "$CLI_WORK_DIR" ]]; then
-    SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir=\"${CLI_WORK_DIR}\""
+    SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir='${CLI_WORK_DIR}'"
   fi
 
   # Add custom model path if provided
   if [[ -n "$CLI_MODEL_PATH" ]]; then
     if [[ "$MODEL" == "deepseek" ]]; then
-      SCRIPT_ARGS="${SCRIPT_ARGS} --model=\"${CLI_MODEL_PATH}\""
+      SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     else
       # For Grok
-      SCRIPT_ARGS="${SCRIPT_ARGS} --model=\"${CLI_MODEL_PATH}\""
+      SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     fi
   fi
 
   if [[ "$MODEL" == "deepseek" ]]; then
     # For DeepSeek, pass additional parameters if needed
-    docker exec \
+    "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash -c "$SCRIPT $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
+      bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   else
     # For Grok, use the existing command structure
-    docker exec \
+    "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       "${CONTAINER_NAME}" \
-      bash -c "$SCRIPT $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
+      bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   fi
 
   # Track success of online benchmark for gating offline
@@ -777,6 +991,19 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     fi
   fi
 
+  echo "[nightly] === ${MODE_TO_RUN^} benchmark dispatched for ${MODEL^^}; check logs in ${CONTAINER_NAME} ==="
+done
+else
+  echo "[nightly] === Skipping benchmark execution - all benchmarks already complete ==="
+fi
+
+###############################################################################
+# 5. Post-processing: CSV Processing, Plot Generation, and Teams Notifications
+###############################################################################
+echo "[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ==="
+
+# Process and generate plots for each mode
+for MODE_TO_RUN in $MODES_TO_RUN; do
   # Process CSV and Generate Plots (Combined)
   if [ "$MODE_TO_RUN" == "offline" ]; then
     # Construct the path to the log folder for offline benchmarks
@@ -788,15 +1015,30 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
-    if [[ -n "$CLI_WORK_DIR" ]]; then
-      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/offline/${MODEL_NAME}'"
-      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/offline'"
+    # Determine the correct directory name for DeepSeek-V3
+    if [[ "$MODEL" == "DeepSeek-V3" ]]; then
+      DIRECTORY_NAME="DeepSeek-V3"
+    else
+      DIRECTORY_NAME="${MODEL_NAME}"
     fi
 
-    # Ensure log directory exists before redirecting output
-    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
+    if [[ -n "$CLI_WORK_DIR" ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/offline/${DIRECTORY_NAME}'"
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${DIRECTORY_NAME}/offline'"
+      # Use custom work directory for log file as well
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/offline/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
+    else
+      # Use default directories
+      BENCHMARK_OUTPUT_FOLDER="${OFFLINE_OUTPUT_DIR}/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_offline"
+    fi
 
-    docker exec \
+    COMBINED_LOG_FILE="${BENCHMARK_OUTPUT_FOLDER}/process_and_generate_offline_plots.log"
+    echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
+
+    # Ensure log directory exists before redirecting output
+    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
+
+    "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
@@ -816,15 +1058,28 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    # Determine the correct directory name for DeepSeek-V3
+    if [[ "$MODEL" == "DeepSeek-V3" ]]; then
+      DIRECTORY_NAME="DeepSeek-V3"
+    else
+      DIRECTORY_NAME="${MODEL_NAME}"
+    fi
+
     if [[ -n "$CLI_WORK_DIR" ]]; then
-      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${MODEL_NAME}'"
-      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${MODEL_NAME}/online'"
+      PYTHON_ARGS="${PYTHON_ARGS} --base-dir '${BENCHMARK_CI_DIR}'"
+      PYTHON_ARGS="${PYTHON_ARGS} --data-dir '${BENCHMARK_CI_DIR}/online/${DIRECTORY_NAME}'"
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-dir '${BENCHMARK_CI_DIR}/plots_server/${DIRECTORY_NAME}/online'"
+      # Use custom work directory for log file as well
+      BENCHMARK_OUTPUT_FOLDER="${BENCHMARK_CI_DIR}/online/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    else
+      # Use default directories
+      BENCHMARK_OUTPUT_FOLDER="${ONLINE_OUTPUT_DIR}/${DIRECTORY_NAME}/${SELECTED_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
     fi
 
     # Ensure log directory exists before redirecting output
-    docker exec "${CONTAINER_NAME}" mkdir -p "$(dirname '${COMBINED_LOG_FILE}')"
+    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
 
-    docker exec \
+    "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
@@ -834,5 +1089,16 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     send_teams_notification "${MODEL}" "online"
   fi
 
-  echo "[nightly] === ${MODE_TO_RUN^} benchmark dispatched for ${MODEL^^}; check logs in ${CONTAINER_NAME} ==="
+  echo "[nightly] === ${MODE_TO_RUN^} post-processing completed for ${MODEL^^} ==="
 done
+
+  echo "[nightly] =========================================="
+  echo "[nightly] Completed benchmarks for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+  echo "[nightly] Stopping container ${CONTAINER_NAME} to release resources..."
+  "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  echo "[nightly] =========================================="
+done
+
+echo "[nightly] =========================================="
+echo "[nightly] All benchmarks completed for ${#SELECTED_TAGS[@]} image(s)"
+echo "[nightly] =========================================="

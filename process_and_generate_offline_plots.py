@@ -89,6 +89,7 @@ OUTPUT:
 import argparse
 import os
 import re  # Import re for regular expressions
+import socket  # For hostname detection
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -130,6 +131,17 @@ class OfflineDataProcessor:
             (current_date - timedelta(days=i)).strftime("%Y%m%d")
             for i in range(1, days_back + 1)
         ]
+
+        # Get hostname for node identification
+        self.hostname = self._get_hostname()
+
+    def _get_hostname(self):
+        """Get the hostname for node identification."""
+        try:
+            hostname = socket.gethostname()
+            return hostname if hostname else "unknown"
+        except Exception:
+            return "unknown"
 
     def _extract_date_from_name(self, name):
         """
@@ -245,6 +257,7 @@ class OfflineDataProcessor:
                     "date": date_str,
                     "batch_size": int(batch_size),
                     "backend": csv_backend,
+                    "node_name": self.hostname,
                     "E2E_Latency(s)": batch_data["E2E_Latency(s)"].mean(),
                     "E2E_Throughput(token/s)": batch_data[
                         "E2E_Throughput(token/s)"
@@ -373,7 +386,8 @@ class OfflineDataProcessor:
             # Try to save anyway without sorting
 
         output_file = os.path.join(
-            self.data_dir, f"{self.output_model_name_prefix}_summary.csv"
+            self.data_dir,
+            f"{self.output_model_name_prefix}_summary_{self.hostname}.csv",
         )
         try:
             # Ensure the directory exists
@@ -648,13 +662,22 @@ def main():
             "olen": 128,
         },
         "deepseek": {
-            "variant_name": "DeepSeek-V3-0324",
+            "variant_name": "DeepSeek",
+            "output_prefix_template": "{variant_name}_FP8_offline",
+            "model_name_template": "{variant_name}_FP8_offline",
+            "ilen": 1024,
+            "olen": 128,
+        },
+        "DeepSeek-V3": {
+            "variant_name": "DeepSeek-V3",
             "output_prefix_template": "{variant_name}_FP8_offline",
             "model_name_template": "{variant_name}_FP8_offline",
             "ilen": 1024,
             "olen": 128,
         },
     }
+
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
     parser = argparse.ArgumentParser(
         description="Process offline benchmark CSV files and generate plots",
@@ -668,10 +691,16 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'.",
+        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
+    parser.add_argument(
+        "--base-dir",
+        type=str,
+        default=DEFAULT_BASE_DIR,
+        help="Base directory for default paths (can be overridden by specific path arguments).",
+    )
     parser.add_argument(
         "--data-dir", type=str, default=None, help="Override data directory path."
     )
@@ -739,16 +768,22 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
+    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
     if args.data_dir is None:
-        args.data_dir = f"/mnt/raid/michael/sgl_benchmark_ci/offline/{variant_name}"
+        args.data_dir = os.path.join(args.base_dir, "offline", directory_name)
     if args.output_prefix is None:
         args.output_prefix = config["output_prefix_template"].format(
             variant_name=variant_name
         )
     if args.plot_dir is None:
-        args.plot_dir = (
-            f"/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/offline"
+        args.plot_dir = os.path.join(
+            args.base_dir, "plots_server", directory_name, "offline"
         )
+    elif not args.plot_dir.endswith(("online", "offline")):
+        # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
+        # append the model-specific subdirectory structure for consistency
+        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        args.plot_dir = os.path.join(args.plot_dir, directory_name, "offline")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name
@@ -801,8 +836,14 @@ def main():
                 summary_csv_path = args.summary_csv
             else:
                 # Auto-generate path
+                # Get hostname for consistent naming with processor output
+                try:
+                    hostname = socket.gethostname()
+                except Exception:
+                    hostname = "unknown"
+
                 summary_csv_path = os.path.join(
-                    args.data_dir, f"{args.output_prefix}_summary.csv"
+                    args.data_dir, f"{args.output_prefix}_summary_{hostname}.csv"
                 )
 
         if not summary_csv_path or not os.path.exists(summary_csv_path):

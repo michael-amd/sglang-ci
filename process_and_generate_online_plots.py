@@ -38,13 +38,16 @@ USAGE EXAMPLES:
 2. Process and plot DeepSeek model with default settings:
    python process_and_generate_online_plots.py --model deepseek
 
-3. Process only (skip plotting):
+3. Process and plot DeepSeek-V3 model with default settings:
+   python process_and_generate_online_plots.py --model DeepSeek-V3
+
+4. Process only (skip plotting):
    python process_and_generate_online_plots.py --model grok --process-only
 
-4. Plot only (skip processing, use existing summary CSV):
+5. Plot only (skip processing, use existing summary CSV):
    python process_and_generate_online_plots.py --model grok --plot-only
 
-5. Custom configuration with overrides:
+6. Custom configuration with overrides:
    python process_and_generate_online_plots.py \
      --model grok \
      --data-dir /path/to/data \
@@ -52,10 +55,10 @@ USAGE EXAMPLES:
      --mode-filter aiter \
      --split-request-rates
 
-6. Process DeepSeek data with split request rate plots:
+7. Process DeepSeek-V3 data with split request rate plots:
    python process_and_generate_online_plots.py \
-     --model deepseek \
-     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3-0324 \
+     --model DeepSeek-V3 \
+     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3 \
      --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
      --mode-filter aiter \
      --split-request-rates
@@ -84,12 +87,13 @@ INPUT DATA FORMAT:
 
 OUTPUT:
 - Summary CSV: {output_prefix}_{mode_filter}_summary.csv
-- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_DeepSeek-V3-0324_online.png)
+- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_DeepSeek_online.png)
 """
 
 import argparse  # For command-line argument parsing
 import os
 import re  # Import re for regular expressions
+import socket  # For hostname detection
 from collections import defaultdict  # For cleaner dictionary handling
 from datetime import datetime, timedelta
 
@@ -134,9 +138,14 @@ class OnlineDataProcessor:
             for i in range(0, days)
         ]
 
-        # Compile regex pattern for KV cache info parsing (used repeatedly)
+        # Compile regex patterns for KV cache info parsing (used repeatedly)
         # Updated to handle format: "KV size: 63.62 GB" instead of separate K and V sizes
-        self.kv_cache_pattern = re.compile(r"#tokens: (\d+), KV size: ([\d\.]+) GB")
+        self.kv_cache_pattern_combined = re.compile(
+            r"#tokens: (\d+), KV size: ([\d\.]+) GB"
+        )
+        self.kv_cache_pattern_separate = re.compile(
+            r"#tokens: (\d+), K size: ([\d\.]+) GB, V size: ([\d\.]+) GB"
+        )
 
         # Expected request rates for complete data
         if expected_rates is None:
@@ -156,6 +165,17 @@ class OnlineDataProcessor:
             raise ValueError(
                 f"Invalid mode_filter: {mode_filter}. Must be 'all', a string mode name, or a list of mode names."
             )
+
+        # Get hostname for node identification
+        self.hostname = self._get_hostname()
+
+    def _get_hostname(self):
+        """Get the hostname for node identification."""
+        try:
+            hostname = socket.gethostname()
+            return hostname if hostname else "unknown"
+        except Exception:
+            return "unknown"
 
     def _should_process_mode(self, mode):
         """Check if a mode should be processed based on the filter."""
@@ -181,23 +201,37 @@ class OnlineDataProcessor:
                 with open(log_path, "r") as f:
                     for line in f:
                         if "KV Cache is allocated." in line and "#tokens:" in line:
-                            match = self.kv_cache_pattern.search(line)
+                            # Try combined format first: "KV size: 63.62 GB"
+                            match = self.kv_cache_pattern_combined.search(line)
                             if match:
                                 try:
                                     num_tokens = int(match.group(1))
                                     kv_size_gb = float(match.group(2))
-                                    return (
-                                        num_tokens,
-                                        kv_size_gb,
-                                    )  # Found values, return early
+                                    return (num_tokens, kv_size_gb)
                                 except ValueError:
                                     print(
                                         f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}"
                                     )
                             else:
-                                print(
-                                    f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}"
-                                )
+                                # Try separate format: "K size: 70.03 GB, V size: 70.03 GB"
+                                match = self.kv_cache_pattern_separate.search(line)
+                                if match:
+                                    try:
+                                        num_tokens = int(match.group(1))
+                                        k_size_gb = float(match.group(2))
+                                        v_size_gb = float(match.group(3))
+                                        kv_size_gb = (
+                                            k_size_gb + v_size_gb
+                                        )  # Total KV size
+                                        return (num_tokens, kv_size_gb)
+                                    except ValueError:
+                                        print(
+                                            f"Warning: Could not parse KV cache info from line: {line.strip()} in {log_path}"
+                                        )
+                                else:
+                                    print(
+                                        f"Warning: Found KV Cache allocation line but failed to parse: {line.strip()} in {log_path}"
+                                    )
             except Exception as e:
                 print(f"Error reading server log {log_path}: {e}")
 
@@ -260,7 +294,7 @@ class OnlineDataProcessor:
                     # Fallback: extract mode from filename pattern
                     parts = log_file.replace(".log", "").split("_")
                     if len(parts) > 0:
-                        # For files like "sglang_client_log_DeepSeek-V3-0324_gsm8k.log"
+                        # For files like "sglang_client_log_DeepSeek_gsm8k.log"
                         # where there's no explicit mode, we need to determine it differently
                         last_part = parts[-1]
                         if last_part == "gsm8k":
@@ -399,7 +433,7 @@ class OnlineDataProcessor:
                     # Format can be:
                     # - MI300x-aiter, node_name\t...
                     # - MI300x-triton, node_name\t...
-                    # - DeepSeek-V3-0324-FP8\t... (no mode specified, assume default)
+                    # - DeepSeek-FP8\t... (no mode specified, assume default)
                     parts = line.split("\t")
                     if len(parts) > 1:
                         first_part = parts[0]
@@ -542,6 +576,7 @@ class OnlineDataProcessor:
                 "date": date_str,
                 "mode": mode,
                 self.load_metric_name: rate,
+                "node_name": self.hostname,
                 "GSM8K_Accuracy": gsm8k_acc,
                 "E2E_Latency_ms": metrics.get("E2E_Latency_ms", pd.NA),
                 "TTFT_ms": metrics.get("TTFT_ms", pd.NA),
@@ -649,7 +684,7 @@ class OnlineDataProcessor:
     def filter_complete_dates(self):
         """
         Filters records to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
-        Valid data means at least one performance metric (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        Valid data means ALL performance metrics (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) are not NA.
         """
         if not self.all_records:
             return
@@ -704,19 +739,19 @@ class OnlineDataProcessor:
                         )
                         break
 
-                    # Check if at least one performance metric has valid data
-                    has_valid_data = False
+                    # Check if ALL performance metrics have valid data
+                    has_valid_data = True
                     for metric in metric_columns:
-                        if metric in rr_df.columns and not pd.isna(
+                        if metric not in rr_df.columns or pd.isna(
                             rr_df[metric].iloc[0]
                         ):
-                            has_valid_data = True
+                            has_valid_data = False
                             break
 
                     if not has_valid_data:
                         is_complete = False
                         print(
-                            f"Date {date}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: No valid performance metrics (all NA)"
+                            f"Date {date}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
                         )
                         break
 
@@ -779,7 +814,8 @@ class OnlineDataProcessor:
             mode_suffix = "_all"
 
         output_file = os.path.join(
-            self.data_dir, f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
+            self.data_dir,
+            f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv",
         )
         try:
             # Ensure the directory exists
@@ -830,9 +866,7 @@ class OnlineDataProcessor:
             except Exception as chmod_e:
                 print(f"Could not make directory writable: {chmod_e}")
                 # Fall back to current directory if making writable fails
-                fallback_output_file = (
-                    f"{self.output_model_name_prefix}{mode_suffix}_summary.csv"
-                )
+                fallback_output_file = f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv"
                 try:
                     summary_df.to_csv(fallback_output_file, index=False)
                     print(f"Permission denied for {output_file}")
@@ -1038,7 +1072,7 @@ class OnlineGraphPlotter:
     def filter_complete_dates(self):
         """
         Filters dataframe to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
-        Valid data means at least one performance metric (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) is not NA.
+        Valid data means ALL performance metrics (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) are not NA.
         """
         if self.df.empty:
             return
@@ -1090,17 +1124,20 @@ class OnlineGraphPlotter:
                         )
                         break
 
-                    # Check if at least one performance metric has valid data
-                    has_valid_data = False
+                    # Check if ALL performance metrics have valid data
+                    has_valid_data = True
                     for metric in metric_columns:
-                        if metric in rr_df.columns and rr_df[metric].notna().any():
-                            has_valid_data = True
+                        if (
+                            metric not in rr_df.columns
+                            or not rr_df[metric].notna().any()
+                        ):
+                            has_valid_data = False
                             break
 
                     if not has_valid_data:
                         is_complete = False
                         print(
-                            f"Date {date.strftime('%Y%m%d')}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: No valid performance metrics (all NA)"
+                            f"Date {date.strftime('%Y%m%d')}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
                         )
                         break
 
@@ -1777,13 +1814,22 @@ def main():
             "load_metric_name": "request_rate",
         },
         "deepseek": {
-            "variant_name": "DeepSeek-V3-0324",
+            "variant_name": "DeepSeek-V3",
+            "output_prefix_template": "{variant_name}_FP8_online",
+            "model_name_template": "{variant_name} FP8 Online",
+            "expected_rates": [1, 4, 16, 64, 128],
+            "load_metric_name": "concurrency",
+        },
+        "DeepSeek-V3": {
+            "variant_name": "DeepSeek-V3",
             "output_prefix_template": "{variant_name}_FP8_online",
             "model_name_template": "{variant_name} FP8 Online",
             "expected_rates": [1, 4, 16, 64, 128],
             "load_metric_name": "concurrency",
         },
     }
+
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
     parser = argparse.ArgumentParser(
         description="Process online benchmark CSV files and generate plots",
@@ -1797,10 +1843,16 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek'.",
+        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
+    parser.add_argument(
+        "--base-dir",
+        type=str,
+        default=DEFAULT_BASE_DIR,
+        help="Base directory for default paths (can be overridden by specific path arguments).",
+    )
     parser.add_argument(
         "--data-dir", type=str, default=None, help="Override data directory path."
     )
@@ -1867,16 +1919,22 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
+    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
     if args.data_dir is None:
-        args.data_dir = f"/mnt/raid/michael/sgl_benchmark_ci/online/{variant_name}"
+        args.data_dir = os.path.join(args.base_dir, "online", directory_name)
     if args.output_prefix is None:
         args.output_prefix = config["output_prefix_template"].format(
             variant_name=variant_name
         )
     if args.plot_dir is None:
-        args.plot_dir = (
-            f"/mnt/raid/michael/sgl_benchmark_ci/plots_server/{variant_name}/online"
+        args.plot_dir = os.path.join(
+            args.base_dir, "plots_server", directory_name, "online"
         )
+    elif not args.plot_dir.endswith(("online", "offline")):
+        # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
+        # append the model-specific subdirectory structure for consistency
+        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        args.plot_dir = os.path.join(args.plot_dir, directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name
@@ -1957,8 +2015,15 @@ def main():
                 else:
                     mode_suffix = "_all"
 
+                # Get hostname for consistent naming with processor output
+                try:
+                    hostname = socket.gethostname()
+                except Exception:
+                    hostname = "unknown"
+
                 summary_csv_path = os.path.join(
-                    args.data_dir, f"{args.output_prefix}{mode_suffix}_summary.csv"
+                    args.data_dir,
+                    f"{args.output_prefix}{mode_suffix}_summary_{hostname}.csv",
                 )
 
         if not summary_csv_path or not os.path.exists(summary_csv_path):

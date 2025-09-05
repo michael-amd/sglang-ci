@@ -5,7 +5,7 @@
 #
 # USAGE:
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash grok_perf_online_csv.sh --model=/path/to/model
+#   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--g
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
-DEFAULT_NODE="${DEFAULT_NODE_NAME:-dell300x-pla-t10-23}"
+# Node name will be read from hostname
 DEFAULT_THRESHOLD="${DEFAULT_GSM8K_THRESHOLD:-0.8}"
 
 # Container configuration
@@ -63,8 +63,8 @@ TOKENIZER=""
 WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
-NODE=""
 THRESHOLD=""
+CURRENT_DIR=""  # New parameter for current/script directory
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -76,52 +76,51 @@ for arg in "$@"; do
   case $arg in
     --docker_image=*|--docker-image=*)
       docker_image="${arg#*=}"
-      shift
       ;;
-    --model=*)
+    --model=*|--model-path=*)
       MODEL="${arg#*=}"
-      shift
       ;;
     --tokenizer=*)
       TOKENIZER="${arg#*=}"
-      shift
       ;;
     --work-dir=*)
       WORK_DIR="${arg#*=}"
-      shift
       ;;
     --output-dir=*)
       OUTPUT_DIR="${arg#*=}"
-      shift
       ;;
     --gsm8k-script=*)
       GSM8K_SCRIPT="${arg#*=}"
-      shift
-      ;;
-    --node=*)
-      NODE="${arg#*=}"
-      shift
       ;;
     --threshold=*)
       THRESHOLD="${arg#*=}"
-      shift
+      ;;
+    --current-dir=*)
+      CURRENT_DIR="${arg#*=}"
       ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
       echo "  --docker_image=IMAGE    Docker image to use (default: $DEFAULT_IMAGE)"
       echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --model-path=PATH      Model path (alias for --model)"
       echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
-      echo "  --node=NAME            Node name for reporting (default: $DEFAULT_NODE)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
+      echo "  --current-dir=PATH     Current directory to use for script resolution and work dir override"
       echo "  --help                 Show this help message"
       exit 0
       ;;
   esac
 done
+
+# Override script path if current directory is provided
+if [[ -n "${CURRENT_DIR}" ]]; then
+    SCRIPT_PATH="${CURRENT_DIR}/$(basename "$0")"
+    echo "[online] Using current directory for script path: ${SCRIPT_PATH}"
+fi
 
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
@@ -134,10 +133,18 @@ if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}"
 else
     TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
 fi
-WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+
+# Override default work directory if current directory is provided and work_dir is not set
+if [[ -n "${CURRENT_DIR}" && -z "${WORK_DIR:-}" ]]; then
+    WORK_DIR="${CURRENT_DIR}"
+    echo "[online] Using current directory as work directory: ${WORK_DIR}"
+else
+    WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
+fi
+
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
-NODE="${NODE:-$DEFAULT_NODE}"
+NODE="$(hostname)"  # Get node name from hostname
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
 docker_image="${docker_image:-${1:-$DEFAULT_IMAGE}}"
@@ -264,17 +271,17 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
 
+    # Build arguments to pass to the container
+    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --threshold=\"${THRESHOLD}\""
+
+    # Add current directory if it was provided
+    if [[ -n "${CURRENT_DIR}" ]]; then
+      CONTAINER_ARGS="${CONTAINER_ARGS} --current-dir=\"${CURRENT_DIR}\""
+    fi
+
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash "${SCRIPT_PATH}" \
-           --docker_image="${FULL_IMAGE}" \
-           --model="${MODEL}" \
-           --tokenizer="${TOKENIZER}" \
-           --work-dir="${WORK_DIR}" \
-           --output-dir="${OUTPUT_DIR}" \
-           --gsm8k-script="${GSM8K_SCRIPT}" \
-           --node="${NODE}" \
-           --threshold="${THRESHOLD}"
+      bash "${SCRIPT_PATH}" ${CONTAINER_ARGS}
     exit 0
   fi
 fi
@@ -450,16 +457,23 @@ run_single_rate_benchmark() {
 
     echo "Processing request rate ${RATE} for mode ${mode}..."
     for i in {1..3}; do
-        # Check if log already exists using glob pattern
+        # Check if log already exists and is complete using glob pattern
         existing_log=""
         for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log; do
             if [[ -f "$log_file" ]]; then
-                existing_log="$log_file"
-                break
+                # Check if the run actually completed by looking for "Run completed at:" in the log
+                if grep -q "Run completed at:" "$log_file"; then
+                    existing_log="$log_file"
+                    break
+                else
+                    echo "Found incomplete log file: $log_file (missing 'Run completed at:' marker)"
+                    echo "Removing incomplete log and re-running..."
+                    rm -f "$log_file"
+                fi
             fi
         done
         if [ -n "$existing_log" ]; then
-            echo "Log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
+            echo "Complete log for mode ${mode}, rate ${RATE}, run ${i} already exists. Skipping."
             # Update progress even for skipped runs
             update_progress "$RATE" "$i"
             continue
@@ -493,10 +507,26 @@ run_single_rate_benchmark() {
         # Update progress after each run completes
         update_progress "$RATE" "$i"
 
-        # Add 10 second sleep between runs to avoid memory access faults (except after the last run)
+        # Add sleep between runs to avoid memory access faults (except after the last run)
         if [ "$i" -lt 3 ]; then
-            echo "Sleeping 10 seconds between runs to avoid memory access faults..."
-            sleep 10
+            # Special handling for rate 16 - needs longer recovery time and memory cleanup
+            if [ "$RATE" -eq 16 ]; then
+                echo "Rate 16 detected - sleeping 20 seconds and clearing memory before next run..."
+                sleep 20
+
+                # Clear GPU memory cache and force garbage collection
+                echo "Clearing GPU memory cache..."
+                if command -v curl &> /dev/null; then
+                    # Try to clear server cache if possible
+                    curl -s -X POST "http://0.0.0.0:30000/flush_cache" >/dev/null 2>&1 || true
+                fi
+
+                # Force Python garbage collection on next server request
+                echo "Memory cleanup completed"
+            else
+                echo "Sleeping 10 seconds between runs to avoid memory access faults..."
+                sleep 10
+            fi
         fi
     done
 
@@ -542,6 +572,74 @@ get_best_metrics() {
         [ -z "$best_ttft" ] && best_ttft="NA"
         [ -z "$best_itl" ] && best_itl="NA"
         echo "$best_e2e $best_ttft $best_itl"
+    fi
+}
+
+# Function to check if all benchmark runs and GSM8K test are complete
+check_all_logs_complete() {
+    echo "Scanning existing logs to check if all benchmarks are already complete..."
+    local all_complete=true
+    local gsm8k_complete=true
+
+    # 1. Check GSM8K log completion
+    echo "Checking GSM8K log status..."
+    local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${ATTENTION_BACKEND}.log"
+    if [ ! -f "$gsm8k_log" ]; then
+        echo "Missing: GSM8K log file ($gsm8k_log)"
+        gsm8k_complete=false
+    elif [ ! -s "$gsm8k_log" ]; then
+        echo "Empty: GSM8K log file ($gsm8k_log)"
+        gsm8k_complete=false
+    else
+        # Check if GSM8K test completed successfully
+        if grep -q "Average Accuracy over $GSM8K_RUNS runs for mode ${ATTENTION_BACKEND}" "$gsm8k_log" && \
+           grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
+            echo "✅ GSM8K log file is complete."
+        else
+            echo "Incomplete: GSM8K log file missing final summary ($gsm8k_log)"
+            gsm8k_complete=false
+        fi
+    fi
+
+    # 2. Check client benchmark logs completion
+    echo "Checking client benchmark logs..."
+    local expected_runs_per_rate=3
+    local total_expected_logs=$((${#REQ_RATES[@]} * expected_runs_per_rate))
+    local actual_completed_logs=0
+
+    for rate in "${REQ_RATES[@]}"; do
+        for i in $(seq 1 $expected_runs_per_rate); do
+            local log_found=false
+            for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${ATTENTION_BACKEND}_${rate}_run${i}"_*.log; do
+                if [ -f "$log_file" ] && grep -q "Run completed at:" "$log_file"; then
+                    log_found=true
+                    break
+                fi
+            done
+            if [ "$log_found" = true ]; then
+                actual_completed_logs=$((actual_completed_logs + 1))
+            fi
+        done
+    done
+
+    echo "Scan complete: ${actual_completed_logs}/${total_expected_logs} client benchmark runs are complete."
+
+    if [ "$actual_completed_logs" -lt "$total_expected_logs" ]; then
+        all_complete=false
+    fi
+
+    if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
+        echo "✅ All benchmark logs (client + GSM8K) are present and complete! No server startup needed."
+        return 0 # Success
+    else
+        if [ "$all_complete" = false ]; then
+            echo "❌ Missing or incomplete client benchmark runs."
+        fi
+        if [ "$gsm8k_complete" = false ]; then
+            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
+        fi
+        echo "Server startup required."
+        return 1 # Failure
     fi
 }
 
@@ -773,16 +871,32 @@ run_client_benchmark() {
 # ---------------------------
 # 7. Run Benchmarks for Each Mode
 # ---------------------------
-echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
-launch_server
+ATTENTION_BACKEND="aiter" # Set backend before log check
 
-if run_client_gsm8k "${ATTENTION_BACKEND}"; then
-    run_client_benchmark "${ATTENTION_BACKEND}"
+if check_all_logs_complete; then
+    echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
+    echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
+
+    # Initialize and populate CSV from existing logs
+    init_csv
+    for rate in "${REQ_RATES[@]}"; do
+        update_csv_for_rate "$rate"
+    done
+
+    echo "✅ CSV generated from existing logs successfully."
+
 else
-    echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
-fi
+    echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
+    launch_server
 
-shutdown_server
+    if run_client_gsm8k "${ATTENTION_BACKEND}"; then
+        run_client_benchmark "${ATTENTION_BACKEND}"
+    else
+        echo "Skipping benchmarks for ${ATTENTION_BACKEND} backend due to low GSM8K accuracy."
+    fi
+
+    shutdown_server
+fi
 
 # ---------------------------
 # 8. Parse Logs and Generate CSV Summary (with Ratio Rows)
