@@ -1919,7 +1919,14 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
-    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+    if args.model == "DeepSeek-V3":
+        directory_name = "DeepSeek-V3"
+    elif args.model == "deepseek":
+        directory_name = (
+            "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
+        )
+    else:
+        directory_name = variant_name
     if args.data_dir is None:
         args.data_dir = os.path.join(args.base_dir, "online", directory_name)
     if args.output_prefix is None:
@@ -1933,8 +1940,13 @@ def main():
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
-        args.plot_dir = os.path.join(args.plot_dir, directory_name, "online")
+        if args.model == "DeepSeek-V3":
+            plot_directory_name = "DeepSeek-V3"
+        elif args.model == "deepseek":
+            plot_directory_name = "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
+        else:
+            plot_directory_name = variant_name
+        args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name

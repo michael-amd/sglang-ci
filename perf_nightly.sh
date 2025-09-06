@@ -41,6 +41,7 @@
 #   --teams-webhook-url=URL  Enable Teams notifications with webhook URL
 #   --teams-skip-analysis    Skip GSM8K accuracy and performance analysis
 #   --teams-analysis-days=N  Days to look back for performance comparison [default: 7]
+#   --check-dp-attention     Enable DP attention mode error checking (for DeepSeek)
 #   --help, -h           Show detailed help message
 #
 # EXAMPLES:
@@ -372,6 +373,12 @@ send_teams_notification() {
     echo "[nightly] Including intelligent analysis (${TEAMS_ANALYSIS_DAYS} days lookback)"
   fi
 
+  # Add DP attention flag for DeepSeek online mode
+  if [[ "$CHECK_DP_ATTENTION" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --check-dp-attention"
+    echo "[nightly] Adding --check-dp-attention flag for Teams notification"
+  fi
+
   "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
     -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
@@ -423,6 +430,7 @@ MODE="all" # Default to run both offline and online
 MODEL="grok" # Default to grok
 CLI_TEAMS_WEBHOOK_URL="" # Teams webhook URL from command line
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
+CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
@@ -460,6 +468,9 @@ for arg in "$@"; do
     --teams-analysis-days=*)
       TEAMS_ANALYSIS_DAYS="${arg#*=}"
       ;;
+    --check-dp-attention)
+      CLI_CHECK_DP_ATTENTION="true"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
@@ -476,6 +487,7 @@ for arg in "$@"; do
       echo "  --teams-webhook-url=URL          Teams webhook URL to enable notifications [default: disabled]"
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
+      echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
@@ -490,6 +502,7 @@ for arg in "$@"; do
       echo "  $0 --model=deepseek --work-dir=/home/user/workspace --download-model=deepseek-ai/DeepSeek-V3  # Download to work-dir/models/"
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
       echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
+      echo "  $0 --model=deepseek --mode=online --check-dp-attention  # DeepSeek online with DP attention error checking"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -519,6 +532,13 @@ fi
 if [[ -n "$CLI_TEAMS_SKIP_ANALYSIS" ]]; then
   TEAMS_SKIP_ANALYSIS="$CLI_TEAMS_SKIP_ANALYSIS"
   echo "[nightly] Teams analysis disabled via command line"
+fi
+
+# Process DP attention flag
+CHECK_DP_ATTENTION="false"  # Default to false
+if [[ -n "$CLI_CHECK_DP_ATTENTION" ]]; then
+  CHECK_DP_ATTENTION="$CLI_CHECK_DP_ATTENTION"
+  echo "[nightly] DP attention mode enabled via command line"
 fi
 
 # Override work directory and model path if provided via command line
@@ -963,6 +983,12 @@ if [[ "$all_modes_complete" != "true" ]]; then
 
   if [[ "$MODEL" == "deepseek" ]]; then
     # For DeepSeek, pass additional parameters if needed
+    # Add --check-dp-attention flag if enabled and running online mode
+    if [[ "$CHECK_DP_ATTENTION" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
+      echo "[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark"
+    fi
+
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${SELECTED_TAG}" \

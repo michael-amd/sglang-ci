@@ -5,8 +5,14 @@
 # Online-throughput benchmark for DeepSeek on TP=8 MI300x using GSM8K.
 #
 # USAGE:
+#   # Standard benchmarking with GSM8K + serving benchmarks:
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250718
+#
+#   # Data Parallel attention mode (GSM8K only):
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+#
+#   # Custom model and paths:
 #   bash deepseek_perf_online_csv.sh --model-path=/raid/deepseek-v3 --model-name=DeepSeek-V3-0324
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
@@ -102,6 +108,7 @@ OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
 DOWNLOAD_MODEL="false"
+CHECK_DP_ATTENTION="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -138,6 +145,9 @@ for arg in "$@"; do
     --download-model)
       DOWNLOAD_MODEL="true"
       ;;
+    --check-dp-attention)
+      CHECK_DP_ATTENTION="true"
+      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -151,6 +161,7 @@ for arg in "$@"; do
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --download-model       Download model if not present (default: false)"
+      echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
       echo "  --help                 Show this help message"
       echo ""
       echo "Environment Variables:"
@@ -229,7 +240,8 @@ manage_container() {
                 --output-dir="${OUTPUT_DIR}" \
                 --gsm8k-script="${GSM8K_SCRIPT}" \
                 --threshold="${THRESHOLD}" \
-                $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model")
+                $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
+                $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention")
         exit 0
     fi
 }
@@ -510,28 +522,86 @@ get_sglang_env_var() {
 # - Memory fraction and request limits
 # - Proper port and trust settings
 start_sglang_server() {
-    local aiter_env_var=$(get_sglang_env_var)
-    echo "[DEBUG] Using environment variable: ${aiter_env_var}"
+    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        echo "[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1"
 
-    # Start server in background using the online command format
-    env ${aiter_env_var}=1 python3 -m sglang.launch_server \
-        --model-path "${MODEL}" \
-        --tp-size "${TP}" \
-        --port "$GSM8K_PORT" \
-        --trust-remote-code \
-        --mem-fraction-static "$SERVER_MEM_FRACTION" \
-        --max-running-requests "$SERVER_MAX_REQUESTS" > "$SERVER_LOG_FILE" 2>&1 &
+        # Start server in background using DP attention command format
+        env SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
+            --model-path "${MODEL}" \
+            --tp "${TP}" \
+            --port "$GSM8K_PORT" \
+            --trust-remote-code \
+            --chunked-prefill-size 131072 \
+            --dp-size 8 \
+            --enable-dp-attention > "$SERVER_LOG_FILE" 2>&1 &
+    else
+        local aiter_env_var=$(get_sglang_env_var)
+        echo "[DEBUG] Using standard settings with environment variable: ${aiter_env_var}"
+
+        # Start server in background using the standard command format
+        env ${aiter_env_var}=1 python3 -m sglang.launch_server \
+            --model-path "${MODEL}" \
+            --tp-size "${TP}" \
+            --port "$GSM8K_PORT" \
+            --trust-remote-code \
+            --mem-fraction-static "$SERVER_MEM_FRACTION" \
+            --max-running-requests "$SERVER_MAX_REQUESTS" > "$SERVER_LOG_FILE" 2>&1 &
+    fi
+
     echo $! > "$SERVER_PID_FILE"
     SERVER_PID=$(cat "$SERVER_PID_FILE")
 
     echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
     echo "Server logs are being written to: $SERVER_LOG_FILE"
 
-    # Wait for server to be ready - poll health check endpoint
+    # Wait for server to be ready - poll health check endpoint and monitor for errors
     local startup_start_time=$(date +%s)
-    if ! timeout "${SERVER_TIMEOUT}s" bash -c "until curl -s -f ${GSM8K_HOST}:${GSM8K_PORT}${HEALTH_CHECK_ENDPOINT} > /dev/null 2>&1; do echo -n '.'; sleep ${HEALTH_CHECK_INTERVAL}; done"; then
+    local check_count=0
+    local max_checks=$((SERVER_TIMEOUT / HEALTH_CHECK_INTERVAL))
+
+    while [ $check_count -lt $max_checks ]; do
+        # Check if server process is still running
+        if ! ps -p $SERVER_PID > /dev/null 2>&1; then
+            echo "" # Newline after dots
+            echo "SGLang server process (PID: $SERVER_PID) has terminated unexpectedly!"
+            echo "Check $SERVER_LOG_FILE for error details:"
+            if [ -f "$SERVER_LOG_FILE" ]; then
+                echo "--- Last 20 lines of server log ---"
+                tail -20 "$SERVER_LOG_FILE"
+                echo "--- End of server log ---"
+            fi
+            exit 1
+        fi
+
+        # Check for critical errors in server log
+        if [ -f "$SERVER_LOG_FILE" ] && tail -n 100 "$SERVER_LOG_FILE" | grep -q -E "(RuntimeError|CUDA error|OutOfMemoryError|AssertionError|Fatal|Traceback.*Error)"; then
+            echo "" # Newline after dots
+            echo "SGLang server encountered critical errors during startup!"
+            echo "Critical errors found in $SERVER_LOG_FILE:"
+            echo "--- Error details ---"
+            tail -n 100 "$SERVER_LOG_FILE" | grep -A 3 -B 3 -E "(RuntimeError|CUDA error|OutOfMemoryError|AssertionError|Fatal|Traceback.*Error)" | tail -20
+            echo "--- End of error details ---"
+            echo "Killing server process and exiting..."
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+        fi
+
+        # Check if health endpoint is available
+        if curl -s -f "${GSM8K_HOST}:${GSM8K_PORT}${HEALTH_CHECK_ENDPOINT}" > /dev/null 2>&1; then
+            break
+        fi
+
+        echo -n '.'
+        sleep ${HEALTH_CHECK_INTERVAL}
+        check_count=$((check_count + 1))
+    done
+
+    # Final check - if we've reached max checks without success
+    if [ $check_count -ge $max_checks ]; then
         echo "" # Newline after dots
-        echo "SGLang server failed to start in time. Check $SERVER_LOG_FILE for details. Killing server (if any) and exiting."
+        echo "SGLang server failed to start in time (${SERVER_TIMEOUT} seconds timeout reached)."
+        echo "Check $SERVER_LOG_FILE for details. Killing server (if any) and exiting."
+        kill $SERVER_PID 2>/dev/null || true
         exit 1
     fi
     local startup_end_time=$(date +%s)
@@ -545,9 +615,15 @@ start_sglang_server() {
 SCRIPT_START_TIME=$(date +%s)
 echo "[online] Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
-folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+# Add _dp_attention suffix to folder name when in DP attention mode
+if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+    folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online_dp_attention"
+    OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online_dp_attention.csv"
+else
+    folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
+    OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online.csv"
+fi
 mkdir -p "$folder" || { echo "ERROR: Cannot create output folder ${folder}"; exit 1; }
-OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online.csv"
 SERVER_LOG_FILE="${folder}/sglang_server.log" # Define server log path
 GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
 
@@ -742,8 +818,12 @@ get_best_metrics() {
 # 6. Serving Benchmark with Different Concurrency Levels
 ###############################################################################
 
-# Setup serving benchmark CSV
-SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
+# Setup serving benchmark CSV with appropriate naming
+if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+    SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving_dp_attention.csv"
+else
+    SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
+fi
 
 # Global arrays for storing metrics per concurrency
 declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics
@@ -761,11 +841,22 @@ CURRENT_RUN=0
 # Function to calculate total number of runs
 calculate_total_runs() {
     local gsm8k_runs=$GSM8K_RUNS
-    local concurrency_levels
-    read -ra concurrency_levels <<< "$BENCHMARK_CONCURRENCY_LEVELS"
-    local serving_runs=$((${#concurrency_levels[@]} * BENCHMARK_RUNS_PER_CONCURRENCY))
+    local serving_runs=0
+
+    # Only count serving runs if not in DP attention mode
+    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+        local concurrency_levels
+        read -ra concurrency_levels <<< "$BENCHMARK_CONCURRENCY_LEVELS"
+        serving_runs=$((${#concurrency_levels[@]} * BENCHMARK_RUNS_PER_CONCURRENCY))
+    fi
+
     TOTAL_RUNS=$((gsm8k_runs + serving_runs))
-    echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs})"
+
+    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K only - DP attention mode)"
+    else
+        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs})"
+    fi
 }
 
 # Function to display progress bar
@@ -1049,47 +1140,68 @@ check_all_logs_complete() {
         fi
     fi
 
-    # Check serving benchmark logs
-    echo "Checking serving benchmark logs..."
-    for concurrency in "${concurrency_values[@]}"; do
-        for run_number in $(seq 1 "$BENCHMARK_RUNS_PER_CONCURRENCY"); do
-            total_runs=$((total_runs + 1))
-            local log_found=false
+    # Check serving benchmark logs only if not in DP attention mode
+    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+        echo "Checking serving benchmark logs..."
+        for concurrency in "${concurrency_values[@]}"; do
+            for run_number in $(seq 1 "$BENCHMARK_RUNS_PER_CONCURRENCY"); do
+                total_runs=$((total_runs + 1))
+                local log_found=false
 
-            # Check if log already exists and completed successfully using glob pattern
-            for log_file in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run${run_number}"_*.log; do
-                if [[ -f "$log_file" ]]; then
-                    # Check if the run completed successfully by looking for completion marker
-                    if grep -q "Run completed at:" "$log_file"; then
-                        log_found=true
-                        break
-                    else
-                        echo "Found incomplete log: $log_file"
+                # Check if log already exists and completed successfully using glob pattern
+                for log_file in "${folder}/sglang_serving_benchmark_concurrency_${concurrency}_run${run_number}"_*.log; do
+                    if [[ -f "$log_file" ]]; then
+                        # Check if the run completed successfully by looking for completion marker
+                        if grep -q "Run completed at:" "$log_file"; then
+                            log_found=true
+                            break
+                        else
+                            echo "Found incomplete log: $log_file"
+                        fi
                     fi
+                done
+
+                if [ "$log_found" = false ]; then
+                    echo "Missing: Concurrency ${concurrency}, Run ${run_number}"
+                    all_complete=false
+                    missing_runs=$((missing_runs + 1))
                 fi
             done
-
-            if [ "$log_found" = false ]; then
-                echo "Missing: Concurrency ${concurrency}, Run ${run_number}"
-                all_complete=false
-                missing_runs=$((missing_runs + 1))
-            fi
         done
-    done
+    else
+        echo "DP attention mode - skipping serving benchmark log checks (GSM8K only)"
+    fi
 
     echo "Scan complete: ${total_runs} total runs needed, ${missing_runs} missing/incomplete"
 
-    # All benchmarks are complete only if both serving logs AND GSM8K logs (if required) are complete
-    if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
-        echo "✅ All benchmark logs (serving + GSM8K) are present and complete! No server startup needed."
-        return 0
-    else
-        if [ "$all_complete" = false ]; then
-            echo "❌ Missing ${missing_runs} serving benchmark runs."
-        fi
-        if [ "$gsm8k_complete" = false ]; then
+    # All benchmarks are complete based on the mode
+    local benchmarks_complete=false
+    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        # In DP attention mode, only GSM8K needs to be complete
+        if [ "$gsm8k_complete" = true ]; then
+            benchmarks_complete=true
+            echo "✅ All benchmark logs (GSM8K only - DP attention mode) are present and complete! No server startup needed."
+        else
             echo "❌ GSM8K benchmark is missing, empty, or incomplete."
         fi
+    else
+        # In standard mode, both serving and GSM8K logs need to be complete
+        if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
+            benchmarks_complete=true
+            echo "✅ All benchmark logs (serving + GSM8K) are present and complete! No server startup needed."
+        else
+            if [ "$all_complete" = false ]; then
+                echo "❌ Missing ${missing_runs} serving benchmark runs."
+            fi
+            if [ "$gsm8k_complete" = false ]; then
+                echo "❌ GSM8K benchmark is missing, empty, or incomplete."
+            fi
+        fi
+    fi
+
+    if [ "$benchmarks_complete" = true ]; then
+        return 0
+    else
         echo "Server startup required."
         return 1
     fi
@@ -1100,18 +1212,23 @@ if check_all_logs_complete; then
     echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
     echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
 
-    # Initialize the structured CSV
-    init_serving_csv
+    # Only generate serving CSV if not in DP attention mode
+    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+        # Initialize the structured CSV
+        init_serving_csv
 
-    # Extract metrics from existing logs and update CSV
-    for concurrency in "${concurrency_values[@]}"; do
-        echo "Extracting metrics for concurrency ${concurrency} from existing logs..."
-        update_serving_csv_for_concurrency "$concurrency"
-    done
+        # Extract metrics from existing logs and update CSV
+        for concurrency in "${concurrency_values[@]}"; do
+            echo "Extracting metrics for concurrency ${concurrency} from existing logs..."
+            update_serving_csv_for_concurrency "$concurrency"
+        done
 
-    echo "✅ CSV generated from existing logs successfully."
-    echo "Serving benchmark results written to ${SERVING_CSV}"
-    echo "Note: Both GSM8K and serving benchmarks were already complete"
+        echo "✅ CSV generated from existing logs successfully."
+        echo "Serving benchmark results written to ${SERVING_CSV}"
+        echo "Note: Both GSM8K and serving benchmarks were already complete"
+    else
+        echo "✅ GSM8K logs already complete (DP attention mode - no serving benchmarks)."
+    fi
 
     serving_start_time=$(date +%s)
     serving_end_time=$(date +%s)
@@ -1158,8 +1275,21 @@ else
         exit 1
     fi
 
-    echo "Starting serving benchmark tests with different concurrency levels..."
-    serving_start_time=$(date +%s)
+    # Skip serving benchmarks if in DP attention mode (GSM8K only)
+    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        echo "✅ DP attention mode enabled - skipping serving benchmarks (GSM8K only mode)"
+        echo "GSM8K benchmark completed. Serving benchmarks skipped in DP attention mode." >> "$TIMING_LOG"
+
+        # Set serving duration to 0 since we're skipping
+        serving_start_time=$(date +%s)
+        serving_end_time=$(date +%s)
+        serving_duration=0
+
+        # Jump to cleanup section
+        echo "Proceeding to cleanup..."
+    else
+        echo "Starting serving benchmark tests with different concurrency levels..."
+        serving_start_time=$(date +%s)
 
     # Initialize the structured CSV
     init_serving_csv
@@ -1183,14 +1313,20 @@ else
             sleep 3
         fi
     done
-fi
+    fi  # Close the else part of CHECK_DP_ATTENTION
+fi      # Close the else part of check_all_logs_complete
 
 serving_end_time=$(date +%s)
 serving_duration=$((serving_end_time - serving_start_time))
 
-echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds."
-echo "Structured serving benchmark results written to ${SERVING_CSV}"
-echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
+# Only show serving benchmark completion messages if we actually ran serving benchmarks
+if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+    echo "✅ GSM8K benchmark completed in DP attention mode (serving benchmarks skipped)."
+else
+    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds."
+    echo "Structured serving benchmark results written to ${SERVING_CSV}"
+    echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
+fi
 
 # Log to timing summary
 echo "  End time: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
