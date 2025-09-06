@@ -295,21 +295,28 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
   - `--gsm8k-script=PATH`: Path to the GSM8K benchmark script (configurable via environment variables).
   - `--threshold=VALUE`: The minimum GSM8K accuracy required for the warm-up test to pass (default: `0.93`).
   - `--download-model`: A flag to enable automatic model download if it's not found locally.
+  - `--check-dp-attention`: Enable Data Parallel attention mode - runs GSM8K test only and checks for server errors (skips serving benchmarks).
   - `--help`: Displays the help message with all available options.
 - **Workflow:**
   1. **Container Management:** Automatically manages the Docker container lifecycle, re-invoking itself inside a container if run on a host machine.
   2. **Model Download:** If the `--download-model` flag is present, it uses `huggingface-cli` to download the model.
   3. **Server Launch:** Starts the SGLang server with the specified DeepSeek model and a tensor-parallel size of 8.
+     - **Standard Mode:** Uses standard server configuration for both GSM8K and serving benchmarks.
+     - **DP Attention Mode:** Uses Data Parallel attention settings with `--dp-size 8` and `--enable-dp-attention` flags.
   4. **GSM8K Warm-up Test:** Runs an initial benchmark using the GSM8K script to validate model accuracy against the threshold.
   5. **Serving Benchmark:** Executes a series of load tests using `sglang.bench_serving` across multiple concurrency levels (e.g., 128, 64, 16, 4, 1).
+     - **Note:** In DP attention mode (`--check-dp-attention`), serving benchmarks are skipped and only GSM8K testing is performed with error checking.
 - **Metrics Captured:**
   - **GSM8K Test:** Average accuracy, throughput, and latency.
   - **Serving Test:** For each concurrency level, it captures the best results from multiple runs for Median End-to-End (E2E) Latency, Median Time-To-First-Token (TTFT), and Median Inter-Token Latency (ITL).
 - **Output:**
   A dedicated run folder is created, which includes:
-  - Server logs (`sglang_server.log`) and client logs for both GSM8K and serving benchmarks.
-  - A CSV file summarizing the initial GSM8K test results.
-  - A separate, structured CSV file for the serving benchmark, detailing E2E, TTFT, and ITL metrics against concurrency levels.
+  - **Standard Mode:** Server logs (`sglang_server.log`) and client logs for both GSM8K and serving benchmarks.
+    - A CSV file summarizing the initial GSM8K test results.
+    - A separate, structured CSV file for the serving benchmark, detailing E2E, TTFT, and ITL metrics against concurrency levels.
+  - **DP Attention Mode:** Folder name includes `_dp_attention` suffix.
+    - Server logs (`sglang_server.log`) with error checking for RuntimeError and critical issues.
+    - GSM8K test results only (serving benchmarks are skipped).
 - **Usage:**
 
   ```bash
@@ -325,7 +332,26 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
     --model=$MODEL_PATH \
     --model-name=DeepSeek-Custom \
     --threshold=0.90
+
+  # DP attention mode - GSM8K test only with error checking
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
+    --check-dp-attention \
+    --model-path=/path-to-deepseek
   ```
+
+**DP Attention Mode Features:**
+
+The Data Parallel attention mode (`--check-dp-attention`) is a specialized testing mode designed for validation of DP attention functionality:
+
+- **Purpose:** Validates Data Parallel attention implementation with error detection
+- **Server Configuration:**
+  - Uses `SGLANG_USE_AITER=1` environment variable
+  - Launches server with `--dp-size 8`, `--enable-dp-attention`, and `--chunked-prefill-size 131072` flags
+- **Testing Scope:** Runs only GSM8K accuracy tests (serving benchmarks are skipped for focused testing)
+- **Error Detection:** Automatically monitors server logs for RuntimeError and critical errors during execution
+- **Output Naming:** Creates output folders with `_dp_attention` suffix for easy identification
+- **Use Cases:** Ideal for validating DP attention functionality, debugging server issues, or running quick accuracy-only tests
 
 ---
 

@@ -9,6 +9,7 @@ to provide actionable alerts about benchmark health.
 USAGE:
     python send_teams_notification.py --model grok --mode online
     python send_teams_notification.py --model deepseek --mode offline
+    python send_teams_notification.py --model deepseek --mode online --check-dp-attention
     python send_teams_notification.py --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --model grok --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
@@ -57,13 +58,16 @@ except ImportError:
 class BenchmarkAnalyzer:
     """Analyze benchmark results for accuracy and performance regressions"""
 
-    def __init__(self, base_dir: Optional[str] = None):
+    def __init__(
+        self, base_dir: Optional[str] = None, check_dp_attention: bool = False
+    ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
         self.base_dir = base_dir or os.getenv(
             "BENCHMARK_BASE_DIR", os.path.expanduser("~/sgl_benchmark_ci")
         )
         self.offline_dir = os.path.join(self.base_dir, "offline")
         self.online_dir = os.path.join(self.base_dir, "online")
+        self.check_dp_attention = check_dp_attention
 
     def parse_gsm8k_accuracy(
         self, model: str, mode: str, date_str: str
@@ -86,12 +90,15 @@ class BenchmarkAnalyzer:
         }
         model_name = model_names.get(model, model.upper())
 
+        # Build mode suffix for DP attention
+        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+
         # Search for GSM8K log files
         search_patterns = [
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}*/gsm8k*.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}*/gsm8k*.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}*/gsm8k*.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}*/gsm8k*.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/gsm8k*.log",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/gsm8k*.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/gsm8k*.log",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/gsm8k*.log",
         ]
 
         for pattern in search_patterns:
@@ -131,6 +138,82 @@ class BenchmarkAnalyzer:
         except ValueError as e:
             print(f"   Warning: Value error while parsing {log_file}: {e}")
         return None
+
+    def check_dp_attention_errors(
+        self, model: str, mode: str, date_str: str
+    ) -> Dict[str, any]:
+        """
+        Check for RuntimeError and other critical errors in DP attention mode logs
+
+        Args:
+            model: Model name (grok, deepseek)
+            mode: Benchmark mode (online, offline)
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Dictionary with error status and details
+        """
+        result = {
+            "status": "pass",  # pass, fail
+            "errors": [],
+            "log_file": None,
+        }
+
+        if not self.check_dp_attention:
+            return result
+
+        model_names = {"grok": "GROK1", "deepseek": "DeepSeek-V3-0324"}
+        model_name = model_names.get(model, model.upper())
+
+        # Search for server log files in DP attention folders
+        search_patterns = [
+            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}_dp_attention*/sglang_server.log",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}_dp_attention*/sglang_server.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}_dp_attention*/sglang_server.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}_dp_attention*/sglang_server.log",
+        ]
+
+        for pattern in search_patterns:
+            log_files = glob.glob(pattern)
+
+            for log_file in log_files:
+                result["log_file"] = log_file
+                errors = self._extract_server_errors(log_file)
+
+                if errors:
+                    result["status"] = "fail"
+                    result["errors"].extend(errors)
+                    return result  # Return first error found
+
+        return result
+
+    def _extract_server_errors(self, log_file: str) -> List[str]:
+        """Extract critical errors from server log file"""
+        errors = []
+
+        try:
+            with open(log_file, "r") as f:
+                content = f.read()
+
+            # Look for RuntimeError patterns only for DP attention mode
+            error_patterns = [
+                (r"RuntimeError: ([^\n]+)", "RuntimeError"),
+            ]
+
+            for pattern, error_type in error_patterns:
+                matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
+                for match in matches:
+                    # Clean up the error message
+                    error_msg = match.strip()
+                    if error_msg:
+                        errors.append(f"{error_type}: {error_msg}")
+
+        except (FileNotFoundError, IOError) as e:
+            print(f"   Warning: Could not read server log {log_file}: {e}")
+        except Exception as e:
+            print(f"   Warning: Error parsing server log {log_file}: {e}")
+
+        return errors
 
     def compare_performance_metrics(
         self, model: str, mode: str, current_date: str, days_back: int = 7
@@ -210,10 +293,13 @@ class BenchmarkAnalyzer:
         }
         model_name = model_names.get(model, model.upper())
 
+        # Build mode suffix for DP attention
+        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+
         # Look for CSV files with online metrics
         csv_patterns = [
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*online*/*.csv",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*online*/*.csv",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*online{mode_suffix}*/*.csv",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*online{mode_suffix}*/*.csv",
         ]
 
         for pattern in csv_patterns:
@@ -295,6 +381,7 @@ class TeamsNotifier:
         github_upload: bool = False,
         github_repo: str = None,
         github_token: str = None,
+        check_dp_attention: bool = False,
     ):
         """
         Initialize Teams notifier
@@ -308,6 +395,7 @@ class TeamsNotifier:
             github_upload: If True, upload images to GitHub and link to them
             github_repo: GitHub repository in format 'owner/repo'
             github_token: GitHub personal access token
+            check_dp_attention: If True, look for DP attention mode logs and check for errors
         """
         self.webhook_url = webhook_url
         self.plot_server_base_url = (
@@ -318,7 +406,8 @@ class TeamsNotifier:
         self.github_upload = github_upload
         self.github_repo = github_repo
         self.github_token = github_token
-        self.analyzer = BenchmarkAnalyzer(benchmark_dir)
+        self.check_dp_attention = check_dp_attention
+        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention)
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
         """
@@ -348,6 +437,7 @@ class TeamsNotifier:
             "details": [],
             "gsm8k_accuracy": None,
             "performance_regressions": [],
+            "dp_attention_errors": [],
         }
 
         # Check GSM8K accuracy
@@ -372,6 +462,38 @@ class TeamsNotifier:
                 )
             else:
                 alert["details"].append(f"GSM8K accuracy: {gsm8k_accuracy:.1%} ✅")
+
+        # Check DP attention errors if enabled
+        if self.check_dp_attention:
+            dp_error_results = self.analyzer.check_dp_attention_errors(
+                model, mode, current_date
+            )
+
+            if dp_error_results["status"] == "fail":
+                alert["status"] = "error"
+                if alert["title"] == "✅ Good: No Issues Detected":
+                    alert["title"] = "❌ DP Attention RuntimeError Detected"
+                elif "GSM8K" in alert["title"]:
+                    alert["title"] = "❌ GSM8K Failure + DP Attention RuntimeError"
+
+                alert["dp_attention_errors"] = dp_error_results["errors"]
+
+                # Only show the log file path, not individual error messages
+                if dp_error_results["log_file"]:
+                    # Convert absolute path to relative path from base directory
+                    log_path = dp_error_results["log_file"]
+                    if self.analyzer.base_dir in log_path:
+                        # Remove the base directory part and show relative path from sgl_benchmark_ci
+                        relative_path = log_path.replace(
+                            self.analyzer.base_dir, "/sgl_benchmark_ci"
+                        )
+                        alert["details"].append(f"📋 Error found in: {relative_path}")
+                    else:
+                        # Fallback to filename if path manipulation fails
+                        log_name = os.path.basename(log_path)
+                        alert["details"].append(f"📋 Error found in: {log_name}")
+            else:
+                alert["details"].append("DP attention mode: No errors detected ✅")
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -406,7 +528,7 @@ class TeamsNotifier:
             threshold_text = thresholds.get(model, "80%")
             alert["details"].append(f"Accuracy above threshold ({threshold_text}).")
         elif alert["status"] == "good":
-            alert["title"] = "✅ Good: No Regression Detected"
+            alert["title"] = "✅ Good: No Issues Detected"
 
         return alert
 
@@ -746,6 +868,16 @@ class TeamsNotifier:
         # Create card body elements starting with run name
         body_elements = []
 
+        # Customize title based on DP attention mode
+        if self.check_dp_attention:
+            main_title = (
+                f"{current_date} {model.upper()} {mode.title()} DP Attention Check"
+            )
+        else:
+            main_title = (
+                f"{current_date} {model.upper()} {mode.title()} Benchmark Results"
+            )
+
         # Add main header first
         body_elements.extend(
             [
@@ -753,7 +885,7 @@ class TeamsNotifier:
                     "type": "TextBlock",
                     "size": "Large",
                     "weight": "Bolder",
-                    "text": f"{current_date} {model.upper()} {mode.title()} Benchmark Results",
+                    "text": main_title,
                 },
                 {
                     "type": "TextBlock",
@@ -814,39 +946,41 @@ class TeamsNotifier:
                     }
                 )
 
-        # Add Plot section title
-        body_elements.append(
-            {
-                "type": "TextBlock",
-                "text": "**Plot:**",
-                "weight": "Bolder",
-                "size": "Medium",
-                "spacing": "Medium",
-            }
-        )
-
-        if not plots:
+        # Add Plot section only if not in DP attention mode
+        if not self.check_dp_attention:
+            # Add Plot section title
             body_elements.append(
                 {
                     "type": "TextBlock",
-                    "text": "⚠️ No plot files found for this benchmark run.",
-                    "color": "Warning",
-                    "wrap": True,
+                    "text": "**Plot:**",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium",
                 }
             )
-        else:
-            # Add plot information based on hosting method
-            for i, plot in enumerate(plots, 1):
-                # Add plot title
+
+            if not plots:
                 body_elements.append(
                     {
                         "type": "TextBlock",
-                        "text": f"**{i}. {plot['file_name']}**",
+                        "text": "⚠️ No plot files found for this benchmark run.",
+                        "color": "Warning",
                         "wrap": True,
-                        "size": "Small",
-                        "spacing": "Small",
                     }
                 )
+            else:
+                # Add plot information based on hosting method
+                for i, plot in enumerate(plots, 1):
+                    # Add plot title
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"**{i}. {plot['file_name']}**",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "Small",
+                        }
+                    )
 
                 # Handle different hosting methods
                 if plot.get("public_url") and plot.get("hosting_service"):
@@ -905,6 +1039,10 @@ class TeamsNotifier:
         actions = []
         if self.plot_server_base_url:
             # Add HTTP server links
+            pass
+
+        # Only add plot-related actions if not in DP attention mode
+        if not self.check_dp_attention:
             if plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
@@ -1120,6 +1258,12 @@ def main():
         help="GitHub personal access token (or set GITHUB_TOKEN env var)",
     )
 
+    parser.add_argument(
+        "--check-dp-attention",
+        action="store_true",
+        help="Check DP attention mode logs for RuntimeError and other critical errors",
+    )
+
     args = parser.parse_args()
 
     # Get webhook URL
@@ -1184,6 +1328,11 @@ def main():
     print(f"📁 Plot directory: {args.plot_dir}")
     print(f"🗂️  Benchmark directory: {args.benchmark_dir}")
 
+    if args.check_dp_attention:
+        print(
+            "🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs"
+        )
+
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
@@ -1194,6 +1343,7 @@ def main():
         github_upload=args.github_upload,
         github_repo=args.github_repo,
         github_token=github_token,
+        check_dp_attention=args.check_dp_attention,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 

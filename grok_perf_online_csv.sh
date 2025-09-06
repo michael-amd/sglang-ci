@@ -64,7 +64,6 @@ WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
-CURRENT_DIR=""  # New parameter for current/script directory
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -95,9 +94,6 @@ for arg in "$@"; do
     --threshold=*)
       THRESHOLD="${arg#*=}"
       ;;
-    --current-dir=*)
-      CURRENT_DIR="${arg#*=}"
-      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -109,18 +105,11 @@ for arg in "$@"; do
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
-      echo "  --current-dir=PATH     Current directory to use for script resolution and work dir override"
       echo "  --help                 Show this help message"
       exit 0
       ;;
   esac
 done
-
-# Override script path if current directory is provided
-if [[ -n "${CURRENT_DIR}" ]]; then
-    SCRIPT_PATH="${CURRENT_DIR}/$(basename "$0")"
-    echo "[online] Using current directory for script path: ${SCRIPT_PATH}"
-fi
 
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
@@ -133,15 +122,7 @@ if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}"
 else
     TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
 fi
-
-# Override default work directory if current directory is provided and work_dir is not set
-if [[ -n "${CURRENT_DIR}" && -z "${WORK_DIR:-}" ]]; then
-    WORK_DIR="${CURRENT_DIR}"
-    echo "[online] Using current directory as work directory: ${WORK_DIR}"
-else
-    WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
-fi
-
+WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 NODE="$(hostname)"  # Get node name from hostname
@@ -281,7 +262,15 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
 
     docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
       "${CONTAINER_NAME}" \
-      bash "${SCRIPT_PATH}" ${CONTAINER_ARGS}
+      bash "${SCRIPT_PATH}" \
+           --docker_image="${FULL_IMAGE}" \
+           --model="${MODEL}" \
+           --tokenizer="${TOKENIZER}" \
+           --work-dir="${WORK_DIR}" \
+           --output-dir="${OUTPUT_DIR}" \
+           --gsm8k-script="${GSM8K_SCRIPT}" \
+           --node="${NODE}" \
+           --threshold="${THRESHOLD}"
     exit 0
   fi
 fi
