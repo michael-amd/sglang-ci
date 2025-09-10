@@ -10,10 +10,11 @@
 # IMAGE DISCOVERY:
 #   • Uses Docker Hub API with pagination to find images
 #   • Searches for non-SRT images from today, then yesterday
-#   • Supports mi30x (rocm630) and mi35x (rocm700) hardware variants
+#   • Supports mi30x (rocm700 default, rocm630 optional) and mi35x (rocm700) hardware variants
 #   • Examples:
-#     - rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+#     - rocm/sgl-dev:v0.4.9.post2-rocm700-mi30x-20250716
 #     - rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250716
+#     - rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 (with --mi30x-rocm-version=rocm630)
 #   • Automatically excludes SRT variants (ends with -srt)
 #
 # MODEL DOWNLOAD:
@@ -56,6 +57,7 @@
 #   perf_nightly.sh --model=DeepSeek-V3 \                     # Combined custom paths
 #     --model-path=/raid/deepseek-ai/DeepSeek-V3 --work-dir=/home/user/workspace
 #   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
+#   perf_nightly.sh --hardware=mi30x --mi30x-rocm-version=rocm630  # Use rocm630 for mi30x instead of default rocm700
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -118,7 +120,7 @@ HARDWARE_TYPE="${HARDWARE_TYPE:-mi35x}"  # Default to mi35x, can be mi30x or mi3
 
 # ROCM version mapping based on hardware
 declare -A ROCM_VERSIONS=(
-  ["mi30x"]="rocm630"
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
 )
 
@@ -435,6 +437,7 @@ CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
 CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
+CLI_MI30X_ROCM_VERSION="" # ROCM version for mi30x hardware from command line
 
 for arg in "$@"; do
   case $arg in
@@ -452,6 +455,9 @@ for arg in "$@"; do
       ;;
     --hardware=*)
       HARDWARE_TYPE="${arg#*=}"
+      ;;
+    --mi30x-rocm-version=*)
+      CLI_MI30X_ROCM_VERSION="${arg#*=}"
       ;;
     --download-model=*)
       CLI_DOWNLOAD_MODEL="${arg#*=}"
@@ -482,6 +488,7 @@ for arg in "$@"; do
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
+      echo "  --mi30x-rocm-version=VERSION     ROCM version for mi30x hardware (rocm630, rocm700) [default: rocm700]"
       echo "  --download-model=REPO            Download model from HuggingFace if not exists (no default)"
       echo "  --continue-run-days=DAYS         Run benchmarks for last N days' images [default: 1]"
       echo "  --teams-webhook-url=URL          Teams webhook URL to enable notifications [default: disabled]"
@@ -503,6 +510,7 @@ for arg in "$@"; do
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
       echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo "  $0 --model=deepseek --mode=online --check-dp-attention  # DeepSeek online with DP attention error checking"
+      echo "  $0 --hardware=mi30x --mi30x-rocm-version=rocm630 # Use rocm630 for mi30x instead of default rocm700"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -570,6 +578,18 @@ if [[ -n "$CLI_CONTINUE_RUN_DAYS" ]]; then
     exit 1
   fi
   echo "[nightly] Will run benchmarks for last $CONTINUE_RUN_DAYS days' images"
+fi
+
+# Process mi30x ROCM version override
+if [[ -n "$CLI_MI30X_ROCM_VERSION" ]]; then
+  # Validate the provided ROCM version
+  if [[ "$CLI_MI30X_ROCM_VERSION" != "rocm630" && "$CLI_MI30X_ROCM_VERSION" != "rocm700" ]]; then
+    echo "[nightly] ERROR: --mi30x-rocm-version must be 'rocm630' or 'rocm700' (got: $CLI_MI30X_ROCM_VERSION)"
+    exit 1
+  fi
+  # Override the mi30x ROCM version
+  ROCM_VERSIONS["mi30x"]="$CLI_MI30X_ROCM_VERSION"
+  echo "[nightly] mi30x ROCM version overridden to: $CLI_MI30X_ROCM_VERSION"
 fi
 
 # Set script paths after CLI parameter processing (so custom work directory is used)
