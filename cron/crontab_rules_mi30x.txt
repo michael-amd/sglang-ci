@@ -1,0 +1,34 @@
+# machine is at CT time
+#
+# REQUIRED ENVIRONMENT VARIABLES - Set these before installing cron jobs:
+# - SGL_BENCHMARK_CI_DIR: Path to sgl_benchmark_ci directory (e.g., /home/user/sgl_benchmark_ci)
+# - GROK_MODEL_PATH: Path to Grok model (e.g., /data/grok-1-W4A8KV8)
+# - DEEPSEEK_MODEL_PATH: Path to DeepSeek model (e.g., /data/deepseek-ai/DeepSeek-V3)
+# - HARDWARE_TYPE: Hardware type for all jobs (mi30x, mi35x)
+# - TEAMS_WEBHOOK_URL: Teams webhook URL for notifications
+#
+# Environment variables (set these before running crontab):
+SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sgl_benchmark_ci"
+GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
+GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
+DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
+HARDWARE_TYPE="mi30x"
+TEAMS_WEBHOOK_URL=""
+
+# 10 PM PT (0 AM CT) - Grok 2 online serving benchmark + Teams notifications
+0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/grok2_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+
+# 12 AM PT (2 AM CT) - Grok online and offline benchmark with gating logic + Teams notifications
+0 2 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
+
+# 2 AM PT (4 AM CT) - DeepSeek online with DP attention checking + Teams notifications
+0 4 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/deepseek_dp_attention_$(date +\%Y\%m\%d).log 2>&1
+
+# 2:30 AM PT (5 AM CT) - DeepSeek online serving benchmark + Teams notifications
+30 4 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/deepseek_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+
+# 7 AM PT (8 AM CT) - Unit test nightly run with Teams notifications
+0 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/test_nightly_$(date +\%Y\%m\%d).log 2>&1
+
+# 8 AM PT (10 AM CT) - Docker image availability check with Teams notifications
+0 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh > cron/cron_log/docker_image_check_$(date +\%Y\%m\%d).log 2>&1

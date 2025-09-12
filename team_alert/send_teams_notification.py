@@ -8,10 +8,11 @@ to provide actionable alerts about benchmark health.
 
 USAGE:
     python send_teams_notification.py --model grok --mode online
+    python send_teams_notification.py --model grok2 --mode online
     python send_teams_notification.py --model deepseek --mode offline
     python send_teams_notification.py --model deepseek --mode online --check-dp-attention
     python send_teams_notification.py --webhook-url "https://teams.webhook.url"
-    python send_teams_notification.py --model grok --mode online --github-upload --github-repo "user/repo"
+    python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
@@ -76,7 +77,7 @@ class BenchmarkAnalyzer:
         Parse GSM8K accuracy from benchmark logs
 
         Args:
-            model: Model name (grok, deepseek, DeepSeek-V3)
+            model: Model name (grok, grok2, deepseek, DeepSeek-V3)
             mode: Benchmark mode (online, offline)
             date_str: Date string (YYYYMMDD)
 
@@ -85,6 +86,7 @@ class BenchmarkAnalyzer:
         """
         model_names = {
             "grok": "GROK1",
+            "grok2": "GROK2",
             "deepseek": "DeepSeek-V3-0324",
             "DeepSeek-V3": "DeepSeek-V3-0324",
         }
@@ -146,7 +148,7 @@ class BenchmarkAnalyzer:
         Check for RuntimeError and other critical errors in DP attention mode logs
 
         Args:
-            model: Model name (grok, deepseek)
+            model: Model name (grok, grok2, deepseek)
             mode: Benchmark mode (online, offline)
             date_str: Date string (YYYYMMDD)
 
@@ -162,7 +164,11 @@ class BenchmarkAnalyzer:
         if not self.check_dp_attention:
             return result
 
-        model_names = {"grok": "GROK1", "deepseek": "DeepSeek-V3-0324"}
+        model_names = {
+            "grok": "GROK1",
+            "grok2": "GROK2",
+            "deepseek": "DeepSeek-V3-0324",
+        }
         model_name = model_names.get(model, model.upper())
 
         # Search for server log files in DP attention folders
@@ -214,6 +220,217 @@ class BenchmarkAnalyzer:
             print(f"   Warning: Error parsing server log {log_file}: {e}")
 
         return errors
+
+    def extract_additional_info(
+        self, model: str, mode: str, date_str: str
+    ) -> Dict[str, any]:
+        """
+        Extract additional information from benchmark logs (Docker image, hardware, runtime)
+
+        Args:
+            model: Model name (grok, grok2, deepseek)
+            mode: Benchmark mode (online, offline)
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Dictionary with additional information
+        """
+        result = {
+            "docker_image": None,
+            "hardware": None,
+            "runtime": None,
+            "hostname": None,
+            "start_time": None,
+            "end_time": None,
+        }
+
+        model_names = {
+            "grok": "GROK1",
+            "grok2": "GROK2",
+            "deepseek": "DeepSeek-V3-0324",
+        }
+        model_name = model_names.get(model, model.upper())
+
+        # Build mode suffix for DP attention if applicable
+        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+
+        # Search for log files in benchmark directories and cron logs
+        search_patterns = [
+            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/*.log",
+            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/*.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/*.log",
+            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/*.log",
+        ]
+
+        # Also search in cron logs which contain much of the needed information
+        cron_log_dir = os.path.join(self.base_dir, "cron", "cron_log")
+        cron_patterns = [
+            f"{cron_log_dir}/{model.lower()}_nightly_{mode}_{date_str}.log",
+            f"{cron_log_dir}/{model}_nightly_{mode}_{date_str}.log",
+        ]
+        search_patterns.extend(cron_patterns)
+
+        for pattern in search_patterns:
+            log_files = glob.glob(pattern)
+
+            for log_file in log_files:
+                # Skip server logs for benchmark directories, but process cron logs
+                if (
+                    "server" in os.path.basename(log_file).lower()
+                    and "cron_log" not in log_file
+                ):
+                    continue
+
+                info = self._extract_additional_info_from_log(log_file)
+
+                # If we found some info, merge it and continue looking for more complete info
+                if info.get("docker_image") and not result.get("docker_image"):
+                    result["docker_image"] = info["docker_image"]
+                if info.get("hardware") and not result.get("hardware"):
+                    result["hardware"] = info["hardware"]
+                if info.get("runtime") and not result.get("runtime"):
+                    result["runtime"] = info["runtime"]
+                if info.get("hostname") and not result.get("hostname"):
+                    result["hostname"] = info["hostname"]
+                if info.get("start_time") and not result.get("start_time"):
+                    result["start_time"] = info["start_time"]
+                if info.get("end_time") and not result.get("end_time"):
+                    result["end_time"] = info["end_time"]
+
+        return result
+
+    def _extract_additional_info_from_log(self, log_file: str) -> Dict[str, any]:
+        """Extract additional info (Docker image, hardware, runtime) from log file"""
+        info = {
+            "docker_image": None,
+            "hardware": None,
+            "runtime": None,
+            "hostname": None,
+            "start_time": None,
+            "end_time": None,
+        }
+
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Extract Docker image (multiple patterns)
+            image_patterns = [
+                r"Image:\s*(.+)",  # Original pattern
+                r"Docker image:\s*(.+)",  # timing_summary logs
+                r"\[nightly\] Using Docker image:\s*(.+)",  # nightly cron logs
+            ]
+            for pattern in image_patterns:
+                image_match = re.search(pattern, content)
+                if image_match:
+                    info["docker_image"] = image_match.group(1).strip()
+                    break
+
+            # Extract hardware (multiple patterns)
+            hardware_patterns = [
+                r"Hardware:\s*(.+)",  # Original pattern
+                r"\[nightly\] Hardware:\s*(.+)",  # nightly cron logs
+            ]
+            for pattern in hardware_patterns:
+                hardware_match = re.search(pattern, content)
+                if hardware_match:
+                    hardware_text = hardware_match.group(1).strip()
+                    # Clean up hardware text (remove ROCM version for cleaner display)
+                    if ", ROCM Version:" in hardware_text:
+                        hardware_text = hardware_text.split(", ROCM Version:")[0]
+                    info["hardware"] = hardware_text
+                    break
+
+            # Extract hostname/machine name
+            hostname_patterns = [
+                r"Machine:\s*(.+)",  # Original pattern
+                r"Hostname:\s*(.+)",  # Alternative pattern
+                r"\[nightly\] Machine:\s*(.+)",  # nightly cron logs
+            ]
+            for pattern in hostname_patterns:
+                hostname_match = re.search(pattern, content)
+                if hostname_match:
+                    info["hostname"] = hostname_match.group(1).strip()
+                    break
+
+            # Extract start and end times for runtime calculation
+            start_patterns = [
+                r"Start time:\s*(.+)",  # Original pattern
+                r"Script started at:\s*(.+)",  # timing_summary logs
+                r"\[nightly\] Start time:\s*(.+)",  # nightly cron logs
+            ]
+
+            for pattern in start_patterns:
+                start_match = re.search(pattern, content)
+                if start_match:
+                    info["start_time"] = start_match.group(1).strip()
+                    break
+
+            end_patterns = [
+                r"End time:\s*(.+)",  # Original pattern
+                r"\[nightly\] End time:\s*(.+)",  # nightly cron logs
+            ]
+
+            for pattern in end_patterns:
+                end_match = re.search(pattern, content)
+                if end_match:
+                    info["end_time"] = end_match.group(1).strip()
+                    break
+
+            # Calculate runtime if both start and end times are available
+            if info.get("start_time") and info.get("end_time"):
+                start_str = info["start_time"]
+                end_str = info["end_time"]
+
+                try:
+                    # Handle different possible formats
+                    time_formats = [
+                        "%Y-%m-%d %H:%M:%S %Z",  # 2025-09-03 22:42:28 CDT
+                        "%Y-%m-%d %H:%M:%S %z",  # With timezone offset
+                        "%Y-%m-%d %H:%M:%S",  # Without timezone
+                    ]
+
+                    start_dt = None
+                    end_dt = None
+
+                    for fmt in time_formats:
+                        try:
+                            # Remove timezone abbreviations like CDT, CST, etc. for parsing
+                            start_clean = re.sub(r"\s+[A-Z]{3,4}$", "", start_str)
+                            end_clean = re.sub(r"\s+[A-Z]{3,4}$", "", end_str)
+
+                            if fmt == "%Y-%m-%d %H:%M:%S":
+                                start_dt = datetime.strptime(start_clean, fmt)
+                                end_dt = datetime.strptime(end_clean, fmt)
+                                break
+                        except ValueError:
+                            continue
+
+                    if start_dt and end_dt:
+                        duration = end_dt - start_dt
+                        total_seconds = int(duration.total_seconds())
+
+                        # Format duration as "5m 23s" or "1h 5m 23s"
+                        hours = total_seconds // 3600
+                        minutes = (total_seconds % 3600) // 60
+                        seconds = total_seconds % 60
+
+                        if hours > 0:
+                            info["runtime"] = f"{hours}h {minutes}m {seconds}s"
+                        else:
+                            info["runtime"] = f"{minutes}m {seconds}s"
+
+                except Exception as e:
+                    print(
+                        f"   Warning: Could not calculate runtime from {log_file}: {e}"
+                    )
+
+        except (FileNotFoundError, IOError) as e:
+            print(f"   Warning: File error while parsing {log_file}: {e}")
+        except Exception as e:
+            print(f"   Warning: Error parsing additional info from {log_file}: {e}")
+
+        return info
 
     def compare_performance_metrics(
         self, model: str, mode: str, current_date: str, days_back: int = 7
@@ -288,6 +505,7 @@ class BenchmarkAnalyzer:
         """Get online performance metrics for a specific date"""
         model_names = {
             "grok": "GROK1",
+            "grok2": "GROK2",
             "deepseek": "DeepSeek-V3-0324",
             "DeepSeek-V3": "DeepSeek-V3-0324",
         }
@@ -438,6 +656,7 @@ class TeamsNotifier:
             "gsm8k_accuracy": None,
             "performance_regressions": [],
             "dp_attention_errors": [],
+            "additional_info": {},
         }
 
         # Check GSM8K accuracy
@@ -447,7 +666,8 @@ class TeamsNotifier:
 
             # Define thresholds based on model
             thresholds = {
-                "grok": 0.8,  # 80% for GROK
+                "grok": 0.8,  # 80% for GROK1
+                "grok2": 0.92,  # 92% for GROK2
                 "deepseek": 0.93,  # 93% for DeepSeek
                 "DeepSeek-V3": 0.93,  # 93% for DeepSeek-V3
             }
@@ -462,6 +682,13 @@ class TeamsNotifier:
                 )
             else:
                 alert["details"].append(f"GSM8K accuracy: {gsm8k_accuracy:.1%} ✅")
+
+        # Extract additional info for online mode
+        if mode == "online":
+            additional_info = self.analyzer.extract_additional_info(
+                model, mode, current_date
+            )
+            alert["additional_info"] = additional_info
 
         # Check DP attention errors if enabled
         if self.check_dp_attention:
@@ -494,6 +721,12 @@ class TeamsNotifier:
                         alert["details"].append(f"📋 Error found in: {log_name}")
             else:
                 alert["details"].append("DP attention mode: No errors detected ✅")
+                # Update title for successful DP attention check
+                if (
+                    alert["status"] == "good"
+                    and alert["title"] == "✅ Good: No Issues Detected"
+                ):
+                    alert["title"] = "✅ DP Attention Test Passed"
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -524,7 +757,12 @@ class TeamsNotifier:
         # Update title if everything is good
         if alert["status"] == "good" and not alert["details"]:
             # Show model-specific threshold message
-            thresholds = {"grok": "80%", "deepseek": "93%", "DeepSeek-V3": "93%"}
+            thresholds = {
+                "grok": "80%",
+                "grok2": "92%",
+                "deepseek": "93%",
+                "DeepSeek-V3": "93%",
+            }
             threshold_text = thresholds.get(model, "80%")
             alert["details"].append(f"Accuracy above threshold ({threshold_text}).")
         elif alert["status"] == "good":
@@ -653,6 +891,7 @@ class TeamsNotifier:
             # Map model names to match directory structure
             model_names = {
                 "grok": "GROK1",
+                "grok2": "GROK2",
                 "deepseek": "DeepSeek-V3",
                 "DeepSeek-V3": "DeepSeek-V3",
             }
@@ -771,7 +1010,7 @@ class TeamsNotifier:
         Discover plot files for the given model and mode
 
         Args:
-            model: Model name (grok, deepseek, DeepSeek-V3)
+            model: Model name (grok, grok2, deepseek, DeepSeek-V3)
             mode: Benchmark mode (online, offline)
             plot_dir: Base plot directory
 
@@ -779,55 +1018,91 @@ class TeamsNotifier:
             List of plot file info dictionaries
         """
         plots = []
-        current_date = datetime.now().strftime("%Y%m%d")
+
+        # Search for plots from the last 3 days to handle nightly runs that may complete
+        # at different times (e.g., benchmark completes at 3 AM, notification sent later)
+        search_dates = []
+        for days_back in range(3):  # Today, yesterday, day before yesterday
+            search_date = (datetime.now() - timedelta(days=days_back)).strftime(
+                "%Y%m%d"
+            )
+            search_dates.append(search_date)
 
         # Model name mapping for file search
         model_names = {
             "grok": "GROK1",
+            "grok2": "GROK2",
             "deepseek": "DeepSeek-V3-0324",
             "DeepSeek-V3": "DeepSeek-V3",
         }
 
         model_name = model_names.get(model, model.upper())
 
-        # Search for plot files with flexible naming patterns
-        # Support both uppercase model names (GROK1) and lowercase (grok)
-        search_patterns = [
-            f"{plot_dir}/{model_name}/{mode}/{current_date}_{model_name}_{mode}.png",
-            f"{plot_dir}/{model_name}/{mode}/{current_date}_{model_name}_{mode}_split.png",
-            f"{plot_dir}/{model_name}/{mode}/{current_date}_{model.lower()}_{mode}.png",
-            f"{plot_dir}/{model_name}/{mode}/{current_date}_{model.lower()}_{mode}_split.png",
-        ]
+        # Search through each date (most recent first)
+        for search_date in search_dates:
+            # Search for plot files with flexible naming patterns
+            # Support both uppercase model names (GROK1) and lowercase (grok)
+            search_patterns = [
+                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model_name}_{mode}.png",
+                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model_name}_{mode}_split.png",
+                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model.lower()}_{mode}.png",
+                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model.lower()}_{mode}_split.png",
+            ]
 
-        for pattern in search_patterns:
-            files = glob.glob(pattern)
-            for file_path in files:
-                file_name = os.path.basename(file_path)
-                relative_path = file_path.replace(plot_dir, "").lstrip("/")
+            # For deepseek model, also search for the actual generated filename pattern "DeepSeek-V3"
+            # This handles the change in filename format from DeepSeek-V3-0324 to DeepSeek-V3
+            if model == "deepseek":
+                search_patterns.extend(
+                    [
+                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3_{mode}.png",
+                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3_{mode}_split.png",
+                    ]
+                )
 
-                plot_info = {
-                    "file_name": file_name,
-                    "file_path": file_path,
-                    "model": model_name,
-                    "mode": mode,
-                }
+            # For DeepSeek-V3 model, also search for the legacy filename pattern "DeepSeek-V3-0324"
+            # to maintain backward compatibility
+            if model == "DeepSeek-V3":
+                search_patterns.extend(
+                    [
+                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3-0324_{mode}.png",
+                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3-0324_{mode}_split.png",
+                    ]
+                )
 
-                # Determine how to handle the image
-                if self.github_upload:
-                    # Upload to GitHub and get public URL
-                    plot_info["public_url"] = self.upload_to_github(
-                        file_path, model, mode
-                    )
-                    if plot_info["public_url"]:
-                        plot_info["hosting_service"] = "GitHub"
-                elif self.plot_server_base_url:
-                    # Use HTTP URL for server-hosted images
-                    plot_info["plot_url"] = (
-                        f"{self.plot_server_base_url}/{relative_path}"
-                    )
-                # If no GitHub upload or server URL, file_path will be used as fallback
+            # Check each pattern for this date
+            for pattern in search_patterns:
+                files = glob.glob(pattern)
+                for file_path in files:
+                    file_name = os.path.basename(file_path)
+                    relative_path = file_path.replace(plot_dir, "").lstrip("/")
 
-                plots.append(plot_info)
+                    plot_info = {
+                        "file_name": file_name,
+                        "file_path": file_path,
+                        "model": model_name,
+                        "mode": mode,
+                    }
+
+                    # Determine how to handle the image
+                    if self.github_upload:
+                        # Upload to GitHub and get public URL
+                        plot_info["public_url"] = self.upload_to_github(
+                            file_path, model, mode
+                        )
+                        if plot_info["public_url"]:
+                            plot_info["hosting_service"] = "GitHub"
+                    elif self.plot_server_base_url:
+                        # Use HTTP URL for server-hosted images
+                        plot_info["plot_url"] = (
+                            f"{self.plot_server_base_url}/{relative_path}"
+                        )
+                    # If no GitHub upload or server URL, file_path will be used as fallback
+
+                    plots.append(plot_info)
+
+            # If we found plots for this date, return them (most recent first)
+            if plots:
+                break
 
         return plots
 
@@ -946,6 +1221,58 @@ class TeamsNotifier:
                     }
                 )
 
+        # Add additional information for online mode
+        if mode == "online" and summary_alert.get("additional_info"):
+            additional_info = summary_alert["additional_info"]
+
+            # Add Docker Image (only if available)
+            if additional_info.get("docker_image"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Docker Image: **{additional_info['docker_image']}**",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+
+            # Add Hostname (only if available)
+            if additional_info.get("hostname"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Hostname: **{additional_info['hostname']}**",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+
+            # Add Hardware (only if available)
+            if additional_info.get("hardware"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Hardware: **{additional_info['hardware']}**",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+
+            # Add Runtime (only if available)
+            if additional_info.get("runtime"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Runtime: **{additional_info['runtime']}**",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+
         # Add Plot section only if not in DP attention mode
         if not self.check_dp_attention:
             # Add Plot section title
@@ -1047,6 +1374,7 @@ class TeamsNotifier:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
                     "grok": "GROK1",
+                    "grok2": "GROK2",
                     "deepseek": "DeepSeek-V3-0324",
                     "DeepSeek-V3": "DeepSeek-V3",
                 }
@@ -1187,7 +1515,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        choices=["grok", "deepseek", "DeepSeek-V3"],
+        choices=["grok", "grok2", "deepseek", "DeepSeek-V3"],
         help="Model name",
     )
 

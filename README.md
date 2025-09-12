@@ -25,7 +25,7 @@ This repository provides a comprehensive benchmarking and continuous integration
 **⚡ Flexible Configuration:**
 
 - **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
-- **Multi-Model Support:** Specialized configurations for GROK1 MOE and DeepSeek V3 models with FP8 quantization
+- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), and DeepSeek models with FP8/INT4 quantization
 - **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
 
 **🔍 Advanced Comparison Tools:**
@@ -111,11 +111,12 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
 #### grok_perf_offline_csv.sh
 
-- **Purpose:** Benchmarks the GROK model with multiple test modes (normal, long_context, dummy).
+- **Purpose:** Benchmarks GROK models (GROK1, GROK2) with multiple test modes (normal, long_context, dummy).
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use
   - `--mode=MODE`: Test mode - normal, long_context, or dummy (default: normal)
   - `--model=PATH`: Model path (configurable via environment variables)
+  - `--model-type=TYPE`: Model type - grok1 or grok2 (default: grok1)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
   - `--dummy-model=PATH`: Dummy model path for dummy mode (configurable via environment variables)
   - `--work-dir=PATH`: Working directory (configurable via environment variables)
@@ -158,6 +159,9 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
   bash grok_perf_offline_csv.sh \
     --model=$MODEL_PATH \
     --tokenizer=$TOKENIZER_NAME
+
+  # Grok 2 model
+  bash grok_perf_offline_csv.sh --model-type=grok2
 
   # Long context mode
   bash grok_perf_offline_csv.sh --mode=long_context
@@ -224,7 +228,7 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
 ### Online Mode
 
-Online mode benchmarks measure the real-time serving performance of GROK1. This mode is designed to simulate interactive use and assess latency under different request rates.
+Online mode benchmarks measure the real-time serving performance of GROK models (GROK1, GROK2). This mode is designed to simulate interactive use and assess latency under different request rates.
 
 #### grok_perf_online_csv.sh
 
@@ -232,6 +236,7 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Parameters:**
   - `--docker_image=IMAGE`: Docker image to use
   - `--model=PATH`: Model path (configurable via environment variables)
+  - `--model-type=TYPE`: Model type - grok1 or grok2 (default: grok1)
   - `--tokenizer=NAME`: Tokenizer name (default: Xenova/grok-1-tokenizer)
   - `--work-dir=PATH`: Working directory (configurable via environment variables)
   - `--output-dir=PATH`: Output directory (default: same as work-dir)
@@ -264,13 +269,17 @@ Online mode benchmarks measure the real-time serving performance of GROK1. This 
 - **Usage:**
 
   ```bash
-  # Basic usage
+  # Basic usage (GROK1 default)
   bash grok_perf_online_csv.sh
+
+  # GROK2 model
+  bash grok_perf_online_csv.sh --model-type=grok2
 
   # Custom configuration
   bash grok_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 \
     --model=$MODEL_PATH \
+    --model-type=grok2 \
     --tokenizer=$TOKENIZER_NAME \
     --node=$NODE_NAME \
     --threshold=0.85
@@ -730,7 +739,7 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 - **GSM8K Accuracy Extraction:** Automatically extracts GSM8K accuracy from associated log files
 - **Performance Threshold Analysis:** Configurable thresholds for highlighting significant changes
 - **Flexible Output:** Generates timestamped comparison folders with markdown reports
-- **Multi-Model Support:** Handles different model comparisons (GROK1, DeepSeek-V3, etc.)
+- **Multi-Model Support:** Handles different model comparisons (GROK1, GROK2, DeepSeek-V3, etc.)
 
 **Parameters:**
 
@@ -790,6 +799,18 @@ python3 compare_csv_results.py \
   --csv1 online/GROK1/20250624_GROK1_MOE-I4F8_online \
   --csv2 online/GROK1/20250626_GROK1_MOE-I4F8_online \
   --mode online --model grok1
+
+# Compare GROK2 offline results
+python3 compare_csv_results.py \
+  --csv1 offline/GROK2/20250624_GROK2_FP8_offline \
+  --csv2 offline/GROK2/20250626_GROK2_FP8_offline \
+  --mode offline --model grok2
+
+# Compare GROK2 online results
+python3 compare_csv_results.py \
+  --csv1 online/GROK2/20250624_GROK2_FP8_online \
+  --csv2 online/GROK2/20250626_GROK2_FP8_online \
+  --mode online --model grok2
 
 # Compare DeepSeek-V3 offline results
 python3 compare_csv_results.py \
@@ -852,6 +873,9 @@ The benchmark scripts use different torch.compile configurations that affect per
 The benchmark scripts use GSM8K accuracy testing as a warm-up validation step with the following default thresholds:
 
 - **GROK-1 Model:**
+  - **Online Mode:** 0.8 (80% accuracy threshold)
+
+- **GROK-2 Model:**
   - **Online Mode:** 0.8 (80% accuracy threshold)
 
 - **DeepSeek V3-0324 Model:**

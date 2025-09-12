@@ -31,7 +31,7 @@
 #   perf_nightly.sh [OPTIONS]
 #
 # OPTIONS:
-#   --model=MODEL        Model to benchmark: grok, deepseek, DeepSeek-V3 [default: grok]
+#   --model=MODEL        Model to benchmark: grok, grok2, deepseek, DeepSeek-V3 [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
@@ -48,6 +48,7 @@
 #   perf_nightly.sh                                    # Grok online+offline (mi30x)
 #   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
 #   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
+#   perf_nightly.sh --model=grok2 --mode=online        # Grok 2 online only (mi30x)
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
 #   perf_nightly.sh --model=grok --mode=all \          # Grok with Teams alerts
 #     --teams-webhook-url="https://prod-99.westus.logic.azure.com/..."
@@ -125,6 +126,8 @@ declare -A ROCM_VERSIONS=(
 # Model configuration - will be set based on --model parameter
 GROK_MODEL_NAME="${GROK_MODEL_NAME:-GROK1}"
 GROK_MODEL_VARIANT="${GROK_MODEL_VARIANT:-MOE-I4F8}"
+GROK2_MODEL_NAME="${GROK2_MODEL_NAME:-GROK2}"
+GROK2_MODEL_VARIANT="${GROK2_MODEL_VARIANT:-MOE-I4F0}"
 DEEPSEEK_MODEL_NAME="${DEEPSEEK_MODEL_NAME:-DeepSeek-V3-0324}"
 DEEPSEEK_MODEL_VARIANT="${DEEPSEEK_MODEL_VARIANT:-FP8}"
 
@@ -266,7 +269,7 @@ download_hf_model() {
       required_space_gb=685
       echo "[nightly] DeepSeek model detected - requiring ${required_space_gb}GB disk space"
       ;;
-    "grok")
+    "grok"|"grok2")
       required_space_gb=200  # Conservative estimate for Grok models
       echo "[nightly] Grok model detected - requiring ${required_space_gb}GB disk space"
       ;;
@@ -477,7 +480,7 @@ for arg in "$@"; do
       echo "Run SGL nightly benchmarks with optional Teams notifications"
       echo ""
       echo "Options:"
-      echo "  --model=MODEL                    Model to benchmark (grok, deepseek, DeepSeek-V3) [default: grok]"
+      echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
@@ -494,6 +497,7 @@ for arg in "$@"; do
       echo "  $0                                          # Run grok online+offline, no Teams (mi30x)"
       echo "  $0 --model=deepseek --mode=online           # Run deepseek online only, no Teams (mi30x)"
       echo "  $0 --model=DeepSeek-V3 --mode=online        # Run DeepSeek-V3 online only, no Teams (mi30x)"
+      echo "  $0 --model=grok2 --mode=online              # Run grok2 online only, no Teams (mi30x)"
       echo "  $0 --hardware=mi35x --mode=all              # Run grok on mi35x hardware"
       echo "  $0 --model=grok --mode=all \\                # Run grok with Teams notifications"
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
@@ -586,8 +590,8 @@ PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SC
 TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/team_alert/send_teams_notification.py}"
 
 # Validate model parameter
-if [[ "$MODEL" != "grok" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" ]]; then
-    echo "[nightly] ERROR: Invalid --model value '$MODEL'. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
+if [[ "$MODEL" != "grok" && "$MODEL" != "grok2" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" ]]; then
+    echo "[nightly] ERROR: Invalid --model value '$MODEL'. Must be 'grok', 'grok2', 'deepseek', or 'DeepSeek-V3'."
     exit 1
 fi
 
@@ -599,6 +603,13 @@ fi
 
 # Set ROCM version based on hardware type
 ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
+
+# Special case: grok2 on mi30x should use rocm700 instead of rocm630
+if [[ "$MODEL" == "grok2" && "$HARDWARE_TYPE" == "mi30x" ]]; then
+    ROCM_VERSION="rocm700"
+    echo "[nightly] Special case: Using rocm700 for grok2 on mi30x hardware"
+fi
+
 echo "[nightly] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
 
 # Set model-specific variables
@@ -609,6 +620,12 @@ case "$MODEL" in
         OFFLINE_SCRIPT="$GROK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$GROK_ONLINE_SCRIPT"
         ;;
+    "grok2")
+        MODEL_NAME="$GROK2_MODEL_NAME"
+        MODEL_VARIANT="$GROK2_MODEL_VARIANT"
+        OFFLINE_SCRIPT="$GROK_OFFLINE_SCRIPT"
+        ONLINE_SCRIPT="$GROK_ONLINE_SCRIPT"
+        ;;
     "deepseek"|"DeepSeek-V3")
         MODEL_NAME="$DEEPSEEK_MODEL_NAME"
         MODEL_VARIANT="$DEEPSEEK_MODEL_VARIANT"
@@ -616,7 +633,7 @@ case "$MODEL" in
         ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
         ;;
     *)
-        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'deepseek', or 'DeepSeek-V3'."
+        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'grok2', 'deepseek', or 'DeepSeek-V3'."
         exit 1
         ;;
 esac
@@ -758,7 +775,7 @@ for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
     # Define expected number of runs based on model and mode
     expected_runs=0
     if [[ "$mode_to_check" == "online" ]]; then
-      if [[ "$MODEL" == "grok" || "$MODEL" == "deepseek" ]]; then
+      if [[ "$MODEL" == "grok" || "$MODEL" == "grok2" || "$MODEL" == "deepseek" ]]; then
         expected_runs=15 # Based on 5 request rates * 3 runs per rate
       fi
     fi
@@ -976,9 +993,15 @@ if [[ "$all_modes_complete" != "true" ]]; then
     if [[ "$MODEL" == "deepseek" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     else
-      # For Grok
+      # For Grok and Grok2
       SCRIPT_ARGS="${SCRIPT_ARGS} --model='${CLI_MODEL_PATH}'"
     fi
+  fi
+
+  # Add model-type parameter for grok2
+  if [[ "$MODEL" == "grok2" ]]; then
+    SCRIPT_ARGS="${SCRIPT_ARGS} --model-type=grok2"
+    echo "[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark"
   fi
 
   if [[ "$MODEL" == "deepseek" ]]; then
@@ -997,7 +1020,7 @@ if [[ "$all_modes_complete" != "true" ]]; then
       "${CONTAINER_NAME}" \
       bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   else
-    # For Grok, use the existing command structure
+    # For Grok and Grok2, use the existing command structure
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${SELECTED_TAG}" \
