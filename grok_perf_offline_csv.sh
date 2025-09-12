@@ -2,10 +2,11 @@
 # ------------------------------------------------------------------------------
 # grok_perf_offline_csv.sh
 #
-# Offline Grok-1 benchmark.  Supports --docker_image=<image[:tag]> override.
+# Offline Grok-1 and Grok-2 benchmark.  Supports --docker_image=<image[:tag]> override.
 #
 # USAGE:
 #   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+#   bash grok_perf_offline_csv.sh --model-type=grok2 --model=/data2/grok-2/
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
 #   bash grok_perf_offline_csv.sh --model-path=/raid/grok-1-W4A8KV8 --tokenizer=/raid/grok-1-W4A8KV8
@@ -18,12 +19,22 @@
 
 # Default image and model configuration
 DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
-MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
-MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
-# Default paths - can be overridden
-DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
-DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-Xenova/grok-1-tokenizer}"
+# Model type configuration (grok1 or grok2)
+DEFAULT_MODEL_TYPE="${DEFAULT_MODEL_TYPE:-grok1}"
+
+# Grok 1 defaults
+GROK1_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
+GROK1_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
+GROK1_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/}"
+GROK1_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-Xenova/grok-1-tokenizer}"
+
+# Grok 2 defaults
+GROK2_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK2}"
+GROK2_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F0}"
+GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/data2/grok-2/}"
+GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/data2/grok-2/tokenizer.tok.json}"
+
 DEFAULT_DUMMY_MODEL="${DEFAULT_DUMMY_MODEL_PATH:-/mnt/raid/models/dummy_prod1/}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
@@ -63,6 +74,7 @@ docker_image=""
 mode="normal"  # default mode (normal, long_context, or dummy)
 
 # Initialize variables with defaults
+MODEL_TYPE=""
 MODEL=""
 TOKENIZER=""
 DUMMY_MODEL=""
@@ -89,6 +101,10 @@ for arg in "$@"; do
       MODEL="${arg#*=}"
       shift
       ;;
+    --model-type=*)
+      MODEL_TYPE="${arg#*=}"
+      shift
+      ;;
     --tokenizer=*)
       TOKENIZER="${arg#*=}"
       shift
@@ -110,8 +126,9 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --docker_image=IMAGE    Docker image to use (default: $DOCKER_IMAGE_DEFAULT)"
       echo "  --mode=MODE            Mode: normal, long_context, or dummy (default: normal)"
-      echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
-      echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
+      echo "  --model=PATH           Model path"
+      echo "  --model-type=TYPE      Model type: grok1 or grok2 (default: $DEFAULT_MODEL_TYPE)"
+      echo "  --tokenizer=NAME       Tokenizer name"
       echo "  --dummy-model=PATH     Dummy model path for dummy mode (default: $DEFAULT_DUMMY_MODEL)"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
@@ -121,9 +138,54 @@ for arg in "$@"; do
   esac
 done
 
+# Auto-detect model type if not explicitly provided
+if [[ -z "${MODEL_TYPE}" ]]; then
+    MODEL_TYPE="${DEFAULT_MODEL_TYPE}"
+    # Auto-detect based on model path if provided
+    if [[ -n "${MODEL}" ]]; then
+        if [[ "${MODEL}" == *"grok-2"* ]] || [[ "${MODEL}" == *"grok2"* ]]; then
+            MODEL_TYPE="grok2"
+            echo "[csv] Auto-detected model type: grok2 from path: ${MODEL}"
+        elif [[ "${MODEL}" == *"grok-1"* ]] || [[ "${MODEL}" == *"grok1"* ]]; then
+            MODEL_TYPE="grok1"
+            echo "[csv] Auto-detected model type: grok1 from path: ${MODEL}"
+        fi
+    fi
+fi
+
+# Set model-specific defaults based on model type
+if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+    MODEL_NAME="${GROK2_MODEL_NAME}"
+    MODEL_VARIANT="${GROK2_MODEL_VARIANT}"
+    DEFAULT_MODEL="${GROK2_DEFAULT_MODEL}"
+    DEFAULT_TOKENIZER="${GROK2_DEFAULT_TOKENIZER}"
+    echo "[csv] Using Grok 2 configuration"
+else
+    MODEL_NAME="${GROK1_MODEL_NAME}"
+    MODEL_VARIANT="${GROK1_MODEL_VARIANT}"
+    DEFAULT_MODEL="${GROK1_DEFAULT_MODEL}"
+    DEFAULT_TOKENIZER="${GROK1_DEFAULT_TOKENIZER}"
+    echo "[csv] Using Grok 1 configuration"
+fi
+
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
-TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+
+# Handle tokenizer path logic
+if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+    # For Grok 2, use specific tokenizer file if custom model provided
+    if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}" ]]; then
+        TOKENIZER="${MODEL}/tokenizer.tok.json"
+        echo "[csv] Using custom Grok 2 tokenizer file: ${TOKENIZER}"
+    else
+        TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+        echo "[csv] Using default Grok 2 tokenizer: ${TOKENIZER}"
+    fi
+else
+    # For Grok 1, use existing logic
+    TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+fi
+
 DUMMY_MODEL="${DUMMY_MODEL:-$DEFAULT_DUMMY_MODEL}"
 WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
@@ -264,6 +326,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --docker_image="${FULL_IMAGE}" \
            --mode="${mode}" \
            --model="${MODEL}" \
+           --model-type="${MODEL_TYPE}" \
            --tokenizer="${TOKENIZER}" \
            --dummy-model="${DUMMY_MODEL}" \
            --work-dir="${WORK_DIR}" \
@@ -408,9 +471,14 @@ for tp in "${TP_VALUES[@]}"; do
       # Select command variant depending on mode and backend
       # -----------------------------------------------------------------------
       if [[ "$mode" == "dummy" ]]; then
-        # Dummy mode command - always use aiter backend
+        # Dummy mode command - always use aiter backend with model-specific env vars
+        if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+          env_vars="RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+        else
+          env_vars="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+        fi
         out=$(
-          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 \
+          env ${env_vars} \
           python3 -m sglang.bench_one_batch \
             --model "${MODEL}" \
             --load-format dummy \
@@ -427,9 +495,14 @@ for tp in "${TP_VALUES[@]}"; do
         )
         cmd_exit_status=${PIPESTATUS[0]}
       elif [[ "$mode" == "long_context" ]]; then
-        # Long context mode command - always use aiter backend
+        # Long context mode command - always use aiter backend with model-specific env vars
+        if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+          env_vars="RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+        else
+          env_vars="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+        fi
         out=$(
-          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 \
+          env ${env_vars} \
           python3 -m sglang.bench_one_batch \
             --model "${MODEL}" \
             --tokenizer-path "${TOKENIZER}" \
@@ -443,7 +516,7 @@ for tp in "${TP_VALUES[@]}"; do
         )
         cmd_exit_status=${PIPESTATUS[0]}
       else
-        # Normal mode - always use aiter backend
+        # Normal mode - always use aiter backend with model-specific env vars
         mem_fraction_arg=""
         if [[ "$bs" -eq 128 ]]; then
           mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_128_MEM_FRACTION"
@@ -451,8 +524,14 @@ for tp in "${TP_VALUES[@]}"; do
           mem_fraction_arg=" --mem-fraction-static $BATCH_SIZE_256_MEM_FRACTION"
         fi
 
+        if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+          env_vars="RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+        else
+          env_vars="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+        fi
+
         out=$(
-          env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 \
+          env ${env_vars} \
           python3 -m sglang.bench_one_batch \
             --model "${MODEL}" \
             --tokenizer-path "${TOKENIZER}" \

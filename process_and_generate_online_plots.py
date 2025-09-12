@@ -35,19 +35,22 @@ USAGE EXAMPLES:
 1. Process and plot GROK1 model with default settings:
    python process_and_generate_online_plots.py --model grok
 
-2. Process and plot DeepSeek model with default settings:
+2. Process and plot GROK2 model with default settings:
+   python process_and_generate_online_plots.py --model grok2
+
+3. Process and plot DeepSeek model with default settings:
    python process_and_generate_online_plots.py --model deepseek
 
-3. Process and plot DeepSeek-V3 model with default settings:
+4. Process and plot DeepSeek-V3 model with default settings:
    python process_and_generate_online_plots.py --model DeepSeek-V3
 
-4. Process only (skip plotting):
+5. Process only (skip plotting):
    python process_and_generate_online_plots.py --model grok --process-only
 
-5. Plot only (skip processing, use existing summary CSV):
+6. Plot only (skip processing, use existing summary CSV):
    python process_and_generate_online_plots.py --model grok --plot-only
 
-6. Custom configuration with overrides:
+7. Custom configuration with overrides:
    python process_and_generate_online_plots.py \
      --model grok \
      --data-dir /path/to/data \
@@ -55,7 +58,7 @@ USAGE EXAMPLES:
      --mode-filter aiter \
      --split-request-rates
 
-7. Process DeepSeek-V3 data with split request rate plots:
+8. Process DeepSeek-V3 data with split request rate plots:
    python process_and_generate_online_plots.py \
      --model DeepSeek-V3 \
      --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3 \
@@ -87,7 +90,7 @@ INPUT DATA FORMAT:
 
 OUTPUT:
 - Summary CSV: {output_prefix}_{mode_filter}_summary.csv
-- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_DeepSeek_online.png)
+- Plot files: {date}_{base_model_name}_online.png (e.g. 20250717_GROK1_online.png, 20250717_GROK2_online.png, 20250717_DeepSeek_online.png)
 """
 
 import argparse  # For command-line argument parsing
@@ -1813,6 +1816,13 @@ def main():
             "expected_rates": [1, 2, 4, 8, 16],
             "load_metric_name": "request_rate",
         },
+        "grok2": {
+            "variant_name": "GROK2",
+            "output_prefix_template": "{variant_name}_MOE-I4F0_online",
+            "model_name_template": "{variant_name} MOE-I4F0 Online",
+            "expected_rates": [1, 2, 4, 8, 16],
+            "load_metric_name": "request_rate",
+        },
         "deepseek": {
             "variant_name": "DeepSeek-V3",
             "output_prefix_template": "{variant_name}_FP8_online",
@@ -1843,7 +1853,7 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
+        help="The model to process. Options: 'grok', 'grok2', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
@@ -1926,7 +1936,9 @@ def main():
             "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
         )
     else:
-        directory_name = variant_name
+        directory_name = (
+            variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
+        )
     if args.data_dir is None:
         args.data_dir = os.path.join(args.base_dir, "online", directory_name)
     if args.output_prefix is None:
@@ -1945,7 +1957,9 @@ def main():
         elif args.model == "deepseek":
             plot_directory_name = "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
         else:
-            plot_directory_name = variant_name
+            plot_directory_name = (
+                variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
+            )
         args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(

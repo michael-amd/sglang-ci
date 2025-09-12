@@ -661,6 +661,13 @@ def main():
             "ilen": 1024,
             "olen": 128,
         },
+        "grok2": {
+            "variant_name": "GROK2",
+            "output_prefix_template": "{variant_name}_MOE-I4F0_offline",
+            "model_name_template": "{variant_name}_MOE-I4F0_offline",
+            "ilen": 1024,
+            "olen": 128,
+        },
         "deepseek": {
             "variant_name": "DeepSeek",
             "output_prefix_template": "{variant_name}_FP8_offline",
@@ -691,7 +698,7 @@ def main():
         type=str,
         default="grok",
         choices=MODEL_CONFIGS.keys(),
-        help="The model to process. Options: 'grok', 'deepseek', 'DeepSeek-V3'.",
+        help="The model to process. Options: 'grok', 'grok2', 'deepseek', 'DeepSeek-V3'.",
     )
 
     # Arguments for paths and names (default to None, will be set from config)
@@ -768,7 +775,9 @@ def main():
     variant_name = config["variant_name"]
 
     # Set values from config, allowing overrides from command line
-    directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+    directory_name = (
+        "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+    )  # variant_name will be "GROK1" for grok, "GROK2" for grok2
     if args.data_dir is None:
         args.data_dir = os.path.join(args.base_dir, "offline", directory_name)
     if args.output_prefix is None:
@@ -782,7 +791,9 @@ def main():
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        directory_name = "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        directory_name = (
+            "DeepSeek-V3" if args.model == "DeepSeek-V3" else variant_name
+        )  # variant_name will be "GROK1" for grok, "GROK2" for grok2
         args.plot_dir = os.path.join(args.plot_dir, directory_name, "offline")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(

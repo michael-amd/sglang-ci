@@ -4,7 +4,8 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm630-mi30x-20250909
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm700-mi35x-20250909
 #   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
@@ -20,12 +21,21 @@ export TZ='America/Los_Angeles'
 
 # Default image and model configuration
 DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
-MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
-MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
 
-# Default paths - can be overridden
-DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
-DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
+# Model type configuration (grok1 or grok2)
+DEFAULT_MODEL_TYPE="${DEFAULT_MODEL_TYPE:-grok1}"
+
+# Grok 1 defaults
+GROK1_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK1}"
+GROK1_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-MOE-I4F8}"
+GROK1_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
+GROK1_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
+
+# Grok 2 defaults
+GROK2_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK2}"
+GROK2_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
+GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/grok-2/}"
+GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/grok-2/tokenizer.tok.json}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
@@ -58,12 +68,14 @@ REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
 docker_image=""
 
 # Initialize variables
+MODEL_TYPE=""
 MODEL=""
 TOKENIZER=""
 WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
+CURRENT_DIR=""  # Initialize to empty to avoid unbound variable error
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -78,6 +90,9 @@ for arg in "$@"; do
       ;;
     --model=*|--model-path=*)
       MODEL="${arg#*=}"
+      ;;
+    --model-type=*)
+      MODEL_TYPE="${arg#*=}"
       ;;
     --tokenizer=*)
       TOKENIZER="${arg#*=}"
@@ -98,9 +113,10 @@ for arg in "$@"; do
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
       echo "  --docker_image=IMAGE    Docker image to use (default: $DEFAULT_IMAGE)"
-      echo "  --model=PATH           Model path (default: $DEFAULT_MODEL)"
+      echo "  --model=PATH           Model path"
       echo "  --model-path=PATH      Model path (alias for --model)"
-      echo "  --tokenizer=NAME       Tokenizer name (default: $DEFAULT_TOKENIZER)"
+      echo "  --model-type=TYPE      Model type: grok1 or grok2 (default: $DEFAULT_MODEL_TYPE)"
+      echo "  --tokenizer=NAME       Tokenizer name"
       echo "  --work-dir=PATH        Working directory (default: $DEFAULT_WORK_DIR)"
       echo "  --output-dir=PATH      Output directory (default: same as work-dir)"
       echo "  --gsm8k-script=PATH    Path to GSM8K benchmark script (default: $DEFAULT_GSM8K_SCRIPT)"
@@ -111,24 +127,66 @@ for arg in "$@"; do
   esac
 done
 
+# Auto-detect model type if not explicitly provided
+if [[ -z "${MODEL_TYPE}" ]]; then
+    MODEL_TYPE="${DEFAULT_MODEL_TYPE}"
+    # Auto-detect based on model path if provided
+    if [[ -n "${MODEL}" ]]; then
+        if [[ "${MODEL}" == *"grok-2"* ]] || [[ "${MODEL}" == *"grok2"* ]]; then
+            MODEL_TYPE="grok2"
+            echo "[online] Auto-detected model type: grok2 from path: ${MODEL}"
+        elif [[ "${MODEL}" == *"grok-1"* ]] || [[ "${MODEL}" == *"grok1"* ]]; then
+            MODEL_TYPE="grok1"
+            echo "[online] Auto-detected model type: grok1 from path: ${MODEL}"
+        fi
+    fi
+fi
+
+# Set model-specific defaults based on model type
+if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+    MODEL_NAME="${GROK2_MODEL_NAME}"
+    MODEL_VARIANT="${GROK2_MODEL_VARIANT}"
+    DEFAULT_MODEL="${GROK2_DEFAULT_MODEL}"
+    DEFAULT_TOKENIZER="${GROK2_DEFAULT_TOKENIZER}"
+    echo "[online] Using Grok 2 configuration"
+else
+    MODEL_NAME="${GROK1_MODEL_NAME}"
+    MODEL_VARIANT="${GROK1_MODEL_VARIANT}"
+    DEFAULT_MODEL="${GROK1_DEFAULT_MODEL}"
+    DEFAULT_TOKENIZER="${GROK1_DEFAULT_TOKENIZER}"
+    echo "[online] Using Grok 1 configuration"
+fi
+
 # Set defaults if not provided
 MODEL="${MODEL:-$DEFAULT_MODEL}"
 
-# If a custom model was provided but no tokenizer, use the model path as tokenizer path
-# This avoids issues with the default tokenizer path containing problematic characters
-if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}" ]]; then
-    TOKENIZER="${MODEL}"
-    echo "[online] Using custom model path as tokenizer path: ${TOKENIZER}"
+# Handle tokenizer path logic
+if [[ "${MODEL_TYPE}" == "grok2" ]]; then
+    # For Grok 2, use specific tokenizer file if custom model provided
+    if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}" ]]; then
+        TOKENIZER="${MODEL}/tokenizer.tok.json"
+        echo "[online] Using custom Grok 2 tokenizer file: ${TOKENIZER}"
+    else
+        TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+        echo "[online] Using default Grok 2 tokenizer: ${TOKENIZER}"
+    fi
 else
-    TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+    # For Grok 1, use model path as tokenizer path if custom model provided
+    if [[ -n "${MODEL:-}" && "${MODEL}" != "${DEFAULT_MODEL}" && -z "${TOKENIZER:-}" ]]; then
+        TOKENIZER="${MODEL}"
+        echo "[online] Using custom model path as tokenizer path: ${TOKENIZER}"
+    else
+        TOKENIZER="${TOKENIZER:-$DEFAULT_TOKENIZER}"
+    fi
 fi
+
 WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 NODE="$(hostname)"  # Get node name from hostname
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
-docker_image="${docker_image:-${1:-$DEFAULT_IMAGE}}"
+docker_image="${docker_image:-$DEFAULT_IMAGE}"
 
 ###############################################################################
 # 0-b. Use the full image name as provided (no auto-prefixing)
@@ -253,7 +311,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     fi
 
     # Build arguments to pass to the container
-    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --threshold=\"${THRESHOLD}\""
+    CONTAINER_ARGS="--docker_image=\"${FULL_IMAGE}\" --model=\"${MODEL}\" --model-type=\"${MODEL_TYPE}\" --tokenizer=\"${TOKENIZER}\" --work-dir=\"${WORK_DIR}\" --output-dir=\"${OUTPUT_DIR}\" --gsm8k-script=\"${GSM8K_SCRIPT}\" --threshold=\"${THRESHOLD}\""
 
     # Add current directory if it was provided
     if [[ -n "${CURRENT_DIR}" ]]; then
@@ -265,6 +323,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \
            --model="${MODEL}" \
+           --model-type="${MODEL_TYPE}" \
            --tokenizer="${TOKENIZER}" \
            --work-dir="${WORK_DIR}" \
            --output-dir="${OUTPUT_DIR}" \
@@ -300,7 +359,31 @@ echo "Model: ${MODEL}" >> "$TIMING_LOG"
 echo "" >> "$TIMING_LOG"
 
 ###############################################################################
-# 3. Helper: launch server (backend chosen by tag-type)
+# 3. Helper functions
+###############################################################################
+
+# Function to get environment variables based on model type
+get_model_env_vars() {
+  local model_type="$1"
+  local prefix_only="${2:-false}"  # Optional parameter to return only prefix (no 'env' command)
+
+  if [[ "${model_type}" == "grok2" ]]; then
+    if [[ "${prefix_only}" == "true" ]]; then
+      echo "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+    else
+      echo "env RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+    fi
+  else
+    if [[ "${prefix_only}" == "true" ]]; then
+      echo "SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+    else
+      echo "env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+    fi
+  fi
+}
+
+###############################################################################
+# 4. Helper: launch server (backend chosen by tag-type)
 ###############################################################################
 # Global variable to store the actual attention backend being used
 ATTENTION_BACKEND=""
@@ -312,21 +395,21 @@ launch_server() {
   # All supported images use aiter backend with SGLANG_USE_AITER
   attn_backend="aiter"
   aiter_env_var="SGLANG_USE_AITER"
-  env_prefix="SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+
+  # Set environment variables based on model type
+  env_prefix="$(get_model_env_vars "${MODEL_TYPE}" true)"
+  echo "[online] Using ${MODEL_TYPE^} environment: ${env_prefix}"
+
   extra_flags=""
 
   # Store the backend globally for CSV output
   ATTENTION_BACKEND="$attn_backend"
 
-  echo "[online] Launching backend=${attn_backend}"
-  echo "Attention backend: ${attn_backend}" >> "$TIMING_LOG"
+  echo "[online] Launching backend=${attn_backend} for ${MODEL_TYPE}"
+  echo "Attention backend: ${attn_backend} (${MODEL_TYPE})" >> "$TIMING_LOG"
 
-  # Build command with proper env handling
-  if [[ "$attn_backend" == "aiter" ]]; then
-    cmd="env '${aiter_env_var}=1' SGLANG_INT4_WEIGHT=1"
-  else
-    cmd="env SGLANG_INT4_WEIGHT=1"
-  fi
+  # Build command with proper env handling based on model type
+  cmd="$(get_model_env_vars "${MODEL_TYPE}")"
 
   cmd="${cmd} python3 -m sglang.launch_server \
         --model '${MODEL}' \
