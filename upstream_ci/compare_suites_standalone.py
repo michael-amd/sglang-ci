@@ -450,17 +450,33 @@ def main():
         print(f"Error fetching or parsing run_suite.py: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Redirect output if needed
+    # Handle output to both terminal and file if needed
     if args.output:
-        sys.stdout = open(args.output, "w", encoding="utf-8")
+        # Import io for StringIO
+        import io
 
-    try:
+        # Capture output to string first
+        output_buffer = io.StringIO()
+        original_stdout = sys.stdout
+        sys.stdout = output_buffer
+
+        try:
+            compare_suites(suites_map, args.format, args.no_details)
+        finally:
+            sys.stdout = original_stdout
+
+        # Get the captured output
+        output_content = output_buffer.getvalue()
+
+        # Write to file
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(output_content)
+
+        # Also print to terminal
+        print(output_content, end="")
+        print(f"Output written to: {args.output}")
+    else:
         compare_suites(suites_map, args.format, args.no_details)
-    finally:
-        if args.output:
-            sys.stdout.close()
-            sys.stdout = sys.__stdout__
-            print(f"Output written to: {args.output}")
 
 
 if __name__ == "__main__":
