@@ -4,15 +4,24 @@ Standalone version of compare_suites.py that works without SGLang dependencies.
 Parses run_suite.py as text instead of executing it.
 
 USAGE:
-    # Generate CSV report with date-stamped filename (RECOMMENDED)
-    python3 compare_suites_standalone.py --format csv --output "sglang_ci_report_$(date +%Y%m%d).csv"
+    # Default: Generate CSV summary report with date-stamped filename (outputs to both terminal and file)
+    python3 compare_suites_standalone.py
 
-    # Compare suites with detailed breakdown
+    # Generate detailed markdown report with date-stamped filename (includes full test lists)
+    python3 compare_suites_standalone.py --details
+
+    # Generate report with custom filename
+    python3 compare_suites_standalone.py --output "my_report.csv"
+    python3 compare_suites_standalone.py --details --output "detailed_report.md"
+
+    # Output only to terminal (no file)
+    python3 compare_suites_standalone.py --stdout
+
+    # Generate detailed markdown report to terminal only
+    python3 compare_suites_standalone.py --details --stdout
+
+    # Compare suites from specific URL
     python3 compare_suites_standalone.py https://github.com/sgl-project/sglang/blob/main/test/srt/run_suite.py
-
-    # Generate summary only (no detailed test lists)
-    python3 compare_suites_standalone.py --format csv --no-details
-    python3 compare_suites_standalone.py --format markdown --no-details
 
 REQUIREMENTS:
     - Internet connection (to fetch workflow and nightly test files)
@@ -271,82 +280,52 @@ def calculate_coverage(amd_count: int, nvidia_count: int) -> str:
 def compare_suites(
     suites_map: Dict[str, List[str]],
     format_type: str = "markdown",
-    no_details: bool = False,
 ):
     """Compare NVIDIA vs AMD test suites and output results."""
 
     if format_type == "csv":
-        if no_details:
-            # CSV header
-            print("pair,nv_total,amd_total,common,only_nv,only_amd")
+        # CSV format with coverage analysis
+        print("Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)")
 
-            # Process suite pairs
-            for nv_suite, amd_suite, display_name in SUITE_PAIRS:
-                nv_tests = suites_map.get(nv_suite, [])
-                amd_tests = suites_map.get(amd_suite, [])
+        total_amd = 0
+        total_nvidia = 0
 
+        # Process suite pairs
+        for nv_suite, amd_suite, display_name in SUITE_PAIRS:
+            nv_tests = suites_map.get(nv_suite, [])
+            amd_tests = suites_map.get(amd_suite, [])
+
+            # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
+            if nv_suite == "per-commit":
                 # Exclude test_mla_flashinfer.py from per-commit suite
-                if nv_suite == "per-commit":
-                    nv_tests = [
-                        test
-                        for test in nv_tests
-                        if "test_mla_flashinfer.py" not in test
-                    ]
+                nv_tests = [
+                    test for test in nv_tests if "test_mla_flashinfer.py" not in test
+                ]
 
-                nv_set = set(nv_tests)
-                amd_set = set(amd_tests)
-                common = len(nv_set & amd_set)
-                only_nv = len(nv_set - amd_set)
-                only_amd = len(amd_set - nv_set)
+                # Add mi35x suite tests and deduplicate
+                mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
+                amd_tests_set = set(amd_tests + mi35x_tests)
+                amd_tests = list(amd_tests_set)
 
-                print(
-                    f"{display_name},{len(nv_tests)},{len(amd_tests)},{common},{only_nv},{only_amd}"
-                )
-        else:
-            # Full CSV with additional categories
-            print("Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)")
+            amd_count = len(amd_tests)
+            nvidia_count = len(nv_tests)
+            coverage = calculate_coverage(amd_count, nvidia_count)
 
-            total_amd = 0
-            total_nvidia = 0
+            print(f"{display_name},{amd_count},{nvidia_count},{coverage}")
+            total_amd += amd_count
+            total_nvidia += nvidia_count
 
-            # Process suite pairs
-            for nv_suite, amd_suite, display_name in SUITE_PAIRS:
-                nv_tests = suites_map.get(nv_suite, [])
-                amd_tests = suites_map.get(amd_suite, [])
+        # Add additional categories from dynamic analysis
+        additional_categories = get_dynamic_additional_categories()
+        for category, amd_count, nvidia_count in additional_categories:
+            coverage = calculate_coverage(amd_count, nvidia_count)
+            print(f"{category},{amd_count},{nvidia_count},{coverage}")
+            total_amd += amd_count
+            total_nvidia += nvidia_count
 
-                # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
-                if nv_suite == "per-commit":
-                    # Exclude test_mla_flashinfer.py from per-commit suite
-                    nv_tests = [
-                        test
-                        for test in nv_tests
-                        if "test_mla_flashinfer.py" not in test
-                    ]
-
-                    # Add mi35x suite tests and deduplicate
-                    mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
-                    amd_tests_set = set(amd_tests + mi35x_tests)
-                    amd_tests = list(amd_tests_set)
-
-                amd_count = len(amd_tests)
-                nvidia_count = len(nv_tests)
-                coverage = calculate_coverage(amd_count, nvidia_count)
-
-                print(f"{display_name},{amd_count},{nvidia_count},{coverage}")
-                total_amd += amd_count
-                total_nvidia += nvidia_count
-
-            # Add additional categories from dynamic analysis
-            additional_categories = get_dynamic_additional_categories()
-            for category, amd_count, nvidia_count in additional_categories:
-                coverage = calculate_coverage(amd_count, nvidia_count)
-                print(f"{category},{amd_count},{nvidia_count},{coverage}")
-                total_amd += amd_count
-                total_nvidia += nvidia_count
-
-            # Total
-            total_coverage = calculate_coverage(total_amd, total_nvidia)
-            print(f"Total,{total_amd},{total_nvidia},{total_coverage}")
+        # Total
+        total_coverage = calculate_coverage(total_amd, total_nvidia)
+        print(f"Total,{total_amd},{total_nvidia},{total_coverage}")
 
     else:  # markdown format
         for nv_suite, amd_suite, display_name in SUITE_PAIRS:
@@ -386,25 +365,18 @@ def compare_suites(
             only_nv = sorted(nv_set - amd_set)
             only_amd = sorted(amd_set - nv_set)
 
-            if no_details:
-                print(f"| Suite | Total | Common | Only in NVIDIA | Only in AMD |")
-                print(f"| --- | --- | --- | --- | --- |")
-                print(
-                    f"| {display_name} | {len(nv_tests)} vs {len(amd_tests)} | {len(common)} | {len(only_nv)} | {len(only_amd)} |"
-                )
-            else:
-                print(f"| Suite | Total | Common | Only in NVIDIA | Only in AMD |")
-                print(f"| --- | --- | --- | --- | --- |")
-                print(
-                    f"| {display_name} | {len(nv_tests)} vs {len(amd_tests)} | {len(common)} | {len(only_nv)} | {len(only_amd)} |"
-                )
-                print()
-                print(f"| Common | Only in NVIDIA | Only in AMD |")
-                print(f"| --- | --- | --- |")
-                common_str = "<br>".join(common) if common else ""
-                only_nv_str = "<br>".join(only_nv) if only_nv else ""
-                only_amd_str = "<br>".join(only_amd) if only_amd else ""
-                print(f"| {common_str} | {only_nv_str} | {only_amd_str} |")
+            print(f"| Suite | Total | Common | Only in NVIDIA | Only in AMD |")
+            print(f"| --- | --- | --- | --- | --- |")
+            print(
+                f"| {display_name} | {len(nv_tests)} vs {len(amd_tests)} | {len(common)} | {len(only_nv)} | {len(only_amd)} |"
+            )
+            print()
+            print(f"| Common | Only in NVIDIA | Only in AMD |")
+            print(f"| --- | --- | --- |")
+            common_str = "<br>".join(common) if common else ""
+            only_nv_str = "<br>".join(only_nv) if only_nv else ""
+            only_amd_str = "<br>".join(only_amd) if only_amd else ""
+            print(f"| {common_str} | {only_nv_str} | {only_amd_str} |")
 
             print()
 
@@ -420,20 +392,19 @@ def main():
         help="Path or URL to run_suite.py (default: GitHub raw URL)",
     )
     parser.add_argument(
-        "--format",
-        choices=["markdown", "csv"],
-        default="markdown",
-        help="Output format (default: markdown)",
-    )
-    parser.add_argument(
-        "--no-details",
+        "--details",
         action="store_true",
-        help="Show summary only without detailed test lists",
+        help="Show detailed test lists (default: summary only)",
     )
     parser.add_argument(
         "--output",
         "-o",
-        help="Output file (default: stdout)",
+        help="Output file (default: date-stamped file based on format)",
+    )
+    parser.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Output to stdout instead of file",
     )
     args = parser.parse_args()
 
@@ -451,10 +422,27 @@ def main():
         print(f"Error fetching or parsing run_suite.py: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Handle output to both terminal and file if needed
-    if args.output:
-        # Import io for StringIO
+    # Determine output behavior
+    if args.stdout:
+        # Output only to stdout
+        # Details flag determines format: details=markdown, no-details=csv
+        format_type = "markdown" if args.details else "csv"
+        compare_suites(suites_map, format_type)
+    else:
+        # Default: output to both terminal and file
         import io
+        from datetime import datetime
+
+        # Determine output filename
+        if args.output:
+            output_file = args.output
+        else:
+            # Default date-stamped filename based on details flag
+            date_stamp = datetime.now().strftime("%Y%m%d")
+            if args.details:
+                output_file = f"sglang_ci_report_{date_stamp}.md"
+            else:
+                output_file = f"sglang_ci_report_{date_stamp}.csv"
 
         # Capture output to string first
         output_buffer = io.StringIO()
@@ -462,7 +450,9 @@ def main():
         sys.stdout = output_buffer
 
         try:
-            compare_suites(suites_map, args.format, args.no_details)
+            # Details flag determines format: details=markdown, no-details=csv
+            format_type = "markdown" if args.details else "csv"
+            compare_suites(suites_map, format_type)
         finally:
             sys.stdout = original_stdout
 
@@ -470,14 +460,12 @@ def main():
         output_content = output_buffer.getvalue()
 
         # Write to file
-        with open(args.output, "w", encoding="utf-8") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(output_content)
 
         # Also print to terminal
         print(output_content, end="")
-        print(f"Output written to: {args.output}")
-    else:
-        compare_suites(suites_map, args.format, args.no_details)
+        print(f"Output written to: {output_file}")
 
 
 if __name__ == "__main__":
