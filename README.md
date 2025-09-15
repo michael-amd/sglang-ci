@@ -41,16 +41,16 @@ The toolkit is designed for both development teams conducting regular performanc
 ## Table of Contents
 
 - [Supported Docker Images](#supported-docker-images)
-- [Benchmark Modes](#benchmark-modes)
+- [Benchmark CI](#benchmark-ci)
   - [Offline Mode](#offline-mode)
     - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
     - [deepseek_perf_offline_csv.sh](#deepseek_perf_offline_csvsh)
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
     - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
-- [Data Processing and Visualization](#data-processing-and-visualization)
-  - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
-  - [Plot Server](#plot-server)
+  - [Data Processing and Visualization](#data-processing-and-visualization)
+    - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
+    - [Plot Server](#plot-server)
 - [Nightly CI](#nightly-ci)
   - [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
     - [nightly_image_check.sh](#nightly_image_checksh)
@@ -105,7 +105,7 @@ The benchmark scripts support Docker images from multiple sources:
 
 ---
 
-## Benchmark Modes
+## Benchmark CI
 
 ### Offline Mode
 
@@ -717,7 +717,7 @@ This section contains tools for analyzing the upstream SGLang project's continuo
 
 **Usage:**
 
-    ```bash
+```bash
 # Default: Generate CSV coverage report with date-stamped filename
 python3 compare_suites_standalone.py
 
@@ -898,12 +898,34 @@ These thresholds can be customized using the `--threshold` parameter in online m
 
 ## Cron Schedule
 
-The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `cron/crontab_rules.txt`.
+The benchmarks and CI processes are scheduled to run daily via cron jobs. Hardware-specific schedules are defined in separate files:
 
-- **GROK Online and Offline Benchmark:** Runs daily at 12 AM PT (2 AM CT) with Teams notifications
-- **DeepSeek Online Benchmark:** Runs daily at 3 AM PT (5 AM CT) with Teams notifications
+- **mi30x hardware:** `cron/crontab_rules_mi30x.txt`
+- **mi35x hardware:** `cron/crontab_rules_mi35x.txt`
 
-To apply these rules, run: `crontab cron/crontab_rules.txt`
+**Currently Scheduled Tests:**
+
+1. **Docker image availability check** - Verifies nightly Docker images are available
+2. **Nightly Unit test** - Runs automated unit tests on latest Docker images
+3. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
+4. **Grok online benchmark** - Performance benchmarking for Grok model
+5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation
+6. **DeepSeek online** - Standard DeepSeek performance benchmarking
+
+**Usage:**
+
+```bash
+# Check specific hardware schedule file for exact timing
+cat cron/crontab_rules_mi30x.txt  # For mi30x hardware
+cat cron/crontab_rules_mi35x.txt  # For mi35x hardware
+
+# Apply cron rules for your hardware type
+crontab cron/crontab_rules_mi30x.txt  # For mi30x
+crontab cron/crontab_rules_mi35x.txt  # For mi35x
+
+# Check currently deployed cron jobs
+crontab -l
+```
 
 ---
 
