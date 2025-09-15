@@ -69,7 +69,7 @@ def count_unittest_executions(workflow_content: str, job_pattern: str) -> int:
 
         # Count direct test file executions (but be more specific)
         direct_test_count = len(
-            re.findall(r"python3 (?!-m).*?test.*?\.py", run_section)
+            re.findall(r"python3 (?!-m)[^\s]*test[^\s]*\.py", run_section)
         )
 
         # Count AMD CI script executions with test files (for bench-test-2-gpu-amd)
@@ -226,7 +226,8 @@ def parse_suite_dict(suite_content: str) -> Dict[str, List[str]]:
 
     # Parse each suite entry like: "per-commit": [ ... ]
     # Handle multi-line arrays with proper bracket matching
-    suite_entry_pattern = r'"([^"]+)"\s*:\s*\[((?:[^\[\]]|\[[^\]]*\])*)\]'
+    # This pattern matches quoted keys followed by arrays, handling nested brackets carefully
+    suite_entry_pattern = r'"([^"]+)"\s*:\s*\[((?:[^\[\]]+|\[[^\]]*\])*)\]'
 
     for suite_match in re.finditer(suite_entry_pattern, suite_content, re.DOTALL):
         suite_name = suite_match.group(1)
