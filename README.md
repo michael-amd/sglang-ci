@@ -48,17 +48,19 @@ The toolkit is designed for both development teams conducting regular performanc
   - [Online Mode](#online-mode)
     - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
     - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
-- [Automated Nightly Benchmarking](#automated-nightly-benchmarking)
-  - [perf_nightly.sh](#perf_nightlysh)
-- [Automated Nightly Unit Test](#automated-nightly-unit-test)
-  - [test_nightly.sh](#test_nightlysh)
-- [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
-  - [nightly_image_check.sh](#nightly_image_checksh)
 - [Data Processing and Visualization](#data-processing-and-visualization)
   - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
   - [Plot Server](#plot-server)
+- [Nightly CI](#nightly-ci)
+  - [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
+    - [nightly_image_check.sh](#nightly_image_checksh)
+  - [Nightly Unit Test](#nightly-unit-test)
+    - [test_nightly.sh](#test_nightlysh)
+  - [Nightly Benchmarking](#nightly-benchmarking)
+    - [perf_nightly.sh](#perf_nightlysh)
+- [Upstream SGLang Tool](#upstream-sglang-tool)
+  - [Compare CI Suites](#compare-ci-suites)
 - [Benchmark Comparison](#benchmark-comparison)
-  - [compare_csv_results.py](#compare_csv_resultspy)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
@@ -362,13 +364,178 @@ The Data Parallel attention mode (`--check-dp-attention`) is a specialized testi
 - **Output Naming:** Creates output folders with `_dp_attention` suffix for easy identification
 - **Use Cases:** Ideal for validating DP attention functionality, debugging server issues, or running quick accuracy-only tests
 
+### Data Processing and Visualization
+
+The benchmark CI includes unified scripts that handle both data processing and plot generation. These scripts consolidate results from multiple benchmark runs and generate performance trend plots, supporting both `grok` and `deepseek` models via a `--model` flag.
+
+#### Processing and Plotting Scripts
+
+These scripts process raw benchmark outputs, create consolidated summary CSV files, and generate plots.
+
+- **`process_and_generate_offline_plots.py`**
+  - **Purpose:** Process raw offline data and create visual representations of performance trends.
+  - **Functionality:**
+    - Consolidates data from multiple dates into a single summary CSV.
+    - Generates plots for latency and throughput vs. date, with backend information.
+  - **Usage:**
+
+    ```bash
+    # For GROK
+    python3 process_and_generate_offline_plots.py --model grok
+
+    # For DeepSeek
+    python3 process_and_generate_offline_plots.py --model deepseek
+    ```
+
+- **`process_and_generate_online_plots.py`**
+  - **Purpose:** Process raw online data and create visual representations of performance trends for both GROK and DeepSeek.
+  - **Functionality:**
+    - Consolidates data from multiple dates into a single summary CSV.
+    - Supports model-specific configurations for `grok` and `deepseek`.
+    - Handles different load metrics (`request_rate` for grok, `concurrency` for deepseek).
+    - Generates a comprehensive plot with subplots for E2E Latency, TTFT, ITL, and, if available, Token/KV Cache data.
+  - **Usage:**
+
+    ```bash
+    cd $WORK_DIR
+    # For GROK
+    python3 process_and_generate_online_plots.py --model grok
+
+    # For DeepSeek
+    python3 process_and_generate_online_plots.py --model deepseek
+    ```
+
+#### Plot Server
+
+A simple HTTP server is provided to view generated plots:
+
+```bash
+# Start the plot server
+bash server/plots_server.sh
+
+# Access plots at http://<server-ip>:8000/
+```
+
+The server uses `server/custom_http_server.py` to serve files with proper directory listings.
+
 ---
 
-## Automated Nightly Benchmarking
+## Nightly CI
+
+This section covers all automated nightly continuous integration processes, including benchmarking, unit testing, and Docker image monitoring.
+
+### Nightly Docker Image Monitoring
+
+Automated Docker image availability monitoring for mi30x and mi35x hardware types with optional Teams alerts.
+
+#### nightly_image_check.sh
+
+Checks nightly Docker images (`rocm/sgl-dev`) for both hardware types using Docker Hub API.
+
+**Key Options:**
+
+- `--date=YYYYMMDD`: Check specific date (default: today PST)
+- `--days=N`: Check last N days (default: 1)
+- `--teams-webhook=URL`: Teams webhook URL for alerts (or set `TEAMS_WEBHOOK_URL`)
+
+**Usage:**
+
+```bash
+# Basic check
+./nightly_image_check.sh
+
+# Check with Teams alerts
+./nightly_image_check.sh --teams-webhook="https://your-webhook-url"
+
+# Check specific date with Teams alerts
+./nightly_image_check.sh --date=20250108 --teams-webhook="https://your-webhook-url"
+```
+
+**Teams Alert Features:**
+
+- ✅ **Success**: All images available (shows specific image tags)
+- ⚠️ **Warning**: Some images missing
+- ❌ **Error**: All images missing or critical issues
+- Includes links to GitHub workflow and Docker Hub for troubleshooting
+- Test mode: `python3 team_alert/send_docker_image_alert.py --test-mode`
+
+### Nightly Unit Test
+
+The automated nightly unit test system provides continuous validation of SGL functionality through automated unit test execution on the latest Docker images. This system runs unit tests from the [SGLang repository test directory](https://github.com/sgl-project/sglang/tree/main/test) to ensure code quality and compatibility across different hardware configurations (mi30x and mi35x) with intelligent resource management and Teams integration for immediate failure notifications.
+
+#### test_nightly.sh
+
+- **Purpose:** Automated nightly unit test runner that discovers, pulls, and runs unit tests from the [SGLang repository](https://github.com/sgl-project/sglang/tree/main/test) on the latest Docker images for SGL with support for mi30x and mi35x hardware variants.
+- **Key Features:**
+  - **Automatic Image Discovery:** Uses Docker Hub API with pagination to find latest non-SRT images from today, then yesterday as fallback
+  - **Hardware Support:** Supports both mi30x and mi35x hardware variants
+  - **Intelligent Resource Management:** Checks GPU idle status and stops existing containers before launching tests
+  - **Teams Integration:** Sends detailed Teams notifications with test results, including success/failure counts and runtime information
+  - **Comprehensive Logging:** Creates detailed logs for debugging and analysis
+  - **Test Discovery:** Automatically discovers and runs all test files from the SGLang repository test directory
+  - **Error Handling:** Robust error detection and reporting for container issues, test failures, and resource conflicts
+
+**Parameters:**
+
+- `--hardware`: Hardware type (`mi30x` or `mi35x`, default: `mi30x`)
+- `--teams-webhook`: Teams webhook URL for notifications (or set `TEAMS_WEBHOOK_URL` environment variable)
+- `--dry-run`: Show what would be done without executing
+- `--verbose`: Enable detailed logging output
+- `--container-timeout`: Container startup timeout in seconds (default: 300)
+- `--test-timeout`: Individual test timeout in seconds (default: 1800)
+
+**Usage:**
+
+```bash
+# Basic run with mi30x hardware
+bash test_nightly.sh
+
+# Run with mi35x hardware and Teams notifications
+bash test_nightly.sh --hardware=mi35x --teams-webhook="https://your-webhook-url"
+
+# Dry run to see what would be executed
+bash test_nightly.sh --dry-run --verbose
+
+# Custom timeouts for slower tests
+bash test_nightly.sh --container-timeout=600 --test-timeout=3600
+```
+
+**Teams Notifications:**
+
+- 🟢 **Success**: All tests passed (includes test count, runtime, and Docker image info)
+- 🟡 **Partial Success**: Some tests failed (detailed breakdown of pass/fail counts)
+- 🔴 **Failure**: Critical errors or all tests failed
+- **Rich Information**: Container details, test execution summary, and troubleshooting links
+- **Test Mode**: Use `python3 team_alert/send_unit_test_alert.py --test-mode` for testing
+
+**Output Structure:**
+
+```
+unit_test_results/
+├── YYYYMMDD_unit_test_{hardware}/
+│   ├── container_logs.txt          # Docker container startup logs
+│   ├── test_execution_summary.txt  # High-level test results summary
+│   ├── test_results/               # Individual test outputs
+│   │   ├── test_file1.py.log      # Individual test logs
+│   │   └── test_file2.py.log
+│   └── teams_notification.json     # Teams notification payload (if sent)
+```
+
+**Troubleshooting:**
+
+- **"No suitable Docker images found"**: Check Docker Hub for available images or try different date
+- **"Teams notifications disabled"**: No webhook URL configured - use `--teams-webhook-url` or set `TEAMS_WEBHOOK_URL` environment variable
+- **HTTP 202 responses**: Normal for Power Automate flows (asynchronous processing)
+- **Plot server not accessible**: Check `PLOT_SERVER_HOST`/`PLOT_SERVER_PORT` and ensure plot server is running, or use `--check-server` to test connectivity
+- **Permission issues**: Ensure webhook URL has proper Teams permissions
+- **Missing analysis data**: Check `BENCHMARK_BASE_DIR` environment variable or use `--benchmark-dir` to specify custom benchmark directory
+- **Plot files not found**: Verify `--plot-dir` path to ensure plots exist with expected naming pattern
+
+### Nightly Benchmarking
 
 The `perf_nightly.sh` script provides automated orchestration for running nightly benchmarks for both GROK and DeepSeek. This script is designed to be run via cron jobs and handles the complete workflow from Docker image management to benchmark execution and data processing.
 
-### perf_nightly.sh
+#### perf_nightly.sh
 
 - **Purpose:** Automated nightly benchmark orchestration that pulls the latest `rocm/sgl-dev` Docker image and runs benchmarks with proper resource management.
 - **Key Features:**
@@ -414,67 +581,6 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
 **Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
 
 ---
-
-## Automated Nightly Unit Test
-
-The automated nightly unit test system provides continuous validation of SGL functionality through automated unit test execution on the latest Docker images. This system runs unit tests from the [SGLang repository test directory](https://github.com/sgl-project/sglang/tree/main/test) to ensure code quality and compatibility across different hardware configurations (mi30x and mi35x) with intelligent resource management and Teams integration for immediate failure notifications.
-
-### test_nightly.sh
-
-- **Purpose:** Automated nightly unit test runner that discovers, pulls, and runs unit tests from the [SGLang repository](https://github.com/sgl-project/sglang/tree/main/test) on the latest Docker images for SGL with support for mi30x and mi35x hardware variants.
-- **Key Features:**
-  - **Automatic Image Discovery:** Uses Docker Hub API with pagination to find latest non-SRT images from today, then yesterday as fallback
-  - **Hardware Support:** Supports both mi30x and mi35x hardware variants
-  - **GPU Resource Management:** Intelligent GPU utilization checks and container lifecycle management with configurable thresholds
-  - **Unit Test Execution:** Runs `test_custom_allreduce.TestCustomAllReduce` unit test from the SGLang test suite
-  - **Teams Integration:** Optional Microsoft Teams notifications for test results with adaptive card alerts
-  - **Process Locking:** Prevents multiple instances from running simultaneously
-- **Parameters:**
-  - `--hardware=HW`: Hardware type - `mi30x` or `mi35x` (default: `mi30x`)
-  - `--teams-webhook-url=URL`: Teams webhook URL for test result notifications
-  - `--help`, `-h`: Show detailed help message
-- **Test Configuration:**
-  - **Unit Test:** `test_custom_allreduce.TestCustomAllReduce` from the [SGLang test suite](https://github.com/sgl-project/sglang/tree/main/test)
-  - **Test Directory:** `/sgl-workspace/sglang/test/srt`
-  - **Log Directory:** `${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/`
-- **Output:**
-  - **Log Files:** Structured logs with test metadata, execution output, and results summary
-  - **Teams Alerts:** Adaptive cards showing test status, runtime, hardware details, and Docker image info
-  - **Process Logs:** Console output with detailed workflow progress and container management
-- **Usage:**
-
-  ```bash
-  # Basic usage with default mi30x hardware
-  bash test_nightly.sh
-
-  # Test mi35x hardware
-  bash test_nightly.sh --hardware=mi35x
-
-  # Test with Teams notifications
-  bash test_nightly.sh --teams-webhook-url="https://your-webhook-url"
-
-  # Test mi35x with Teams notifications
-  bash test_nightly.sh --hardware=mi35x --teams-webhook-url="https://your-webhook-url"
-
-  # Show help
-  bash test_nightly.sh --help
-  ```
-
-**Teams Alert Content:**
-When Teams notifications are enabled, the script sends adaptive cards containing:
-- **unit-test-backend-8-gpu-CAR-amd:** section header
-- **Test detail:** test_custom_allreduce.TestCustomAllReduce from the [SGLang test suite](https://github.com/sgl-project/sglang/tree/main/test)
-- **Docker Image:** Full image name with tag
-- **Hostname:** Machine where test was executed
-- **Hardware:** Hardware type (mi30x or mi35x)
-- **Runtime:** Test execution time in human-readable format
-- **Status:** Pass/fail with appropriate icons and colors
-- **Error Details:** For failed tests, includes error information and troubleshooting steps
-- **Action Links:** GitHub repository and Docker Hub links for further investigation
-
-**Note:** This script is designed for automated execution via cron jobs and integrates seamlessly with CI/CD pipelines for continuous unit test validation across different hardware configurations and nightly Docker image builds.
-
-### Microsoft Teams Integration
 
 The nightly benchmark script includes built-in Microsoft Teams integration to automatically send plot notifications to Teams channels and group chats when benchmarks complete. **Teams notifications are disabled by default** and require explicit configuration to enable.
 
@@ -535,21 +641,7 @@ The Teams integration includes **automatic benchmark health monitoring** with in
 - ⚠️ **Warning**: Performance regression detected
 - ❌ **Error**: GSM8K accuracy failure or critical issues
 
-**⚙️ Analysis Control**
-
-```bash
-# Enable analysis with custom lookback period
-bash perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=14
-
-# Skip analysis for faster notifications (plots only)
-bash perf_nightly.sh --teams-webhook-url="..." --teams-skip-analysis
-
-# Configure via environment variables
-export TEAMS_SKIP_ANALYSIS="false"
-export TEAMS_ANALYSIS_DAYS="7"
-```
-
-#### Getting Webhook URLs
+#### Setting Up Teams Webhook URLs
 
 **For Teams Channels (Incoming Webhook)**
 
@@ -566,33 +658,6 @@ export TEAMS_ANALYSIS_DAYS="7"
 3. Add "Post message in a chat or channel" action
 4. Configure to post to your group chat
 5. Copy the HTTP POST URL: `https://prod-XX.westus.logic.azure.com:443/workflows/...`
-
-#### Configuration Options
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TEAMS_WEBHOOK_URL` | Teams webhook URL (**required to enable**) | Empty (disabled) |
-| `TEAMS_SKIP_ANALYSIS` | Skip GSM8K accuracy and performance analysis | `false` |
-| `TEAMS_ANALYSIS_DAYS` | Days to look back for performance comparison | `7` |
-| `PLOT_SERVER_HOST` | Plot server hostname | Auto-detected via `hostname -I` |
-| `PLOT_SERVER_PORT` | Plot server port | `8000` |
-| `PLOT_SERVER_BASE_URL` | Full server URL override | - |
-| `BENCHMARK_BASE_DIR` | Base directory for benchmark data | `/mnt/raid/michael/sgl_benchmark_ci` |
-
-#### Command Line Options
-
-The Teams notification script supports these additional command line options:
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--model` | Model name (`grok`, `deepseek`) | **Required** |
-| `--mode` | Benchmark mode (`online`, `offline`) | **Required** |
-| `--webhook-url` | Teams webhook URL (overrides `TEAMS_WEBHOOK_URL`) | - |
-| `--plot-dir` | Base directory where plots are stored | `/mnt/raid/michael/sgl_benchmark_ci/plots_server` |
-| `--benchmark-dir` | Base benchmark directory (overrides `BENCHMARK_BASE_DIR`) | `/mnt/raid/michael/sgl_benchmark_ci` |
-| `--check-server` | Check plot server accessibility before sending | `false` |
-| `--skip-analysis` | Skip GSM8K accuracy and performance analysis | `false` |
-| `--analysis-days` | Days to look back for performance comparison | `7` |
 
 #### Teams Message Content
 
@@ -630,108 +695,54 @@ bash perf_nightly.sh
 - **Missing analysis data**: Check `BENCHMARK_BASE_DIR` environment variable or use `--benchmark-dir` to specify custom benchmark directory
 - **Plot files not found**: Verify `--plot-dir` path to ensure plots exist with expected naming pattern
 
----
+## Upstream SGLang Tool
 
-## Nightly Docker Image Monitoring
+This section contains tools for analyzing the upstream SGLang project's continuous integration (CI) system.
 
-Automated Docker image availability monitoring for mi30x and mi35x hardware types with optional Teams alerts.
+### Compare CI Suites
 
-### nightly_image_check.sh
+**Purpose:** Compare NVIDIA vs AMD test suites from SGLang's CI system to analyze test coverage and identify differences between GPU platforms.
 
-Checks nightly Docker images (`rocm/sgl-dev`) for both hardware types using Docker Hub API.
+**Script:** `upstream_ci/compare_suites_standalone.py`
 
-**Key Options:**
+**Key Features:**
 
-- `--date=YYYYMMDD`: Check specific date (default: today PST)
-- `--days=N`: Check last N days (default: 1)
-- `--teams-webhook=URL`: Teams webhook URL for alerts (or set `TEAMS_WEBHOOK_URL`)
+- **Automatic Suite Analysis:** Fetches and parses SGLang's test suites from GitHub
+- **Coverage Comparison:** Generates detailed coverage analysis between AMD and NVIDIA test suites
+- **Dual Output Formats:**
+  - CSV format with coverage percentages and test counts
+  - Markdown format with detailed test breakdowns
+- **Dynamic Category Detection:** Automatically detects performance, accuracy, and nightly test categories
+- **Standalone Operation:** Works without SGLang dependencies, parsing test files as text
 
 **Usage:**
 
-```bash
-# Basic check
-./nightly_image_check.sh
+    ```bash
+# Default: Generate CSV coverage report with date-stamped filename
+python3 compare_suites_standalone.py
 
-# Check with Teams alerts
-./nightly_image_check.sh --teams-webhook="https://your-webhook-url"
+# Generate detailed markdown report with full test lists
+python3 compare_suites_standalone.py --details
 
-# Check specific date with Teams alerts
-./nightly_image_check.sh --date=20250108 --teams-webhook="https://your-webhook-url"
+# Output to terminal only (no file creation)
+python3 compare_suites_standalone.py --stdout
+
+# Custom output filename
+python3 compare_suites_standalone.py --output "my_report.csv"
 ```
 
-**Teams Alert Features:**
+**Output Examples:**
 
-- ✅ **Success**: All images available (shows specific image tags)
-- ⚠️ **Warning**: Some images missing
-- ❌ **Error**: All images missing or critical issues
-- Includes links to GitHub workflow and Docker Hub for troubleshooting
-- Test mode: `python3 team_alert/send_docker_image_alert.py --test-mode`
+- **CSV Format:** Test categories with AMD/NVIDIA test counts and coverage percentages
+- **Markdown Format:** Detailed breakdowns showing common tests, NVIDIA-only tests, and AMD-only tests
 
----
-
-## Data Processing and Visualization
-
-The benchmark CI includes unified scripts that handle both data processing and plot generation. These scripts consolidate results from multiple benchmark runs and generate performance trend plots, supporting both `grok` and `deepseek` models via a `--model` flag.
-
-### Processing and Plotting Scripts
-
-These scripts process raw benchmark outputs, create consolidated summary CSV files, and generate plots.
-
-- **`process_and_generate_offline_plots.py`**
-  - **Purpose:** Process raw offline data and create visual representations of performance trends.
-  - **Functionality:**
-    - Consolidates data from multiple dates into a single summary CSV.
-    - Generates plots for latency and throughput vs. date, with backend information.
-  - **Usage:**
-
-    ```bash
-    # For GROK
-    python3 process_and_generate_offline_plots.py --model grok
-
-    # For DeepSeek
-    python3 process_and_generate_offline_plots.py --model deepseek
-    ```
-
-- **`process_and_generate_online_plots.py`**
-  - **Purpose:** Process raw online data and create visual representations of performance trends for both GROK and DeepSeek.
-  - **Functionality:**
-    - Consolidates data from multiple dates into a single summary CSV.
-    - Supports model-specific configurations for `grok` and `deepseek`.
-    - Handles different load metrics (`request_rate` for grok, `concurrency` for deepseek).
-    - Generates a comprehensive plot with subplots for E2E Latency, TTFT, ITL, and, if available, Token/KV Cache data.
-  - **Usage:**
-
-    ```bash
-    cd $WORK_DIR
-    # For GROK
-    python3 process_and_generate_online_plots.py --model grok
-
-    # For DeepSeek
-    python3 process_and_generate_online_plots.py --model deepseek
-    ```
-
-### Plot Server
-
-A simple HTTP server is provided to view generated plots:
-
-```bash
-# Start the plot server
-bash server/plots_server.sh
-
-# Access plots at http://<server-ip>:8000/
-```
-
-The server uses `server/custom_http_server.py` to serve files with proper directory listings.
-
----
-
-## Benchmark Comparison
+### Benchmark Comparison
 
 The benchmark CI includes a powerful comparison tool that allows you to compare CSV results between different benchmark runs, automatically extracting GSM8K accuracy information and generating detailed performance comparison reports.
 
-### compare_csv_results.py
-
 **Purpose:** Compare SGLang benchmark CSV results from different runs and generate comprehensive markdown reports with performance analysis.
+
+**Script:** `compare_csv_results.py`
 
 **Key Features:**
 
