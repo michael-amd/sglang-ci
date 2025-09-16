@@ -41,7 +41,7 @@ import pandas as pd
 
 # Configuration variables - can be overridden via environment variables
 DEFAULT_OUTPUT_DIR = os.environ.get(
-    "COMPARISON_OUTPUT_DIR", "/mnt/raid/michael/sgl_benchmark_ci/comparison_results"
+    "COMPARISON_OUTPUT_DIR", "/mnt/raid/michael/sglang-ci/comparison_results"
 )
 GSM8K_ACCURACY_THRESHOLD = float(os.environ.get("GSM8K_ACCURACY_THRESHOLD", "0.001"))
 PERFORMANCE_THRESHOLD = float(os.environ.get("PERFORMANCE_THRESHOLD", "5.0"))
@@ -462,6 +462,9 @@ def compare_online_results(
 
 
 def main():
+    # Declare global variables at the start of the function
+    global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
+    
     parser = argparse.ArgumentParser(
         description="Compare SGLang benchmark CSV results",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -505,7 +508,6 @@ def main():
     args = parser.parse_args()
 
     # Update global thresholds with command-line arguments
-    global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
     GSM8K_ACCURACY_THRESHOLD = args.gsm8k_threshold
     PERFORMANCE_THRESHOLD = args.performance_threshold
 

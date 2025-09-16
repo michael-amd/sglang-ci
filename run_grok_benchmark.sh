@@ -22,7 +22,7 @@ set -euo pipefail
 # Configuration variables - can be overridden via environment variables
 IMAGE_NAME="${DOCKER_IMAGE:-lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x}"
 MODEL_PATH="${MODEL_PATH:-/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8}"
-WORK_DIR="${WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+WORK_DIR="${WORK_DIR:-/mnt/raid/michael/sglang-ci}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-$MODEL_PATH}"  # Use model path as default for tokenizer
 
 echo "Configuration:"
