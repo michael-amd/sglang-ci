@@ -381,7 +381,6 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
   - `--model=MODEL`: The model to run. Options: `grok` (default), `deepseek`.
   - `--mode=MODE`: Which benchmarks to run. Options: `all` (default), `offline`, `online`.
 - **Environment Variables:** All configuration can be customized via environment variables:
-  - `BENCHMARK_CI_DIR`: Base directory for benchmark scripts (default: `/mnt/raid/michael/sgl_benchmark_ci`)
   - `MOUNT_DIR`: Directory to mount in container (default: `/mnt/raid/`)
   - `WORK_DIR`: Working directory inside container (default: `/sgl-workspace`)
   - `IMAGE_REPO`: Docker image repository (default: `rocm/sgl-dev`)
@@ -577,7 +576,7 @@ export TEAMS_ANALYSIS_DAYS="7"
 | `PLOT_SERVER_HOST` | Plot server hostname | Auto-detected via `hostname -I` |
 | `PLOT_SERVER_PORT` | Plot server port | `8000` |
 | `PLOT_SERVER_BASE_URL` | Full server URL override | - |
-| `BENCHMARK_BASE_DIR` | Base directory for benchmark data | `/mnt/raid/michael/sgl_benchmark_ci` |
+| `BENCHMARK_BASE_DIR` | Base directory for benchmark data | `~/sglang-ci` |
 
 #### Command Line Options
 
@@ -588,8 +587,8 @@ The Teams notification script supports these additional command line options:
 | `--model` | Model name (`grok`, `deepseek`) | **Required** |
 | `--mode` | Benchmark mode (`online`, `offline`) | **Required** |
 | `--webhook-url` | Teams webhook URL (overrides `TEAMS_WEBHOOK_URL`) | - |
-| `--plot-dir` | Base directory where plots are stored | `/mnt/raid/michael/sgl_benchmark_ci/plots_server` |
-| `--benchmark-dir` | Base benchmark directory (overrides `BENCHMARK_BASE_DIR`) | `/mnt/raid/michael/sgl_benchmark_ci` |
+| `--plot-dir` | Base directory where plots are stored | `~/sglang-ci/plots_server` |
+| `--benchmark-dir` | Base benchmark directory (overrides `BENCHMARK_BASE_DIR`) | `~/sglang-ci` |
 | `--check-server` | Check plot server accessibility before sending | `false` |
 | `--skip-analysis` | Skip GSM8K accuracy and performance analysis | `false` |
 | `--analysis-days` | Days to look back for performance comparison | `7` |
@@ -750,7 +749,7 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 - `--model1`: Model name for first directory (overrides `--model`)
 - `--model2`: Model name for second directory (overrides `--model`)
 - `--output-md`: Custom path for output markdown file (optional)
-- `--output-dir`: Output directory (default: `/mnt/raid/michael/sgl_benchmark_ci/comparison_results`)
+- `--output-dir`: Output directory (default: `~/sglang-ci/comparison_results`)
 - `--append`: Append to existing file instead of overwriting
 - `--gsm8k-threshold`: GSM8K accuracy threshold for significance detection (default: 0.001)
 - `--performance-threshold`: Performance change threshold for highlighting (default: 5.0%)
@@ -887,12 +886,34 @@ These thresholds can be customized using the `--threshold` parameter in online m
 
 ## Cron Schedule
 
-The benchmarks are scheduled to run daily via cron jobs. The schedule is defined in `cron/crontab_rules.txt`.
+The benchmarks and CI processes are scheduled to run daily via cron jobs. Hardware-specific schedules are defined in separate files:
 
-- **GROK Online and Offline Benchmark:** Runs daily at 12 AM PT (2 AM CT) with Teams notifications
-- **DeepSeek Online Benchmark:** Runs daily at 3 AM PT (5 AM CT) with Teams notifications
+- **mi30x hardware:** `cron/crontab_rules_mi30x.txt`
+- **mi35x hardware:** `cron/crontab_rules_mi35x.txt`
 
-To apply these rules, run: `crontab cron/crontab_rules.txt`
+**Currently Scheduled Tests:**
+
+1. **Docker image availability check** - Verifies nightly Docker images are available
+2. **Nightly Unit test** - Runs automated unit tests on latest Docker images
+3. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
+4. **Grok online benchmark** - Performance benchmarking for Grok model
+5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation
+6. **DeepSeek online** - Standard DeepSeek performance benchmarking
+
+**Usage:**
+
+```bash
+# Check specific hardware schedule file for exact timing
+cat cron/crontab_rules_mi30x.txt  # For mi30x hardware
+cat cron/crontab_rules_mi35x.txt  # For mi35x hardware
+
+# Apply cron rules for your hardware type
+crontab cron/crontab_rules_mi30x.txt  # For mi30x
+crontab cron/crontab_rules_mi35x.txt  # For mi35x
+
+# Check currently deployed cron jobs
+crontab -l
+```
 
 ---
 
