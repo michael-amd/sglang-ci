@@ -637,6 +637,13 @@ start_sglang_server() {
     echo "Server startup time: ${startup_duration} seconds" >> "$TIMING_LOG"
 }
 
+## 2.  Helper Functions ---------------------------------------------------------
+
+# Helper function to check if we should run serving benchmarks
+should_run_serving_benchmarks() {
+    [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]
+}
+
 ## 2.  Run-folder bookkeeping ---------------------------------------------------
 SCRIPT_START_TIME=$(date +%s)
 echo "[online] Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
@@ -878,8 +885,8 @@ calculate_total_runs() {
     local gsm8k_runs=$GSM8K_RUNS
     local serving_runs=0
 
-    # Only count serving runs if not in DP attention mode or torch compile mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]; then
+    # Only count serving runs if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         local concurrency_levels
         read -ra concurrency_levels <<< "$BENCHMARK_CONCURRENCY_LEVELS"
         serving_runs=$((${#concurrency_levels[@]} * BENCHMARK_RUNS_PER_CONCURRENCY))
@@ -903,10 +910,10 @@ calculate_total_runs() {
         mode_desc="standard"
     fi
 
-    if [ "$CHECK_DP_ATTENTION" = "true" ] || [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K only - ${mode_desc} mode)"
-    else
+    if should_run_serving_benchmarks; then
         echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs}) - ${mode_desc} mode"
+    else
+        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K only - ${mode_desc} mode)"
     fi
 }
 
@@ -1191,8 +1198,8 @@ check_all_logs_complete() {
         fi
     fi
 
-    # Check serving benchmark logs only if not in DP attention mode or torch compile mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]; then
+    # Check serving benchmark logs only if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         echo "Checking serving benchmark logs..."
         for concurrency in "${concurrency_values[@]}"; do
             for run_number in $(seq 1 "$BENCHMARK_RUNS_PER_CONCURRENCY"); do
@@ -1239,15 +1246,7 @@ check_all_logs_complete() {
 
     # All benchmarks are complete based on the mode
     local benchmarks_complete=false
-    if [ "$CHECK_DP_ATTENTION" = "true" ] || [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        # In DP attention mode or torch compile mode, only GSM8K needs to be complete
-        if [ "$gsm8k_complete" = true ]; then
-            benchmarks_complete=true
-            echo "✅ All benchmark logs (GSM8K only - ${mode_desc} mode) are present and complete! No server startup needed."
-        else
-            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
-        fi
-    else
+    if should_run_serving_benchmarks; then
         # In standard mode, both serving and GSM8K logs need to be complete
         if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
             benchmarks_complete=true
@@ -1259,6 +1258,14 @@ check_all_logs_complete() {
             if [ "$gsm8k_complete" = false ]; then
                 echo "❌ GSM8K benchmark is missing, empty, or incomplete."
             fi
+        fi
+    else
+        # In DP attention mode or torch compile mode, only GSM8K needs to be complete
+        if [ "$gsm8k_complete" = true ]; then
+            benchmarks_complete=true
+            echo "✅ All benchmark logs (GSM8K only - ${mode_desc} mode) are present and complete! No server startup needed."
+        else
+            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
         fi
     fi
 
@@ -1275,8 +1282,8 @@ if check_all_logs_complete; then
     echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
     echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
 
-    # Only generate serving CSV if not in DP attention mode or torch compile mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]; then
+    # Only generate serving CSV if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         # Initialize the structured CSV
         init_serving_csv
 
@@ -1350,8 +1357,8 @@ else
         exit 1
     fi
 
-    # Skip serving benchmarks if in DP attention mode or torch compile mode (GSM8K only)
-    if [ "$CHECK_DP_ATTENTION" = "true" ] || [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    # Skip serving benchmarks if not in standard mode (GSM8K only)
+    if ! should_run_serving_benchmarks; then
         # Build mode description for logging
         mode_desc=""
         if [ "$CHECK_DP_ATTENTION" = "true" ]; then
@@ -1407,7 +1414,7 @@ serving_end_time=$(date +%s)
 serving_duration=$((serving_end_time - serving_start_time))
 
 # Only show serving benchmark completion messages if we actually ran serving benchmarks
-if [ "$CHECK_DP_ATTENTION" = "true" ] || [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+if ! should_run_serving_benchmarks; then
     # Build mode description for final message
     mode_desc=""
     if [ "$CHECK_DP_ATTENTION" = "true" ]; then
@@ -1422,14 +1429,8 @@ if [ "$CHECK_DP_ATTENTION" = "true" ] || [ "$ENABLE_TORCH_COMPILE" = "true" ]; t
     fi
     echo "✅ GSM8K benchmark completed in ${mode_desc} mode (serving benchmarks skipped)."
 else
-    # Build mode description for final message
-    mode_desc=""
-    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        mode_desc="torch compile "
-    else
-        mode_desc="standard "
-    fi
-    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (${mode_desc}mode)."
+    # Build mode description for final message (standard mode only)
+    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (standard mode)."
     echo "Structured serving benchmark results written to ${SERVING_CSV}"
     echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
 fi
