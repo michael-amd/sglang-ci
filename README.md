@@ -548,7 +548,6 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
   - `--model=MODEL`: The model to run. Options: `grok` (default), `deepseek`.
   - `--mode=MODE`: Which benchmarks to run. Options: `all` (default), `offline`, `online`.
 - **Environment Variables:** All configuration can be customized via environment variables:
-  - `BENCHMARK_CI_DIR`: Base directory for benchmark scripts (default: `/mnt/raid/michael/sgl_benchmark_ci`)
   - `MOUNT_DIR`: Directory to mount in container (default: `/mnt/raid/`)
   - `WORK_DIR`: Working directory inside container (default: `/sgl-workspace`)
   - `IMAGE_REPO`: Docker image repository (default: `rocm/sgl-dev`)
@@ -659,6 +658,33 @@ The Teams integration includes **automatic benchmark health monitoring** with in
 4. Configure to post to your group chat
 5. Copy the HTTP POST URL: `https://prod-XX.westus.logic.azure.com:443/workflows/...`
 
+#### Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TEAMS_WEBHOOK_URL` | Teams webhook URL (**required to enable**) | Empty (disabled) |
+| `TEAMS_SKIP_ANALYSIS` | Skip GSM8K accuracy and performance analysis | `false` |
+| `TEAMS_ANALYSIS_DAYS` | Days to look back for performance comparison | `7` |
+| `PLOT_SERVER_HOST` | Plot server hostname | Auto-detected via `hostname -I` |
+| `PLOT_SERVER_PORT` | Plot server port | `8000` |
+| `PLOT_SERVER_BASE_URL` | Full server URL override | - |
+| `BENCHMARK_BASE_DIR` | Base directory for benchmark data | `~/sglang-ci` |
+
+#### Command Line Options
+
+The Teams notification script supports these additional command line options:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--model` | Model name (`grok`, `deepseek`) | **Required** |
+| `--mode` | Benchmark mode (`online`, `offline`) | **Required** |
+| `--webhook-url` | Teams webhook URL (overrides `TEAMS_WEBHOOK_URL`) | - |
+| `--plot-dir` | Base directory where plots are stored | `~/sglang-ci/plots_server` |
+| `--benchmark-dir` | Base benchmark directory (overrides `BENCHMARK_BASE_DIR`) | `~/sglang-ci` |
+| `--check-server` | Check plot server accessibility before sending | `false` |
+| `--skip-analysis` | Skip GSM8K accuracy and performance analysis | `false` |
+| `--analysis-days` | Days to look back for performance comparison | `7` |
+
 #### Teams Message Content
 
 When benchmarks complete, Teams receives text-only adaptive cards containing:
@@ -761,7 +787,7 @@ The benchmark CI includes a powerful comparison tool that allows you to compare 
 - `--model1`: Model name for first directory (overrides `--model`)
 - `--model2`: Model name for second directory (overrides `--model`)
 - `--output-md`: Custom path for output markdown file (optional)
-- `--output-dir`: Output directory (default: `/mnt/raid/michael/sgl_benchmark_ci/comparison_results`)
+- `--output-dir`: Output directory (default: `~/sglang-ci/comparison_results`)
 - `--append`: Append to existing file instead of overwriting
 - `--gsm8k-threshold`: GSM8K accuracy threshold for significance detection (default: 0.001)
 - `--performance-threshold`: Performance change threshold for highlighting (default: 5.0%)

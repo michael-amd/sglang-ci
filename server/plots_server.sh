@@ -20,8 +20,8 @@ set -euo pipefail
 
 # Default configuration - can be overridden via environment variables
 DEFAULT_PORT="${HTTP_SERVER_PORT:-8000}"
-DEFAULT_PLOTS_DIR="${PLOTS_SERVER_DIR:-/mnt/raid/michael/sgl_benchmark_ci/plots_server}"
-DEFAULT_BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_PLOTS_DIR="${PLOTS_SERVER_DIR:-/mnt/raid/michael/sglang-ci/plots_server}"
+DEFAULT_BENCHMARK_CI_DIR="${BENCHMARK_CI_DIR:-/mnt/raid/michael/sglang-ci}"
 DEFAULT_MODEL_DIRS="${PLOTS_MODEL_DIRS:-"GROK1 DeepSeek-V3-0324"}"  # Space-separated list
 
 # Server configuration - HTTP server script defaults to same directory as this script

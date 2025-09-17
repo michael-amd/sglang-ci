@@ -82,7 +82,7 @@ echo ""
 
 # Base paths and directories
 TEST_CI_DIR="${TEST_CI_DIR:-$(pwd)}"
-MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt/raid/michael/sglang-ci}"
 WORK_DIR="${WORK_DIR:-/sgl-workspace}"
 
 # Docker configuration
