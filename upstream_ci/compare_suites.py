@@ -1,36 +1,185 @@
 #!/usr/bin/env python3
+"""
+Standalone version of compare_suites.py that works without SGLang dependencies.
+Parses run_suite.py as text instead of executing it.
+
+USAGE:
+    # Default: Generate CSV summary report with date-stamped filename (outputs to both terminal and file)
+    python3 compare_suites.py
+
+    # Generate detailed markdown report with date-stamped filename (includes full test lists)
+    python3 compare_suites.py --details
+
+    # Generate report with custom filename
+    python3 compare_suites.py --output "my_report.csv"
+    python3 compare_suites.py --details --output "detailed_report.md"
+
+    # Output only to terminal (no file)
+    python3 compare_suites.py --stdout
+
+    # Generate detailed markdown report to terminal only
+    python3 compare_suites.py --details --stdout
+
+    # Compare suites from specific URL
+    python3 compare_suites.py https://github.com/sgl-project/sglang/blob/main/test/srt/run_suite.py
+
+REQUIREMENTS:
+    - Internet connection (to fetch workflow and nightly test files)
+    - Python requests library
+"""
+
 import argparse
-import os
+import csv
 import re
-import runpy
 import sys
-import tempfile
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
 try:
     import requests
 except ImportError:
     requests = None
 
+# Suite pairs mapping from internal names to display names
 SUITE_PAIRS = [
-    ("per-commit", "per-commit-amd"),
-    ("per-commit-2-gpu", "per-commit-2-gpu-amd"),
-    ("per-commit-4-gpu", "per-commit-4-gpu-amd"),
-    ("per-commit-8-gpu", "per-commit-8-gpu-amd"),
+    ("per-commit", "per-commit-amd", "unit-test-backend-1-gpu"),
+    ("per-commit-2-gpu", "per-commit-2-gpu-amd", "unit-test-backend-2-gpu"),
+    ("per-commit-4-gpu", "per-commit-4-gpu-amd", "unit-test-backend-4-gpu"),
+    ("per-commit-8-gpu", "per-commit-8-gpu-amd", "unit-test-backend-8-gpu"),
 ]
 
-LIKELY_SUITE_VARNAMES = [
-    "suites",
-    "SUITES",
-    "SUITE_MAP",
-    "SUITE_DEFS",
-    "SUITE_DEFINITIONS",
-    "TEST_SUITES",
-    "SRT_SUITES",
-]
+# URLs for workflow and test files
+NVIDIA_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml"
+AMD_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml"
+NVIDIA_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py"
+AMD_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval_amd.py"
+
+
+def count_unittest_executions(workflow_content: str, job_pattern: str) -> int:
+    """Count unittest executions in a workflow job."""
+    # Find the specific job section more precisely
+    job_match = re.search(
+        rf"  {job_pattern}:(.*?)(?=\n  [a-zA-Z]|$)", workflow_content, re.DOTALL
+    )
+    if not job_match:
+        return 0
+
+    job_content = job_match.group(1)
+
+    # Only count unittest executions in run steps
+    run_sections = re.findall(
+        r"run:\s*\|(.*?)(?=\n      - name:|$)", job_content, re.DOTALL
+    )
+
+    total_count = 0
+    for run_section in run_sections:
+        # Count unittest executions
+        unittest_count = len(re.findall(r"python3 -m unittest", run_section))
+
+        # Count direct test file executions (but be more specific)
+        direct_test_count = len(
+            re.findall(r"python3 (?!-m)[^\s]*test[^\s]*\.py", run_section)
+        )
+
+        # Count AMD CI script executions with test files (for bench-test-2-gpu-amd)
+        amd_ci_test_count = len(
+            re.findall(r"bash.*amd_ci_exec\.sh.*python3.*test.*?\.py", run_section)
+        )
+
+        total_count += unittest_count + direct_test_count + amd_ci_test_count
+
+    return total_count
+
+
+def count_nightly_models(nightly_content: str) -> int:
+    """Count models in MODEL_SCORE_THRESHOLDS dictionary."""
+    # Find the MODEL_SCORE_THRESHOLDS section
+    threshold_match = re.search(
+        r"MODEL_SCORE_THRESHOLDS\s*=\s*\{([^}]+)\}", nightly_content, re.DOTALL
+    )
+    if not threshold_match:
+        return 0
+
+    threshold_content = threshold_match.group(1)
+
+    # Count entries with threshold values (": 0.XX")
+    model_count = len(re.findall(r'": 0\.\d+', threshold_content))
+
+    return model_count
+
+
+def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
+    """Dynamically fetch test counts from workflow and nightly files."""
+    try:
+        # Fetch workflow files
+        nvidia_workflow = fetch_text(NVIDIA_WORKFLOW_URL)
+        amd_workflow = fetch_text(AMD_WORKFLOW_URL)
+
+        # Fetch nightly test files
+        nvidia_nightly = fetch_text(NVIDIA_NIGHTLY_URL)
+        amd_nightly = fetch_text(AMD_NIGHTLY_URL)
+
+        # Count performance tests - ONLY from specific sections
+        # performance-test-1-gpu = part-1 + part-2 for both NVIDIA and AMD
+        nvidia_perf_1_part1 = count_unittest_executions(
+            nvidia_workflow, "performance-test-1-gpu-part-1"
+        )
+        nvidia_perf_1_part2 = count_unittest_executions(
+            nvidia_workflow, "performance-test-1-gpu-part-2"
+        )
+        nvidia_perf_1_total = nvidia_perf_1_part1 + nvidia_perf_1_part2
+
+        amd_perf_1_part1 = count_unittest_executions(
+            amd_workflow, "performance-test-1-gpu-part-1-amd"
+        )
+        amd_perf_1_part2 = count_unittest_executions(
+            amd_workflow, "performance-test-1-gpu-part-2-amd"
+        )
+        amd_perf_1_total = amd_perf_1_part1 + amd_perf_1_part2
+
+        # performance-test-2-gpu = ONLY from performance-test-2-gpu section (NVIDIA) and bench-test-2-gpu-amd (AMD)
+        nvidia_perf_2 = count_unittest_executions(
+            nvidia_workflow, "performance-test-2-gpu"
+        )
+        amd_perf_2 = count_unittest_executions(amd_workflow, "bench-test-2-gpu-amd")
+
+        # Count accuracy tests
+        nvidia_acc_1 = 1 if "accuracy-test-1-gpu:" in nvidia_workflow else 0
+        nvidia_acc_2 = 1 if "accuracy-test-2-gpu:" in nvidia_workflow else 0
+        amd_acc_1 = 1 if "accuracy-test-1-gpu-amd:" in amd_workflow else 0
+        amd_acc_2 = 1 if "accuracy-test-2-gpu-amd:" in amd_workflow else 0
+
+        # Count nightly models
+        nvidia_nightly_count = count_nightly_models(nvidia_nightly)
+        amd_nightly_count = count_nightly_models(amd_nightly)
+
+        # Count frontend tests
+        nvidia_frontend = 1 if "unit-test-frontend:" in nvidia_workflow else 0
+        amd_frontend = 1 if "unit-test-frontend-amd:" in amd_workflow else 0
+
+        return [
+            ("nightly-models-test", amd_nightly_count, nvidia_nightly_count),
+            ("unit-test-frontend", amd_frontend, nvidia_frontend),
+            ("performance-test-1-gpu", amd_perf_1_total, nvidia_perf_1_total),
+            ("performance-test-2-gpu", amd_perf_2, nvidia_perf_2),
+            ("accuracy-test-1-gpu", amd_acc_1, nvidia_acc_1),
+            ("accuracy-test-2-gpu", amd_acc_2, nvidia_acc_2),
+        ]
+
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to fetch dynamic test counts from workflow and nightly files.\n"
+            f"Error: {e}\n"
+            f"Please check your internet connection and ensure the following URLs are accessible:\n"
+            f"- {NVIDIA_WORKFLOW_URL}\n"
+            f"- {AMD_WORKFLOW_URL}\n"
+            f"- {NVIDIA_NIGHTLY_URL}\n"
+            f"- {AMD_NIGHTLY_URL}"
+        )
 
 
 def fetch_text(path_or_url: str) -> str:
+    """Fetch text content from file or URL."""
     if re.match(r"^https?://", path_or_url):
         if requests is None:
             raise RuntimeError(
@@ -48,133 +197,193 @@ def fetch_text(path_or_url: str) -> str:
         return f.read()
 
 
-def write_temp_py(text: str) -> str:
-    fd, path = tempfile.mkstemp(suffix=".py", prefix="run_suite_")
-    os.close(fd)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(text)
-    return path
+def parse_suites_from_text(source_code: str) -> Optional[Dict[str, List[str]]]:
+    """Parse test suites from run_suite.py source code using regex."""
+
+    all_suites = {}
+
+    # Look for main suites = { ... }
+    suite_pattern = r"suites\s*=\s*\{([^}]+(?:\}[^}]*)*)\}"
+    match = re.search(suite_pattern, source_code, re.DOTALL)
+
+    if match:
+        suite_content = match.group(1)
+        parsed_suites = parse_suite_dict(suite_content)
+        all_suites.update(parsed_suites)
+
+    # Look for AMD suites: suite_amd = { ... }
+    amd_suite_pattern = r"suite_amd\s*=\s*\{([^}]+(?:\}[^}]*)*)\}"
+    amd_match = re.search(amd_suite_pattern, source_code, re.DOTALL)
+
+    if amd_match:
+        amd_suite_content = amd_match.group(1)
+        amd_parsed_suites = parse_suite_dict(amd_suite_content)
+        all_suites.update(amd_parsed_suites)
+
+    # Look for suites.update(suite_amd) pattern
+    if "suites.update(suite_amd)" in source_code and amd_match:
+        amd_suite_content = amd_match.group(1)
+        amd_parsed_suites = parse_suite_dict(amd_suite_content)
+        all_suites.update(amd_parsed_suites)
+
+    return all_suites if all_suites else None
 
 
-def normalize_suite_value(val: Any) -> Optional[List[str]]:
-    if isinstance(val, (list, tuple)):
-        out: List[str] = []
-        for item in val:
-            if isinstance(item, str):
-                out.append(item)
-            else:
-                name = getattr(item, "name", None)
-                if isinstance(name, str):
-                    out.append(name)
-                else:
-                    return None
-        return out
-    return None
+def parse_suite_dict(suite_content: str) -> Dict[str, List[str]]:
+    """Parse a single suite dictionary content."""
+    suites = {}
+
+    # Parse each suite entry like: "per-commit": [ ... ]
+    # Handle multi-line arrays with proper bracket matching
+    # This pattern matches quoted keys followed by arrays, handling nested brackets carefully
+    suite_entry_pattern = r'"([^"]+)"\s*:\s*\[((?:[^\[\]]+|\[[^\]]*\])*)\]'
+
+    for suite_match in re.finditer(suite_entry_pattern, suite_content, re.DOTALL):
+        suite_name = suite_match.group(1)
+        suite_tests_str = suite_match.group(2)
+
+        # Extract test file names from TestFile objects and quoted strings
+        test_files = []
+        # Look for TestFile("filename.py") or TestFile("filename.py", time)
+        # But exclude commented out lines
+        lines = suite_tests_str.split("\n")
+        for line in lines:
+            # Skip commented out lines
+            stripped_line = line.strip()
+            if stripped_line.startswith("#"):
+                continue
+
+            test_pattern = r'TestFile\("([^"]+\.py)"(?:,\s*\d+)?\)'
+            for test_match in re.finditer(test_pattern, line):
+                test_file = test_match.group(1)
+                test_files.append(test_file)
+
+        # Also look for direct quoted strings (fallback)
+        if not test_files:
+            direct_pattern = r'"([^"]+\.py)"'
+            for test_match in re.finditer(direct_pattern, suite_tests_str):
+                test_file = test_match.group(1)
+                test_files.append(test_file)
+
+        suites[suite_name] = test_files
+
+    return suites
 
 
-def is_suite_mapping(obj: Any) -> bool:
-    if not isinstance(obj, dict) or not obj:
-        return False
-    if not all(isinstance(k, str) for k in obj.keys()):
-        return False
-    values = list(obj.values())
-    good = 0
-    for v in values:
-        norm = normalize_suite_value(v)
-        if isinstance(norm, list):
-            good += 1
-    return good >= max(1, len(values) // 2)
+def calculate_coverage(amd_count: int, nvidia_count: int) -> str:
+    """Calculate AMD coverage percentage."""
+    if nvidia_count == 0:
+        return "N/A"
+    return f"{(amd_count / nvidia_count) * 100:.0f}%"
 
 
-def load_suites_by_executing(source_code: str) -> Optional[Dict[str, List[str]]]:
-    path = write_temp_py(source_code)
-    prev_argv = sys.argv[:]
-    try:
-        globs = {"__name__": "sglang_srt_run_suite_loaded"}
-        sys.argv = [path]
-        os.environ.setdefault("CI", "1")
-        module_globals = runpy.run_path(path, init_globals=globs)
-    except Exception:
-        return None
-    finally:
-        sys.argv = prev_argv
-        try:
-            os.remove(path)
-        except Exception:
-            pass
+def compare_suites(
+    suites_map: Dict[str, List[str]],
+    format_type: str = "markdown",
+):
+    """Compare NVIDIA vs AMD test suites and output results."""
 
-    for name in LIKELY_SUITE_VARNAMES:
-        raw = module_globals.get(name)
-        if is_suite_mapping(raw):
-            norm: Dict[str, List[str]] = {}
-            for k, v in raw.items():
-                nv = normalize_suite_value(v)
-                if nv is not None:
-                    norm[k] = nv
-            return norm
+    if format_type == "csv":
+        # CSV format with coverage analysis
+        print("Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)")
 
-    candidates = [v for v in module_globals.values() if is_suite_mapping(v)]
-    if candidates:
-        targets = {
-            "per-commit",
-            "per-commit-amd",
-            "per-commit-2-gpu",
-            "per-commit-2-gpu-amd",
-            "per-commit-4-gpu",
-            "per-commit-4-gpu-amd",
-            "per-commit-8-gpu",
-            "per-commit-8-gpu-amd",
-        }
-        for cand in candidates:
-            if any(k in cand for k in targets):
-                norm: Dict[str, List[str]] = {}
-                for k, v in cand.items():
-                    nv = normalize_suite_value(v)
-                    if nv is not None:
-                        norm[k] = nv
-                return norm
-    return None
+        total_amd = 0
+        total_nvidia = 0
 
+        # Process suite pairs
+        for nv_suite, amd_suite, display_name in SUITE_PAIRS:
+            nv_tests = suites_map.get(nv_suite, [])
+            amd_tests = suites_map.get(amd_suite, [])
 
-def to_markdown_table(headers: List[str], rows: List[List[str]]) -> str:
-    # Basic Markdown table with header separator
-    line = "| " + " | ".join(headers) + " |"
-    sep = "| " + " | ".join("---" for _ in headers) + " |"
-    body = "\n".join("| " + " | ".join(row) + " |" for row in rows)
-    return "\n".join([line, sep, body]) if rows else "\n".join([line, sep])
+            # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
+            if nv_suite == "per-commit":
+                # Exclude test_mla_flashinfer.py from per-commit suite
+                nv_tests = [
+                    test for test in nv_tests if "test_mla_flashinfer.py" not in test
+                ]
 
+                # Add mi35x suite tests and deduplicate
+                mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
+                amd_tests_set = set(amd_tests + mi35x_tests)
+                amd_tests = list(amd_tests_set)
 
-def to_csv(headers: List[str], rows: List[List[str]]) -> str:
-    def esc(cell: str) -> str:
-        if any(c in cell for c in [",", "\n", '"']):
-            return '"' + cell.replace('"', '""') + '"'
-        return cell
+            amd_count = len(amd_tests)
+            nvidia_count = len(nv_tests)
+            coverage = calculate_coverage(amd_count, nvidia_count)
 
-    out = [",".join(esc(h) for h in headers)]
-    out += [",".join(esc(c) for c in row) for row in rows]
-    return "\n".join(out)
+            print(f"{display_name},{amd_count},{nvidia_count},{coverage}")
+            total_amd += amd_count
+            total_nvidia += nvidia_count
 
+        # Add additional categories from dynamic analysis
+        additional_categories = get_dynamic_additional_categories()
+        for category, amd_count, nvidia_count in additional_categories:
+            coverage = calculate_coverage(amd_count, nvidia_count)
+            print(f"{category},{amd_count},{nvidia_count},{coverage}")
+            total_amd += amd_count
+            total_nvidia += nvidia_count
 
-def list_to_multiline_cell(items: List[str], limit: Optional[int]) -> str:
-    if limit is not None and len(items) > limit:
-        shown = items[:limit]
-        rest = len(items) - limit
-        return "<br>".join(shown) + f"<br>... and {rest} more"
-    return "<br>".join(items)
+        # Total
+        total_coverage = calculate_coverage(total_amd, total_nvidia)
+        print(f"Total,{total_amd},{total_nvidia},{total_coverage}")
 
+    else:  # markdown format
+        for nv_suite, amd_suite, display_name in SUITE_PAIRS:
+            nv_tests = suites_map.get(nv_suite, [])
+            amd_tests = suites_map.get(amd_suite, [])
 
-def compare_pair(nv_list: List[str], amd_list: List[str]):
-    nv_set = set(nv_list)
-    amd_set = set(amd_list)
-    only_nv = sorted(nv_set - amd_set)
-    only_amd = sorted(amd_set - nv_set)
-    common = sorted(nv_set & amd_set)
-    return only_nv, only_amd, common
+            # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
+            if nv_suite == "per-commit":
+                # Exclude test_mla_flashinfer.py from per-commit suite
+                nv_tests = [
+                    test for test in nv_tests if "test_mla_flashinfer.py" not in test
+                ]
+
+                # Add mi35x suite tests and deduplicate
+                mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
+                amd_tests_set = set(amd_tests + mi35x_tests)
+                amd_tests = list(amd_tests_set)
+
+            print(f"## {nv_suite} (NVIDIA) vs {amd_suite} (AMD)")
+
+            if not nv_tests and not amd_tests:
+                print(f"Missing in suites: {nv_suite}, {amd_suite}")
+                print()
+                continue
+            elif not amd_tests:
+                print(f"Missing in suites: {amd_suite}")
+                print()
+                continue
+            elif not nv_tests:
+                print(f"Missing in suites: {nv_suite}")
+                print()
+                continue
+
+            nv_set = set(nv_tests)
+            amd_set = set(amd_tests)
+            common = sorted(nv_set & amd_set)
+            only_nv = sorted(nv_set - amd_set)
+            only_amd = sorted(amd_set - nv_set)
+
+            print(f"| Suite | Total | Common | Only in NVIDIA | Only in AMD |")
+            print(f"| --- | --- | --- | --- | --- |")
+            print(
+                f"| {display_name} | {len(nv_tests)} vs {len(amd_tests)} | {len(common)} | {len(only_nv)} | {len(only_amd)} |"
+            )
+            print()
+            print(f"| Common | Only in NVIDIA | Only in AMD |")
+            print(f"| --- | --- | --- |")
+            common_str = "<br>".join(common) if common else ""
+            only_nv_str = "<br>".join(only_nv) if only_nv else ""
+            only_amd_str = "<br>".join(only_amd) if only_amd else ""
+            print(f"| {common_str} | {only_nv_str} | {only_amd_str} |")
+
+            print()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compare NVIDIA vs AMD test suites and render as Markdown/CSV"
+        description="Compare NVIDIA vs AMD test suites from SGLang (standalone version)"
     )
     parser.add_argument(
         "path_or_url",
@@ -183,158 +392,80 @@ def main():
         help="Path or URL to run_suite.py (default: GitHub raw URL)",
     )
     parser.add_argument(
-        "--pairs",
-        nargs="*",
-        default=[],
-        help="Pairs like 'per-commit,per-commit-amd' 'per-commit-2-gpu,per-commit-2-gpu-amd'",
-    )
-    parser.add_argument(
-        "--format",
-        choices=["markdown", "csv", "text"],
-        default="markdown",
-        help="Output format (default: markdown)",
-    )
-    parser.add_argument(
-        "--no-details",
+        "--details",
         action="store_true",
-        help="Only print the summary (omit the long Common/Only-in tables)",
+        help="Show detailed test lists (default: summary only)",
     )
     parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limit the number of entries shown per section; shows a '... and N more' suffix",
+        "--output",
+        "-o",
+        help="Output file (default: date-stamped file based on format)",
+    )
+    parser.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Output to stdout instead of file",
     )
     args = parser.parse_args()
 
-    source = fetch_text(args.path_or_url)
-    suites_map = load_suites_by_executing(source)
-    if suites_map is None:
-        print(
-            "Error: could not evaluate suites from run_suite.py. Run inside the sglang repo so imports resolve, or pass a local path.",
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
-    if args.pairs:
-        pairs: List[Tuple[str, str]] = []
-        for token in args.pairs:
-            if "," in token:
-                nv, amd = [x.strip() for x in token.split(",", 1)]
-                pairs.append((nv, amd))
-            else:
-                print(f"Unrecognized pair token: {token}", file=sys.stderr)
-                sys.exit(3)
-    else:
-        pairs = SUITE_PAIRS
-
-    # Build outputs
-    for nv, amd in pairs:
-        nv_list = suites_map.get(nv)
-        amd_list = suites_map.get(amd)
-
-        header = f"{nv} (NVIDIA) vs {amd} (AMD)"
-        if nv_list is None or amd_list is None:
-            print(f"# {header}" if args.format == "markdown" else header)
-            missing = []
-            if nv_list is None:
-                missing.append(nv)
-            if amd_list is None:
-                missing.append(amd)
-            print(f"Missing in suites: {', '.join(missing)}")
-            print()
-            continue
-
-        only_nv, only_amd, common = compare_pair(nv_list, amd_list)
-
-        # Summary table
-        if args.format == "markdown":
-            print(f"## {header}")
-            headers = ["Suite", "Total", "Common", "Only in NVIDIA", "Only in AMD"]
-            rows = [
-                [
-                    f"{nv} vs {amd}",
-                    str(len(nv_list)) + " vs " + str(len(amd_list)),
-                    str(len(common)),
-                    str(len(only_nv)),
-                    str(len(only_amd)),
-                ]
-            ]
-            print(to_markdown_table(headers, rows))
-            print()
-        elif args.format == "csv":
-            headers = ["pair", "nv_total", "amd_total", "common", "only_nv", "only_amd"]
-            rows = [
-                [
-                    f"{nv} vs {amd}",
-                    str(len(nv_list)),
-                    str(len(amd_list)),
-                    str(len(common)),
-                    str(len(only_nv)),
-                    str(len(only_amd)),
-                ]
-            ]
-            print(to_csv(headers, rows))
-        else:
-            # text
-            print(f"{header}")
+    # Fetch and parse the run_suite.py
+    try:
+        source = fetch_text(args.path_or_url)
+        suites_map = parse_suites_from_text(source)
+        if suites_map is None:
             print(
-                f"- Total: {len(nv_list)} vs {len(amd_list)}; Common={len(common)}; Only NV={len(only_nv)}; Only AMD={len(only_amd)}"
+                "Error: could not parse suites from run_suite.py. The file format may have changed.",
+                file=sys.stderr,
             )
+            sys.exit(2)
+    except Exception as e:
+        print(f"Error fetching or parsing run_suite.py: {e}", file=sys.stderr)
+        sys.exit(1)
 
-        if not args.no_details:
-            # Detailed table with multi-line cells using <br> (renders well in GitHub/Markdown)
-            if args.format == "markdown":
-                headers = ["Common", "Only in NVIDIA", "Only in AMD"]
-                rows = [
-                    [
-                        list_to_multiline_cell(common, args.limit),
-                        list_to_multiline_cell(only_nv, args.limit),
-                        list_to_multiline_cell(only_amd, args.limit),
-                    ]
-                ]
-                print(to_markdown_table(headers, rows))
-                print()
-            elif args.format == "csv":
-                headers = ["pair", "common", "only_nv", "only_amd"]
-                rows = [
-                    [
-                        f"{nv} vs {amd}",
-                        (
-                            " | ".join(common[: args.limit])
-                            if args.limit
-                            else " | ".join(common)
-                        ),
-                        (
-                            " | ".join(only_nv[: args.limit])
-                            if args.limit
-                            else " | ".join(only_nv)
-                        ),
-                        (
-                            " | ".join(only_amd[: args.limit])
-                            if args.limit
-                            else " | ".join(only_amd)
-                        ),
-                    ]
-                ]
-                print(to_csv(headers, rows))
+    # Determine output behavior
+    if args.stdout:
+        # Output only to stdout
+        # Details flag determines format: details=markdown, no-details=csv
+        format_type = "markdown" if args.details else "csv"
+        compare_suites(suites_map, format_type)
+    else:
+        # Default: output to both terminal and file
+        import io
+        from datetime import datetime
+
+        # Determine output filename
+        if args.output:
+            output_file = args.output
+        else:
+            # Default date-stamped filename based on details flag
+            date_stamp = datetime.now().strftime("%Y%m%d")
+            if args.details:
+                output_file = f"sglang_ci_report_{date_stamp}.md"
             else:
-                print("Common:")
-                for t in common[: args.limit] if args.limit else common:
-                    print(f"  - {t}")
-                if args.limit and len(common) > args.limit:
-                    print(f"  ... and {len(common) - args.limit} more")
-                print("Only in NVIDIA:")
-                for t in only_nv[: args.limit] if args.limit else only_nv:
-                    print(f"  - {t}")
-                if args.limit and len(only_nv) > args.limit:
-                    print(f"  ... and {len(only_nv) - args.limit} more")
-                print("Only in AMD:")
-                for t in only_amd[: args.limit] if args.limit else only_amd:
-                    print(f"  - {t}")
-                if args.limit and len(only_amd) > args.limit:
-                    print(f"  ... and {len(only_amd) - args.limit} more")
-                print()
+                output_file = f"sglang_ci_report_{date_stamp}.csv"
+
+        # Capture output to string first
+        output_buffer = io.StringIO()
+        original_stdout = sys.stdout
+        sys.stdout = output_buffer
+
+        try:
+            # Details flag determines format: details=markdown, no-details=csv
+            format_type = "markdown" if args.details else "csv"
+            compare_suites(suites_map, format_type)
+        finally:
+            sys.stdout = original_stdout
+
+        # Get the captured output
+        output_content = output_buffer.getvalue()
+
+        # Write to file
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(output_content)
+
+        # Also print to terminal
+        print(output_content, end="")
+        print(f"Output written to: {output_file}")
 
 
 if __name__ == "__main__":
