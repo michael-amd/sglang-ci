@@ -61,8 +61,8 @@ USAGE EXAMPLES:
 8. Process DeepSeek-V3 data with split request rate plots:
    python process_and_generate_online_plots.py \
      --model DeepSeek-V3 \
-     --data-dir /home/michaezh/sgl_benchmark_ci/online/DeepSeek-V3 \
-     --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
+     --data-dir /home/michaezh/sglang-ci/online/DeepSeek-V3 \
+     --plot-dir /home/michaezh/sglang-ci/plots_server \
      --mode-filter aiter \
      --split-request-rates
 

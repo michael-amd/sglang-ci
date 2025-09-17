@@ -8,7 +8,7 @@
 # - TEAMS_WEBHOOK_URL: Teams webhook URL for notifications
 #
 # Environment variables (set these before running crontab):
-SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sgl_benchmark_ci"
+SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
 GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
 GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
 DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
