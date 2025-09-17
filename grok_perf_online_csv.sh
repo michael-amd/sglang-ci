@@ -36,7 +36,7 @@ GROK2_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK2}"
 GROK2_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/grok-2/}"
 GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/grok-2/tokenizer.tok.json}"
-DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sglang-ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
 # Node name will be read from hostname

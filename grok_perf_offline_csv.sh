@@ -36,7 +36,7 @@ GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/data2/grok-2/}"
 GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/data2/grok-2/tokenizer.tok.json}"
 
 DEFAULT_DUMMY_MODEL="${DEFAULT_DUMMY_MODEL_PATH:-/mnt/raid/models/dummy_prod1/}"
-DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sgl_benchmark_ci}"
+DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sglang-ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 
 # Container configuration
