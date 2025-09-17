@@ -12,7 +12,7 @@
 #   # Data Parallel attention mode (GSM8K only):
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
 #
-#   # Torch compile optimization (standard mode):
+#   # Torch compile optimization (GSM8K only):
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 --enable-torch-compile
 #
 #   # Torch compile with DP attention (GSM8K only):
