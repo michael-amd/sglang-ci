@@ -729,7 +729,7 @@ This section contains tools for analyzing the upstream SGLang project's continuo
 
 **Purpose:** Compare NVIDIA vs AMD test suites from SGLang's CI system to analyze test coverage and identify differences between GPU platforms.
 
-**Script:** `upstream_ci/compare_suites_standalone.py`
+**Script:** `upstream_ci/compare_suites.py`
 
 **Key Features:**
 
@@ -745,16 +745,16 @@ This section contains tools for analyzing the upstream SGLang project's continuo
 
 ```bash
 # Default: Generate CSV coverage report with date-stamped filename
-python3 compare_suites_standalone.py
+python3 compare_suites.py
 
 # Generate detailed markdown report with full test lists
-python3 compare_suites_standalone.py --details
+python3 compare_suites.py --details
 
 # Output to terminal only (no file creation)
-python3 compare_suites_standalone.py --stdout
+python3 compare_suites.py --stdout
 
 # Custom output filename
-python3 compare_suites_standalone.py --output "my_report.csv"
+python3 compare_suites.py --output "my_report.csv"
 ```
 
 **Output Examples:**
