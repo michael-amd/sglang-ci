@@ -363,11 +363,11 @@ class TestNightlyTeamsNotifier:
         # Add log file path if provided
         if log_file:
             # Extract relative path from the base directory
-            # Look for pattern like: .../sgl_benchmark_ci/test/unit-test-backend-8-gpu-CAR-amd/filename.log
+            # Look for pattern like: .../sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/filename.log
             import re
 
             relative_path_match = re.search(
-                r".*sgl_benchmark_ci/(test/unit-test-backend-8-gpu-CAR-amd/.+)",
+                r".*sglang-ci/(test/unit-test-backend-8-gpu-CAR-amd/.+)",
                 log_file,
             )
             display_path = (

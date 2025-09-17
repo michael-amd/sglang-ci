@@ -64,7 +64,7 @@ class BenchmarkAnalyzer:
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
         self.base_dir = base_dir or os.getenv(
-            "BENCHMARK_BASE_DIR", os.path.expanduser("~/sgl_benchmark_ci")
+            "BENCHMARK_BASE_DIR", os.path.expanduser("~/sglang-ci")
         )
         self.offline_dir = os.path.join(self.base_dir, "offline")
         self.online_dir = os.path.join(self.base_dir, "online")
@@ -710,9 +710,9 @@ class TeamsNotifier:
                     # Convert absolute path to relative path from base directory
                     log_path = dp_error_results["log_file"]
                     if self.analyzer.base_dir in log_path:
-                        # Remove the base directory part and show relative path from sgl_benchmark_ci
+                        # Remove the base directory part and show relative path from sglang-ci
                         relative_path = log_path.replace(
-                            self.analyzer.base_dir, "/sgl_benchmark_ci"
+                            self.analyzer.base_dir, "/sglang-ci"
                         )
                         alert["details"].append(f"📋 Error found in: {relative_path}")
                     else:
@@ -1532,14 +1532,14 @@ def main():
     parser.add_argument(
         "--plot-dir",
         type=str,
-        default=os.path.expanduser("~/sgl_benchmark_ci/plots_server"),
+        default=os.path.expanduser("~/sglang-ci/plots_server"),
         help="Base directory where plots are stored",
     )
 
     parser.add_argument(
         "--benchmark-dir",
         type=str,
-        default=os.path.expanduser("~/sgl_benchmark_ci"),
+        default=os.path.expanduser("~/sglang-ci"),
         help="Base directory for benchmark data (overrides BENCHMARK_BASE_DIR env var)",
     )
 

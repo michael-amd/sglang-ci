@@ -55,8 +55,8 @@ USAGE EXAMPLES:
 6. Process DeepSeek data with custom parameters:
    python process_and_generate_offline_plots.py \
      --model deepseek \
-     --data-dir /home/michaezh/sgl_benchmark_ci/offline/DeepSeek-V3-0324 \
-     --plot-dir /home/michaezh/sgl_benchmark_ci/plots_server \
+     --data-dir /home/michaezh/sglang-ci/offline/DeepSeek-V3-0324 \
+     --plot-dir /home/michaezh/sglang-ci/plots_server \
      --ilen 1024 \
      --olen 128 \
      --days 5
