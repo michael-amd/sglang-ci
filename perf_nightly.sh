@@ -381,6 +381,12 @@ send_teams_notification() {
     TEAMS_CMD="${TEAMS_CMD} --check-dp-attention"
     echo "[nightly] Adding --check-dp-attention flag for Teams notification"
   fi
+  
+  # Add torch compile flag for DeepSeek online mode
+  if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-torch-compile"
+    echo "[nightly] Adding --enable-torch-compile flag for Teams notification"
+  fi
 
   "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
@@ -434,6 +440,7 @@ MODEL="grok" # Default to grok
 CLI_TEAMS_WEBHOOK_URL="" # Teams webhook URL from command line
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
+CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
@@ -474,6 +481,9 @@ for arg in "$@"; do
     --check-dp-attention)
       CLI_CHECK_DP_ATTENTION="true"
       ;;
+    --enable-torch-compile)
+      CLI_ENABLE_TORCH_COMPILE="true"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
@@ -491,6 +501,7 @@ for arg in "$@"; do
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
+      echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
@@ -507,6 +518,8 @@ for arg in "$@"; do
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
       echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo "  $0 --model=deepseek --mode=online --check-dp-attention  # DeepSeek online with DP attention error checking"
+      echo "  $0 --model=deepseek --mode=online --enable-torch-compile # DeepSeek online with torch compile optimization"
+      echo "  $0 --model=deepseek --mode=online --check-dp-attention --enable-torch-compile # DeepSeek online with both DP attention and torch compile"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -543,6 +556,13 @@ CHECK_DP_ATTENTION="false"  # Default to false
 if [[ -n "$CLI_CHECK_DP_ATTENTION" ]]; then
   CHECK_DP_ATTENTION="$CLI_CHECK_DP_ATTENTION"
   echo "[nightly] DP attention mode enabled via command line"
+fi
+
+# Process torch compile flag
+ENABLE_TORCH_COMPILE="false"  # Default to false
+if [[ -n "$CLI_ENABLE_TORCH_COMPILE" ]]; then
+  ENABLE_TORCH_COMPILE="$CLI_ENABLE_TORCH_COMPILE"
+  echo "[nightly] Torch compile mode enabled via command line"
 fi
 
 # Override work directory and model path if provided via command line
@@ -1010,6 +1030,12 @@ if [[ "$all_modes_complete" != "true" ]]; then
     if [[ "$CHECK_DP_ATTENTION" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
       echo "[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark"
+    fi
+    
+    # Add --enable-torch-compile flag if enabled and running online mode
+    if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
+      echo "[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark"
     fi
 
     "${DOCKER_CMD[@]}" exec \
