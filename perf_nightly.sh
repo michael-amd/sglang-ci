@@ -127,7 +127,7 @@ declare -A ROCM_VERSIONS=(
 GROK_MODEL_NAME="${GROK_MODEL_NAME:-GROK1}"
 GROK_MODEL_VARIANT="${GROK_MODEL_VARIANT:-MOE-I4F8}"
 GROK2_MODEL_NAME="${GROK2_MODEL_NAME:-GROK2}"
-GROK2_MODEL_VARIANT="${GROK2_MODEL_VARIANT:-MOE-I4F0}"
+GROK2_MODEL_VARIANT="${GROK2_MODEL_VARIANT:-FP8}"
 DEEPSEEK_MODEL_NAME="${DEEPSEEK_MODEL_NAME:-DeepSeek-V3-0324}"
 DEEPSEEK_MODEL_VARIANT="${DEEPSEEK_MODEL_VARIANT:-FP8}"
 
@@ -381,6 +381,12 @@ send_teams_notification() {
     TEAMS_CMD="${TEAMS_CMD} --check-dp-attention"
     echo "[nightly] Adding --check-dp-attention flag for Teams notification"
   fi
+  
+  # Add torch compile flag for DeepSeek online mode
+  if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-torch-compile"
+    echo "[nightly] Adding --enable-torch-compile flag for Teams notification"
+  fi
 
   "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
@@ -434,6 +440,7 @@ MODEL="grok" # Default to grok
 CLI_TEAMS_WEBHOOK_URL="" # Teams webhook URL from command line
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
+CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
@@ -474,6 +481,9 @@ for arg in "$@"; do
     --check-dp-attention)
       CLI_CHECK_DP_ATTENTION="true"
       ;;
+    --enable-torch-compile)
+      CLI_ENABLE_TORCH_COMPILE="true"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
@@ -491,6 +501,7 @@ for arg in "$@"; do
       echo "  --teams-skip-analysis            Skip GSM8K accuracy and performance regression analysis"
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
+      echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
@@ -507,6 +518,8 @@ for arg in "$@"; do
       echo "  $0 --teams-webhook-url='...' --teams-skip-analysis  # Teams with plots only (no analysis)"
       echo "  $0 --continue-run-days=7 --model=grok               # Run last 7 days' images sequentially"
       echo "  $0 --model=deepseek --mode=online --check-dp-attention  # DeepSeek online with DP attention error checking"
+      echo "  $0 --model=deepseek --mode=online --enable-torch-compile # DeepSeek online with torch compile optimization"
+      echo "  $0 --model=deepseek --mode=online --check-dp-attention --enable-torch-compile # DeepSeek online with both DP attention and torch compile"
       echo ""
       echo "Disk Space Requirements:"
       echo "  DeepSeek models: 685GB minimum free space required"
@@ -543,6 +556,13 @@ CHECK_DP_ATTENTION="false"  # Default to false
 if [[ -n "$CLI_CHECK_DP_ATTENTION" ]]; then
   CHECK_DP_ATTENTION="$CLI_CHECK_DP_ATTENTION"
   echo "[nightly] DP attention mode enabled via command line"
+fi
+
+# Process torch compile flag
+ENABLE_TORCH_COMPILE="false"  # Default to false
+if [[ -n "$CLI_ENABLE_TORCH_COMPILE" ]]; then
+  ENABLE_TORCH_COMPILE="$CLI_ENABLE_TORCH_COMPILE"
+  echo "[nightly] Torch compile mode enabled via command line"
 fi
 
 # Override work directory and model path if provided via command line
@@ -703,19 +723,78 @@ if ! command -v curl &> /dev/null; then
   exit 1
 fi
 
+###############################################################################
+# Docker image management functions
+###############################################################################
+
+# Function to check if Docker image exists locally
+check_local_image() {
+  local image="$1"
+  if "${DOCKER_CMD[@]}" image inspect "${image}" >/dev/null 2>&1; then
+    echo "[nightly] Found local image: ${image}"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Function to check Docker Hub connectivity
+check_docker_hub_connectivity() {
+  if ! curl -s --max-time 30 https://registry-1.docker.io/v2/ >/dev/null 2>&1; then
+    echo "[nightly] WARNING: Docker Hub connectivity test failed"
+    return 1
+  fi
+  return 0
+}
+
+# Function to pull Docker image with retry logic
+pull_image_with_retry() {
+  local image="$1"
+  local max_attempts=3
+  local attempt=1
+  
+  # First check if image already exists locally
+  if check_local_image "$image"; then
+    return 0
+  fi
+  
+  # Check Docker Hub connectivity before attempting pulls
+  if ! check_docker_hub_connectivity; then
+    echo "[nightly] WARNING: Docker Hub connectivity issues detected"
+  fi
+  
+  while [ $attempt -le $max_attempts ]; do
+    echo "[nightly] Pull attempt $attempt/$max_attempts for $image..."
+    if "${DOCKER_CMD[@]}" pull "$image" 2>&1; then
+      echo "[nightly] Successfully pulled image: $image"
+      return 0
+    fi
+    
+    if [ $attempt -lt $max_attempts ]; then
+      local wait_time=$((30 * attempt))  # 30s, 60s, 90s delays
+      echo "[nightly] Pull failed, retrying in ${wait_time}s..."
+      sleep $wait_time
+    else
+      echo "[nightly] All pull attempts failed for $image"
+    fi
+    ((attempt++))
+  done
+  
+  return 1
+}
+
 # Try each day from today going back CONTINUE_RUN_DAYS
 for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
-  echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-
-  if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+  
+  if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
     SELECTED_TAGS+=("$candidate_tag")
-    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+    echo "[nightly] Successfully obtained image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
   else
-    echo "[nightly] WARN: Failed to pull candidate tag ${candidate_tag}. It may be private or invalid."
+    echo "[nightly] WARN: Failed to obtain candidate tag ${candidate_tag}. It may be private or invalid."
   fi
 done
 
@@ -725,12 +804,11 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
   if [[ -n "$candidate_tag" ]]; then
     echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
-    echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-    if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+    if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
       SELECTED_TAGS+=("$candidate_tag")
-      echo "[nightly] Successfully pulled fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+      echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
     else
-      echo "[nightly] WARN: Failed to pull fallback tag ${candidate_tag}. It may be private or invalid."
+      echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
     fi
   else
     echo "[nightly] No fallback image found for yesterday either."
@@ -738,7 +816,7 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
 fi
 
 if [[ ${#SELECTED_TAGS[@]} -eq 0 ]]; then
-  echo "[nightly] ERROR: Could not find and pull any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
+  echo "[nightly] ERROR: Could not find and obtain any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
   exit 1
 fi
 
@@ -1010,6 +1088,12 @@ if [[ "$all_modes_complete" != "true" ]]; then
     if [[ "$CHECK_DP_ATTENTION" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
       echo "[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark"
+    fi
+    
+    # Add --enable-torch-compile flag if enabled and running online mode
+    if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
+      echo "[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark"
     fi
 
     "${DOCKER_CMD[@]}" exec \
