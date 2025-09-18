@@ -1818,8 +1818,8 @@ def main():
         },
         "grok2": {
             "variant_name": "GROK2",
-            "output_prefix_template": "{variant_name}_MOE-I4F0_online",
-            "model_name_template": "{variant_name} MOE-I4F0 Online",
+            "output_prefix_template": "{variant_name}_FP8_online",
+            "model_name_template": "{variant_name} FP8 Online",
             "expected_rates": [1, 2, 4, 8, 16],
             "load_metric_name": "request_rate",
         },

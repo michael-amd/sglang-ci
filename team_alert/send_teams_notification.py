@@ -60,7 +60,7 @@ class BenchmarkAnalyzer:
     """Analyze benchmark results for accuracy and performance regressions"""
 
     def __init__(
-        self, base_dir: Optional[str] = None, check_dp_attention: bool = False
+        self, base_dir: Optional[str] = None, check_dp_attention: bool = False, enable_torch_compile: bool = False
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
         self.base_dir = base_dir or os.getenv(
@@ -69,6 +69,7 @@ class BenchmarkAnalyzer:
         self.offline_dir = os.path.join(self.base_dir, "offline")
         self.online_dir = os.path.join(self.base_dir, "online")
         self.check_dp_attention = check_dp_attention
+        self.enable_torch_compile = enable_torch_compile
 
     def parse_gsm8k_accuracy(
         self, model: str, mode: str, date_str: str
@@ -92,8 +93,12 @@ class BenchmarkAnalyzer:
         }
         model_name = model_names.get(model, model.upper())
 
-        # Build mode suffix for DP attention
-        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+        # Build mode suffix for DP attention and torch compile
+        mode_suffix = ""
+        if self.check_dp_attention:
+            mode_suffix += "_dp_attention"
+        if self.enable_torch_compile:
+            mode_suffix += "_torch_compile"
 
         # Search for GSM8K log files
         search_patterns = [
@@ -251,8 +256,12 @@ class BenchmarkAnalyzer:
         }
         model_name = model_names.get(model, model.upper())
 
-        # Build mode suffix for DP attention if applicable
-        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+        # Build mode suffix for DP attention and torch compile if applicable
+        mode_suffix = ""
+        if self.check_dp_attention:
+            mode_suffix += "_dp_attention"
+        if self.enable_torch_compile:
+            mode_suffix += "_torch_compile"
 
         # Search for log files in benchmark directories and cron logs
         search_patterns = [
@@ -511,8 +520,12 @@ class BenchmarkAnalyzer:
         }
         model_name = model_names.get(model, model.upper())
 
-        # Build mode suffix for DP attention
-        mode_suffix = "_dp_attention" if self.check_dp_attention else ""
+        # Build mode suffix for DP attention and torch compile
+        mode_suffix = ""
+        if self.check_dp_attention:
+            mode_suffix += "_dp_attention"
+        if self.enable_torch_compile:
+            mode_suffix += "_torch_compile"
 
         # Look for CSV files with online metrics
         csv_patterns = [
@@ -600,6 +613,7 @@ class TeamsNotifier:
         github_repo: str = None,
         github_token: str = None,
         check_dp_attention: bool = False,
+        enable_torch_compile: bool = False,
     ):
         """
         Initialize Teams notifier
@@ -614,6 +628,7 @@ class TeamsNotifier:
             github_repo: GitHub repository in format 'owner/repo'
             github_token: GitHub personal access token
             check_dp_attention: If True, look for DP attention mode logs and check for errors
+            enable_torch_compile: If True, look for torch compile mode logs
         """
         self.webhook_url = webhook_url
         self.plot_server_base_url = (
@@ -625,7 +640,8 @@ class TeamsNotifier:
         self.github_repo = github_repo
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
-        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention)
+        self.enable_torch_compile = enable_torch_compile
+        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention, enable_torch_compile)
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
         """
@@ -1143,11 +1159,19 @@ class TeamsNotifier:
         # Create card body elements starting with run name
         body_elements = []
 
-        # Customize title based on DP attention mode
+        # Customize title based on enabled modes
+        mode_description = []
         if self.check_dp_attention:
-            main_title = (
-                f"{current_date} {model.upper()} {mode.title()} DP Attention Check"
-            )
+            mode_description.append("DP Attention")
+        if self.enable_torch_compile:
+            mode_description.append("Torch Compile")
+            
+        if mode_description:
+            mode_text = " + ".join(mode_description)
+            if self.check_dp_attention and not self.enable_torch_compile:
+                main_title = f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
+            else:
+                main_title = f"{current_date} {model.upper()} {mode.title()} {mode_text} Benchmark"
         else:
             main_title = (
                 f"{current_date} {model.upper()} {mode.title()} Benchmark Results"
@@ -1273,8 +1297,8 @@ class TeamsNotifier:
                     }
                 )
 
-        # Add Plot section only if not in DP attention mode
-        if not self.check_dp_attention:
+        # Add Plot section only if not in DP attention mode or torch compile mode
+        if not self.check_dp_attention and not self.enable_torch_compile:
             # Add Plot section title
             body_elements.append(
                 {
@@ -1368,8 +1392,8 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode
-        if not self.check_dp_attention:
+        # Only add plot-related actions if not in DP attention mode or torch compile mode
+        if not self.check_dp_attention and not self.enable_torch_compile:
             if plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
@@ -1592,6 +1616,12 @@ def main():
         help="Check DP attention mode logs for RuntimeError and other critical errors",
     )
 
+    parser.add_argument(
+        "--enable-torch-compile",
+        action="store_true",
+        help="Enable torch compile mode for performance analysis (affects log file discovery)",
+    )
+
     args = parser.parse_args()
 
     # Get webhook URL
@@ -1604,7 +1634,7 @@ def main():
     # Handle test mode
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
-        notifier = TeamsNotifier(webhook_url, "", False, 7, None, False, None, None)
+        notifier = TeamsNotifier(webhook_url, "", False, 7, None, False, None, None, False, False)
         success = notifier.send_test_notification()
         if success:
             print("🎉 Test completed successfully!")
@@ -1661,6 +1691,11 @@ def main():
             "🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs"
         )
 
+    if args.enable_torch_compile:
+        print(
+            "🔥 Torch compile mode: Looking for torch compile benchmark results"
+        )
+
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
@@ -1672,6 +1707,7 @@ def main():
         github_repo=args.github_repo,
         github_token=github_token,
         check_dp_attention=args.check_dp_attention,
+        enable_torch_compile=args.enable_torch_compile,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 

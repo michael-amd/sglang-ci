@@ -60,7 +60,7 @@ The toolkit is designed for both development teams conducting regular performanc
     - [perf_nightly.sh](#perf_nightlysh)
 - [Upstream SGLang Tool](#upstream-sglang-tool)
   - [Compare CI Suites](#compare-ci-suites)
-- [Benchmark Comparison](#benchmark-comparison)
+  - [Benchmark Comparison](#benchmark-comparison)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
@@ -307,6 +307,7 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
   - `--threshold=VALUE`: The minimum GSM8K accuracy required for the warm-up test to pass (default: `0.93`).
   - `--download-model`: A flag to enable automatic model download if it's not found locally.
   - `--check-dp-attention`: Enable Data Parallel attention mode - runs GSM8K test only and checks for server errors (skips serving benchmarks).
+  - `--enable-torch-compile`: Enable torch compile optimization - runs GSM8K test only for performance validation (skips serving benchmarks).
   - `--help`: Displays the help message with all available options.
 - **Workflow:**
   1. **Container Management:** Automatically manages the Docker container lifecycle, re-invoking itself inside a container if run on a host machine.
@@ -314,9 +315,10 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
   3. **Server Launch:** Starts the SGLang server with the specified DeepSeek model and a tensor-parallel size of 8.
      - **Standard Mode:** Uses standard server configuration for both GSM8K and serving benchmarks.
      - **DP Attention Mode:** Uses Data Parallel attention settings with `--dp-size 8` and `--enable-dp-attention` flags.
+     - **Torch Compile Mode:** Uses standard configuration with `--enable-torch-compile` flag for performance optimization.
   4. **GSM8K Warm-up Test:** Runs an initial benchmark using the GSM8K script to validate model accuracy against the threshold.
   5. **Serving Benchmark:** Executes a series of load tests using `sglang.bench_serving` across multiple concurrency levels (e.g., 128, 64, 16, 4, 1).
-     - **Note:** In DP attention mode (`--check-dp-attention`), serving benchmarks are skipped and only GSM8K testing is performed with error checking.
+     - **Note:** In DP attention mode (`--check-dp-attention`) or torch compile mode (`--enable-torch-compile`), serving benchmarks are skipped and only GSM8K testing is performed.
 - **Metrics Captured:**
   - **GSM8K Test:** Average accuracy, throughput, and latency.
   - **Serving Test:** For each concurrency level, it captures the best results from multiple runs for Median End-to-End (E2E) Latency, Median Time-To-First-Token (TTFT), and Median Inter-Token Latency (ITL).
@@ -328,6 +330,9 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
   - **DP Attention Mode:** Folder name includes `_dp_attention` suffix.
     - Server logs (`sglang_server.log`) with error checking for RuntimeError and critical issues.
     - GSM8K test results only (serving benchmarks are skipped).
+  - **Torch Compile Mode:** Folder name includes `_torch_compile` suffix.
+    - Server logs (`sglang_server.log`) with torch compile optimization enabled.
+    - GSM8K test results only (serving benchmarks are skipped for focused performance validation).
 - **Usage:**
 
   ```bash
@@ -349,6 +354,17 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
     --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
     --check-dp-attention \
     --model-path=/path-to-deepseek
+
+  # Torch compile mode - GSM8K test only with performance optimization
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 \
+    --enable-torch-compile
+
+  # Combined mode - DP attention + torch compile (GSM8K only)
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
+    --check-dp-attention \
+    --enable-torch-compile
   ```
 
 **DP Attention Mode Features:**
@@ -363,6 +379,19 @@ The Data Parallel attention mode (`--check-dp-attention`) is a specialized testi
 - **Error Detection:** Automatically monitors server logs for RuntimeError and critical errors during execution
 - **Output Naming:** Creates output folders with `_dp_attention` suffix for easy identification
 - **Use Cases:** Ideal for validating DP attention functionality, debugging server issues, or running quick accuracy-only tests
+
+**Torch Compile Mode Features:**
+
+The torch compile mode (`--enable-torch-compile`) is a specialized testing mode designed for validation of torch compile performance optimization:
+
+- **Purpose:** Validates torch compile optimization effectiveness with focused performance testing
+- **Server Configuration:**
+  - Uses standard server configuration with `--enable-torch-compile` flag added
+  - Compatible with both standard and DP attention modes
+- **Testing Scope:** Runs only GSM8K accuracy tests (serving benchmarks are skipped for focused validation)
+- **Performance Focus:** Optimized for measuring torch compile impact on inference performance
+- **Output Naming:** Creates output folders with `_torch_compile` suffix for easy identification
+- **Use Cases:** Ideal for validating torch compile performance benefits, quick optimization testing, or regression detection
 
 ### Data Processing and Visualization
 
@@ -935,8 +964,10 @@ The benchmarks and CI processes are scheduled to run daily via cron jobs. Hardwa
 2. **Nightly Unit test** - Runs automated unit tests on latest Docker images
 3. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
 4. **Grok online benchmark** - Performance benchmarking for Grok model
-5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation
-6. **DeepSeek online** - Standard DeepSeek performance benchmarking
+5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation (GSM8K only)
+6. **DeepSeek online with torch compile optimization** - DeepSeek benchmarking with torch compile performance validation (GSM8K only)
+7. **DeepSeek online with DP attention + torch compile** - Combined validation testing (GSM8K only)
+8. **DeepSeek online** - Standard DeepSeek performance benchmarking (full GSM8K + serving benchmarks)
 
 **Usage:**
 

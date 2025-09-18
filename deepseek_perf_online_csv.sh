@@ -12,6 +12,12 @@
 #   # Data Parallel attention mode (GSM8K only):
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
 #
+#   # Torch compile optimization (GSM8K only):
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 --enable-torch-compile
+#
+#   # Torch compile with DP attention (GSM8K only):
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --enable-torch-compile
+#
 #   # Custom model and paths:
 #   bash deepseek_perf_online_csv.sh --model-path=/raid/deepseek-v3 --model-name=DeepSeek-V3-0324
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
@@ -109,6 +115,7 @@ GSM8K_SCRIPT=""
 THRESHOLD=""
 DOWNLOAD_MODEL="false"
 CHECK_DP_ATTENTION="false"
+ENABLE_TORCH_COMPILE="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -148,6 +155,9 @@ for arg in "$@"; do
     --check-dp-attention)
       CHECK_DP_ATTENTION="true"
       ;;
+    --enable-torch-compile)
+      ENABLE_TORCH_COMPILE="true"
+      ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
@@ -162,6 +172,7 @@ for arg in "$@"; do
       echo "  --threshold=VALUE      GSM8K accuracy threshold (default: $DEFAULT_THRESHOLD)"
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
+      echo "  --enable-torch-compile Enable torch compile for performance optimization (default: false)"
       echo "  --help                 Show this help message"
       echo ""
       echo "Environment Variables:"
@@ -241,7 +252,8 @@ manage_container() {
                 --gsm8k-script="${GSM8K_SCRIPT}" \
                 --threshold="${THRESHOLD}" \
                 $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
-                $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention")
+                $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention") \
+                $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile")
         exit 0
     fi
 }
@@ -522,8 +534,17 @@ get_sglang_env_var() {
 # - Memory fraction and request limits
 # - Proper port and trust settings
 start_sglang_server() {
+    # Build torch compile flag if enabled
+    local torch_compile_flag=""
+    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+        torch_compile_flag="--enable-torch-compile"
+    fi
+
     if [ "$CHECK_DP_ATTENTION" = "true" ]; then
         echo "[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1"
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            echo "[DEBUG] Torch compile enabled with DP attention"
+        fi
 
         # Start server in background using DP attention command format
         env SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
@@ -533,10 +554,14 @@ start_sglang_server() {
             --trust-remote-code \
             --chunked-prefill-size 131072 \
             --dp-size 8 \
-            --enable-dp-attention > "$SERVER_LOG_FILE" 2>&1 &
+            --enable-dp-attention \
+            ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
         echo "[DEBUG] Using standard settings with environment variable: ${aiter_env_var}"
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            echo "[DEBUG] Torch compile enabled with standard settings"
+        fi
 
         # Start server in background using the standard command format
         env ${aiter_env_var}=1 python3 -m sglang.launch_server \
@@ -545,7 +570,8 @@ start_sglang_server() {
             --port "$GSM8K_PORT" \
             --trust-remote-code \
             --mem-fraction-static "$SERVER_MEM_FRACTION" \
-            --max-running-requests "$SERVER_MAX_REQUESTS" > "$SERVER_LOG_FILE" 2>&1 &
+            --max-running-requests "$SERVER_MAX_REQUESTS" \
+            ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     fi
 
     echo $! > "$SERVER_PID_FILE"
@@ -611,18 +637,28 @@ start_sglang_server() {
     echo "Server startup time: ${startup_duration} seconds" >> "$TIMING_LOG"
 }
 
+## 2.  Helper Functions ---------------------------------------------------------
+
+# Helper function to check if we should run serving benchmarks
+should_run_serving_benchmarks() {
+    [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]
+}
+
 ## 2.  Run-folder bookkeeping ---------------------------------------------------
 SCRIPT_START_TIME=$(date +%s)
 echo "[online] Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 
-# Add _dp_attention suffix to folder name when in DP attention mode
+# Build suffix based on enabled features
+suffix="online"
 if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-    folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online_dp_attention"
-    OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online_dp_attention.csv"
-else
-    folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online"
-    OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_online.csv"
+    suffix="${suffix}_dp_attention"
 fi
+if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    suffix="${suffix}_torch_compile"
+fi
+
+folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}"
+OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}.csv"
 mkdir -p "$folder" || { echo "ERROR: Cannot create output folder ${folder}"; exit 1; }
 SERVER_LOG_FILE="${folder}/sglang_server.log" # Define server log path
 GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
@@ -637,6 +673,8 @@ export TIMING_LOG  # Make it available to all functions
     echo "Timezone: $(date +%Z) ($(date +%z))"
     echo "Docker image: ${FULL_IMAGE}"
     echo "Model: ${MODEL}"
+    echo "DP Attention: ${CHECK_DP_ATTENTION}"
+    echo "Torch Compile: ${ENABLE_TORCH_COMPILE}"
     echo ""
 } > "$TIMING_LOG" || { echo "ERROR: Cannot create timing log ${TIMING_LOG}"; exit 1; }
 
@@ -819,11 +857,15 @@ get_best_metrics() {
 ###############################################################################
 
 # Setup serving benchmark CSV with appropriate naming
+serving_suffix="serving"
 if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-    SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving_dp_attention.csv"
-else
-    SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_serving.csv"
+    serving_suffix="${serving_suffix}_dp_attention"
 fi
+if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    serving_suffix="${serving_suffix}_torch_compile"
+fi
+
+SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${serving_suffix}.csv"
 
 # Global arrays for storing metrics per concurrency
 declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics
@@ -843,8 +885,8 @@ calculate_total_runs() {
     local gsm8k_runs=$GSM8K_RUNS
     local serving_runs=0
 
-    # Only count serving runs if not in DP attention mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+    # Only count serving runs if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         local concurrency_levels
         read -ra concurrency_levels <<< "$BENCHMARK_CONCURRENCY_LEVELS"
         serving_runs=$((${#concurrency_levels[@]} * BENCHMARK_RUNS_PER_CONCURRENCY))
@@ -852,10 +894,26 @@ calculate_total_runs() {
 
     TOTAL_RUNS=$((gsm8k_runs + serving_runs))
 
+    # Build mode description
+    local mode_desc=""
     if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K only - DP attention mode)"
+        mode_desc="DP attention"
+    fi
+    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+        if [ -n "$mode_desc" ]; then
+            mode_desc="${mode_desc} + torch compile"
+        else
+            mode_desc="torch compile"
+        fi
+    fi
+    if [ -z "$mode_desc" ]; then
+        mode_desc="standard"
+    fi
+
+    if should_run_serving_benchmarks; then
+        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs}) - ${mode_desc} mode"
     else
-        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs})"
+        echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K only - ${mode_desc} mode)"
     fi
 }
 
@@ -1140,8 +1198,8 @@ check_all_logs_complete() {
         fi
     fi
 
-    # Check serving benchmark logs only if not in DP attention mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+    # Check serving benchmark logs only if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         echo "Checking serving benchmark logs..."
         for concurrency in "${concurrency_values[@]}"; do
             for run_number in $(seq 1 "$BENCHMARK_RUNS_PER_CONCURRENCY"); do
@@ -1169,22 +1227,26 @@ check_all_logs_complete() {
             done
         done
     else
-        echo "DP attention mode - skipping serving benchmark log checks (GSM8K only)"
+        # Build mode description for logging
+        mode_desc=""
+        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+            mode_desc="DP attention"
+        fi
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            if [ -n "$mode_desc" ]; then
+                mode_desc="${mode_desc} + torch compile"
+            else
+                mode_desc="torch compile"
+            fi
+        fi
+        echo "${mode_desc} mode - skipping serving benchmark log checks (GSM8K only)"
     fi
 
     echo "Scan complete: ${total_runs} total runs needed, ${missing_runs} missing/incomplete"
 
     # All benchmarks are complete based on the mode
     local benchmarks_complete=false
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        # In DP attention mode, only GSM8K needs to be complete
-        if [ "$gsm8k_complete" = true ]; then
-            benchmarks_complete=true
-            echo "✅ All benchmark logs (GSM8K only - DP attention mode) are present and complete! No server startup needed."
-        else
-            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
-        fi
-    else
+    if should_run_serving_benchmarks; then
         # In standard mode, both serving and GSM8K logs need to be complete
         if [ "$all_complete" = true ] && [ "$gsm8k_complete" = true ]; then
             benchmarks_complete=true
@@ -1196,6 +1258,14 @@ check_all_logs_complete() {
             if [ "$gsm8k_complete" = false ]; then
                 echo "❌ GSM8K benchmark is missing, empty, or incomplete."
             fi
+        fi
+    else
+        # In DP attention mode or torch compile mode, only GSM8K needs to be complete
+        if [ "$gsm8k_complete" = true ]; then
+            benchmarks_complete=true
+            echo "✅ All benchmark logs (GSM8K only - ${mode_desc} mode) are present and complete! No server startup needed."
+        else
+            echo "❌ GSM8K benchmark is missing, empty, or incomplete."
         fi
     fi
 
@@ -1212,8 +1282,8 @@ if check_all_logs_complete; then
     echo "Skipping server startup and benchmark execution - generating CSV from existing logs..."
     echo "All logs already complete - skipping server startup" >> "$TIMING_LOG"
 
-    # Only generate serving CSV if not in DP attention mode
-    if [ "$CHECK_DP_ATTENTION" = "false" ]; then
+    # Only generate serving CSV if we should run serving benchmarks
+    if should_run_serving_benchmarks; then
         # Initialize the structured CSV
         init_serving_csv
 
@@ -1227,7 +1297,19 @@ if check_all_logs_complete; then
         echo "Serving benchmark results written to ${SERVING_CSV}"
         echo "Note: Both GSM8K and serving benchmarks were already complete"
     else
-        echo "✅ GSM8K logs already complete (DP attention mode - no serving benchmarks)."
+        # Build mode description for final message
+        mode_desc=""
+        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+            mode_desc="DP attention"
+        fi
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            if [ -n "$mode_desc" ]; then
+                mode_desc="${mode_desc} + torch compile"
+            else
+                mode_desc="torch compile"
+            fi
+        fi
+        echo "✅ GSM8K logs already complete (${mode_desc} mode - no serving benchmarks)."
     fi
 
     serving_start_time=$(date +%s)
@@ -1275,10 +1357,22 @@ else
         exit 1
     fi
 
-    # Skip serving benchmarks if in DP attention mode (GSM8K only)
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        echo "✅ DP attention mode enabled - skipping serving benchmarks (GSM8K only mode)"
-        echo "GSM8K benchmark completed. Serving benchmarks skipped in DP attention mode." >> "$TIMING_LOG"
+    # Skip serving benchmarks if not in standard mode (GSM8K only)
+    if ! should_run_serving_benchmarks; then
+        # Build mode description for logging
+        mode_desc=""
+        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+            mode_desc="DP attention"
+        fi
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            if [ -n "$mode_desc" ]; then
+                mode_desc="${mode_desc} + torch compile"
+            else
+                mode_desc="torch compile"
+            fi
+        fi
+        echo "✅ ${mode_desc} mode enabled - skipping serving benchmarks (GSM8K only mode)"
+        echo "GSM8K benchmark completed. Serving benchmarks skipped in ${mode_desc} mode." >> "$TIMING_LOG"
 
         # Set serving duration to 0 since we're skipping
         serving_start_time=$(date +%s)
@@ -1320,10 +1414,23 @@ serving_end_time=$(date +%s)
 serving_duration=$((serving_end_time - serving_start_time))
 
 # Only show serving benchmark completion messages if we actually ran serving benchmarks
-if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-    echo "✅ GSM8K benchmark completed in DP attention mode (serving benchmarks skipped)."
+if ! should_run_serving_benchmarks; then
+    # Build mode description for final message
+    mode_desc=""
+    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        mode_desc="DP attention"
+    fi
+    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+        if [ -n "$mode_desc" ]; then
+            mode_desc="${mode_desc} + torch compile"
+        else
+            mode_desc="torch compile"
+        fi
+    fi
+    echo "✅ GSM8K benchmark completed in ${mode_desc} mode (serving benchmarks skipped)."
 else
-    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds."
+    # Build mode description for final message (standard mode only)
+    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (standard mode)."
     echo "Structured serving benchmark results written to ${SERVING_CSV}"
     echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
 fi
