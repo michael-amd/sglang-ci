@@ -723,19 +723,78 @@ if ! command -v curl &> /dev/null; then
   exit 1
 fi
 
+###############################################################################
+# Docker image management functions
+###############################################################################
+
+# Function to check if Docker image exists locally
+check_local_image() {
+  local image="$1"
+  if "${DOCKER_CMD[@]}" image inspect "${image}" >/dev/null 2>&1; then
+    echo "[nightly] Found local image: ${image}"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Function to check Docker Hub connectivity
+check_docker_hub_connectivity() {
+  if ! curl -s --max-time 30 https://registry-1.docker.io/v2/ >/dev/null 2>&1; then
+    echo "[nightly] WARNING: Docker Hub connectivity test failed"
+    return 1
+  fi
+  return 0
+}
+
+# Function to pull Docker image with retry logic
+pull_image_with_retry() {
+  local image="$1"
+  local max_attempts=3
+  local attempt=1
+  
+  # First check if image already exists locally
+  if check_local_image "$image"; then
+    return 0
+  fi
+  
+  # Check Docker Hub connectivity before attempting pulls
+  if ! check_docker_hub_connectivity; then
+    echo "[nightly] WARNING: Docker Hub connectivity issues detected"
+  fi
+  
+  while [ $attempt -le $max_attempts ]; do
+    echo "[nightly] Pull attempt $attempt/$max_attempts for $image..."
+    if "${DOCKER_CMD[@]}" pull "$image" 2>&1; then
+      echo "[nightly] Successfully pulled image: $image"
+      return 0
+    fi
+    
+    if [ $attempt -lt $max_attempts ]; then
+      local wait_time=$((30 * attempt))  # 30s, 60s, 90s delays
+      echo "[nightly] Pull failed, retrying in ${wait_time}s..."
+      sleep $wait_time
+    else
+      echo "[nightly] All pull attempts failed for $image"
+    fi
+    ((attempt++))
+  done
+  
+  return 1
+}
+
 # Try each day from today going back CONTINUE_RUN_DAYS
 for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
-  echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-
-  if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+  
+  if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
     SELECTED_TAGS+=("$candidate_tag")
-    echo "[nightly] Successfully pulled image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+    echo "[nightly] Successfully obtained image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
   else
-    echo "[nightly] WARN: Failed to pull candidate tag ${candidate_tag}. It may be private or invalid."
+    echo "[nightly] WARN: Failed to obtain candidate tag ${candidate_tag}. It may be private or invalid."
   fi
 done
 
@@ -745,12 +804,11 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
   if [[ -n "$candidate_tag" ]]; then
     echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
-    echo "[nightly] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-    if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+    if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
       SELECTED_TAGS+=("$candidate_tag")
-      echo "[nightly] Successfully pulled fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+      echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
     else
-      echo "[nightly] WARN: Failed to pull fallback tag ${candidate_tag}. It may be private or invalid."
+      echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
     fi
   else
     echo "[nightly] No fallback image found for yesterday either."
@@ -758,7 +816,7 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
 fi
 
 if [[ ${#SELECTED_TAGS[@]} -eq 0 ]]; then
-  echo "[nightly] ERROR: Could not find and pull any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
+  echo "[nightly] ERROR: Could not find and obtain any valid non-SRT images for the last $CONTINUE_RUN_DAYS days."
   exit 1
 fi
 
