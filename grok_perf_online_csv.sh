@@ -7,6 +7,7 @@
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm630-mi30x-20250909
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm700-mi35x-20250909
 #   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
+#   bash grok_perf_online_csv.sh --model-path=/mnt/raid/models/huggingface/grok-2/ --model-type=grok2
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
 
@@ -35,7 +36,7 @@ GROK1_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/
 GROK2_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK2}"
 GROK2_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/grok-2/}"
-GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/grok-2/tokenizer.tok.json}"
+GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sglang-ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"

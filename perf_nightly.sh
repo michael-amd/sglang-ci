@@ -624,10 +624,10 @@ fi
 # Set ROCM version based on hardware type
 ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
 
-# Special case: grok2 on mi30x should use rocm700 instead of rocm630
-if [[ "$MODEL" == "grok2" && "$HARDWARE_TYPE" == "mi30x" ]]; then
+# Special case: grok2 always uses rocm700 regardless of hardware type
+if [[ "$MODEL" == "grok2" ]]; then
     ROCM_VERSION="rocm700"
-    echo "[nightly] Special case: Using rocm700 for grok2 on mi30x hardware"
+    echo "[nightly] Special case: Using rocm700 for grok2 on ${HARDWARE_TYPE} hardware"
 fi
 
 echo "[nightly] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
@@ -840,8 +840,10 @@ for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
   ensure_gpu_idle
 
   DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-  # Generate container name (replace special chars for Docker compatibility)
-  CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
+  # Generate container name using image tag only (model-agnostic to share containers across models)
+  # Extract repo name from IMAGE_REPO (e.g., "rocm/sgl-dev" -> "sgl-dev")
+  REPO_NAME="${IMAGE_REPO##*/}"
+  CONTAINER_NAME="${REPO_NAME}_${SELECTED_TAG//:/_}"
 
   # Check if all runs for the specified modes are already complete for this image
   all_modes_complete=true
