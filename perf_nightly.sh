@@ -33,6 +33,7 @@
 # OPTIONS:
 #   --model=MODEL        Model to benchmark: grok, grok2, deepseek, DeepSeek-V3 [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
+#   --tokenizer-path=PATH Custom tokenizer path (for grok2, overrides default tokenizer)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
@@ -49,6 +50,8 @@
 #   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
 #   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
 #   perf_nightly.sh --model=grok2 --mode=online        # Grok 2 online only (mi30x)
+#   perf_nightly.sh --model=grok2 --model-path=/path/to/grok2 \   # Grok 2 with custom paths
+#     --tokenizer-path=/path/to/tokenizer --mode=online
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
 #   perf_nightly.sh --model=grok --mode=all \          # Grok with Teams alerts
 #     --teams-webhook-url="https://prod-99.westus.logic.azure.com/..."
@@ -443,6 +446,7 @@ CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
+CLI_TOKENIZER_PATH="" # Custom tokenizer path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
 CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
 
@@ -456,6 +460,9 @@ for arg in "$@"; do
       ;;
     --model-path=*)
       CLI_MODEL_PATH="${arg#*=}"
+      ;;
+    --tokenizer-path=*)
+      CLI_TOKENIZER_PATH="${arg#*=}"
       ;;
     --work-dir=*)
       CLI_WORK_DIR="${arg#*=}"
@@ -492,6 +499,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
+      echo "  --tokenizer-path=PATH            Custom tokenizer path (for grok2, overrides default tokenizer path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
@@ -509,6 +517,7 @@ for arg in "$@"; do
       echo "  $0 --model=deepseek --mode=online           # Run deepseek online only, no Teams (mi30x)"
       echo "  $0 --model=DeepSeek-V3 --mode=online        # Run DeepSeek-V3 online only, no Teams (mi30x)"
       echo "  $0 --model=grok2 --mode=online              # Run grok2 online only, no Teams (mi30x)"
+      echo "  $0 --model=grok2 --model-path=/path/to/grok2 --tokenizer-path=/path/to/tokenizer  # Run grok2 with custom model and tokenizer paths"
       echo "  $0 --hardware=mi35x --mode=all              # Run grok on mi35x hardware"
       echo "  $0 --model=grok --mode=all \\                # Run grok with Teams notifications"
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
@@ -573,6 +582,10 @@ fi
 
 if [[ -n "$CLI_MODEL_PATH" ]]; then
   echo "[nightly] Custom model path provided: $CLI_MODEL_PATH"
+fi
+
+if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
+  echo "[nightly] Custom tokenizer path provided: $CLI_TOKENIZER_PATH"
 fi
 
 # Process HuggingFace model download option
@@ -1082,6 +1095,12 @@ if [[ "$all_modes_complete" != "true" ]]; then
   if [[ "$MODEL" == "grok2" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --model-type=grok2"
     echo "[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark"
+    
+    # Add custom tokenizer path for grok2 if provided
+    if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --tokenizer='${CLI_TOKENIZER_PATH}'"
+      echo "[nightly] Adding --tokenizer='${CLI_TOKENIZER_PATH}' flag for Grok 2 benchmark"
+    fi
   fi
 
   if [[ "$MODEL" == "deepseek" ]]; then
