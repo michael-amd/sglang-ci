@@ -249,6 +249,22 @@ check_disk_space() {
 }
 
 ###############################################################################
+# Function to extract date from Docker image tag
+###############################################################################
+extract_date_from_tag() {
+  local tag="$1"
+  # Extract date from tag format like "v0.5.3rc0-rocm700-mi30x-20250922"
+  # Use regex to find 8-digit date pattern (YYYYMMDD) at the end
+  if [[ "$tag" =~ -([0-9]{8})$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+    return 0
+  else
+    echo "[nightly] WARN: Could not extract date from tag: $tag" >&2
+    return 1
+  fi
+}
+
+###############################################################################
 # HuggingFace model download function
 ###############################################################################
 download_hf_model() {
@@ -355,6 +371,15 @@ send_teams_notification() {
   # Build the command with directory parameters to match where plots are actually created
   PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
   TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
+  
+  # Add benchmark date if available (extracted from SELECTED_TAG)
+  if [[ -n "${SELECTED_TAG:-}" ]]; then
+    BENCHMARK_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
+    if [[ $? -eq 0 && -n "$BENCHMARK_DATE" ]]; then
+      TEAMS_CMD="${TEAMS_CMD} --benchmark-date '${BENCHMARK_DATE}'"
+      echo "[nightly] Adding benchmark date to Teams notification: ${BENCHMARK_DATE}"
+    fi
+  fi
 
   echo "[nightly] Teams notification using plot directory: ${PLOT_DIR_PATH}"
 
@@ -1212,6 +1237,16 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    
+    # Extract date from image tag for plot filename
+    PLOT_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
+    if [[ $? -eq 0 && -n "$PLOT_DATE" ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-date '${PLOT_DATE}'"
+      echo "[nightly] Using plot date from image tag: ${PLOT_DATE}"
+    else
+      echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
+    fi
+    
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"

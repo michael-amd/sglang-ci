@@ -673,10 +673,46 @@ export TIMING_LOG  # Make it available to all functions
     echo "Timezone: $(date +%Z) ($(date +%z))"
     echo "Docker image: ${FULL_IMAGE}"
     echo "Model: ${MODEL}"
+    echo "Hostname: $(hostname)"
+    echo "Mode: online"
     echo "DP Attention: ${CHECK_DP_ATTENTION}"
     echo "Torch Compile: ${ENABLE_TORCH_COMPILE}"
     echo ""
 } > "$TIMING_LOG" || { echo "ERROR: Cannot create timing log ${TIMING_LOG}"; exit 1; }
+
+###############################################################################
+# Helper Functions
+###############################################################################
+
+# Function to check server errors and log them to timing summary
+check_server_errors_and_log() {
+    if [ ! -f "$SERVER_LOG_FILE" ] || [ ! -n "$TIMING_LOG" ]; then
+        return
+    fi
+    
+    echo "" >> "$TIMING_LOG"
+    echo "Server Error Check:" >> "$TIMING_LOG"
+    
+    # Check for RuntimeError (for DP attention mode)
+    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    if [ "$runtime_errors" -gt 0 ]; then
+        echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
+        # Log the first few RuntimeErrors for context
+        grep "RuntimeError:" "$SERVER_LOG_FILE" | head -3 | sed 's/^/    /' >> "$TIMING_LOG" 2>/dev/null || true
+        echo "  Server error status: FAIL" >> "$TIMING_LOG"
+    else
+        echo "  RuntimeError count: 0" >> "$TIMING_LOG"
+        echo "  Server error status: PASS" >> "$TIMING_LOG"
+    fi
+    
+    # Check for other critical errors
+    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    if [ "$critical_errors" -gt 0 ]; then
+        echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
+    else
+        echo "  Critical error count: 0" >> "$TIMING_LOG"
+    fi
+}
 
 ###############################################################################
 # GSM8K Online Benchmark Function
@@ -746,6 +782,7 @@ run_gsm8k_benchmark() {
     echo "  Total duration: ${duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
     echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     # Extract performance metrics from the combined output
     # Look for throughput and latency metrics in GSM8K output format
@@ -1458,6 +1495,12 @@ echo "GSM8K accuracy results written to ${OUTPUT_CSV}"
 ###############################################################################
 echo "Shutting down SGLang server..."
 shutdown_start_time=$(date +%s)
+
+# Check for server errors before shutdown
+if [ -f "$SERVER_LOG_FILE" ]; then
+    check_server_errors_and_log
+fi
+
 # The cleanup trap will handle this, but we can also do it explicitly here
 shutdown_end_time=$(date +%s)
 shutdown_duration=$((shutdown_end_time - shutdown_start_time))

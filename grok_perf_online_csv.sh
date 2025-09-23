@@ -357,6 +357,10 @@ echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 echo "Timezone: $(date +%Z) ($(date +%z))" >> "$TIMING_LOG"
 echo "Docker image: ${FULL_IMAGE}" >> "$TIMING_LOG"
 echo "Model: ${MODEL}" >> "$TIMING_LOG"
+echo "Hostname: $(hostname)" >> "$TIMING_LOG"
+echo "Mode: online" >> "$TIMING_LOG"
+echo "Model type: ${MODEL_TYPE}" >> "$TIMING_LOG"
+echo "Attention backend: ${ATTENTION_BACKEND:-unknown}" >> "$TIMING_LOG"
 echo "" >> "$TIMING_LOG"
 
 ###############################################################################
@@ -449,6 +453,12 @@ launch_server() {
 shutdown_server() {
     echo "[online] Shutting down server (PID ${SERVER_PID})..."
     local shutdown_start=$(date +%s)
+    
+    # Check for server errors before shutdown
+    if [ -f "$SERVER_LOG" ]; then
+        check_server_errors_and_log
+    fi
+    
     kill "$SERVER_PID"
     sleep 2
     local shutdown_end=$(date +%s)
@@ -456,6 +466,36 @@ shutdown_server() {
     echo "[online] Server shutdown completed in ${shutdown_duration} seconds"
     if [ -n "$TIMING_LOG" ]; then
         echo "Server shutdown time: ${shutdown_duration} seconds" >> "$TIMING_LOG"
+    fi
+}
+
+# Function to check server errors and log them to timing summary
+check_server_errors_and_log() {
+    if [ ! -f "$SERVER_LOG" ] || [ ! -n "$TIMING_LOG" ]; then
+        return
+    fi
+    
+    echo "" >> "$TIMING_LOG"
+    echo "Server Error Check:" >> "$TIMING_LOG"
+    
+    # Check for RuntimeError (for DP attention mode)
+    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG" 2>/dev/null || echo "0")
+    if [ "$runtime_errors" -gt 0 ]; then
+        echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
+        # Log the first few RuntimeErrors for context
+        grep "RuntimeError:" "$SERVER_LOG" | head -3 | sed 's/^/    /' >> "$TIMING_LOG" 2>/dev/null || true
+        echo "  Server error status: FAIL" >> "$TIMING_LOG"
+    else
+        echo "  RuntimeError count: 0" >> "$TIMING_LOG"
+        echo "  Server error status: PASS" >> "$TIMING_LOG"
+    fi
+    
+    # Check for other critical errors
+    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG" 2>/dev/null || echo "0")
+    if [ "$critical_errors" -gt 0 ]; then
+        echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
+    else
+        echo "  Critical error count: 0" >> "$TIMING_LOG"
     fi
 }
 
@@ -509,6 +549,7 @@ run_client_gsm8k() {
     echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
     echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
          echo "Average accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
