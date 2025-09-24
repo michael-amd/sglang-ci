@@ -63,6 +63,9 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
+# Set timezone to PST/PDT for consistent logging
+export TZ='America/Los_Angeles'
+
 ###############################################################################
 # Command and execution logging
 ###############################################################################
@@ -1100,6 +1103,11 @@ if [[ "$all_modes_complete" != "true" ]]; then
 
   # Add current directory parameter (always pass it to override default paths)
   SCRIPT_ARGS="${SCRIPT_ARGS} --current-dir='${BENCHMARK_CI_DIR}'"
+
+  # Add nightly command, hardware, and ROCM version info for timing logs
+  SCRIPT_ARGS="${SCRIPT_ARGS} --nightly-command='$0 $*'"
+  SCRIPT_ARGS="${SCRIPT_ARGS} --hardware='${HARDWARE_TYPE}'"
+  SCRIPT_ARGS="${SCRIPT_ARGS} --rocm-version='${ROCM_VERSION}'"
 
   # Add custom work directory if provided
   if [[ -n "$CLI_WORK_DIR" ]]; then

@@ -76,6 +76,9 @@ WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
+NIGHTLY_COMMAND=""
+HARDWARE=""
+ROCM_VERSION=""
 CURRENT_DIR=""  # Initialize to empty to avoid unbound variable error
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
@@ -109,6 +112,15 @@ for arg in "$@"; do
       ;;
     --threshold=*)
       THRESHOLD="${arg#*=}"
+      ;;
+    --nightly-command=*)
+      NIGHTLY_COMMAND="${arg#*=}"
+      ;;
+    --hardware=*)
+      HARDWARE="${arg#*=}"
+      ;;
+    --rocm-version=*)
+      ROCM_VERSION="${arg#*=}"
       ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
@@ -330,7 +342,10 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --output-dir="${OUTPUT_DIR}" \
            --gsm8k-script="${GSM8K_SCRIPT}" \
            --node="${NODE}" \
-           --threshold="${THRESHOLD}"
+           --threshold="${THRESHOLD}" \
+           $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
+           $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
+           $([ -n "$ROCM_VERSION" ] && echo "--rocm-version=\"$ROCM_VERSION\"")
     exit 0
   fi
 fi
@@ -355,6 +370,15 @@ echo "TIMING SUMMARY LOG" > "$TIMING_LOG"
 echo "==================" >> "$TIMING_LOG"
 echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 echo "Timezone: $(date +%Z) ($(date +%z))" >> "$TIMING_LOG"
+if [[ -n "$NIGHTLY_COMMAND" ]]; then
+    echo "Command: ${NIGHTLY_COMMAND}" >> "$TIMING_LOG"
+fi
+if [[ -n "$HARDWARE" ]]; then
+    echo "Hardware: ${HARDWARE}" >> "$TIMING_LOG"
+fi
+if [[ -n "$ROCM_VERSION" ]]; then
+    echo "ROCM Version: ${ROCM_VERSION}" >> "$TIMING_LOG"
+fi
 echo "Docker image: ${FULL_IMAGE}" >> "$TIMING_LOG"
 echo "Model: ${MODEL}" >> "$TIMING_LOG"
 echo "Hostname: $(hostname)" >> "$TIMING_LOG"

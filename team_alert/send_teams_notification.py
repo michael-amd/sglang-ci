@@ -119,35 +119,35 @@ class BenchmarkAnalyzer:
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
 
-        # Search for timing_summary logs with the target date in the filename
-        # This allows finding logs even when they're in folders with different dates (e.g., Docker image date)
+        # Search for timing_summary logs in folders that contain the image date
+        # The folder name contains the image date, but the timing log filename contains the run date
         search_patterns = []
         if mode == "online":
             # Use more specific patterns to avoid matching longer suffixes
             if mode_suffix:
                 # For specific modes, ensure exact suffix match
                 search_patterns.extend([
-                    f"{self.online_dir}/{model_name}/*{model_name}*{mode}{mode_suffix}/timing_summary_{date_str}_*.log",
-                    f"{self.online_dir}/{model_name}/*{model.lower()}*{mode}{mode_suffix}/timing_summary_{date_str}_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
                 ])
             else:
                 # For standard mode, match folders ending with just the mode (no additional suffixes)
                 search_patterns.extend([
-                    f"{self.online_dir}/{model_name}/*{model_name}*{mode}/timing_summary_{date_str}_*.log",
-                    f"{self.online_dir}/{model_name}/*{model.lower()}*{mode}/timing_summary_{date_str}_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
                     # Also handle variant names like MOE-I4F8
-                    f"{self.online_dir}/{model_name}/*{model_name}*_*_{mode}/timing_summary_{date_str}_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*_*_{mode}/timing_summary_*.log",
                 ])
         else:
             if mode_suffix:
                 search_patterns.extend([
-                    f"{self.offline_dir}/{model_name}/*{model_name}*{mode}{mode_suffix}/timing_summary_{date_str}_*.log",
-                    f"{self.offline_dir}/{model_name}/*{model.lower()}*{mode}{mode_suffix}/timing_summary_{date_str}_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
                 ])
             else:
                 search_patterns.extend([
-                    f"{self.offline_dir}/{model_name}/*{model_name}*{mode}/timing_summary_{date_str}_*.log",
-                    f"{self.offline_dir}/{model_name}/*{model.lower()}*{mode}/timing_summary_{date_str}_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
                 ])
 
         # Find the most recent timing_summary log for the specific date
@@ -1303,8 +1303,15 @@ class TeamsNotifier:
 
             # Runtime is already shown in the status details section, so don't duplicate it here
 
-        # Add Plot section only if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
+        is_mi35x_machine = False
+        additional_info = summary_alert.get("additional_info", {})
+        docker_image = additional_info.get("docker_image", "")
+        if "mi35x" in docker_image.lower():
+            is_mi35x_machine = True
+
+        # Add Plot section only if not in DP attention mode, torch compile mode, or MI35X machine
+        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
             # Add Plot section title
             body_elements.append(
                 {
@@ -1398,8 +1405,8 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
+        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
             if plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
