@@ -7,6 +7,7 @@
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm630-mi30x-20250909
 #   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm700-mi35x-20250909
 #   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
+#   bash grok_perf_online_csv.sh --model-path=/mnt/raid/models/huggingface/grok-2/ --model-type=grok2
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
 # ------------------------------------------------------------------------------
 
@@ -35,7 +36,7 @@ GROK1_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/
 GROK2_MODEL_NAME="${BENCHMARK_MODEL_NAME:-GROK2}"
 GROK2_MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 GROK2_DEFAULT_MODEL="${DEFAULT_MODEL_PATH:-/mnt/raid/models/huggingface/grok-2/}"
-GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/grok-2/tokenizer.tok.json}"
+GROK2_DEFAULT_TOKENIZER="${DEFAULT_TOKENIZER_NAME:-/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer}"
 DEFAULT_WORK_DIR="${DEFAULT_WORK_DIR:-/mnt/raid/michael/sglang-ci}"
 DEFAULT_OUTPUT_DIR="${DEFAULT_OUTPUT_DIR:-}"  # If empty, will use work_dir
 DEFAULT_GSM8K_SCRIPT="${DEFAULT_GSM8K_SCRIPT:-/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py}"
@@ -75,6 +76,9 @@ WORK_DIR=""
 OUTPUT_DIR=""
 GSM8K_SCRIPT=""
 THRESHOLD=""
+NIGHTLY_COMMAND=""
+HARDWARE=""
+ROCM_VERSION=""
 CURRENT_DIR=""  # Initialize to empty to avoid unbound variable error
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
@@ -108,6 +112,15 @@ for arg in "$@"; do
       ;;
     --threshold=*)
       THRESHOLD="${arg#*=}"
+      ;;
+    --nightly-command=*)
+      NIGHTLY_COMMAND="${arg#*=}"
+      ;;
+    --hardware=*)
+      HARDWARE="${arg#*=}"
+      ;;
+    --rocm-version=*)
+      ROCM_VERSION="${arg#*=}"
       ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
@@ -329,7 +342,10 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
            --output-dir="${OUTPUT_DIR}" \
            --gsm8k-script="${GSM8K_SCRIPT}" \
            --node="${NODE}" \
-           --threshold="${THRESHOLD}"
+           --threshold="${THRESHOLD}" \
+           $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
+           $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
+           $([ -n "$ROCM_VERSION" ] && echo "--rocm-version=\"$ROCM_VERSION\"")
     exit 0
   fi
 fi
@@ -354,8 +370,21 @@ echo "TIMING SUMMARY LOG" > "$TIMING_LOG"
 echo "==================" >> "$TIMING_LOG"
 echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
 echo "Timezone: $(date +%Z) ($(date +%z))" >> "$TIMING_LOG"
+if [[ -n "$NIGHTLY_COMMAND" ]]; then
+    echo "Command: ${NIGHTLY_COMMAND}" >> "$TIMING_LOG"
+fi
+if [[ -n "$HARDWARE" ]]; then
+    echo "Hardware: ${HARDWARE}" >> "$TIMING_LOG"
+fi
+if [[ -n "$ROCM_VERSION" ]]; then
+    echo "ROCM Version: ${ROCM_VERSION}" >> "$TIMING_LOG"
+fi
 echo "Docker image: ${FULL_IMAGE}" >> "$TIMING_LOG"
 echo "Model: ${MODEL}" >> "$TIMING_LOG"
+echo "Hostname: $(hostname)" >> "$TIMING_LOG"
+echo "Mode: online" >> "$TIMING_LOG"
+echo "Model type: ${MODEL_TYPE}" >> "$TIMING_LOG"
+echo "Attention backend: ${ATTENTION_BACKEND:-unknown}" >> "$TIMING_LOG"
 echo "" >> "$TIMING_LOG"
 
 ###############################################################################
@@ -448,6 +477,12 @@ launch_server() {
 shutdown_server() {
     echo "[online] Shutting down server (PID ${SERVER_PID})..."
     local shutdown_start=$(date +%s)
+    
+    # Check for server errors before shutdown
+    if [ -f "$SERVER_LOG" ]; then
+        check_server_errors_and_log
+    fi
+    
     kill "$SERVER_PID"
     sleep 2
     local shutdown_end=$(date +%s)
@@ -455,6 +490,36 @@ shutdown_server() {
     echo "[online] Server shutdown completed in ${shutdown_duration} seconds"
     if [ -n "$TIMING_LOG" ]; then
         echo "Server shutdown time: ${shutdown_duration} seconds" >> "$TIMING_LOG"
+    fi
+}
+
+# Function to check server errors and log them to timing summary
+check_server_errors_and_log() {
+    if [ ! -f "$SERVER_LOG" ] || [ ! -n "$TIMING_LOG" ]; then
+        return
+    fi
+    
+    echo "" >> "$TIMING_LOG"
+    echo "Server Error Check:" >> "$TIMING_LOG"
+    
+    # Check for RuntimeError (for DP attention mode)
+    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG" 2>/dev/null || echo "0")
+    if [ "$runtime_errors" -gt 0 ]; then
+        echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
+        # Log the first few RuntimeErrors for context
+        grep "RuntimeError:" "$SERVER_LOG" | head -3 | sed 's/^/    /' >> "$TIMING_LOG" 2>/dev/null || true
+        echo "  Server error status: FAIL" >> "$TIMING_LOG"
+    else
+        echo "  RuntimeError count: 0" >> "$TIMING_LOG"
+        echo "  Server error status: PASS" >> "$TIMING_LOG"
+    fi
+    
+    # Check for other critical errors
+    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG" 2>/dev/null || echo "0")
+    if [ "$critical_errors" -gt 0 ]; then
+        echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
+    else
+        echo "  Critical error count: 0" >> "$TIMING_LOG"
     fi
 }
 
@@ -508,6 +573,7 @@ run_client_gsm8k() {
     echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
     echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
          echo "Average accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"

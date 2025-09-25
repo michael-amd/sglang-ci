@@ -920,6 +920,7 @@ class OnlineGraphPlotter:
         split_request_rates=False,
         expected_rates=None,
         load_metric_name="request_rate",
+        plot_date=None,
     ):
         """
         Initialize the OnlineGraphPlotter.
@@ -935,6 +936,7 @@ class OnlineGraphPlotter:
             split_request_rates: If True, create separate plots for low (1,2,4) and high (8,16) request rates
             expected_rates: A list of integers for expected request rates.
             load_metric_name: The name for the load metric column (e.g. 'request_rate', 'concurrency')
+            plot_date: Date to use for plot filename (YYYYMMDD format). If None, uses current date.
         """
         self.summary_csv_path = summary_csv_path
         self.plot_dir = plot_dir
@@ -942,6 +944,7 @@ class OnlineGraphPlotter:
         self.mode_filter = mode_filter
         self.split_request_rates = split_request_rates
         self.load_metric_name = load_metric_name
+        self.plot_date = plot_date
 
         # Try to create plot directory, attempt to make writable first if permission denied
         try:
@@ -1648,7 +1651,10 @@ class OnlineGraphPlotter:
         )  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot
-        current_date_str = datetime.now().strftime("%Y%m%d")
+        if self.plot_date:
+            current_date_str = self.plot_date
+        else:
+            current_date_str = datetime.now().strftime("%Y%m%d")
 
         # Extract base model name for filename (e.g. GROK1 from "GROK1 MOE-I4F8 Online")
         # Generate filename format: YYYYMMDD_MODEL_Online.png (e.g. 20250717_GROK1_Online.png)
@@ -1670,7 +1676,10 @@ class OnlineGraphPlotter:
         low_rr = [rr for rr in unique_load_values if rr in self.low_request_rates]
         high_rr = [rr for rr in unique_load_values if rr in self.high_request_rates]
 
-        current_date_str = datetime.now().strftime("%Y%m%d")
+        if self.plot_date:
+            current_date_str = self.plot_date
+        else:
+            current_date_str = datetime.now().strftime("%Y%m%d")
 
         # Extract base model name for filename (e.g. GROK1 from "GROK1 MOE-I4F8 Online")
         base_model_name = self.model_name_in_plot.split()[0]
@@ -1921,6 +1930,12 @@ def main():
         type=str,
         help="Path to existing summary CSV file (for --plot-only mode)",
     )
+    parser.add_argument(
+        "--plot-date",
+        type=str,
+        default=None,
+        help="Date to use for plot filename (YYYYMMDD format). If not provided, uses current date.",
+    )
 
     args = parser.parse_args()
 
@@ -2065,6 +2080,7 @@ def main():
             split_request_rates=args.split_request_rates,
             expected_rates=expected_rates,
             load_metric_name=load_metric_name,
+            plot_date=args.plot_date,
         )
         plotter.generate_and_save_plots()
 
