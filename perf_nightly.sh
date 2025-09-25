@@ -665,10 +665,10 @@ fi
 # Set ROCM version based on hardware type
 ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
 
-# Special case: grok2 always uses rocm700 regardless of hardware type
+# grok2 uses rocm700 as its standard ROCM version regardless of hardware type
 if [[ "$MODEL" == "grok2" ]]; then
     ROCM_VERSION="rocm700"
-    echo "[nightly] Special case: Using rocm700 for grok2 on ${HARDWARE_TYPE} hardware"
+    echo "[nightly] Using rocm700 for grok2 on ${HARDWARE_TYPE} hardware"
 fi
 
 echo "[nightly] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
