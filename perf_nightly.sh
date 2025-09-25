@@ -33,6 +33,7 @@
 # OPTIONS:
 #   --model=MODEL        Model to benchmark: grok, grok2, deepseek, DeepSeek-V3 [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
+#   --tokenizer-path=PATH Custom tokenizer path (for grok2, overrides default tokenizer)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
@@ -49,6 +50,8 @@
 #   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
 #   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
 #   perf_nightly.sh --model=grok2 --mode=online        # Grok 2 online only (mi30x)
+#   perf_nightly.sh --model=grok2 --model-path=/path/to/grok2 \   # Grok 2 with custom paths
+#     --tokenizer-path=/path/to/tokenizer --mode=online
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
 #   perf_nightly.sh --model=grok --mode=all \          # Grok with Teams alerts
 #     --teams-webhook-url="https://prod-99.westus.logic.azure.com/..."
@@ -59,6 +62,9 @@
 #   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
 # ---------------------------------------------------------------------------
 set -euo pipefail
+
+# Set timezone to PST/PDT for consistent logging
+export TZ='America/Los_Angeles'
 
 ###############################################################################
 # Command and execution logging
@@ -246,6 +252,22 @@ check_disk_space() {
 }
 
 ###############################################################################
+# Function to extract date from Docker image tag
+###############################################################################
+extract_date_from_tag() {
+  local tag="$1"
+  # Extract date from tag format like "v0.5.3rc0-rocm700-mi30x-20250922"
+  # Use regex to find 8-digit date pattern (YYYYMMDD) at the end
+  if [[ "$tag" =~ -([0-9]{8})$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+    return 0
+  else
+    echo "[nightly] WARN: Could not extract date from tag: $tag" >&2
+    return 1
+  fi
+}
+
+###############################################################################
 # HuggingFace model download function
 ###############################################################################
 download_hf_model() {
@@ -352,6 +374,15 @@ send_teams_notification() {
   # Build the command with directory parameters to match where plots are actually created
   PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
   TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
+  
+  # Add benchmark date if available (extracted from SELECTED_TAG)
+  if [[ -n "${SELECTED_TAG:-}" ]]; then
+    BENCHMARK_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
+    if [[ $? -eq 0 && -n "$BENCHMARK_DATE" ]]; then
+      TEAMS_CMD="${TEAMS_CMD} --benchmark-date '${BENCHMARK_DATE}'"
+      echo "[nightly] Adding benchmark date to Teams notification: ${BENCHMARK_DATE}"
+    fi
+  fi
 
   echo "[nightly] Teams notification using plot directory: ${PLOT_DIR_PATH}"
 
@@ -443,6 +474,7 @@ CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
+CLI_TOKENIZER_PATH="" # Custom tokenizer path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
 CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
 
@@ -456,6 +488,9 @@ for arg in "$@"; do
       ;;
     --model-path=*)
       CLI_MODEL_PATH="${arg#*=}"
+      ;;
+    --tokenizer-path=*)
+      CLI_TOKENIZER_PATH="${arg#*=}"
       ;;
     --work-dir=*)
       CLI_WORK_DIR="${arg#*=}"
@@ -492,6 +527,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
+      echo "  --tokenizer-path=PATH            Custom tokenizer path (for grok2, overrides default tokenizer path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
@@ -509,6 +545,7 @@ for arg in "$@"; do
       echo "  $0 --model=deepseek --mode=online           # Run deepseek online only, no Teams (mi30x)"
       echo "  $0 --model=DeepSeek-V3 --mode=online        # Run DeepSeek-V3 online only, no Teams (mi30x)"
       echo "  $0 --model=grok2 --mode=online              # Run grok2 online only, no Teams (mi30x)"
+      echo "  $0 --model=grok2 --model-path=/path/to/grok2 --tokenizer-path=/path/to/tokenizer  # Run grok2 with custom model and tokenizer paths"
       echo "  $0 --hardware=mi35x --mode=all              # Run grok on mi35x hardware"
       echo "  $0 --model=grok --mode=all \\                # Run grok with Teams notifications"
       echo "     --teams-webhook-url='https://prod-99.westus.logic.azure.com/...'"
@@ -575,6 +612,10 @@ if [[ -n "$CLI_MODEL_PATH" ]]; then
   echo "[nightly] Custom model path provided: $CLI_MODEL_PATH"
 fi
 
+if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
+  echo "[nightly] Custom tokenizer path provided: $CLI_TOKENIZER_PATH"
+fi
+
 # Process HuggingFace model download option
 # Only enable HuggingFace downloads when explicitly requested via --download-model
 if [[ -n "$CLI_DOWNLOAD_MODEL" ]]; then
@@ -624,10 +665,10 @@ fi
 # Set ROCM version based on hardware type
 ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
 
-# Special case: grok2 on mi30x should use rocm700 instead of rocm630
-if [[ "$MODEL" == "grok2" && "$HARDWARE_TYPE" == "mi30x" ]]; then
+# grok2 uses rocm700 as its standard ROCM version regardless of hardware type
+if [[ "$MODEL" == "grok2" ]]; then
     ROCM_VERSION="rocm700"
-    echo "[nightly] Special case: Using rocm700 for grok2 on mi30x hardware"
+    echo "[nightly] Using rocm700 for grok2 on ${HARDWARE_TYPE} hardware"
 fi
 
 echo "[nightly] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
@@ -840,8 +881,10 @@ for SELECTED_TAG in "${SELECTED_TAGS[@]}"; do
   ensure_gpu_idle
 
   DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-  # Generate container name (replace special chars for Docker compatibility)
-  CONTAINER_NAME="${MODEL}_${SELECTED_TAG//[:.]/_}"
+  # Generate container name using image tag only (model-agnostic to share containers across models)
+  # Extract repo name from IMAGE_REPO (e.g., "rocm/sgl-dev" -> "sgl-dev")
+  REPO_NAME="${IMAGE_REPO##*/}"
+  CONTAINER_NAME="${REPO_NAME}_${SELECTED_TAG//:/_}"
 
   # Check if all runs for the specified modes are already complete for this image
   all_modes_complete=true
@@ -1061,6 +1104,11 @@ if [[ "$all_modes_complete" != "true" ]]; then
   # Add current directory parameter (always pass it to override default paths)
   SCRIPT_ARGS="${SCRIPT_ARGS} --current-dir='${BENCHMARK_CI_DIR}'"
 
+  # Add nightly command, hardware, and ROCM version info for timing logs
+  SCRIPT_ARGS="${SCRIPT_ARGS} --nightly-command='$0 $*'"
+  SCRIPT_ARGS="${SCRIPT_ARGS} --hardware='${HARDWARE_TYPE}'"
+  SCRIPT_ARGS="${SCRIPT_ARGS} --rocm-version='${ROCM_VERSION}'"
+
   # Add custom work directory if provided
   if [[ -n "$CLI_WORK_DIR" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --work-dir='${CLI_WORK_DIR}'"
@@ -1080,6 +1128,12 @@ if [[ "$all_modes_complete" != "true" ]]; then
   if [[ "$MODEL" == "grok2" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --model-type=grok2"
     echo "[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark"
+    
+    # Add custom tokenizer path for grok2 if provided
+    if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --tokenizer='${CLI_TOKENIZER_PATH}'"
+      echo "[nightly] Adding --tokenizer='${CLI_TOKENIZER_PATH}' flag for Grok 2 benchmark"
+    fi
   fi
 
   if [[ "$MODEL" == "deepseek" ]]; then
@@ -1191,6 +1245,16 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    
+    # Extract date from image tag for plot filename
+    PLOT_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
+    if [[ $? -eq 0 && -n "$PLOT_DATE" ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --plot-date '${PLOT_DATE}'"
+      echo "[nightly] Using plot date from image tag: ${PLOT_DATE}"
+    else
+      echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
+    fi
+    
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"

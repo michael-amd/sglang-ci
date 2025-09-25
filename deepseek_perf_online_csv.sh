@@ -116,6 +116,9 @@ THRESHOLD=""
 DOWNLOAD_MODEL="false"
 CHECK_DP_ATTENTION="false"
 ENABLE_TORCH_COMPILE="false"
+NIGHTLY_COMMAND=""
+HARDWARE=""
+ROCM_VERSION=""
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -157,6 +160,15 @@ for arg in "$@"; do
       ;;
     --enable-torch-compile)
       ENABLE_TORCH_COMPILE="true"
+      ;;
+    --nightly-command=*)
+      NIGHTLY_COMMAND="${arg#*=}"
+      ;;
+    --hardware=*)
+      HARDWARE="${arg#*=}"
+      ;;
+    --rocm-version=*)
+      ROCM_VERSION="${arg#*=}"
       ;;
     --help)
       echo "Usage: $0 [OPTIONS]"
@@ -253,7 +265,10 @@ manage_container() {
                 --threshold="${THRESHOLD}" \
                 $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
                 $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention") \
-                $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile")
+                $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile") \
+                $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
+                $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
+                $([ -n "$ROCM_VERSION" ] && echo "--rocm-version=\"$ROCM_VERSION\"")
         exit 0
     fi
 }
@@ -658,7 +673,6 @@ if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
 fi
 
 folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}"
-OUTPUT_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}.csv"
 mkdir -p "$folder" || { echo "ERROR: Cannot create output folder ${folder}"; exit 1; }
 SERVER_LOG_FILE="${folder}/sglang_server.log" # Define server log path
 GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
@@ -671,12 +685,57 @@ export TIMING_LOG  # Make it available to all functions
     echo "=================="
     echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
     echo "Timezone: $(date +%Z) ($(date +%z))"
+    if [[ -n "$NIGHTLY_COMMAND" ]]; then
+        echo "Command: ${NIGHTLY_COMMAND}"
+    fi
+    if [[ -n "$HARDWARE" ]]; then
+        echo "Hardware: ${HARDWARE}"
+    fi
+    if [[ -n "$ROCM_VERSION" ]]; then
+        echo "ROCM Version: ${ROCM_VERSION}"
+    fi
     echo "Docker image: ${FULL_IMAGE}"
     echo "Model: ${MODEL}"
+    echo "Hostname: $(hostname)"
+    echo "Mode: online"
     echo "DP Attention: ${CHECK_DP_ATTENTION}"
     echo "Torch Compile: ${ENABLE_TORCH_COMPILE}"
     echo ""
 } > "$TIMING_LOG" || { echo "ERROR: Cannot create timing log ${TIMING_LOG}"; exit 1; }
+
+###############################################################################
+# Helper Functions
+###############################################################################
+
+# Function to check server errors and log them to timing summary
+check_server_errors_and_log() {
+    if [ ! -f "$SERVER_LOG_FILE" ] || [ ! -n "$TIMING_LOG" ]; then
+        return
+    fi
+    
+    echo "" >> "$TIMING_LOG"
+    echo "Server Error Check:" >> "$TIMING_LOG"
+    
+    # Check for RuntimeError (for DP attention mode)
+    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    if [ "$runtime_errors" -gt 0 ]; then
+        echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
+        # Log the first few RuntimeErrors for context
+        grep "RuntimeError:" "$SERVER_LOG_FILE" | head -3 | sed 's/^/    /' >> "$TIMING_LOG" 2>/dev/null || true
+        echo "  Server error status: FAIL" >> "$TIMING_LOG"
+    else
+        echo "  RuntimeError count: 0" >> "$TIMING_LOG"
+        echo "  Server error status: PASS" >> "$TIMING_LOG"
+    fi
+    
+    # Check for other critical errors
+    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    if [ "$critical_errors" -gt 0 ]; then
+        echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
+    else
+        echo "  Critical error count: 0" >> "$TIMING_LOG"
+    fi
+}
 
 ###############################################################################
 # GSM8K Online Benchmark Function
@@ -746,6 +805,7 @@ run_gsm8k_benchmark() {
     echo "  Total duration: ${duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
     echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     # Extract performance metrics from the combined output
     # Look for throughput and latency metrics in GSM8K output format
@@ -761,11 +821,7 @@ run_gsm8k_benchmark() {
         avg_latency="N/A"
     fi
 
-    # Write results to CSV in structured format
-    echo "Results" >> "$OUTPUT_CSV"
-    echo "Average Accuracy\t${avg_accuracy}" >> "$OUTPUT_CSV"
-    echo "Average Throughput (tokens/s)\t${avg_throughput}" >> "$OUTPUT_CSV"
-    echo "Average Latency (s)\t${avg_latency}" >> "$OUTPUT_CSV"
+    # Results are logged to GSM8K_LOG_FILE and timing log only - no CSV generation
 
     # Check if accuracy meets threshold
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
@@ -1327,16 +1383,7 @@ else
     start_sglang_server
 
     # Run GSM8K benchmark
-    # Initialize GSM8K CSV with structured format
-    echo "GSM8K Accuracy Test - ${MODEL_NAME} (${LATEST_TAG})" > "$OUTPUT_CSV"
-    echo "" >> "$OUTPUT_CSV"
-    echo "Test Configuration" >> "$OUTPUT_CSV"
-    echo "TP\t${TP}" >> "$OUTPUT_CSV"
-    echo "Questions\t${GSM8K_NUM_QUESTIONS}" >> "$OUTPUT_CSV"
-    echo "Parallel\t${GSM8K_PARALLEL}" >> "$OUTPUT_CSV"
-    echo "Shots\t${GSM8K_NUM_SHOTS}" >> "$OUTPUT_CSV"
-    echo "Runs\t${GSM8K_RUNS}" >> "$OUTPUT_CSV"
-    echo "" >> "$OUTPUT_CSV"
+    # GSM8K results will be logged to GSM8K_LOG_FILE and timing log only - no CSV generation
 
     echo "=== Online GSM8K Benchmark: TP=${TP}, Questions=${GSM8K_NUM_QUESTIONS}, Parallel=${GSM8K_PARALLEL}, Shots=${GSM8K_NUM_SHOTS} ==="
 
@@ -1349,7 +1396,6 @@ else
     # Run the main GSM8K benchmark
     if run_gsm8k_benchmark; then
         echo "✅ GSM8K benchmark completed successfully."
-        echo "Results written to ${OUTPUT_CSV}"
         echo "GSM8K log saved to ${GSM8K_LOG_FILE}"
         echo "Server log saved to ${SERVER_LOG_FILE}"
     else
@@ -1451,13 +1497,19 @@ for conc in "${concurrency_values[@]}"; do
     echo "" >> "$TIMING_LOG"
 done
 
-echo "GSM8K accuracy results written to ${OUTPUT_CSV}"
+echo "GSM8K accuracy results written to ${GSM8K_LOG_FILE}"
 
 ###############################################################################
 # Final Cleanup - Shutdown Server
 ###############################################################################
 echo "Shutting down SGLang server..."
 shutdown_start_time=$(date +%s)
+
+# Check for server errors before shutdown
+if [ -f "$SERVER_LOG_FILE" ]; then
+    check_server_errors_and_log
+fi
+
 # The cleanup trap will handle this, but we can also do it explicitly here
 shutdown_end_time=$(date +%s)
 shutdown_duration=$((shutdown_end_time - shutdown_start_time))
@@ -1487,7 +1539,6 @@ echo "=========================================="
 echo "Script completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
 echo "Total execution time: ${TOTAL_DURATION} seconds ($(($TOTAL_DURATION / 60)) minutes)"
 echo "Output directory: ${folder}"
-echo "CSV file: ${OUTPUT_CSV}"
 echo "Serving CSV: ${SERVING_CSV}"
 echo "Timing log: ${TIMING_LOG}"
 echo "==========================================="

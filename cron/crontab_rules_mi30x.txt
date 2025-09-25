@@ -11,14 +11,15 @@
 SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
 GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
 GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
+GROK2_TOKENIZER_PATH="/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer"
 DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
 HARDWARE_TYPE="mi30x"
 TEAMS_WEBHOOK_URL=""
 
 # 10 PM PT (0 AM CT) - Grok 2 online serving benchmark + Teams notifications
-0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/grok2_nightly_online_$(date +\%Y\%m\%d).log 2>&1
+0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/grok2_nightly_online_$(date +\%Y\%m\%d).log 2>&1
 
-# 12 AM PT (2 AM CT) - Grok online and offline benchmark with gating logic + Teams notifications
+# 12 AM PT (2 AM CT) - Grok online benchmark with gating logic + Teams notifications
 0 2 * * * cd "$SGL_BENCHMARK_CI_DIR" && bash perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/grok_nightly_$(date +\%Y\%m\%d).log 2>&1
 
 # 2 AM PT (4 AM CT) - DeepSeek online with DP attention checking + Teams notifications

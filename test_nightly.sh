@@ -347,8 +347,10 @@ echo "[test] Checking GPU status before starting tests for ${IMAGE_REPO}:${SELEC
 ensure_gpu_idle
 
 DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
-# Generate container name (replace special chars for Docker compatibility)
-CONTAINER_NAME="test_${SELECTED_TAG//[:.]/_}"
+# Generate container name using image tag only (model-agnostic to share containers across models)
+# Extract repo name from IMAGE_REPO (e.g., "rocm/sgl-dev" -> "sgl-dev")
+REPO_NAME="${IMAGE_REPO##*/}"
+CONTAINER_NAME="${REPO_NAME}_${SELECTED_TAG//:/_}"
 
 echo "[test] Using Docker image: $DOCKER_IMAGE"
 echo "[test] Container name: $CONTAINER_NAME"

@@ -13,6 +13,7 @@ USAGE:
     python send_teams_notification.py --model deepseek --mode online --check-dp-attention
     python send_teams_notification.py --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
+    python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
@@ -60,7 +61,7 @@ class BenchmarkAnalyzer:
     """Analyze benchmark results for accuracy and performance regressions"""
 
     def __init__(
-        self, base_dir: Optional[str] = None, check_dp_attention: bool = False, enable_torch_compile: bool = False
+        self, base_dir: Optional[str] = None, check_dp_attention: bool = False, enable_torch_compile: bool = False, benchmark_date: Optional[str] = None
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
         self.base_dir = base_dir or os.getenv(
@@ -70,12 +71,13 @@ class BenchmarkAnalyzer:
         self.online_dir = os.path.join(self.base_dir, "online")
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.benchmark_date = benchmark_date
 
     def parse_gsm8k_accuracy(
         self, model: str, mode: str, date_str: str
     ) -> Optional[float]:
         """
-        Parse GSM8K accuracy from benchmark logs
+        Parse GSM8K accuracy from timing_summary logs
 
         Args:
             model: Model name (grok, grok2, deepseek, DeepSeek-V3)
@@ -85,11 +87,28 @@ class BenchmarkAnalyzer:
         Returns:
             GSM8K accuracy as float (0.0-1.0) or None if not found
         """
+        timing_log_file = self._find_timing_summary_log(model, mode, date_str)
+        if timing_log_file:
+            return self._extract_accuracy_from_log(timing_log_file)
+        return None
+
+    def _find_timing_summary_log(self, model: str, mode: str, date_str: str) -> Optional[str]:
+        """
+        Find timing_summary log file for the given model, mode, and date
+
+        Args:
+            model: Model name (grok, grok2, deepseek, DeepSeek-V3)
+            mode: Benchmark mode (online, offline)
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Path to timing_summary log file or None if not found or benchmark didn't run for this date
+        """
         model_names = {
             "grok": "GROK1",
             "grok2": "GROK2",
             "deepseek": "DeepSeek-V3-0324",
-            "DeepSeek-V3": "DeepSeek-V3-0324",
+            "DeepSeek-V3": "DeepSeek-V3",
         }
         model_name = model_names.get(model, model.upper())
 
@@ -100,35 +119,62 @@ class BenchmarkAnalyzer:
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
 
-        # Search for GSM8K log files
-        search_patterns = [
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/gsm8k*.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/gsm8k*.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/gsm8k*.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/gsm8k*.log",
-        ]
+        # Search for timing_summary logs in folders that contain the image date
+        # The folder name contains the image date, but the timing log filename contains the run date
+        search_patterns = []
+        if mode == "online":
+            # Use more specific patterns to avoid matching longer suffixes
+            if mode_suffix:
+                # For specific modes, ensure exact suffix match
+                search_patterns.extend([
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
+                ])
+            else:
+                # For standard mode, match folders ending with just the mode (no additional suffixes)
+                search_patterns.extend([
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
+                    # Also handle variant names like MOE-I4F8
+                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*_*_{mode}/timing_summary_*.log",
+                ])
+        else:
+            if mode_suffix:
+                search_patterns.extend([
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
+                ])
+            else:
+                search_patterns.extend([
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
+                ])
 
+        # Find the most recent timing_summary log for the specific date
+        timing_logs = []
         for pattern in search_patterns:
-            log_files = glob.glob(pattern)
-            for log_file in log_files:
-                accuracy = self._extract_accuracy_from_log(log_file)
-                if accuracy is not None:
-                    return accuracy
-
+            timing_logs.extend(glob.glob(pattern))
+        
+        if timing_logs:
+            # Sort by modification time and return the most recent
+            timing_logs.sort(key=os.path.getmtime, reverse=True)
+            print(f"   Found timing_summary log for {model} {mode} on {date_str}: {os.path.basename(timing_logs[0])}")
+            return timing_logs[0]
+        
+        print(f"   No timing_summary log found for {model} {mode} on {date_str} - benchmark may not have run yet")
         return None
 
     def _extract_accuracy_from_log(self, log_file: str) -> Optional[float]:
-        """Extract accuracy from GSM8K log file"""
+        """Extract accuracy from timing_summary log file"""
         try:
             with open(log_file, "r") as f:
                 content = f.read()
 
-            # Look for accuracy patterns
+            # Look for GSM8K accuracy patterns in timing_summary logs
             patterns = [
-                r"accuracy[:\s]+([0-9]*\.?[0-9]+)",
-                r"Accuracy[:\s]+([0-9]*\.?[0-9]+)",
-                r"GSM8K accuracy[:\s]+([0-9]*\.?[0-9]+)",
-                r"final accuracy[:\s]+([0-9]*\.?[0-9]+)",
+                r"GSM8K accuracy[:\s]+([0-9]*\.?[0-9]+)",  # Primary pattern from timing_summary
+                r"Average accuracy[:\s]+([0-9]*\.?[0-9]+)",  # Fallback pattern
+                r"accuracy[:\s]+([0-9]*\.?[0-9]+)",  # Generic accuracy pattern
             ]
 
             for pattern in patterns:
@@ -150,7 +196,7 @@ class BenchmarkAnalyzer:
         self, model: str, mode: str, date_str: str
     ) -> Dict[str, any]:
         """
-        Check for RuntimeError and other critical errors in DP attention mode logs
+        Check for RuntimeError and other critical errors in timing_summary logs
 
         Args:
             model: Model name (grok, grok2, deepseek)
@@ -169,68 +215,62 @@ class BenchmarkAnalyzer:
         if not self.check_dp_attention:
             return result
 
-        model_names = {
-            "grok": "GROK1",
-            "grok2": "GROK2",
-            "deepseek": "DeepSeek-V3-0324",
-        }
-        model_name = model_names.get(model, model.upper())
-
-        # Search for server log files in DP attention folders
-        search_patterns = [
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}_dp_attention*/sglang_server.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}_dp_attention*/sglang_server.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}_dp_attention*/sglang_server.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}_dp_attention*/sglang_server.log",
-        ]
-
-        for pattern in search_patterns:
-            log_files = glob.glob(pattern)
-
-            for log_file in log_files:
-                result["log_file"] = log_file
-                errors = self._extract_server_errors(log_file)
-
-                if errors:
-                    result["status"] = "fail"
-                    result["errors"].extend(errors)
-                    return result  # Return first error found
-
+        timing_log_file = self._find_timing_summary_log(model, mode, date_str)
+        if timing_log_file:
+            result["log_file"] = timing_log_file
+            errors = self._extract_server_errors_from_timing_log(timing_log_file)
+            
+            if errors:
+                result["status"] = "fail"
+                result["errors"].extend(errors)
+            
         return result
 
-    def _extract_server_errors(self, log_file: str) -> List[str]:
-        """Extract critical errors from server log file"""
+    def _extract_server_errors_from_timing_log(self, log_file: str) -> List[str]:
+        """Extract server errors from timing_summary log file"""
         errors = []
 
         try:
             with open(log_file, "r") as f:
                 content = f.read()
 
-            # Look for RuntimeError patterns only for DP attention mode
-            error_patterns = [
-                (r"RuntimeError: ([^\n]+)", "RuntimeError"),
-            ]
+            # Look for server error status in timing_summary logs
+            if "Server error status: FAIL" in content:
+                # Extract RuntimeError details if present
+                runtime_error_match = re.search(r"RuntimeError count: (\d+)", content)
+                if runtime_error_match:
+                    error_count = int(runtime_error_match.group(1))
+                    if error_count > 0:
+                        errors.append(f"RuntimeError: {error_count} error(s) found in server logs")
+                        
+                        # Try to extract specific error messages
+                        error_lines = re.findall(r"    (RuntimeError:.*)", content)
+                        for error_line in error_lines[:3]:  # Limit to first 3 errors
+                            errors.append(error_line.strip())
 
-            for pattern, error_type in error_patterns:
-                matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
-                for match in matches:
-                    # Clean up the error message
-                    error_msg = match.strip()
-                    if error_msg:
-                        errors.append(f"{error_type}: {error_msg}")
+            # Check for critical errors
+            critical_error_match = re.search(r"Critical error count: (\d+)", content)
+            if critical_error_match:
+                error_count = int(critical_error_match.group(1))
+                if error_count > 0:
+                    errors.append(f"Critical errors: {error_count} error(s) found in server logs")
 
         except (FileNotFoundError, IOError) as e:
-            print(f"   Warning: Could not read server log {log_file}: {e}")
+            print(f"   Warning: Could not read timing log {log_file}: {e}")
         except Exception as e:
-            print(f"   Warning: Error parsing server log {log_file}: {e}")
+            print(f"   Warning: Error parsing timing log {log_file}: {e}")
 
         return errors
+
+    def _extract_server_errors(self, log_file: str) -> List[str]:
+        """Legacy function - kept for backward compatibility"""
+        return self._extract_server_errors_from_timing_log(log_file)
 
     def extract_additional_info(
         self, model: str, mode: str, date_str: str
     ) -> Dict[str, any]:
         """
-        Extract additional information from benchmark logs (Docker image, hardware, runtime)
+        Extract additional information from timing_summary logs
 
         Args:
             model: Model name (grok, grok2, deepseek)
@@ -247,69 +287,24 @@ class BenchmarkAnalyzer:
             "hostname": None,
             "start_time": None,
             "end_time": None,
+            "torch_compile": False,
+            "total_runtime_seconds": None,
+            "total_runtime_minutes": None,
         }
 
-        model_names = {
-            "grok": "GROK1",
-            "grok2": "GROK2",
-            "deepseek": "DeepSeek-V3-0324",
-        }
-        model_name = model_names.get(model, model.upper())
-
-        # Build mode suffix for DP attention and torch compile if applicable
-        mode_suffix = ""
-        if self.check_dp_attention:
-            mode_suffix += "_dp_attention"
-        if self.enable_torch_compile:
-            mode_suffix += "_torch_compile"
-
-        # Search for log files in benchmark directories and cron logs
-        search_patterns = [
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/*.log",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/*.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}*/*.log",
-            f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}*/*.log",
-        ]
-
-        # Also search in cron logs which contain much of the needed information
-        cron_log_dir = os.path.join(self.base_dir, "cron", "cron_log")
-        cron_patterns = [
-            f"{cron_log_dir}/{model.lower()}_nightly_{mode}_{date_str}.log",
-            f"{cron_log_dir}/{model}_nightly_{mode}_{date_str}.log",
-        ]
-        search_patterns.extend(cron_patterns)
-
-        for pattern in search_patterns:
-            log_files = glob.glob(pattern)
-
-            for log_file in log_files:
-                # Skip server logs for benchmark directories, but process cron logs
-                if (
-                    "server" in os.path.basename(log_file).lower()
-                    and "cron_log" not in log_file
-                ):
-                    continue
-
-                info = self._extract_additional_info_from_log(log_file)
-
-                # If we found some info, merge it and continue looking for more complete info
-                if info.get("docker_image") and not result.get("docker_image"):
-                    result["docker_image"] = info["docker_image"]
-                if info.get("hardware") and not result.get("hardware"):
-                    result["hardware"] = info["hardware"]
-                if info.get("runtime") and not result.get("runtime"):
-                    result["runtime"] = info["runtime"]
-                if info.get("hostname") and not result.get("hostname"):
-                    result["hostname"] = info["hostname"]
-                if info.get("start_time") and not result.get("start_time"):
-                    result["start_time"] = info["start_time"]
-                if info.get("end_time") and not result.get("end_time"):
-                    result["end_time"] = info["end_time"]
+        timing_log_file = self._find_timing_summary_log(model, mode, date_str)
+        if timing_log_file:
+            info = self._extract_additional_info_from_log(timing_log_file)
+            
+            # Merge all information from timing_summary log
+            for key, value in info.items():
+                if value is not None and (result[key] is None or result[key] is False):
+                    result[key] = value
 
         return result
 
     def _extract_additional_info_from_log(self, log_file: str) -> Dict[str, any]:
-        """Extract additional info (Docker image, hardware, runtime) from log file"""
+        """Extract additional info (Docker image, hardware, runtime, torch compile) from log file"""
         info = {
             "docker_image": None,
             "hardware": None,
@@ -317,77 +312,65 @@ class BenchmarkAnalyzer:
             "hostname": None,
             "start_time": None,
             "end_time": None,
+            "torch_compile": False,
+            "total_runtime_seconds": None,
+            "total_runtime_minutes": None,
         }
 
         try:
             with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
-            # Extract Docker image (multiple patterns)
-            image_patterns = [
-                r"Image:\s*(.+)",  # Original pattern
-                r"Docker image:\s*(.+)",  # timing_summary logs
-                r"\[nightly\] Using Docker image:\s*(.+)",  # nightly cron logs
-            ]
-            for pattern in image_patterns:
-                image_match = re.search(pattern, content)
-                if image_match:
-                    info["docker_image"] = image_match.group(1).strip()
-                    break
+            # Extract Docker image (timing_summary pattern)
+            image_match = re.search(r"Docker image:\s*(.+)", content)
+            if image_match:
+                info["docker_image"] = image_match.group(1).strip()
 
-            # Extract hardware (multiple patterns)
-            hardware_patterns = [
-                r"Hardware:\s*(.+)",  # Original pattern
-                r"\[nightly\] Hardware:\s*(.+)",  # nightly cron logs
-            ]
-            for pattern in hardware_patterns:
-                hardware_match = re.search(pattern, content)
-                if hardware_match:
-                    hardware_text = hardware_match.group(1).strip()
-                    # Clean up hardware text (remove ROCM version for cleaner display)
-                    if ", ROCM Version:" in hardware_text:
-                        hardware_text = hardware_text.split(", ROCM Version:")[0]
-                    info["hardware"] = hardware_text
-                    break
+            # Extract hardware (timing_summary pattern)
+            hardware_match = re.search(r"Hardware:\s*(.+)", content)
+            if hardware_match:
+                hardware_text = hardware_match.group(1).strip()
+                # Clean up hardware text (remove ROCM version for cleaner display)
+                if ", ROCM Version:" in hardware_text:
+                    hardware_text = hardware_text.split(", ROCM Version:")[0]
+                info["hardware"] = hardware_text
 
-            # Extract hostname/machine name
-            hostname_patterns = [
-                r"Machine:\s*(.+)",  # Original pattern
-                r"Hostname:\s*(.+)",  # Alternative pattern
-                r"\[nightly\] Machine:\s*(.+)",  # nightly cron logs
-            ]
-            for pattern in hostname_patterns:
-                hostname_match = re.search(pattern, content)
-                if hostname_match:
-                    info["hostname"] = hostname_match.group(1).strip()
-                    break
+            # Extract hostname (timing_summary pattern)
+            hostname_match = re.search(r"Hostname:\s*(.+)", content)
+            if hostname_match:
+                info["hostname"] = hostname_match.group(1).strip()
 
-            # Extract start and end times for runtime calculation
-            start_patterns = [
-                r"Start time:\s*(.+)",  # Original pattern
-                r"Script started at:\s*(.+)",  # timing_summary logs
-                r"\[nightly\] Start time:\s*(.+)",  # nightly cron logs
-            ]
+            # Extract start and end times (timing_summary patterns)
+            start_match = re.search(r"Script started at:\s*(.+)", content)
+            if start_match:
+                info["start_time"] = start_match.group(1).strip()
 
-            for pattern in start_patterns:
-                start_match = re.search(pattern, content)
-                if start_match:
-                    info["start_time"] = start_match.group(1).strip()
-                    break
+            end_match = re.search(r"Script ended at:\s*(.+)", content)
+            if end_match:
+                info["end_time"] = end_match.group(1).strip()
 
-            end_patterns = [
-                r"End time:\s*(.+)",  # Original pattern
-                r"\[nightly\] End time:\s*(.+)",  # nightly cron logs
-            ]
-
-            for pattern in end_patterns:
-                end_match = re.search(pattern, content)
-                if end_match:
-                    info["end_time"] = end_match.group(1).strip()
-                    break
-
-            # Calculate runtime if both start and end times are available
-            if info.get("start_time") and info.get("end_time"):
+            # Check for torch compile status (timing_summary pattern)
+            torch_compile_match = re.search(r"Torch Compile:\s*(true|false)", content, re.IGNORECASE)
+            if torch_compile_match:
+                info["torch_compile"] = torch_compile_match.group(1).lower() == "true"
+            
+            # Extract total runtime from timing summary logs (preferred method)
+            runtime_match = re.search(r'Total execution time: (\d+) seconds \((\d+) minutes\)', content)
+            if runtime_match:
+                info["total_runtime_seconds"] = runtime_match.group(1)
+                info["total_runtime_minutes"] = runtime_match.group(2)
+                # Format for display
+                seconds = int(runtime_match.group(1))
+                minutes = int(runtime_match.group(2))
+                if minutes >= 60:
+                    hours = minutes // 60
+                    remaining_minutes = minutes % 60
+                    info["runtime"] = f"{hours}h {remaining_minutes}m"
+                else:
+                    info["runtime"] = f"{minutes}m"
+            
+            # Fallback: Calculate runtime if both start and end times are available
+            elif info.get("start_time") and info.get("end_time"):
                 start_str = info["start_time"]
                 end_str = info["end_time"]
 
@@ -418,6 +401,8 @@ class BenchmarkAnalyzer:
                     if start_dt and end_dt:
                         duration = end_dt - start_dt
                         total_seconds = int(duration.total_seconds())
+                        info["total_runtime_seconds"] = str(total_seconds)
+                        info["total_runtime_minutes"] = str(total_seconds // 60)
 
                         # Format duration as "5m 23s" or "1h 5m 23s"
                         hours = total_seconds // 3600
@@ -614,6 +599,7 @@ class TeamsNotifier:
         github_token: str = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        benchmark_date: Optional[str] = None,
     ):
         """
         Initialize Teams notifier
@@ -629,6 +615,7 @@ class TeamsNotifier:
             github_token: GitHub personal access token
             check_dp_attention: If True, look for DP attention mode logs and check for errors
             enable_torch_compile: If True, look for torch compile mode logs
+            benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
         """
         self.webhook_url = webhook_url
         self.plot_server_base_url = (
@@ -641,7 +628,7 @@ class TeamsNotifier:
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
-        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention, enable_torch_compile)
+        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention, enable_torch_compile, benchmark_date)
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
         """
@@ -663,7 +650,11 @@ class TeamsNotifier:
                 "performance_regressions": [],
             }
 
-        current_date = datetime.now().strftime("%Y%m%d")
+        # Use benchmark_date if provided, otherwise use current date
+        if self.analyzer.benchmark_date:
+            current_date = self.analyzer.benchmark_date
+        else:
+            current_date = datetime.now().strftime("%Y%m%d")
 
         alert = {
             "status": "good",  # good, warning, error
@@ -677,6 +668,18 @@ class TeamsNotifier:
 
         # Check GSM8K accuracy
         gsm8k_accuracy = self.analyzer.parse_gsm8k_accuracy(model, mode, current_date)
+        
+        # If no GSM8K data found, it means benchmark didn't run for this date
+        if gsm8k_accuracy is None:
+            # Check if this is due to no benchmark run for the date
+            timing_log = self.analyzer._find_timing_summary_log(model, mode, current_date)
+            if timing_log is None:
+                alert["status"] = "info"
+                alert["title"] = "ℹ️ No Benchmark Run Found"
+                alert["details"] = [f"No benchmark results found for {current_date}", 
+                                 "Benchmark may not have run yet for this date"]
+                return alert
+        
         if gsm8k_accuracy is not None:
             alert["gsm8k_accuracy"] = gsm8k_accuracy
 
@@ -743,6 +746,30 @@ class TeamsNotifier:
                     and alert["title"] == "✅ Good: No Issues Detected"
                 ):
                     alert["title"] = "✅ DP Attention Test Passed"
+                
+        # Check torch compile status if enabled
+        if self.enable_torch_compile and mode == "online":
+            # Get additional info if not already retrieved
+            if not alert.get("additional_info"):
+                additional_info = self.analyzer.extract_additional_info(
+                    model, mode, current_date
+                )
+                alert["additional_info"] = additional_info
+            else:
+                additional_info = alert["additional_info"]
+            
+            # If GSM8K benchmark completed successfully, torch compile test passed
+            if alert.get("gsm8k_accuracy") is not None:
+                alert["details"].append("Torch compile test: No errors detected ✅")
+            else:
+                # If no GSM8K results found, status is unclear
+                alert["details"].append("Torch compile test: Status unclear ⚠️")
+        
+        # Add runtime information if available
+        if mode == "online" and alert.get("additional_info"):
+            runtime_info = alert["additional_info"].get("runtime")
+            if runtime_info:
+                alert["details"].append(f"Runtime: {runtime_info}")
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -1215,7 +1242,7 @@ class TeamsNotifier:
         )
 
         # Add summary alert section
-        alert_color = {"good": "Good", "warning": "Warning", "error": "Attention"}.get(
+        alert_color = {"good": "Good", "warning": "Warning", "error": "Attention", "info": "Default"}.get(
             summary_alert["status"], "Default"
         )
 
@@ -1273,32 +1300,18 @@ class TeamsNotifier:
                     }
                 )
 
-            # Add Hardware (only if available)
-            if additional_info.get("hardware"):
-                body_elements.append(
-                    {
-                        "type": "TextBlock",
-                        "text": f"• Hardware: **{additional_info['hardware']}**",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                    }
-                )
 
-            # Add Runtime (only if available)
-            if additional_info.get("runtime"):
-                body_elements.append(
-                    {
-                        "type": "TextBlock",
-                        "text": f"• Runtime: **{additional_info['runtime']}**",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                    }
-                )
+            # Runtime is already shown in the status details section, so don't duplicate it here
 
-        # Add Plot section only if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
+        is_mi35x_machine = False
+        additional_info = summary_alert.get("additional_info", {})
+        docker_image = additional_info.get("docker_image", "")
+        if "mi35x" in docker_image.lower():
+            is_mi35x_machine = True
+
+        # Add Plot section only if not in DP attention mode, torch compile mode, or MI35X machine
+        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
             # Add Plot section title
             body_elements.append(
                 {
@@ -1392,8 +1405,8 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
+        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
             if plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
@@ -1621,6 +1634,11 @@ def main():
         action="store_true",
         help="Enable torch compile mode for performance analysis (affects log file discovery)",
     )
+    parser.add_argument(
+        "--benchmark-date",
+        type=str,
+        help="Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.",
+    )
 
     args = parser.parse_args()
 
@@ -1634,7 +1652,7 @@ def main():
     # Handle test mode
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
-        notifier = TeamsNotifier(webhook_url, "", False, 7, None, False, None, None, False, False)
+        notifier = TeamsNotifier(webhook_url, "", False, 7, None, False, None, None, False, False, None)
         success = notifier.send_test_notification()
         if success:
             print("🎉 Test completed successfully!")
@@ -1708,6 +1726,7 @@ def main():
         github_token=github_token,
         check_dp_attention=args.check_dp_attention,
         enable_torch_compile=args.enable_torch_compile,
+        benchmark_date=args.benchmark_date,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 
