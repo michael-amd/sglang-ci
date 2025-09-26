@@ -1,0 +1,322 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# download_models.sh
+#   Script to download required models for SGLang sanity check testing.
+#
+# USAGE:
+#   bash download_models.sh [--model MODEL_NAME] [--all] [--dry-run]
+#
+# Examples:
+#   bash download_models.sh --all                    # Download all missing models
+#   bash download_models.sh --model GPT-OSS-120B    # Download specific model
+#   bash download_models.sh --dry-run               # Show what would be downloaded
+# ------------------------------------------------------------------------------
+
+set -euo pipefail
+
+# Set timezone to PST/PDT
+export TZ='America/Los_Angeles'
+
+# Configuration
+BASE_DIR="/mnt/raid/models/huggingface"
+HUGGINGFACE_HUB_CACHE="${BASE_DIR}/.cache"
+
+# Model definitions
+declare -A MODELS=(
+    ["GPT-OSS-120B"]="lmsys/gpt-oss-120b-bf16"
+    ["GPT-OSS-20B"]="openai/gpt-oss-20b"
+    ["QWEN-30B"]="Qwen/Qwen3-30B-A3B-Thinking-2507"
+    ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
+    ["GROK2"]="xai-org/grok-2"
+    ["DEEPSEEK-V3"]="deepseek-ai/DeepSeek-V3-0324"
+    # ["DEEPSEEK-V3.1"]="deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
+    # ["DEEPSEEK-R1"]="deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
+)
+
+# Local paths where models should be stored
+declare -A MODEL_PATHS=(
+    ["GPT-OSS-120B"]="${BASE_DIR}/lmsys/gpt-oss-120b-bf16"
+    ["GPT-OSS-20B"]="${BASE_DIR}/openai/gpt-oss-20b"
+    ["QWEN-30B"]="${BASE_DIR}/Qwen/Qwen3-30B-A3B-Thinking-2507"
+    ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
+    ["GROK2"]="${BASE_DIR}/grok-2"
+    ["DEEPSEEK-V3"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3-0324"
+    # ["DEEPSEEK-V3.1"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
+    # ["DEEPSEEK-R1"]="${BASE_DIR}/deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
+)
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to check if a model exists locally
+check_model_exists() {
+    local model_name="$1"
+    local model_path="${MODEL_PATHS[$model_name]}"
+    
+    if [[ -d "$model_path" ]] && [[ -n "$(ls -A "$model_path" 2>/dev/null)" ]]; then
+        return 0  # Model exists and is not empty
+    else
+        return 1  # Model doesn't exist or is empty
+    fi
+}
+
+# Function to download a model using huggingface-hub
+download_model() {
+    local model_name="$1"
+    local repo_id="${MODELS[$model_name]}"
+    local local_path="${MODEL_PATHS[$model_name]}"
+    local dry_run="${2:-false}"
+    
+    log_info "Processing model: $model_name"
+    log_info "Repository: $repo_id"
+    log_info "Local path: $local_path"
+    
+    if check_model_exists "$model_name"; then
+        log_success "Model $model_name already exists at $local_path"
+        return 0
+    fi
+    
+    if [[ "$dry_run" == "true" ]]; then
+        log_info "[DRY RUN] Would download $repo_id to $local_path"
+        return 0
+    fi
+    
+    # Create directory
+    mkdir -p "$(dirname "$local_path")"
+    
+    # Special handling for certain models
+    case "$model_name" in
+        "GROK2")
+            log_info "Downloading GROK2 from xai-org/grok-2"
+            log_warning "Note: This model may require HuggingFace authentication for access"
+            ;;
+        "GROK2-TOKENIZER")
+            log_info "Downloading GROK2 tokenizer from alvarobartt/grok-2-tokenizer"
+            ;;
+    esac
+    
+    log_info "Starting download of $model_name..."
+    
+    # Use huggingface-hub to download
+    if command -v huggingface-cli &> /dev/null; then
+        log_info "Using huggingface-cli to download $repo_id"
+        if huggingface-cli download "$repo_id" --local-dir "$local_path" --local-dir-use-symlinks False; then
+            log_success "Successfully downloaded $model_name"
+        else
+            log_error "Failed to download $model_name using huggingface-cli"
+            return 1
+        fi
+    elif python3 -c "import huggingface_hub" 2>/dev/null; then
+        log_info "Using Python huggingface_hub to download $repo_id"
+        python3 -c "
+from huggingface_hub import snapshot_download
+import os
+snapshot_download(
+    repo_id='$repo_id',
+    local_dir='$local_path',
+    local_dir_use_symlinks=False
+)
+print('Download completed successfully')
+" && log_success "Successfully downloaded $model_name" || {
+            log_error "Failed to download $model_name using Python huggingface_hub"
+            return 1
+        }
+    else
+        log_error "Neither huggingface-cli nor Python huggingface_hub is available"
+        log_info "Please install huggingface_hub: pip install huggingface_hub"
+        return 1
+    fi
+    
+    # Verify download
+    if check_model_exists "$model_name"; then
+        log_success "Verified: $model_name downloaded successfully"
+    else
+        log_error "Download verification failed for $model_name"
+        return 1
+    fi
+}
+
+# Function to show model status
+show_status() {
+    log_info "Model Status Report"
+    echo "===================="
+    
+    for model_name in "${!MODELS[@]}"; do
+        if check_model_exists "$model_name"; then
+            echo -e "${GREEN}✓${NC} $model_name - Available at ${MODEL_PATHS[$model_name]}"
+        else
+            echo -e "${RED}✗${NC} $model_name - Missing (would download from ${MODELS[$model_name]})"
+        fi
+    done
+    echo ""
+}
+
+# Function to estimate disk space requirements
+estimate_space() {
+    log_info "Estimated Disk Space Requirements:"
+    echo "=================================="
+    echo "GPT-OSS-120B:  ~240GB"
+    echo "GPT-OSS-20B:   ~40GB"
+    echo "QWEN-30B:      ~60GB"
+    echo "GROK2:         ~300GB (if available)"
+    echo "DeepSeek-V3:   ~140GB"
+    echo "DeepSeek-V3.1: ~140GB"
+    echo "DeepSeek-R1:   ~140GB"
+    echo ""
+    echo "Total estimated: ~1TB+ (depending on which models are downloaded)"
+    echo ""
+}
+
+# Parse command line arguments
+DOWNLOAD_ALL=false
+SPECIFIC_MODEL=""
+DRY_RUN=false
+SHOW_STATUS=false
+SHOW_HELP=false
+
+for arg in "$@"; do
+    case $arg in
+        --all)
+            DOWNLOAD_ALL=true
+            ;;
+        --model=*)
+            SPECIFIC_MODEL="${arg#*=}"
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            ;;
+        --status)
+            SHOW_STATUS=true
+            ;;
+        --help)
+            SHOW_HELP=true
+            ;;
+        *)
+            log_error "Unknown argument: $arg"
+            SHOW_HELP=true
+            ;;
+    esac
+done
+
+# Show help
+if [[ "$SHOW_HELP" == "true" ]]; then
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --all              Download all missing models"
+    echo "  --model=MODEL      Download specific model"
+    echo "  --dry-run          Show what would be downloaded without actually downloading"
+    echo "  --status           Show current model status"
+    echo "  --help             Show this help message"
+    echo ""
+    echo "Available models:"
+    for model_name in "${!MODELS[@]}"; do
+        echo "  $model_name (${MODELS[$model_name]})"
+    done
+    echo ""
+    echo "Examples:"
+    echo "  $0 --status                    # Show current status"
+    echo "  $0 --all                       # Download all missing models"
+    echo "  $0 --model=GPT-OSS-120B        # Download specific model"
+    echo "  $0 --dry-run --all             # Show what would be downloaded"
+    exit 0
+fi
+
+# Show status if requested
+if [[ "$SHOW_STATUS" == "true" ]]; then
+    show_status
+    estimate_space
+    exit 0
+fi
+
+# Main execution
+log_info "SGLang Model Download Script"
+log_info "Starting at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+log_info "Base directory: $BASE_DIR"
+
+# Create base directory
+mkdir -p "$BASE_DIR"
+
+# Check prerequisites
+if ! command -v python3 &> /dev/null; then
+    log_error "Python3 is required but not found"
+    exit 1
+fi
+
+# Check for huggingface_hub
+if ! command -v huggingface-cli &> /dev/null && ! python3 -c "import huggingface_hub" 2>/dev/null; then
+    log_warning "huggingface_hub is not installed"
+    log_info "Installing huggingface_hub..."
+    if ! pip3 install huggingface_hub; then
+        log_error "Failed to install huggingface_hub"
+        exit 1
+    fi
+fi
+
+# Show initial status
+show_status
+
+# Download models
+if [[ "$DOWNLOAD_ALL" == "true" ]]; then
+    log_info "Downloading all missing models..."
+    failed_downloads=()
+    
+    for model_name in "${!MODELS[@]}"; do
+        if ! check_model_exists "$model_name" || [[ "$DRY_RUN" == "true" ]]; then
+            if ! download_model "$model_name" "$DRY_RUN"; then
+                failed_downloads+=("$model_name")
+            fi
+        fi
+        echo ""  # Add spacing between models
+    done
+    
+    if [[ ${#failed_downloads[@]} -gt 0 ]]; then
+        log_error "Failed to download: ${failed_downloads[*]}"
+        exit 1
+    else
+        log_success "All models processed successfully"
+    fi
+    
+elif [[ -n "$SPECIFIC_MODEL" ]]; then
+    if [[ -v "MODELS[$SPECIFIC_MODEL]" ]]; then
+        download_model "$SPECIFIC_MODEL" "$DRY_RUN"
+    else
+        log_error "Unknown model: $SPECIFIC_MODEL"
+        log_info "Available models: ${!MODELS[*]}"
+        exit 1
+    fi
+else
+    log_warning "No action specified. Use --all, --model=MODEL_NAME, or --status"
+    log_info "Use --help for more information"
+    exit 1
+fi
+
+# Final status
+if [[ "$DRY_RUN" == "false" ]]; then
+    echo ""
+    log_info "Final Status:"
+    show_status
+fi
+
+log_info "Script completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
