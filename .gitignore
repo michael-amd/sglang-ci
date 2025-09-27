@@ -3,7 +3,8 @@ online/*
 offline/*
 plots_server/*
 cron/cron_log/*
-test/*
+test/*.sh
+test/*/*
 
 *.jsonl
 *.csv
@@ -17,3 +18,4 @@ build_docker_log/*
 
 */__pycache__/*
 __pycache__/*
+logs/*
