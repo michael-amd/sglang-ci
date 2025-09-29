@@ -29,6 +29,7 @@ declare -A MODELS=(
     ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
     ["GROK2"]="xai-org/grok-2"
     ["DEEPSEEK-V3"]="deepseek-ai/DeepSeek-V3-0324"
+    ["LLAMA4-MAVERICK-17B"]="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
 )
@@ -41,6 +42,7 @@ declare -A MODEL_PATHS=(
     ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
     ["GROK2"]="${BASE_DIR}/grok-2"
     ["DEEPSEEK-V3"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3-0324"
+    ["LLAMA4-MAVERICK-17B"]="${BASE_DIR}/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="${BASE_DIR}/deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
 )
@@ -176,13 +178,15 @@ show_status() {
 estimate_space() {
     log_info "Estimated Disk Space Requirements:"
     echo "=================================="
-    echo "GPT-OSS-120B:  ~240GB"
-    echo "GPT-OSS-20B:   ~40GB"
-    echo "QWEN-30B:      ~60GB"
-    echo "GROK2:         ~300GB (if available)"
-    echo "DeepSeek-V3:   ~140GB"
-    echo "DeepSeek-V3.1: ~140GB"
-    echo "DeepSeek-R1:   ~140GB"
+    echo "GPT-OSS-120B:        ~240GB"
+    echo "GPT-OSS-20B:         ~40GB"
+    echo "QWEN-30B:            ~60GB"
+    echo "GROK2:               ~300GB (if available)"
+    echo "GROK2-TOKENIZER:     ~1GB"
+    echo "DeepSeek-V3:         ~140GB"
+    echo "LLAMA4-MAVERICK-17B: ~35GB (FP8 quantized)"
+    echo "DeepSeek-V3.1:       ~140GB"
+    echo "DeepSeek-R1:         ~140GB"
     echo ""
     echo "Total estimated: ~1TB+ (depending on which models are downloaded)"
     echo ""
