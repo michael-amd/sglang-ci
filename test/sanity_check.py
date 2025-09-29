@@ -43,12 +43,12 @@ os.environ['TZ'] = 'America/Los_Angeles'
 DEFAULT_MODELS = {
     "GPT-OSS-120B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16/",
-            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16/",
+            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
+            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16/",
-            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16/",
+            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
+            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
@@ -59,12 +59,12 @@ DEFAULT_MODELS = {
     },
     "GPT-OSS-20B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b/",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b/",
+            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b/",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b/",
+            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
@@ -75,12 +75,12 @@ DEFAULT_MODELS = {
     },
     "QWEN-30B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507/",
-            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507/",
+            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507/",
-            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507/",
+            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend aiter",
@@ -91,12 +91,12 @@ DEFAULT_MODELS = {
     },
     "DeepSeek-V3": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324/",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324/",
+            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
+            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324/",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324/",
+            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
+            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention",
@@ -123,8 +123,8 @@ DEFAULT_MODELS = {
     # },
     "GROK1-IN4": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/",
-            "mi35x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/",
+            "mi30x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8",
+            "mi35x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8",
         },
         "tokenizer_path": {
             "mi30x": "Xenova/grok-1-tokenizer",
@@ -139,8 +139,8 @@ DEFAULT_MODELS = {
     },
     "GROK1-FP8": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/lmzheng-grok-1/",
-            "mi35x": "/mnt/raid/models/lmzheng-grok-1/",
+            "mi30x": "/mnt/raid/models/lmzheng-grok-1",
+            "mi35x": "/mnt/raid/models/lmzheng-grok-1",
         },
         "tokenizer_path": {
             "mi30x": "Xenova/grok-1-tokenizer",
@@ -155,8 +155,8 @@ DEFAULT_MODELS = {
     },
     "GROK2.5": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/grok-2/",
-            "mi35x": "/mnt/raid/models/huggingface/grok-2/",
+            "mi30x": "/mnt/raid/models/huggingface/grok-2",
+            "mi35x": "/mnt/raid/models/huggingface/grok-2",
         },
         "tokenizer_path": {
             "mi30x": "/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer",
