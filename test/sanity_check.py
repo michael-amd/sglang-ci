@@ -105,22 +105,22 @@ DEFAULT_MODELS = {
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.930},
     },
-    "DeepSeek-R1": {
-        "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
-        },
-        "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
-        },
-        "launch_cmd_template": {
-            "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
-        },
-        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.930},
-    },
+    # "DeepSeek-R1": {
+    #     "model_path": {
+    #         "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
+    #         "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
+    #     },
+    #     "tokenizer_path": {
+    #         "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
+    #         "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
+    #     },
+    #     "launch_cmd_template": {
+    #         "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
+    #         "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
+    #     },
+    #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+    #     "criteria": {"accuracy": 0.930},
+    # },
     "GROK1-IN4": {
         "model_path": {
             "mi30x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8/",
@@ -487,14 +487,32 @@ def wait_for_server_ready(server_log_path, timeout=300):
     """Wait until server outputs readiness message."""
     ready_msg = "The server is fired up and ready to roll!"
     start_time = time.time()
+    last_error_logged = 0
+    
     while True:
         time.sleep(0.5)
-        if time.time() - start_time > timeout:
+        elapsed = time.time() - start_time
+        
+        if elapsed > timeout:
             return False
-        with open(server_log_path, "r") as f:
-            content = f.read()
-            if ready_msg in content:
-                return True
+            
+        try:
+            with open(server_log_path, "r") as f:
+                content = f.read()
+                if ready_msg in content:
+                    return True
+                    
+                # Log errors periodically to help with debugging
+                if elapsed - last_error_logged > 30:  # Every 30 seconds
+                    if "Error" in content or "Exception" in content or "Traceback" in content:
+                        print(f"⚠️  Server errors detected at {elapsed:.0f}s - check {server_log_path}")
+                        last_error_logged = elapsed
+        except FileNotFoundError:
+            # Log file doesn't exist yet, continue waiting
+            pass
+        except Exception as e:
+            print(f"⚠️  Error reading server log: {e}")
+            pass
 
 def parse_accuracy(log_file):
     """Extract accuracy from client log."""
@@ -506,9 +524,36 @@ def parse_accuracy(log_file):
     else:
         raise ValueError(f"No accuracy found in {log_file}")
 
+def validate_model_paths(config, platform, model_path=None, tokenizer_path=None):
+    """Validate that model and tokenizer paths exist and contain required files."""
+    # Use custom paths if provided, otherwise use defaults from config
+    final_model_path = model_path if model_path else config["model_path"][platform]
+    final_tokenizer_path = tokenizer_path if tokenizer_path else config["tokenizer_path"][platform]
+    
+    # Check if model path exists and contains config.json
+    if not os.path.exists(final_model_path):
+        return False, f"Model path does not exist: {final_model_path}"
+    
+    config_json_path = os.path.join(final_model_path, "config.json")
+    if not os.path.exists(config_json_path):
+        return False, f"config.json not found in model path: {final_model_path}"
+    
+    # For tokenizer path, check if it's a HuggingFace repo name or local path
+    if final_tokenizer_path and not final_tokenizer_path.startswith(("Xenova/", "alvarobartt--")):
+        if not os.path.exists(final_tokenizer_path):
+            return False, f"Tokenizer path does not exist: {final_tokenizer_path}"
+    
+    return True, "Paths validated successfully"
+
 def build_launch_command(config, platform, model_path=None, tokenizer_path=None):
     """Build the launch command from config template and custom paths."""
     if platform not in config["launch_cmd_template"]:
+        return None
+    
+    # Validate paths first
+    valid, error_msg = validate_model_paths(config, platform, model_path, tokenizer_path)
+    if not valid:
+        print(f"❌ Path validation failed: {error_msg}")
         return None
     
     template = config["launch_cmd_template"][platform]
