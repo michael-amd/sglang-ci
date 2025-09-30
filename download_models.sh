@@ -165,12 +165,40 @@ print('Download completed successfully')
     fi
 }
 
+# Function to get models for specific hardware
+get_models_for_hardware() {
+    local hw="$1"
+    local models=()
+    
+    # Shared models for all hardware
+    local shared_models=("QWEN-30B" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
+    
+    if [[ "$hw" == "mi30x" ]]; then
+        models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
+    elif [[ "$hw" == "mi35x" ]]; then
+        models+=("GPT-OSS-120B-OPENAI" "GPT-OSS-20B-OPENAI")
+    fi
+    
+    # Add shared models
+    models+=("${shared_models[@]}")
+    
+    echo "${models[@]}"
+}
+
 # Function to show model status
 show_status() {
+    local hw_filter="$1"
     log_info "Model Status Report"
-    echo "===================="
     
-    for model_name in "${!MODELS[@]}"; do
+    if [[ -n "$hw_filter" ]]; then
+        echo "==================== (Filtered for $hw_filter)"
+        local models_to_check=($(get_models_for_hardware "$hw_filter"))
+    else
+        echo "===================="
+        local models_to_check=("${!MODELS[@]}")
+    fi
+    
+    for model_name in "${models_to_check[@]}"; do
         if check_model_exists "$model_name"; then
             echo -e "${GREEN}✓${NC} $model_name - Available at ${MODEL_PATHS[$model_name]}"
         else
@@ -262,7 +290,8 @@ if [[ "$SHOW_HELP" == "true" ]]; then
     echo "  Shared: QWEN-30B, GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
     echo ""
     echo "Examples:"
-    echo "  $0 --status                    # Show current status"
+    echo "  $0 --status                    # Show current status (all models)"
+    echo "  $0 --status --hardware=mi30x   # Show status for mi30x models only"
     echo "  $0 --all                       # Download all missing models"
     echo "  $0 --hardware=mi30x            # Download models for mi30x hardware"
     echo "  $0 --hardware=mi35x --dry-run  # Show what would be downloaded for mi35x"
@@ -273,7 +302,7 @@ fi
 
 # Show status if requested
 if [[ "$SHOW_STATUS" == "true" ]]; then
-    show_status
+    show_status "$HARDWARE"
     estimate_space
     exit 0
 fi
@@ -303,27 +332,7 @@ if ! command -v huggingface-cli &> /dev/null && ! python3 -c "import huggingface
 fi
 
 # Show initial status
-show_status
-
-# Function to get models for specific hardware
-get_models_for_hardware() {
-    local hw="$1"
-    local models=()
-    
-    # Shared models for all hardware
-    local shared_models=("QWEN-30B" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
-    
-    if [[ "$hw" == "mi30x" ]]; then
-        models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
-    elif [[ "$hw" == "mi35x" ]]; then
-        models+=("GPT-OSS-120B-OPENAI" "GPT-OSS-20B-OPENAI")
-    fi
-    
-    # Add shared models
-    models+=("${shared_models[@]}")
-    
-    echo "${models[@]}"
-}
+show_status "$HARDWARE"
 
 # Download models
 if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
@@ -344,10 +353,13 @@ if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
             continue
         fi
         
-        if ! check_model_exists "$model_name" || [[ "$DRY_RUN" == "true" ]]; then
+        if ! check_model_exists "$model_name"; then
             if ! download_model "$model_name" "$DRY_RUN"; then
                 failed_downloads+=("$model_name")
             fi
+        elif [[ "$DRY_RUN" == "true" ]]; then
+            # In dry-run mode, show what would be downloaded even if it exists
+            download_model "$model_name" "$DRY_RUN"
         fi
         echo ""  # Add spacing between models
     done
@@ -377,7 +389,7 @@ fi
 if [[ "$DRY_RUN" == "false" ]]; then
     echo ""
     log_info "Final Status:"
-    show_status
+    show_status "$HARDWARE"
 fi
 
 log_info "Script completed at: $(date '+%Y-%m-%d %H:%M:%S %Z')"
