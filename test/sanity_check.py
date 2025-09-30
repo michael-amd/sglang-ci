@@ -44,11 +44,11 @@ DEFAULT_MODELS = {
     "GPT-OSS-120B": {
         "model_path": {
             "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
+            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-120b",
         },
         "tokenizer_path": {
             "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
+            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-120b",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
@@ -59,11 +59,11 @@ DEFAULT_MODELS = {
     },
     "GPT-OSS-20B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16",
             "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16",
             "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
         },
         "launch_cmd_template": {

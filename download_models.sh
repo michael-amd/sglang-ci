@@ -4,12 +4,14 @@
 #   Script to download required models for SGLang sanity check testing.
 #
 # USAGE:
-#   bash download_models.sh [--model MODEL_NAME] [--all] [--dry-run]
+#   bash download_models.sh [--model MODEL_NAME] [--all] [--hardware TYPE] [--dry-run]
 #
 # Examples:
-#   bash download_models.sh --all                    # Download all missing models
-#   bash download_models.sh --model GPT-OSS-120B    # Download specific model
-#   bash download_models.sh --dry-run               # Show what would be downloaded
+#   bash download_models.sh --all                         # Download all missing models
+#   bash download_models.sh --hardware=mi30x              # Download models for mi30x
+#   bash download_models.sh --hardware=mi35x --dry-run    # Show mi35x models
+#   bash download_models.sh --model GPT-OSS-120B-LMSYS    # Download specific model
+#   bash download_models.sh --dry-run                     # Show what would be downloaded
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
@@ -23,8 +25,10 @@ HUGGINGFACE_HUB_CACHE="${BASE_DIR}/.cache"
 
 # Model definitions
 declare -A MODELS=(
-    ["GPT-OSS-120B"]="lmsys/gpt-oss-120b-bf16"
-    ["GPT-OSS-20B"]="openai/gpt-oss-20b"
+    ["GPT-OSS-120B-LMSYS"]="lmsys/gpt-oss-120b-bf16"
+    ["GPT-OSS-120B-OPENAI"]="openai/gpt-oss-120b"
+    ["GPT-OSS-20B-LMSYS"]="lmsys/gpt-oss-20b-bf16"
+    ["GPT-OSS-20B-OPENAI"]="openai/gpt-oss-20b"
     ["QWEN-30B"]="Qwen/Qwen3-30B-A3B-Thinking-2507"
     ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
     ["GROK2"]="xai-org/grok-2"
@@ -36,8 +40,10 @@ declare -A MODELS=(
 
 # Local paths where models should be stored
 declare -A MODEL_PATHS=(
-    ["GPT-OSS-120B"]="${BASE_DIR}/lmsys/gpt-oss-120b-bf16"
-    ["GPT-OSS-20B"]="${BASE_DIR}/openai/gpt-oss-20b"
+    ["GPT-OSS-120B-LMSYS"]="${BASE_DIR}/lmsys/gpt-oss-120b-bf16"
+    ["GPT-OSS-120B-OPENAI"]="${BASE_DIR}/openai/gpt-oss-120b"
+    ["GPT-OSS-20B-LMSYS"]="${BASE_DIR}/lmsys/gpt-oss-20b-bf16"
+    ["GPT-OSS-20B-OPENAI"]="${BASE_DIR}/openai/gpt-oss-20b"
     ["QWEN-30B"]="${BASE_DIR}/Qwen/Qwen3-30B-A3B-Thinking-2507"
     ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
     ["GROK2"]="${BASE_DIR}/grok-2"
@@ -178,8 +184,10 @@ show_status() {
 estimate_space() {
     log_info "Estimated Disk Space Requirements:"
     echo "=================================="
-    echo "GPT-OSS-120B:        ~240GB"
-    echo "GPT-OSS-20B:         ~40GB"
+    echo "GPT-OSS-120B-LMSYS:  ~240GB (bf16)"
+    echo "GPT-OSS-120B-OPENAI: ~240GB"
+    echo "GPT-OSS-20B-LMSYS:   ~40GB (bf16)"
+    echo "GPT-OSS-20B-OPENAI:  ~40GB"
     echo "QWEN-30B:            ~60GB"
     echo "GROK2:               ~300GB (if available)"
     echo "GROK2-TOKENIZER:     ~1GB"
@@ -195,6 +203,7 @@ estimate_space() {
 # Parse command line arguments
 DOWNLOAD_ALL=false
 SPECIFIC_MODEL=""
+HARDWARE=""
 DRY_RUN=false
 SHOW_STATUS=false
 SHOW_HELP=false
@@ -206,6 +215,13 @@ for arg in "$@"; do
             ;;
         --model=*)
             SPECIFIC_MODEL="${arg#*=}"
+            ;;
+        --hardware=*)
+            HARDWARE="${arg#*=}"
+            if [[ "$HARDWARE" != "mi30x" && "$HARDWARE" != "mi35x" ]]; then
+                log_error "Invalid hardware: $HARDWARE. Must be 'mi30x' or 'mi35x'"
+                exit 1
+            fi
             ;;
         --dry-run)
             DRY_RUN=true
@@ -230,6 +246,7 @@ if [[ "$SHOW_HELP" == "true" ]]; then
     echo "Options:"
     echo "  --all              Download all missing models"
     echo "  --model=MODEL      Download specific model"
+    echo "  --hardware=TYPE    Download models for specific hardware (mi30x or mi35x)"
     echo "  --dry-run          Show what would be downloaded without actually downloading"
     echo "  --status           Show current model status"
     echo "  --help             Show this help message"
@@ -239,10 +256,17 @@ if [[ "$SHOW_HELP" == "true" ]]; then
         echo "  $model_name (${MODELS[$model_name]})"
     done
     echo ""
+    echo "Hardware-specific models:"
+    echo "  mi30x: GPT-OSS-120B-LMSYS, GPT-OSS-20B-LMSYS (+ shared models)"
+    echo "  mi35x: GPT-OSS-120B-OPENAI, GPT-OSS-20B-OPENAI (+ shared models)"
+    echo "  Shared: QWEN-30B, GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
+    echo ""
     echo "Examples:"
     echo "  $0 --status                    # Show current status"
     echo "  $0 --all                       # Download all missing models"
-    echo "  $0 --model=GPT-OSS-120B        # Download specific model"
+    echo "  $0 --hardware=mi30x            # Download models for mi30x hardware"
+    echo "  $0 --hardware=mi35x --dry-run  # Show what would be downloaded for mi35x"
+    echo "  $0 --model=GPT-OSS-120B-LMSYS  # Download specific model"
     echo "  $0 --dry-run --all             # Show what would be downloaded"
     exit 0
 fi
@@ -281,12 +305,45 @@ fi
 # Show initial status
 show_status
 
+# Function to get models for specific hardware
+get_models_for_hardware() {
+    local hw="$1"
+    local models=()
+    
+    # Shared models for all hardware
+    local shared_models=("QWEN-30B" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
+    
+    if [[ "$hw" == "mi30x" ]]; then
+        models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
+    elif [[ "$hw" == "mi35x" ]]; then
+        models+=("GPT-OSS-120B-OPENAI" "GPT-OSS-20B-OPENAI")
+    fi
+    
+    # Add shared models
+    models+=("${shared_models[@]}")
+    
+    echo "${models[@]}"
+}
+
 # Download models
-if [[ "$DOWNLOAD_ALL" == "true" ]]; then
-    log_info "Downloading all missing models..."
+if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
+    if [[ -n "$HARDWARE" ]]; then
+        log_info "Downloading models for $HARDWARE hardware..."
+        models_to_download=($(get_models_for_hardware "$HARDWARE"))
+    else
+        log_info "Downloading all missing models..."
+        models_to_download=("${!MODELS[@]}")
+    fi
+    
     failed_downloads=()
     
-    for model_name in "${!MODELS[@]}"; do
+    for model_name in "${models_to_download[@]}"; do
+        # Skip if model doesn't exist in MODELS array (shouldn't happen, but safe check)
+        if [[ ! -v "MODELS[$model_name]" ]]; then
+            log_warning "Model $model_name not found in MODELS array, skipping"
+            continue
+        fi
+        
         if ! check_model_exists "$model_name" || [[ "$DRY_RUN" == "true" ]]; then
             if ! download_model "$model_name" "$DRY_RUN"; then
                 failed_downloads+=("$model_name")
@@ -311,7 +368,7 @@ elif [[ -n "$SPECIFIC_MODEL" ]]; then
         exit 1
     fi
 else
-    log_warning "No action specified. Use --all, --model=MODEL_NAME, or --status"
+    log_warning "No action specified. Use --all, --hardware=TYPE, --model=MODEL_NAME, or --status"
     log_info "Use --help for more information"
     exit 1
 fi
