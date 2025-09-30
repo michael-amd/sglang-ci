@@ -81,7 +81,7 @@ log_error() {
 check_model_exists() {
     local model_name="$1"
     local model_path="${MODEL_PATHS[$model_name]}"
-    
+
     if [[ -d "$model_path" ]] && [[ -n "$(ls -A "$model_path" 2>/dev/null)" ]]; then
         return 0  # Model exists and is not empty
     else
@@ -95,24 +95,24 @@ download_model() {
     local repo_id="${MODELS[$model_name]}"
     local local_path="${MODEL_PATHS[$model_name]}"
     local dry_run="${2:-false}"
-    
+
     log_info "Processing model: $model_name"
     log_info "Repository: $repo_id"
     log_info "Local path: $local_path"
-    
+
     if check_model_exists "$model_name"; then
         log_success "Model $model_name already exists at $local_path"
         return 0
     fi
-    
+
     if [[ "$dry_run" == "true" ]]; then
         log_info "[DRY RUN] Would download $repo_id to $local_path"
         return 0
     fi
-    
+
     # Create directory
     mkdir -p "$(dirname "$local_path")"
-    
+
     # Special handling for certain models
     case "$model_name" in
         "GROK2")
@@ -123,9 +123,9 @@ download_model() {
             log_info "Downloading GROK2 tokenizer from alvarobartt/grok-2-tokenizer"
             ;;
     esac
-    
+
     log_info "Starting download of $model_name..."
-    
+
     # Use huggingface-hub to download
     if command -v huggingface-cli &> /dev/null; then
         log_info "Using huggingface-cli to download $repo_id"
@@ -155,7 +155,7 @@ print('Download completed successfully')
         log_info "Please install huggingface_hub: pip install huggingface_hub"
         return 1
     fi
-    
+
     # Verify download
     if check_model_exists "$model_name"; then
         log_success "Verified: $model_name downloaded successfully"
@@ -169,19 +169,19 @@ print('Download completed successfully')
 get_models_for_hardware() {
     local hw="$1"
     local models=()
-    
+
     # Shared models for all hardware
     local shared_models=("QWEN-30B" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
-    
+
     if [[ "$hw" == "mi30x" ]]; then
         models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
     elif [[ "$hw" == "mi35x" ]]; then
         models+=("GPT-OSS-120B-OPENAI" "GPT-OSS-20B-OPENAI")
     fi
-    
+
     # Add shared models
     models+=("${shared_models[@]}")
-    
+
     echo "${models[@]}"
 }
 
@@ -189,7 +189,7 @@ get_models_for_hardware() {
 show_status() {
     local hw_filter="$1"
     log_info "Model Status Report"
-    
+
     if [[ -n "$hw_filter" ]]; then
         echo "==================== (Filtered for $hw_filter)"
         local models_to_check=($(get_models_for_hardware "$hw_filter"))
@@ -197,7 +197,7 @@ show_status() {
         echo "===================="
         local models_to_check=("${!MODELS[@]}")
     fi
-    
+
     for model_name in "${models_to_check[@]}"; do
         if check_model_exists "$model_name"; then
             echo -e "${GREEN}✓${NC} $model_name - Available at ${MODEL_PATHS[$model_name]}"
@@ -343,16 +343,16 @@ if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
         log_info "Downloading all missing models..."
         models_to_download=("${!MODELS[@]}")
     fi
-    
+
     failed_downloads=()
-    
+
     for model_name in "${models_to_download[@]}"; do
         # Skip if model doesn't exist in MODELS array (shouldn't happen, but safe check)
         if [[ ! -v "MODELS[$model_name]" ]]; then
             log_warning "Model $model_name not found in MODELS array, skipping"
             continue
         fi
-        
+
         if ! check_model_exists "$model_name"; then
             if ! download_model "$model_name" "$DRY_RUN"; then
                 failed_downloads+=("$model_name")
@@ -363,14 +363,14 @@ if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
         fi
         echo ""  # Add spacing between models
     done
-    
+
     if [[ ${#failed_downloads[@]} -gt 0 ]]; then
         log_error "Failed to download: ${failed_downloads[*]}"
         exit 1
     else
         log_success "All models processed successfully"
     fi
-    
+
 elif [[ -n "$SPECIFIC_MODEL" ]]; then
     if [[ -v "MODELS[$SPECIFIC_MODEL]" ]]; then
         download_model "$SPECIFIC_MODEL" "$DRY_RUN"

@@ -477,12 +477,12 @@ launch_server() {
 shutdown_server() {
     echo "[online] Shutting down server (PID ${SERVER_PID})..."
     local shutdown_start=$(date +%s)
-    
+
     # Check for server errors before shutdown
     if [ -f "$SERVER_LOG" ]; then
         check_server_errors_and_log
     fi
-    
+
     kill "$SERVER_PID"
     sleep 2
     local shutdown_end=$(date +%s)
@@ -498,10 +498,10 @@ check_server_errors_and_log() {
     if [ ! -f "$SERVER_LOG" ] || [ ! -n "$TIMING_LOG" ]; then
         return
     fi
-    
+
     echo "" >> "$TIMING_LOG"
     echo "Server Error Check:" >> "$TIMING_LOG"
-    
+
     # Check for RuntimeError (for DP attention mode)
     local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG" 2>/dev/null || echo "0")
     if [ "$runtime_errors" -gt 0 ]; then
@@ -513,7 +513,7 @@ check_server_errors_and_log() {
         echo "  RuntimeError count: 0" >> "$TIMING_LOG"
         echo "  Server error status: PASS" >> "$TIMING_LOG"
     fi
-    
+
     # Check for other critical errors
     local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG" 2>/dev/null || echo "0")
     if [ "$critical_errors" -gt 0 ]; then

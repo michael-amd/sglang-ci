@@ -377,7 +377,7 @@ send_teams_notification() {
   # Build the command with directory parameters to match where plots are actually created
   PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
   TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
-  
+
   # Add benchmark date if available (extracted from SELECTED_TAG)
   if [[ -n "${SELECTED_TAG:-}" ]]; then
     BENCHMARK_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
@@ -415,7 +415,7 @@ send_teams_notification() {
     TEAMS_CMD="${TEAMS_CMD} --check-dp-attention"
     echo "[nightly] Adding --check-dp-attention flag for Teams notification"
   fi
-  
+
   # Add torch compile flag for DeepSeek online mode
   if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --enable-torch-compile"
@@ -834,24 +834,24 @@ pull_image_with_retry() {
   local image="$1"
   local max_attempts=3
   local attempt=1
-  
+
   # First check if image already exists locally
   if check_local_image "$image"; then
     return 0
   fi
-  
+
   # Check Docker Hub connectivity before attempting pulls
   if ! check_docker_hub_connectivity; then
     echo "[nightly] WARNING: Docker Hub connectivity issues detected"
   fi
-  
+
   while [ $attempt -le $max_attempts ]; do
     echo "[nightly] Pull attempt $attempt/$max_attempts for $image..."
     if "${DOCKER_CMD[@]}" pull "$image" 2>&1; then
       echo "[nightly] Successfully pulled image: $image"
       return 0
     fi
-    
+
     if [ $attempt -lt $max_attempts ]; then
       local wait_time=$((30 * attempt))  # 30s, 60s, 90s delays
       echo "[nightly] Pull failed, retrying in ${wait_time}s..."
@@ -861,7 +861,7 @@ pull_image_with_retry() {
     fi
     ((attempt++))
   done
-  
+
   return 1
 }
 
@@ -871,7 +871,7 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
-  
+
   if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
     SELECTED_TAGS+=("$candidate_tag")
     echo "[nightly] Successfully obtained image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
@@ -1125,12 +1125,12 @@ fi
     # Handle sanity check mode
     if [ "$MODE_TO_RUN" == "sanity" ]; then
       echo "[nightly] Launching sanity check inside ${CONTAINER_NAME}"
-      
+
       SANITY_EXIT_CODE=0
-      
+
       # Build sanity check arguments
       SANITY_ARGS="--docker-image='${DOCKER_IMAGE}' --hardware='${HARDWARE_TYPE}' --trials=${SANITY_TRIALS}"
-      
+
       # Add custom work directory if provided
       if [[ -n "$CLI_WORK_DIR" ]]; then
         SANITY_ARGS="${SANITY_ARGS} --work-dir='${CLI_WORK_DIR}'"
@@ -1140,9 +1140,9 @@ fi
         # Use default log directory structure
         SANITY_ARGS="${SANITY_ARGS} --log-dir='${BENCHMARK_CI_DIR}/test/sanity_check_log'"
       fi
-      
+
       echo "[nightly] Executing: python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}"
-      
+
       "${DOCKER_CMD[@]}" exec \
         -e INSIDE_CONTAINER=1 \
         -e LATEST_TAG="${SELECTED_TAG}" \
@@ -1150,13 +1150,13 @@ fi
         -e TZ='America/Los_Angeles' \
         "${CONTAINER_NAME}" \
         bash -c "python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}" || SANITY_EXIT_CODE=$?
-      
+
       if [ $SANITY_EXIT_CODE -eq 0 ]; then
         echo "[nightly] === Sanity check completed successfully ==="
       else
         echo "[nightly] === Sanity check failed (exit code: $SANITY_EXIT_CODE) ==="
       fi
-      
+
       continue
     fi
 
@@ -1207,7 +1207,7 @@ fi
   if [[ "$MODEL" == "grok2" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --model-type=grok2"
     echo "[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark"
-    
+
     # Add custom tokenizer path for grok2 if provided
     if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --tokenizer='${CLI_TOKENIZER_PATH}'"
@@ -1222,7 +1222,7 @@ fi
       SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
       echo "[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark"
     fi
-    
+
     # Add --enable-torch-compile flag if enabled and running online mode
     if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
@@ -1324,7 +1324,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
-    
+
     # Extract date from image tag for plot filename
     PLOT_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
     if [[ $? -eq 0 && -n "$PLOT_DATE" ]]; then
@@ -1333,7 +1333,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     else
       echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
     fi
-    
+
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"
