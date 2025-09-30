@@ -14,8 +14,8 @@
 #   # Run without Docker (direct execution)
 #   python3 sanity_check.py --hardware=mi30x --models GROK1-IN4 GROK2.5
 #
-#   # Run with custom log directory and fewer trials
-#   python3 sanity_check.py --hardware=mi30x --log-dir=/tmp/my_sanity_logs --trials=1
+#   # Run with custom models directory and log directory
+#   python3 sanity_check.py --hardware=mi30x --models-dir=/data/models --log-dir=/tmp/my_sanity_logs --trials=1
 #
 # Available model types:
 #   GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5
@@ -179,6 +179,7 @@ FAIL_MARK = "FAIL [X]"
 DEFAULT_LOG_DIR = "test/sanity_check_log"
 DEFAULT_WORK_DIR = "/mnt/raid/michael/sglang-ci"
 DEFAULT_DOCKER_IMAGE = "lmsysorg/sglang:v0.4.7-rocm630"
+DEFAULT_MODELS_DIR = "/mnt/raid/models"
 
 # Container configuration
 CONTAINER_SHM_SIZE = "32g"
@@ -368,7 +369,7 @@ def ensure_gpu_idle():
 # =======================
 # Docker Container Management Functions
 # =======================
-def manage_docker_container(docker_image, work_dir, model_path, script_path):
+def manage_docker_container(docker_image, work_dir, model_path, script_path, models_dir=DEFAULT_MODELS_DIR):
     """Manage Docker container creation and execution."""
     if os.environ.get("INSIDE_CONTAINER"):
         return None  # Already inside container
@@ -430,6 +431,9 @@ def manage_docker_container(docker_image, work_dir, model_path, script_path):
         # Build mount arguments
         script_dir = os.path.dirname(script_path)
         mount_args = ["-v", f"{MOUNT_DIR}:{MOUNT_DIR}"]
+        
+        # Always mount the models directory explicitly to ensure accessibility
+        mount_args.extend(["-v", f"{models_dir}:{models_dir}"])
         
         # Mount script directory if not under MOUNT_DIR
         if not script_dir.startswith(MOUNT_DIR):
@@ -761,6 +765,7 @@ if __name__ == "__main__":
     parser.add_argument("--hardware", choices=["mi30x", "mi35x"], help="Hardware platform")
     parser.add_argument("--tokenizer-path", help="Custom tokenizer path")
     parser.add_argument("--work-dir", default=DEFAULT_WORK_DIR, help="Working directory")
+    parser.add_argument("--models-dir", default=DEFAULT_MODELS_DIR, help=f"Models directory (default: {DEFAULT_MODELS_DIR})")
     parser.add_argument("--log-dir", help="Log output directory")
     parser.add_argument("-t", "--trials", type=int, default=3, help="Number of client trials per model")
     parser.add_argument("--models", nargs="+", help="Specific models to test (default: all)")
@@ -773,10 +778,10 @@ if __name__ == "__main__":
     # Handle Docker container management
     if not os.environ.get("INSIDE_CONTAINER") and args.docker_image:
         script_path = os.path.abspath(__file__)
-        model_path_for_mount = args.model_path or "/mnt/raid/models"  # Use a default for mounting
+        model_path_for_mount = args.model_path or args.models_dir  # Use models_dir as default for mounting
         
         container_name = manage_docker_container(
-            args.docker_image, args.work_dir, model_path_for_mount, script_path
+            args.docker_image, args.work_dir, model_path_for_mount, script_path, args.models_dir
         )
         
         if container_name:
@@ -794,6 +799,8 @@ if __name__ == "__main__":
                 container_args.extend(["--tokenizer-path", args.tokenizer_path])
             if args.work_dir != DEFAULT_WORK_DIR:
                 container_args.extend(["--work-dir", args.work_dir])
+            if args.models_dir != DEFAULT_MODELS_DIR:
+                container_args.extend(["--models-dir", args.models_dir])
             if args.log_dir:
                 container_args.extend(["--log-dir", args.log_dir])
             if args.trials != 3:
