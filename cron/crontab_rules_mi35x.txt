@@ -16,14 +16,14 @@ DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
 HARDWARE_TYPE="mi35x"
 TEAMS_WEBHOOK_URL=""
 
-# 7:30 AM PT (9:30 AM CT) - Docker image availability check with Teams notifications
-30 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh > cron/cron_log/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1
+# 8 AM PT (10 AM CT) - Docker image availability check with Teams notifications
+0 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh > cron/cron_log/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1
 
-# 7:40 AM PT (9:40 AM CT) - Unit test nightly run with Teams notifications
-40 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/test_nightly.log 2>&1
+# 8:05 AM PT (10:05 AM CT) - Unit test nightly run with Teams notifications
+5 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/test_nightly.log 2>&1
 
-# 8 AM PT (11 AM CT) - Grok 2 online serving benchmark + Teams notifications
-0 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1
+# 8:15 AM PT (8 AM CT) - Grok 2 online serving benchmark + Teams notifications
+15 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1
 
 # 10 AM PT (12 PM CT) - Grok online benchmark with gating logic + Teams notifications
 0 12 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/grok_nightly.log 2>&1
