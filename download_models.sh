@@ -30,6 +30,9 @@ declare -A MODELS=(
     ["GPT-OSS-20B-LMSYS"]="lmsys/gpt-oss-20b-bf16"
     ["GPT-OSS-20B-OPENAI"]="openai/gpt-oss-20b"
     ["QWEN-30B"]="Qwen/Qwen3-30B-A3B-Thinking-2507"
+    ["GROK1-TOKENIZER"]="Xenova/grok-1-tokenizer"
+    ["GROK1-INT4"]="amd/grok-1-W4A8KV8"
+    ["GROK1-FP8"]="lmzheng/grok-1"
     ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
     ["GROK2"]="xai-org/grok-2"
     ["DEEPSEEK-V3"]="deepseek-ai/DeepSeek-V3-0324"
@@ -45,6 +48,9 @@ declare -A MODEL_PATHS=(
     ["GPT-OSS-20B-LMSYS"]="${BASE_DIR}/lmsys/gpt-oss-20b-bf16"
     ["GPT-OSS-20B-OPENAI"]="${BASE_DIR}/openai/gpt-oss-20b"
     ["QWEN-30B"]="${BASE_DIR}/Qwen/Qwen3-30B-A3B-Thinking-2507"
+    ["GROK1-TOKENIZER"]="${BASE_DIR}/Xenova--grok-1-tokenizer"
+    ["GROK1-INT4"]="${BASE_DIR}/amd--grok-1-W4A8KV8"
+    ["GROK1-FP8"]="${BASE_DIR}/lmzheng-grok-1"
     ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
     ["GROK2"]="${BASE_DIR}/grok-2"
     ["DEEPSEEK-V3"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3-0324"
@@ -118,6 +124,17 @@ download_model() {
 
     # Special handling for certain models
     case "$model_name" in
+        "GROK1-INT4")
+            log_info "Downloading GROK1-INT4 (W4A8KV8 quantized) from amd/grok-1-W4A8KV8"
+            log_info "Note: This model uses Xenova/grok-1-tokenizer as tokenizer"
+            ;;
+        "GROK1-FP8")
+            log_info "Downloading GROK1-FP8 from lmzheng/grok-1"
+            log_info "Note: This model uses Xenova/grok-1-tokenizer as tokenizer"
+            ;;
+        "GROK1-TOKENIZER")
+            log_info "Downloading GROK1 tokenizer from Xenova/grok-1-tokenizer"
+            ;;
         "GROK2")
             log_info "Downloading GROK2 from xai-org/grok-2"
             log_warning "Note: This model may require HuggingFace authentication for access"
@@ -174,7 +191,7 @@ get_models_for_hardware() {
     local models=()
 
     # Shared models for all hardware
-    local shared_models=("QWEN-30B" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
+    local shared_models=("QWEN-30B" "GROK1-TOKENIZER" "GROK1-INT4" "GROK1-FP8" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
 
     if [[ "$hw" == "mi30x" ]]; then
         models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
@@ -220,6 +237,9 @@ estimate_space() {
     echo "GPT-OSS-20B-LMSYS:   ~40GB (bf16)"
     echo "GPT-OSS-20B-OPENAI:  ~40GB"
     echo "QWEN-30B:            ~60GB"
+    echo "GROK1-TOKENIZER:     ~1GB"
+    echo "GROK1-INT4:          ~100GB (W4A8KV8 quantized)"
+    echo "GROK1-FP8:           ~160GB (FP8 quantized)"
     echo "GROK2:               ~300GB (if available)"
     echo "GROK2-TOKENIZER:     ~1GB"
     echo "DeepSeek-V3:         ~140GB"
@@ -227,7 +247,7 @@ estimate_space() {
     echo "DeepSeek-V3.1:       ~140GB"
     echo "DeepSeek-R1:         ~140GB"
     echo ""
-    echo "Total estimated: ~1TB+ (depending on which models are downloaded)"
+    echo "Total estimated: ~1.3TB+ (depending on which models are downloaded)"
     echo ""
 }
 
@@ -290,7 +310,8 @@ if [[ "$SHOW_HELP" == "true" ]]; then
     echo "Hardware-specific models:"
     echo "  mi30x: GPT-OSS-120B-LMSYS, GPT-OSS-20B-LMSYS (+ shared models)"
     echo "  mi35x: GPT-OSS-120B-OPENAI, GPT-OSS-20B-OPENAI (+ shared models)"
-    echo "  Shared: QWEN-30B, GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
+    echo "  Shared: QWEN-30B, GROK1-TOKENIZER, GROK1-INT4, GROK1-FP8,"
+    echo "          GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
     echo ""
     echo "Examples:"
     echo "  $0 --status                    # Show current status (all models)"

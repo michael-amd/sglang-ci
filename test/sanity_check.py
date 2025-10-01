@@ -18,7 +18,7 @@
 #   python3 sanity_check.py --hardware=mi30x --models-dir=/data/models --log-dir=/tmp/my_sanity_logs --trials=1
 #
 # Available model types:
-#   GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5
+#   GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
 #
 # Available hardware platforms:
 #   mi30x, mi35x
@@ -127,8 +127,8 @@ DEFAULT_MODELS = {
             "mi35x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8",
         },
         "tokenizer_path": {
-            "mi30x": "Xenova/grok-1-tokenizer",
-            "mi35x": "Xenova/grok-1-tokenizer",
+            "mi30x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
+            "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
             "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
@@ -139,12 +139,12 @@ DEFAULT_MODELS = {
     },
     "GROK1-FP8": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/lmzheng-grok-1",
-            "mi35x": "/mnt/raid/models/lmzheng-grok-1",
+            "mi30x": "/mnt/raid/models/huggingface/lmzheng-grok-1",
+            "mi35x": "/mnt/raid/models/huggingface/lmzheng-grok-1",
         },
         "tokenizer_path": {
-            "mi30x": "Xenova/grok-1-tokenizer",
-            "mi35x": "Xenova/grok-1-tokenizer",
+            "mi30x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
+            "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
             "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
@@ -168,6 +168,22 @@ DEFAULT_MODELS = {
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.915},
+    },
+    "llama4": {
+        "model_path": {
+            "mi30x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+            "mi35x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+        },
+        "tokenizer_path": {
+            "mi30x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+            "mi35x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+        },
+        "launch_cmd_template": {
+            "mi30x": "SGLANG_USE_AITER=1 python -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
+            "mi35x": "SGLANG_USE_AITER=1 python -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
+        },
+        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+        "criteria": {"accuracy": 0.800},
     },
 }
 
@@ -659,7 +675,7 @@ def validate_model_paths(config, platform, model_path=None, tokenizer_path=None)
 
     # For tokenizer path, check if it's a HuggingFace repo name or local path
     if final_tokenizer_path and not final_tokenizer_path.startswith(
-        ("Xenova/", "alvarobartt--")
+        ("Xenova/", "alvarobartt--", "hf-internal-testing/")
     ):
         if not os.path.exists(final_tokenizer_path):
             return False, f"Tokenizer path does not exist: {final_tokenizer_path}"
