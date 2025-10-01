@@ -100,14 +100,17 @@ download_model() {
     log_info "Repository: $repo_id"
     log_info "Local path: $local_path"
 
-    if check_model_exists "$model_name"; then
-        log_success "Model $model_name already exists at $local_path"
+    if [[ "$dry_run" == "true" ]]; then
+        if check_model_exists "$model_name"; then
+            log_info "[DRY RUN] Model exists, would verify/resume download of $repo_id to $local_path"
+        else
+            log_info "[DRY RUN] Would download $repo_id to $local_path"
+        fi
         return 0
     fi
 
-    if [[ "$dry_run" == "true" ]]; then
-        log_info "[DRY RUN] Would download $repo_id to $local_path"
-        return 0
+    if check_model_exists "$model_name"; then
+        log_info "Model folder exists at $local_path - verifying/resuming download to ensure completeness"
     fi
 
     # Create directory
@@ -353,13 +356,9 @@ if [[ "$DOWNLOAD_ALL" == "true" ]] || [[ -n "$HARDWARE" ]]; then
             continue
         fi
 
-        if ! check_model_exists "$model_name"; then
-            if ! download_model "$model_name" "$DRY_RUN"; then
-                failed_downloads+=("$model_name")
-            fi
-        elif [[ "$DRY_RUN" == "true" ]]; then
-            # In dry-run mode, show what would be downloaded even if it exists
-            download_model "$model_name" "$DRY_RUN"
+        # Always attempt download to verify/resume incomplete downloads
+        if ! download_model "$model_name" "$DRY_RUN"; then
+            failed_downloads+=("$model_name")
         fi
         echo ""  # Add spacing between models
     done
