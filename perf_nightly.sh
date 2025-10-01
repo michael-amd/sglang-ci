@@ -1004,6 +1004,11 @@ if "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$
     echo "[nightly] Benchmark CI directory not accessible in existing container. Recreating container..."
     "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
     "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
+  # Check if models directory is accessible inside the container (required for sanity checks)
+  elif ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "/mnt/raid/models" 2>/dev/null; then
+    echo "[nightly] Models directory not accessible in existing container. Recreating container..."
+    "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
   # Check if custom model path is accessible inside the container (if provided)
   elif [[ -n "$CLI_MODEL_PATH" ]] && ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${CLI_MODEL_PATH}" 2>/dev/null; then
     echo "[nightly] Custom model path not accessible in existing container. Recreating container..."
@@ -1018,6 +1023,9 @@ if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME
 
   # Create mount arguments - always mount MOUNT_DIR, and also mount benchmark CI directory if different
   mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+
+  # Always mount the models directory explicitly to ensure accessibility for sanity checks
+  mount_args="${mount_args} -v /mnt/raid/models:/mnt/raid/models"
 
   # If benchmark CI directory is not under MOUNT_DIR, mount it separately
   if [[ "${BENCHMARK_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
