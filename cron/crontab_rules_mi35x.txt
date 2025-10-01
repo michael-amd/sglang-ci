@@ -37,8 +37,8 @@ TEAMS_WEBHOOK_URL=""
 # 12:35 PM PT (2:35 PM CT) - DeepSeek online with DP attention + torch compile + Teams notifications
 35 14 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --enable-torch-compile --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/deepseek_dp_attention_torch_compile.log 2>&1
 
-# 1:00 PM PT (3:00 PM CT) - DeepSeek online serving benchmark + Teams notifications
-0 15 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1
+# 1 PM PT (3 PM CT) - Sanity check with latest nightly image
+0 15 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 > cron/cron_log/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1
 
-# 4:30 PM PT (7:30 PM CT) - Sanity check with latest nightly image
-30 18 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 > cron/cron_log/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1
+# 2 PM PT (4 PM CT) - DeepSeek online serving benchmark + Teams notifications
+0 16 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1
