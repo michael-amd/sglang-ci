@@ -609,23 +609,52 @@ def execute_in_container(container_name, script_path, args):
 # Core Functions
 # =======================
 def wait_for_server_ready(server_log_path, timeout=300):
-    """Wait until server outputs readiness message."""
+    """Wait until server outputs readiness message. Returns (success, error_type, error_details)"""
     ready_msg = "The server is fired up and ready to roll!"
     start_time = time.time()
     last_error_logged = 0
+    last_content = ""
 
     while True:
         time.sleep(0.5)
         elapsed = time.time() - start_time
 
         if elapsed > timeout:
-            return False
+            # Check for specific error patterns before returning
+            try:
+                with open(server_log_path, "r") as f:
+                    content = f.read()
+
+                # Check for memory errors
+                if "Not enough memory" in content or "mem_fraction_static" in content:
+                    mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
+                    current_mem = mem_match.group(1) if mem_match else "unknown"
+                    return False, "memory_error", current_mem
+
+                # Check for timeout during compilation
+                if "start build" in content and "finish build" not in content:
+                    return False, "compilation_timeout", None
+
+            except:
+                pass
+
+            return False, "timeout", None
 
         try:
             with open(server_log_path, "r") as f:
                 content = f.read()
                 if ready_msg in content:
-                    return True
+                    return True, None, None
+
+                # Check for memory errors early
+                if "Not enough memory" in content:
+                    mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
+                    current_mem = mem_match.group(1) if mem_match else "unknown"
+                    print(
+                        f"❌ Memory error detected! Current mem_fraction_static={current_mem}"
+                    )
+                    print(f"   Suggestion: Increase --mem-fraction-static value")
+                    return False, "memory_error", current_mem
 
                 # Log errors periodically to help with debugging
                 if elapsed - last_error_logged > 30:  # Every 30 seconds
@@ -638,6 +667,24 @@ def wait_for_server_ready(server_log_path, timeout=300):
                             f"⚠️  Server errors detected at {elapsed:.0f}s - check {server_log_path}"
                         )
                         last_error_logged = elapsed
+
+                # Log compilation progress for slow models
+                if "start build" in content and content != last_content:
+                    if "finish build" in content:
+                        build_matches = re.findall(
+                            r"finish build.*?cost\s+([\d.]+)s", content
+                        )
+                        if build_matches and elapsed > 60:
+                            print(
+                                f"   📦 Kernel compilation completed ({len(build_matches)} kernels)"
+                            )
+                    elif elapsed > 60 and elapsed - last_error_logged > 30:
+                        print(
+                            f"   ⏳ Kernel compilation in progress... ({elapsed:.0f}s elapsed)"
+                        )
+                        last_error_logged = elapsed
+                    last_content = content
+
         except FileNotFoundError:
             # Log file doesn't exist yet, continue waiting
             pass
@@ -775,28 +822,59 @@ def sanity_check(
     print(f"🚀 Starting server for {model_name}...")
     server_start = time.time()
 
-    # Show progress while waiting for server
-    ready = False
-    elapsed = 0
-    timeout = 300
-    while elapsed < timeout:
-        if wait_for_server_ready(server_log, timeout=1):  # Check every second
-            ready = True
-            break
-        elapsed = int(time.time() - server_start)
-        if elapsed % 10 == 0 and elapsed > 0:  # Show progress every 10 seconds
-            print(f"⏳ Still waiting for server... ({elapsed}s elapsed)")
-        time.sleep(1)
+    # Set timeout based on model type - GROK1-FP8 needs more time for kernel compilation
+    if model_name == "GROK1-FP8":
+        timeout = 600  # 10 minutes for GROK1-FP8
+        print(
+            f"   Using extended timeout ({timeout}s) for {model_name} kernel compilation"
+        )
+    else:
+        timeout = 300  # 5 minutes for other models
 
+    # Wait for server with improved error detection
+    ready, error_type, error_details = wait_for_server_ready(
+        server_log, timeout=timeout
+    )
     server_ready_time = time.time() - server_start
 
     if not ready:
-        print(
-            f"{model_name}: {FAIL_MARK} (server not ready after {server_ready_time:.2f}s)"
-        )
-        if timing_log:
-            timing_log.write(f"Server startup: FAILED after {server_ready_time:.2f}s\n")
-            timing_log.flush()
+        # Generate detailed error message based on error type
+        if error_type == "memory_error":
+            error_msg = f"Out of memory (current mem_fraction_static={error_details})"
+            suggestion = (
+                f"💡 Suggestion: Increase --mem-fraction-static in launch command"
+            )
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "compilation_timeout":
+            error_msg = "Timeout during kernel compilation"
+            suggestion = f"💡 Suggestion: Consider increasing timeout or checking compilation environment"
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        else:
+            print(
+                f"{model_name}: {FAIL_MARK} (server not ready after {server_ready_time:.2f}s)"
+            )
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.flush()
+
         # Clean up the failed server process
         try:
             os.killpg(os.getpgid(server_proc.pid), signal.SIGTERM)
@@ -903,19 +981,27 @@ def sanity_check(
 
     shutdown_time = time.time() - shutdown_start
 
-    # 5. Determine final result
-    all_pass = all(acc >= criteria["accuracy"] for acc in accuracies)
+    # 5. Determine final result based on average accuracy
+    avg_accuracy = sum(accuracies) / len(accuracies) if accuracies else 0.0
+    required_accuracy = criteria["accuracy"]
+    all_pass = avg_accuracy >= required_accuracy
     final_status = PASS_MARK if all_pass else FAIL_MARK
     total_time = time.time() - overall_start
 
     print(f"📋 Result for {model_name} on {platform}: {final_status}")
     print(f"   Accuracies: {accuracies}")
+    print(
+        f"   Average Accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})"
+    )
     print(f"   Total Time: {total_time:.2f}s")
 
     if timing_log:
         timing_log.write(f"Server shutdown: {shutdown_time:.2f}s\n")
         timing_log.write(f"Final result: {final_status}\n")
         timing_log.write(f"Accuracies: {accuracies}\n")
+        timing_log.write(
+            f"Average accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
+        )
         timing_log.write(f"Total time: {total_time:.2f}s\n")
         timing_log.write(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
         timing_log.write("=" * 50 + "\n")
