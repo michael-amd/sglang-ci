@@ -82,31 +82,6 @@ echo "[nightly] Working directory: $(pwd)"
 echo "[nightly] Script location: $(realpath "$0")"
 echo "[nightly] Process ID: $$"
 
-# Check for already running instances
-LOCKFILE="/tmp/perf_nightly.lock"
-if [ -f "$LOCKFILE" ]; then
-    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
-    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
-        echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
-        echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
-        exit 1
-    else
-        echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
-        rm -f "$LOCKFILE"
-    fi
-fi
-
-# Create lock file
-echo "$$" > "$LOCKFILE"
-echo "[nightly] Created process lock: $LOCKFILE"
-
-# Cleanup function
-cleanup() {
-    echo "[nightly] Cleaning up process lock..."
-    rm -f "$LOCKFILE"
-}
-trap cleanup EXIT
-
 echo "[nightly] =========================================="
 echo ""
 
@@ -756,6 +731,40 @@ fi
 echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
 
 ###############################################################################
+# Lock file management - Use separate lock files per model to prevent blocking
+###############################################################################
+# Use separate lock files for different modes to prevent unnecessary blocking
+if [ "$MODE" = "sanity" ]; then
+    LOCKFILE="/tmp/perf_nightly_sanity.lock"
+else
+    LOCKFILE="/tmp/perf_nightly_${MODEL}.lock"
+fi
+
+if [ -f "$LOCKFILE" ]; then
+    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
+    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
+        echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
+        echo "[nightly] Lock file: $LOCKFILE"
+        echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
+        exit 1
+    else
+        echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
+        rm -f "$LOCKFILE"
+    fi
+fi
+
+# Create lock file
+echo "$$" > "$LOCKFILE"
+echo "[nightly] Created process lock: $LOCKFILE"
+
+# Cleanup function
+cleanup() {
+    echo "[nightly] Cleaning up process lock..."
+    rm -f "$LOCKFILE"
+}
+trap cleanup EXIT
+
+###############################################################################
 # 1. Ensure GPU is idle before starting
 ###############################################################################
 ensure_gpu_idle
@@ -1163,6 +1172,33 @@ fi
         echo "[nightly] === Sanity check completed successfully ==="
       else
         echo "[nightly] === Sanity check failed (exit code: $SANITY_EXIT_CODE) ==="
+      fi
+
+      # Send Teams notification for sanity check if webhook URL is configured
+      if [[ -n "$TEAMS_WEBHOOK_URL" ]]; then
+        echo "[nightly] Sending Teams notification for sanity check results..."
+
+        SANITY_TEAMS_EXIT_CODE=0
+        SANITY_TEAMS_SCRIPT="${BENCHMARK_CI_DIR}/team_alert/send_test_nightly_alert.py"
+
+        if [[ -f "$SANITY_TEAMS_SCRIPT" ]]; then
+          # Execute Teams notification inside the container
+          "${DOCKER_CMD[@]}" exec \
+            -e INSIDE_CONTAINER=1 \
+            -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+            "${CONTAINER_NAME}" \
+            bash -c "pip install requests pytz > /dev/null 2>&1; python3 '${SANITY_TEAMS_SCRIPT}' --sanity-mode --docker-image '${SELECTED_TAG}'" || SANITY_TEAMS_EXIT_CODE=$?
+
+          if [ $SANITY_TEAMS_EXIT_CODE -eq 0 ]; then
+            echo "[nightly] Teams notification sent successfully for sanity check"
+          else
+            echo "[nightly] WARN: Teams notification failed for sanity check (exit code: $SANITY_TEAMS_EXIT_CODE)"
+          fi
+        else
+          echo "[nightly] WARN: Teams notification script not found: $SANITY_TEAMS_SCRIPT"
+        fi
+      else
+        echo "[nightly] Teams notifications disabled - no webhook URL configured"
       fi
 
       continue
