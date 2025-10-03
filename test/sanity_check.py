@@ -43,12 +43,12 @@ os.environ["TZ"] = "America/Los_Angeles"
 DEFAULT_MODELS = {
     "GPT-OSS-120B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-120b",
+            "mi30x": "lmsys/gpt-oss-120b-bf16",
+            "mi35x": "openai/gpt-oss-120b",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-120b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-120b",
+            "mi30x": "lmsys/gpt-oss-120b-bf16",
+            "mi35x": "openai/gpt-oss-120b",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
@@ -59,12 +59,12 @@ DEFAULT_MODELS = {
     },
     "GPT-OSS-20B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi30x": "lmsys/gpt-oss-20b-bf16",
+            "mi35x": "openai/gpt-oss-20b",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16",
-            "mi35x": "/mnt/raid/models/huggingface/openai/gpt-oss-20b",
+            "mi30x": "lmsys/gpt-oss-20b-bf16",
+            "mi35x": "openai/gpt-oss-20b",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
@@ -75,12 +75,12 @@ DEFAULT_MODELS = {
     },
     "QWEN-30B": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
-            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi30x": "Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi35x": "Qwen/Qwen3-30B-A3B-Thinking-2507",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
-            "mi35x": "/mnt/raid/models/huggingface/Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi30x": "Qwen/Qwen3-30B-A3B-Thinking-2507",
+            "mi35x": "Qwen/Qwen3-30B-A3B-Thinking-2507",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend aiter",
@@ -91,12 +91,12 @@ DEFAULT_MODELS = {
     },
     "DeepSeek-V3": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
+            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
+            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
@@ -123,12 +123,12 @@ DEFAULT_MODELS = {
     # },
     "GROK1-IN4": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8",
-            "mi35x": "/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8",
+            "mi30x": "amd--grok-1-W4A8KV8",
+            "mi35x": "amd--grok-1-W4A8KV8",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
-            "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
+            "mi30x": "Xenova--grok-1-tokenizer",
+            "mi35x": "Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
             "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
@@ -139,12 +139,12 @@ DEFAULT_MODELS = {
     },
     "GROK1-FP8": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/lmzheng-grok-1",
-            "mi35x": "/mnt/raid/models/huggingface/lmzheng-grok-1",
+            "mi30x": "lmzheng-grok-1",
+            "mi35x": "lmzheng-grok-1",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
-            "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
+            "mi30x": "Xenova--grok-1-tokenizer",
+            "mi35x": "Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
             "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
@@ -155,12 +155,12 @@ DEFAULT_MODELS = {
     },
     "GROK2.5": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/grok-2",
-            "mi35x": "/mnt/raid/models/huggingface/grok-2",
+            "mi30x": "grok-2",
+            "mi35x": "grok-2",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer",
-            "mi35x": "/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer",
+            "mi30x": "alvarobartt--grok-2-tokenizer",
+            "mi35x": "alvarobartt--grok-2-tokenizer",
         },
         "launch_cmd_template": {
             "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
@@ -171,12 +171,12 @@ DEFAULT_MODELS = {
     },
     "llama4": {
         "model_path": {
-            "mi30x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
-            "mi35x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+            "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "tokenizer_path": {
-            "mi30x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
-            "mi35x": "/mnt/raid/models/huggingface/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8/",
+            "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=1 python -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
@@ -195,7 +195,7 @@ FAIL_MARK = "FAIL [X]"
 DEFAULT_LOG_DIR = "test/sanity_check_log"
 DEFAULT_WORK_DIR = "/mnt/raid/michael/sglang-ci"
 DEFAULT_DOCKER_IMAGE = "lmsysorg/sglang:v0.4.7-rocm630"
-DEFAULT_MODELS_DIR = "/mnt/raid/models"
+DEFAULT_MODELS_DIR = "/mnt/raid/models/huggingface"
 
 # Container configuration
 CONTAINER_SHM_SIZE = "32g"
@@ -608,6 +608,20 @@ def execute_in_container(container_name, script_path, args):
 # =======================
 # Core Functions
 # =======================
+def resolve_model_path(path, models_dir=DEFAULT_MODELS_DIR):
+    """Resolve relative model path to absolute path."""
+    if not path:
+        return path
+    # If already absolute, return as-is
+    if os.path.isabs(path):
+        return path
+    # If it's a HuggingFace repo identifier (not a local path), return as-is
+    if path.startswith(("Xenova/", "alvarobartt--", "hf-internal-testing/")):
+        return path
+    # Otherwise, prepend the models directory
+    return os.path.join(models_dir, path)
+
+
 def wait_for_server_ready(server_log_path, timeout=300):
     """Wait until server outputs readiness message. Returns (success, error_type, error_details)"""
     ready_msg = "The server is fired up and ready to roll!"
@@ -704,13 +718,23 @@ def parse_accuracy(log_file):
         raise ValueError(f"No accuracy found in {log_file}")
 
 
-def validate_model_paths(config, platform, model_path=None, tokenizer_path=None):
+def validate_model_paths(
+    config,
+    platform,
+    model_path=None,
+    tokenizer_path=None,
+    models_dir=DEFAULT_MODELS_DIR,
+):
     """Validate that model and tokenizer paths exist and contain required files."""
     # Use custom paths if provided, otherwise use defaults from config
-    final_model_path = model_path if model_path else config["model_path"][platform]
-    final_tokenizer_path = (
+    relative_model_path = model_path if model_path else config["model_path"][platform]
+    relative_tokenizer_path = (
         tokenizer_path if tokenizer_path else config["tokenizer_path"][platform]
     )
+
+    # Resolve to absolute paths
+    final_model_path = resolve_model_path(relative_model_path, models_dir)
+    final_tokenizer_path = resolve_model_path(relative_tokenizer_path, models_dir)
 
     # Check if model path exists and contains config.json
     if not os.path.exists(final_model_path):
@@ -730,14 +754,20 @@ def validate_model_paths(config, platform, model_path=None, tokenizer_path=None)
     return True, "Paths validated successfully"
 
 
-def build_launch_command(config, platform, model_path=None, tokenizer_path=None):
+def build_launch_command(
+    config,
+    platform,
+    model_path=None,
+    tokenizer_path=None,
+    models_dir=DEFAULT_MODELS_DIR,
+):
     """Build the launch command from config template and custom paths."""
     if platform not in config["launch_cmd_template"]:
         return None
 
     # Validate paths first
     valid, error_msg = validate_model_paths(
-        config, platform, model_path, tokenizer_path
+        config, platform, model_path, tokenizer_path, models_dir
     )
     if not valid:
         print(f"❌ Path validation failed: {error_msg}")
@@ -746,10 +776,14 @@ def build_launch_command(config, platform, model_path=None, tokenizer_path=None)
     template = config["launch_cmd_template"][platform]
 
     # Use custom paths if provided, otherwise use defaults from config
-    final_model_path = model_path if model_path else config["model_path"][platform]
-    final_tokenizer_path = (
+    relative_model_path = model_path if model_path else config["model_path"][platform]
+    relative_tokenizer_path = (
         tokenizer_path if tokenizer_path else config["tokenizer_path"][platform]
     )
+
+    # Resolve to absolute paths
+    final_model_path = resolve_model_path(relative_model_path, models_dir)
+    final_tokenizer_path = resolve_model_path(relative_tokenizer_path, models_dir)
 
     # Format the template with the paths
     try:
@@ -773,9 +807,12 @@ def sanity_check(
     tokenizer_path=None,
     timing_log=None,
     docker_image=None,
+    models_dir=DEFAULT_MODELS_DIR,
 ):
     """Run server + multiple client trials and save logs."""
-    launch_cmd = build_launch_command(config, platform, model_path, tokenizer_path)
+    launch_cmd = build_launch_command(
+        config, platform, model_path, tokenizer_path, models_dir
+    )
     if not launch_cmd:
         print(f"{model_name}: {FAIL_MARK} (no launch_cmd for platform {platform})")
         if timing_log:
@@ -1253,6 +1290,7 @@ if __name__ == "__main__":
                 tokenizer_path=args.tokenizer_path,
                 timing_log=timing_log,
                 docker_image=args.docker_image,
+                models_dir=args.models_dir,
             )
 
             # Update progress bar after completion
