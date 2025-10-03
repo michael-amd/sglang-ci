@@ -15,6 +15,8 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi30x-20251001" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi35x-20251002" --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
@@ -610,6 +612,227 @@ class BenchmarkAnalyzer:
         return {}, None
 
 
+def find_sanity_check_log(
+    docker_image: str,
+    base_log_dir: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+) -> Optional[str]:
+    """
+    Find the most recent timing summary log file for a given Docker image
+
+    Args:
+        docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
+        base_log_dir: Base directory for sanity check logs
+
+    Returns:
+        Path to the most recent timing summary log file, or None if not found
+    """
+    # Extract date from docker image tag (last 8 digits)
+    date_match = re.search(r"(\d{8})$", docker_image)
+    if not date_match:
+        print(f"❌ Error: Could not extract date from Docker image tag: {docker_image}")
+        return None
+
+    image_date = date_match.group(1)
+
+    # Construct the log directory path
+    log_dir = os.path.join(base_log_dir, docker_image)
+
+    if not os.path.exists(log_dir):
+        print(f"❌ Error: Log directory not found: {log_dir}")
+        return None
+
+    # Find all timing_summary logs for this date
+    pattern = os.path.join(log_dir, f"timing_summary_{image_date}_*.log")
+    log_files = glob.glob(pattern)
+
+    if not log_files:
+        print(f"❌ Error: No timing summary logs found in {log_dir}")
+        return None
+
+    # Return the most recent log file (sorted by timestamp in filename)
+    most_recent = sorted(log_files)[-1]
+    print(f"📋 Found sanity check log: {most_recent}")
+    return most_recent
+
+
+def parse_sanity_check_log(log_file_path: str) -> Dict:
+    """
+    Parse the sanity check timing summary log file
+
+    Args:
+        log_file_path: Path to the timing_summary log file
+
+    Returns:
+        Dictionary containing parsed sanity check information
+    """
+    parsed_data = {
+        "status": "unknown",
+        "docker_image": None,
+        "platform": None,
+        "models": [],
+        "trials": None,
+        "total_time": None,
+        "start_time": None,
+        "end_time": None,
+        "model_results": {},  # {model_name: {"status": "pass/fail", "accuracies": [], "time": "...", "average_accuracy": X.XX}}
+        "passed_count": 0,
+        "total_count": 0,
+    }
+
+    try:
+        with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+        # Extract Docker image
+        image_match = re.search(r"Docker image:\s*(.+)", content)
+        if image_match:
+            parsed_data["docker_image"] = image_match.group(1).strip()
+
+        # Extract platform
+        platform_match = re.search(r"Platform:\s*(.+)", content)
+        if platform_match:
+            parsed_data["platform"] = platform_match.group(1).strip()
+
+        # Extract models
+        models_match = re.search(r"Models:\s*(.+)", content)
+        if models_match:
+            models_str = models_match.group(1).strip()
+            parsed_data["models"] = [m.strip() for m in models_str.split(",")]
+
+        # Extract trials per model
+        trials_match = re.search(r"Trials per model:\s*(\d+)", content)
+        if trials_match:
+            parsed_data["trials"] = int(trials_match.group(1))
+
+        # Extract start and end times
+        start_match = re.search(r"Start time:\s*(.+?)(?:\n|$)", content)
+        if start_match:
+            parsed_data["start_time"] = start_match.group(1).strip()
+
+        # Look for end time in OVERALL SUMMARY section
+        end_match = re.search(r"End time:\s*(.+?)(?:\n|$)", content)
+        if end_match:
+            parsed_data["end_time"] = end_match.group(1).strip()
+
+        # Extract total execution time
+        total_time_match = re.search(
+            r"Total execution time:\s*([\d.]+)s\s*\(([\d.]+)\s*minutes\)", content
+        )
+        if total_time_match:
+            total_seconds = int(float(total_time_match.group(1)))
+            hours = total_seconds // 3600
+            minutes_part = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+
+            if hours > 0:
+                parsed_data["total_time"] = f"{hours}h {minutes_part}m {seconds}s"
+            else:
+                parsed_data["total_time"] = f"{minutes_part}m {seconds}s"
+
+        # Extract model results
+        # Pattern: === MODEL_NAME on PLATFORM ===
+        model_sections = re.findall(
+            r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
+        )
+
+        for model_name, platform, section_content in model_sections:
+            result_data = {
+                "status": "unknown",
+                "accuracies": [],
+                "time": None,
+                "average_accuracy": None,
+            }
+
+            # Extract final result
+            result_match = re.search(
+                r"Final result:\s*(PASS \[OK\]|FAIL \[X\])", section_content
+            )
+            if result_match:
+                result_data["status"] = (
+                    "pass" if "PASS" in result_match.group(1) else "fail"
+                )
+            else:
+                # Check if server startup failed (no final result means server didn't start)
+                startup_failed_match = re.search(
+                    r"Server startup:\s*FAILED", section_content
+                )
+                if startup_failed_match:
+                    result_data["status"] = "fail"
+
+            # Extract accuracies
+            accuracies_match = re.search(
+                r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
+            )
+            if accuracies_match:
+                acc_str = accuracies_match.group(1)
+                result_data["accuracies"] = [
+                    float(a.strip()) for a in acc_str.split(",") if a.strip()
+                ]
+
+            # Extract average accuracy from log
+            avg_acc_match = re.search(r"Average accuracy:\s*([\d.]+)", section_content)
+            if avg_acc_match:
+                result_data["average_accuracy"] = float(avg_acc_match.group(1))
+            elif result_data["accuracies"]:
+                # Calculate average from individual trial accuracies if not in log
+                result_data["average_accuracy"] = sum(result_data["accuracies"]) / len(
+                    result_data["accuracies"]
+                )
+
+            # Extract total time for this model
+            model_time_match = re.search(r"Total time:\s*([\d.]+)s", section_content)
+            if model_time_match:
+                total_sec = int(float(model_time_match.group(1)))
+                hours = total_sec // 3600
+                minutes = (total_sec % 3600) // 60
+                seconds = total_sec % 60
+
+                if hours > 0:
+                    result_data["time"] = f"{hours}h {minutes}m {seconds}s"
+                else:
+                    result_data["time"] = f"{minutes}m {seconds}s"
+
+            parsed_data["model_results"][model_name] = result_data
+
+        # Extract overall summary - models passed count
+        passed_match = re.search(r"Models passed:\s*(\d+)/(\d+)", content)
+        if passed_match:
+            parsed_data["passed_count"] = int(passed_match.group(1))
+            parsed_data["total_count"] = int(passed_match.group(2))
+            # Determine overall status
+            parsed_data["status"] = (
+                "pass"
+                if parsed_data["passed_count"] == parsed_data["total_count"]
+                else "fail"
+            )
+
+        # If we didn't find the summary, count from model results
+        if parsed_data["total_count"] == 0 and parsed_data["model_results"]:
+            parsed_data["total_count"] = len(parsed_data["model_results"])
+            parsed_data["passed_count"] = sum(
+                1
+                for result in parsed_data["model_results"].values()
+                if result["status"] == "pass"
+            )
+            parsed_data["status"] = (
+                "pass"
+                if parsed_data["passed_count"] == parsed_data["total_count"]
+                else "fail"
+            )
+
+    except FileNotFoundError:
+        print(f"❌ Error: Log file not found: {log_file_path}")
+        return None
+    except Exception as e:
+        print(f"❌ Error parsing sanity check log file: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return None
+
+    return parsed_data
+
+
 class TeamsNotifier:
     """Handle sending plot notifications to Microsoft Teams"""
 
@@ -934,6 +1157,228 @@ class TeamsNotifier:
         except json.JSONDecodeError as e:
             print(f"❌ JSON encoding error: {e}")
             return False
+
+    def create_sanity_check_card(self, parsed_data: Dict) -> dict:
+        """
+        Create adaptive card for sanity check status
+
+        Args:
+            parsed_data: Parsed sanity check data from parse_sanity_check_log()
+
+        Returns:
+            Adaptive card JSON structure
+        """
+        # Use San Francisco time (Pacific Time) if pytz is available
+        if PYTZ_AVAILABLE:
+            pacific_tz = pytz.timezone("America/Los_Angeles")
+            pacific_time = datetime.now(pacific_tz)
+            current_date = pacific_time.strftime("%Y-%m-%d")
+            # Determine if it's PST or PDT
+            tz_name = "PDT" if pacific_time.dst() else "PST"
+            current_time = pacific_time.strftime(f"%H:%M:%S {tz_name}")
+        else:
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.now().strftime("%H:%M:%S UTC")
+
+        # Determine status icon and color
+        status = parsed_data.get("status", "unknown")
+        status_config = {
+            "pass": {
+                "icon": "✅",
+                "color": "Good",
+                "title": "Sanity Check Passed",
+            },
+            "fail": {
+                "icon": "❌",
+                "color": "Attention",
+                "title": "Sanity Check Failed",
+            },
+        }
+
+        config = status_config.get(status, status_config["fail"])
+
+        # Create card body elements
+        body_elements = [
+            {
+                "type": "TextBlock",
+                "size": "Large",
+                "weight": "Bolder",
+                "text": f"{current_date} SGL Sanity Check Results",
+            },
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Completed on {current_date} at {current_time}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
+            {
+                "type": "TextBlock",
+                "text": "**Overall Status:**",
+                "weight": "Bolder",
+                "size": "Medium",
+                "spacing": "Medium",
+            },
+            {
+                "type": "TextBlock",
+                "size": "Medium",
+                "weight": "Bolder",
+                "text": f"{config['icon']} {config['title']}",
+                "color": config["color"],
+                "wrap": True,
+                "spacing": "Small",
+            },
+        ]
+
+        # Add summary section
+        passed_count = parsed_data.get("passed_count", 0)
+        total_count = parsed_data.get("total_count", 0)
+        body_elements.append(
+            {
+                "type": "TextBlock",
+                "text": f"**Models: {passed_count}/{total_count} passed**",
+                "weight": "Bolder",
+                "size": "Medium",
+                "spacing": "Medium",
+            }
+        )
+
+        # Add Docker image if provided
+        docker_image = parsed_data.get("docker_image")
+        if docker_image:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Docker Image: **{docker_image}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                }
+            )
+
+        # Add platform if provided
+        platform = parsed_data.get("platform")
+        if platform:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Platform: **{platform}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add trials if provided
+        trials = parsed_data.get("trials")
+        if trials:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Trials per model: **{trials}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add total runtime if provided
+        total_time = parsed_data.get("total_time")
+        if total_time:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Total Runtime: **{total_time}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add model results section
+        model_results = parsed_data.get("model_results", {})
+        if model_results:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": "**Model Results:**",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium",
+                }
+            )
+
+            for model_name, result in model_results.items():
+                model_status = result.get("status", "unknown")
+                model_icon = "✅" if model_status == "pass" else "❌"
+                model_time = result.get("time", "N/A")
+                avg_accuracy = result.get("average_accuracy")
+
+                # Model name and status
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"{model_icon} **{model_name}** - {model_time}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                        "color": "Good" if model_status == "pass" else "Attention",
+                    }
+                )
+
+                # GSM8K accuracy as percentage if available
+                if avg_accuracy is not None:
+                    accuracy_percent = avg_accuracy * 100
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"  GSM8K accuracy: {accuracy_percent:.1f}%",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "None",
+                            "isSubtle": True,
+                        }
+                    )
+
+        # Create actions
+        actions = []
+
+        # Add GitHub repository link
+        actions.append(
+            {
+                "type": "Action.OpenUrl",
+                "title": "🐙 View Repository",
+                "url": "https://github.com/sgl-project/sglang",
+            }
+        )
+
+        # Add Docker Hub link
+        actions.append(
+            {
+                "type": "Action.OpenUrl",
+                "title": "🐳 View Docker Hub",
+                "url": "https://hub.docker.com/r/rocm/sgl-dev/tags",
+            }
+        )
+
+        # Create the adaptive card
+        card = {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.4",
+                        "body": body_elements,
+                        "actions": actions,
+                    },
+                }
+            ],
+        }
+
+        return card
 
     def upload_to_github(self, image_path: str, model: str, mode: str) -> Optional[str]:
         """
@@ -1557,6 +2002,66 @@ class TeamsNotifier:
             print(f"❌ JSON encoding error: {e}")
             return False
 
+    def send_sanity_notification(
+        self,
+        docker_image: str,
+        base_log_dir: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+    ) -> bool:
+        """
+        Send sanity check status notification to Teams
+
+        Args:
+            docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
+            base_log_dir: Base directory for sanity check logs
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Find the log file
+            log_file_path = find_sanity_check_log(docker_image, base_log_dir)
+            if log_file_path is None:
+                return False
+
+            # Parse the log file
+            print(f"📋 Parsing sanity check log: {log_file_path}")
+            parsed_data = parse_sanity_check_log(log_file_path)
+            if parsed_data is None:
+                return False
+
+            # Create and send the card
+            card = self.create_sanity_check_card(parsed_data)
+            card_json = json.dumps(card)
+
+            headers = {"Content-Type": "application/json"}
+
+            response = requests.post(
+                self.webhook_url, data=card_json, headers=headers, timeout=30
+            )
+
+            if response.status_code in [200, 202]:
+                print(
+                    f"✅ Successfully sent sanity check {parsed_data['status']} alert to Teams"
+                )
+                if response.status_code == 202:
+                    print(
+                        "   (Power Automate flow accepted - message processing asynchronously)"
+                    )
+                return True
+            else:
+                print(
+                    f"❌ Failed to send Teams notification. Status: {response.status_code}"
+                )
+                print(f"Response: {response.text}")
+                return False
+
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Error sending Teams notification: {e}")
+            return False
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON encoding error: {e}")
+            return False
+
 
 def get_plot_server_base_url() -> str:
     """
@@ -1601,7 +2106,10 @@ def main():
     )
 
     parser.add_argument(
-        "--mode", type=str, choices=["online", "offline"], help="Benchmark mode"
+        "--mode",
+        type=str,
+        choices=["online", "offline", "sanity"],
+        help="Benchmark mode",
     )
 
     parser.add_argument(
@@ -1684,6 +2192,12 @@ def main():
         help="Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.",
     )
 
+    parser.add_argument(
+        "--docker-image",
+        type=str,
+        help="Docker image tag for sanity check mode (e.g., 'v0.5.3rc0-rocm630-mi30x-20251001')",
+    )
+
     args = parser.parse_args()
 
     # Get webhook URL
@@ -1708,9 +2222,25 @@ def main():
             print("💥 Test failed - check your webhook URL and Teams configuration")
             return 1
 
+    # Handle sanity mode first
+    if args.mode == "sanity":
+        if not args.docker_image:
+            print("❌ Error: --docker-image is required for sanity check mode")
+            print("   Example: --docker-image 'v0.5.3rc0-rocm630-mi30x-20251001'")
+            return 1
+
+        print("🔍 Sanity check mode: Processing sanity check results")
+        notifier = TeamsNotifier(
+            webhook_url, "", False, 7, None, False, None, None, False, False, None
+        )
+        success = notifier.send_sanity_notification(docker_image=args.docker_image)
+        return 0 if success else 1
+
     # Validate required arguments for normal operation
     if not args.model or not args.mode:
-        print("❌ Error: --model and --mode are required (unless using --test-mode)")
+        print(
+            "❌ Error: --model and --mode are required (unless using --test-mode or --mode sanity)"
+        )
         return 1
 
     # Validate GitHub upload configuration

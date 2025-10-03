@@ -1179,23 +1179,18 @@ fi
         echo "[nightly] Sending Teams notification for sanity check results..."
 
         SANITY_TEAMS_EXIT_CODE=0
-        SANITY_TEAMS_SCRIPT="${BENCHMARK_CI_DIR}/team_alert/send_test_nightly_alert.py"
 
-        if [[ -f "$SANITY_TEAMS_SCRIPT" ]]; then
-          # Execute Teams notification inside the container
-          "${DOCKER_CMD[@]}" exec \
-            -e INSIDE_CONTAINER=1 \
-            -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-            "${CONTAINER_NAME}" \
-            bash -c "pip install requests pytz > /dev/null 2>&1; python3 '${SANITY_TEAMS_SCRIPT}' --sanity-mode --docker-image '${SELECTED_TAG}'" || SANITY_TEAMS_EXIT_CODE=$?
+        # Execute Teams notification inside the container
+        "${DOCKER_CMD[@]}" exec \
+          -e INSIDE_CONTAINER=1 \
+          -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+          "${CONTAINER_NAME}" \
+          bash -c "pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --mode sanity --docker-image '${SELECTED_TAG}'" || SANITY_TEAMS_EXIT_CODE=$?
 
-          if [ $SANITY_TEAMS_EXIT_CODE -eq 0 ]; then
-            echo "[nightly] Teams notification sent successfully for sanity check"
-          else
-            echo "[nightly] WARN: Teams notification failed for sanity check (exit code: $SANITY_TEAMS_EXIT_CODE)"
-          fi
+        if [ $SANITY_TEAMS_EXIT_CODE -eq 0 ]; then
+          echo "[nightly] Teams notification sent successfully for sanity check"
         else
-          echo "[nightly] WARN: Teams notification script not found: $SANITY_TEAMS_SCRIPT"
+          echo "[nightly] WARN: Teams notification failed for sanity check (exit code: $SANITY_TEAMS_EXIT_CODE)"
         fi
       else
         echo "[nightly] Teams notifications disabled - no webhook URL configured"

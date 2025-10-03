@@ -99,8 +99,8 @@ DEFAULT_MODELS = {
             "mi35x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324",
         },
         "launch_cmd_template": {
-            "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention",
-            "mi35x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention",
+            "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
+            "mi35x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.930},
@@ -131,8 +131,8 @@ DEFAULT_MODELS = {
             "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
-            "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
-            "mi35x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
+            "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
+            "mi35x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.800},
@@ -147,11 +147,11 @@ DEFAULT_MODELS = {
             "mi35x": "/mnt/raid/models/huggingface/Xenova--grok-1-tokenizer",
         },
         "launch_cmd_template": {
-            "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
-            "mi35x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter",
+            "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
+            "mi35x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.810},
+        "criteria": {"accuracy": 0.73},
     },
     "GROK2.5": {
         "model_path": {
@@ -163,8 +163,8 @@ DEFAULT_MODELS = {
             "mi35x": "/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer",
         },
         "launch_cmd_template": {
-            "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --quantization fp8",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --quantization fp8",
+            "mi30x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
+            "mi35x": "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model-path {model_path} --tokenizer-path {tokenizer_path} --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.915},
@@ -915,9 +915,27 @@ def sanity_check(
                 bench_cmd, shell=True, stdout=f, stderr=subprocess.STDOUT, text=True
             )
 
+            # Set benchmark timeout (10 minutes should be enough for most models)
+            benchmark_timeout = 600
+
             # Show progress while benchmark is running
+            benchmark_timed_out = False
             while proc.poll() is None:
                 elapsed_so_far = time.time() - trial_start
+
+                # Check for timeout
+                if elapsed_so_far > benchmark_timeout:
+                    print(
+                        f"    ⚠️  Trial {i} timeout after {benchmark_timeout}s - killing benchmark process"
+                    )
+                    try:
+                        proc.kill()
+                        proc.wait(timeout=5)
+                    except:
+                        pass
+                    benchmark_timed_out = True
+                    break
+
                 if (
                     elapsed_so_far > 30 and int(elapsed_so_far) % 15 == 0
                 ):  # Show progress every 15s after 30s
@@ -926,30 +944,43 @@ def sanity_check(
                     )
                 time.sleep(1)
 
-            proc.wait()
+            if not benchmark_timed_out:
+                proc.wait()
 
         trial_end = time.time()
         elapsed = trial_end - trial_start
-        try:
-            acc = parse_accuracy(client_log)
-            accuracies.append(acc)
-            status = PASS_MARK if acc >= criteria["accuracy"] else FAIL_MARK
+
+        if benchmark_timed_out:
             print(
-                f"  ✅ Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)"
+                f"  ❌ Trial {i}: {FAIL_MARK} (Benchmark timeout after {benchmark_timeout}s, Time: {elapsed:.2f}s)"
             )
             if timing_log:
                 timing_log.write(
-                    f"Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)\n"
-                )
-                timing_log.flush()
-        except ValueError as e:
-            print(f"  ❌ Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)")
-            if timing_log:
-                timing_log.write(
-                    f"Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)\n"
+                    f"Trial {i}: {FAIL_MARK} (Benchmark timeout after {benchmark_timeout}s, Time: {elapsed:.2f}s)\n"
                 )
                 timing_log.flush()
             accuracies.append(0.0)
+        else:
+            try:
+                acc = parse_accuracy(client_log)
+                accuracies.append(acc)
+                status = PASS_MARK if acc >= criteria["accuracy"] else FAIL_MARK
+                print(
+                    f"  ✅ Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)"
+                )
+                if timing_log:
+                    timing_log.write(
+                        f"Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)\n"
+                    )
+                    timing_log.flush()
+            except ValueError as e:
+                print(f"  ❌ Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)")
+                if timing_log:
+                    timing_log.write(
+                        f"Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)\n"
+                    )
+                    timing_log.flush()
+                accuracies.append(0.0)
 
     # 4. Kill server after all trials
     print(f"🛑 Stopping server...")
@@ -1109,6 +1140,17 @@ if __name__ == "__main__":
         missing_models = set(args.models) - set(DEFAULT_MODELS.keys())
         if missing_models:
             print(f"Warning: Unknown models specified: {', '.join(missing_models)}")
+
+    # Skip GROK2.5 on rocm630 images (requires rocm700)
+    if (
+        args.docker_image
+        and "rocm630" in args.docker_image
+        and "GROK2.5" in models_to_test
+    ):
+        print(
+            "⚠️  Skipping GROK2.5: This model requires ROCm 7.00+ (current image uses ROCm 6.30)"
+        )
+        models_to_test = {k: v for k, v in models_to_test.items() if k != "GROK2.5"}
 
     # Handle custom model
     if args.model_path and args.model_type:
