@@ -725,7 +725,11 @@ def validate_model_paths(
     tokenizer_path=None,
     models_dir=DEFAULT_MODELS_DIR,
 ):
-    """Validate that model and tokenizer paths exist and contain required files."""
+    """Validate that model and tokenizer paths exist and contain required files.
+
+    Returns:
+        tuple: (is_valid, message, final_model_path, final_tokenizer_path)
+    """
     # Use custom paths if provided, otherwise use defaults from config
     relative_model_path = model_path if model_path else config["model_path"][platform]
     relative_tokenizer_path = (
@@ -738,20 +742,35 @@ def validate_model_paths(
 
     # Check if model path exists and contains config.json
     if not os.path.exists(final_model_path):
-        return False, f"Model path does not exist: {final_model_path}"
+        return (
+            False,
+            f"Model path does not exist: {final_model_path}",
+            final_model_path,
+            final_tokenizer_path,
+        )
 
     config_json_path = os.path.join(final_model_path, "config.json")
     if not os.path.exists(config_json_path):
-        return False, f"config.json not found in model path: {final_model_path}"
+        return (
+            False,
+            f"config.json not found in model path: {final_model_path}",
+            final_model_path,
+            final_tokenizer_path,
+        )
 
     # For tokenizer path, check if it's a HuggingFace repo name or local path
     if final_tokenizer_path and not final_tokenizer_path.startswith(
         ("Xenova/", "alvarobartt--", "hf-internal-testing/")
     ):
         if not os.path.exists(final_tokenizer_path):
-            return False, f"Tokenizer path does not exist: {final_tokenizer_path}"
+            return (
+                False,
+                f"Tokenizer path does not exist: {final_tokenizer_path}",
+                final_model_path,
+                final_tokenizer_path,
+            )
 
-    return True, "Paths validated successfully"
+    return True, "Paths validated successfully", final_model_path, final_tokenizer_path
 
 
 def build_launch_command(
@@ -761,29 +780,22 @@ def build_launch_command(
     tokenizer_path=None,
     models_dir=DEFAULT_MODELS_DIR,
 ):
-    """Build the launch command from config template and custom paths."""
+    """Build the launch command from config template and custom paths.
+
+    Returns:
+        tuple: (launch_cmd, error_msg) where error_msg is set if paths are invalid
+    """
     if platform not in config["launch_cmd_template"]:
-        return None
+        return None, None
 
     # Validate paths first
-    valid, error_msg = validate_model_paths(
+    valid, error_msg, final_model_path, final_tokenizer_path = validate_model_paths(
         config, platform, model_path, tokenizer_path, models_dir
     )
     if not valid:
-        print(f"❌ Path validation failed: {error_msg}")
-        return None
+        return None, error_msg
 
     template = config["launch_cmd_template"][platform]
-
-    # Use custom paths if provided, otherwise use defaults from config
-    relative_model_path = model_path if model_path else config["model_path"][platform]
-    relative_tokenizer_path = (
-        tokenizer_path if tokenizer_path else config["tokenizer_path"][platform]
-    )
-
-    # Resolve to absolute paths
-    final_model_path = resolve_model_path(relative_model_path, models_dir)
-    final_tokenizer_path = resolve_model_path(relative_tokenizer_path, models_dir)
 
     # Format the template with the paths
     try:
@@ -794,7 +806,7 @@ def build_launch_command(
         # If template doesn't use tokenizer_path, just use model_path
         launch_cmd = template.format(model_path=final_model_path)
 
-    return launch_cmd
+    return launch_cmd, None
 
 
 def sanity_check(
@@ -809,17 +821,38 @@ def sanity_check(
     docker_image=None,
     models_dir=DEFAULT_MODELS_DIR,
 ):
-    """Run server + multiple client trials and save logs."""
-    launch_cmd = build_launch_command(
+    """Run server + multiple client trials and save logs.
+
+    Returns:
+        str or bool: "SKIPPED" if model/tokenizer not available, True if passed, False if failed
+    """
+    launch_cmd, error_msg = build_launch_command(
         config, platform, model_path, tokenizer_path, models_dir
     )
     if not launch_cmd:
-        print(f"{model_name}: {FAIL_MARK} (no launch_cmd for platform {platform})")
-        if timing_log:
-            timing_log.write(
-                f"{model_name}: SKIPPED (no launch command for {platform})\n"
+        if error_msg:
+            # Model or tokenizer files not available - this is a skip, not a failure
+            print(f"⏭️  {model_name}: SKIPPED ({error_msg})")
+            if timing_log:
+                timing_log.write(f"{model_name}: SKIPPED - {error_msg}\n")
+                timing_log.write(
+                    f"  Note: Model/tokenizer files not available, not counted as failure\n"
+                )
+                timing_log.write("=" * 50 + "\n")
+                timing_log.flush()
+            return "SKIPPED"
+        else:
+            # No launch command for platform - also skip
+            print(
+                f"⏭️  {model_name}: SKIPPED (no launch command for platform {platform})"
             )
-        return False
+            if timing_log:
+                timing_log.write(
+                    f"{model_name}: SKIPPED (no launch command for {platform})\n"
+                )
+                timing_log.write("=" * 50 + "\n")
+                timing_log.flush()
+            return "SKIPPED"
 
     bench_cmd = config["bench_cmd"]
     criteria = config["criteria"]
@@ -1299,9 +1332,14 @@ if __name__ == "__main__":
             progress = int(current_model / total_models * 40)
             remaining = 40 - progress
             progress_bar = "█" * progress + "░" * remaining
-            status_emoji = "✅" if results[model_name] else "❌"
+            if results[model_name] == "SKIPPED":
+                status_emoji = "⏭️"
+                status_text = "skipped"
+            else:
+                status_emoji = "✅" if results[model_name] else "❌"
+                status_text = "completed"
             print(
-                f"Progress: [{progress_bar}] {current_model}/{total_models} ({current_model/total_models*100:.1f}%) {status_emoji} {model_name} completed in {model_duration:.1f}s"
+                f"Progress: [{progress_bar}] {current_model}/{total_models} ({current_model/total_models*100:.1f}%) {status_emoji} {model_name} {status_text} in {model_duration:.1f}s"
             )
 
         # Final timing summary
@@ -1318,11 +1356,25 @@ if __name__ == "__main__":
             f"Average time per model: {total_script_time/total_models:.2f}s\n"
         )
 
-        passed_count = sum(1 for passed in results.values() if passed)
-        timing_log.write(f"Models passed: {passed_count}/{total_models}\n")
+        passed_count = sum(1 for result in results.values() if result is True)
+        failed_count = sum(1 for result in results.values() if result is False)
+        skipped_count = sum(1 for result in results.values() if result == "SKIPPED")
+        tested_count = total_models - skipped_count
 
-        for model, passed in results.items():
-            timing_log.write(f"  {model}: {'PASS' if passed else 'FAIL'}\n")
+        timing_log.write(f"Models tested: {tested_count}/{total_models}\n")
+        if tested_count > 0:
+            timing_log.write(f"Models passed: {passed_count}/{tested_count}\n")
+            timing_log.write(f"Models failed: {failed_count}/{tested_count}\n")
+        else:
+            timing_log.write(f"Models passed: 0 (no models tested)\n")
+            timing_log.write(f"Models failed: 0 (no models tested)\n")
+        timing_log.write(f"Models skipped: {skipped_count}/{total_models}\n")
+
+        for model, result in results.items():
+            if result == "SKIPPED":
+                timing_log.write(f"  {model}: SKIPPED\n")
+            else:
+                timing_log.write(f"  {model}: {'PASS' if result else 'FAIL'}\n")
 
     print(f"\n🎯 All tests completed!")
     print(
@@ -1332,15 +1384,33 @@ if __name__ == "__main__":
 
     print("\n=== Final Summary ===")
     passed_count = 0
-    for model, passed in results.items():
-        status_emoji = "✅" if passed else "❌"
-        print(f"{status_emoji} {model}: {PASS_MARK if passed else FAIL_MARK}")
-        if passed:
-            passed_count += 1
+    failed_count = 0
+    skipped_count = 0
+    for model, result in results.items():
+        if result == "SKIPPED":
+            status_emoji = "⏭️"
+            print(f"{status_emoji} {model}: SKIPPED (model/tokenizer not available)")
+            skipped_count += 1
+        else:
+            status_emoji = "✅" if result else "❌"
+            print(f"{status_emoji} {model}: {PASS_MARK if result else FAIL_MARK}")
+            if result:
+                passed_count += 1
+            else:
+                failed_count += 1
 
-    print(
-        f"\n📈 Overall: {passed_count}/{len(results)} models passed ({passed_count/len(results)*100:.1f}%)"
-    )
+    tested_count = len(results) - skipped_count
+    if tested_count > 0:
+        print(
+            f"\n📈 Overall: {passed_count}/{tested_count} models passed ({passed_count/tested_count*100:.1f}%)"
+        )
+    else:
+        print(f"\n⚠️  No models were tested (all {skipped_count} models skipped)")
+
+    if skipped_count > 0:
+        print(
+            f"⏭️  Skipped: {skipped_count}/{len(results)} models (not counted in pass/fail statistics)"
+        )
 
     # Final cleanup to ensure all servers are stopped
     print(f"\n🧹 Final cleanup...")
