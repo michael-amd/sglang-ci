@@ -1212,6 +1212,16 @@ class TeamsNotifier:
                 "isSubtle": True,
                 "spacing": "None",
             },
+            # Emit the hostname of the machine that generated the report. This helps
+            # operators quickly locate the host that produced a failing sanity
+            # check without having to look at the log directory structure.
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Hostname: {socket.gethostname()}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
             {
                 "type": "TextBlock",
                 "text": "**Overall Status:**",
