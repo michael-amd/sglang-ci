@@ -50,6 +50,45 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
+"""Utility: load accuracy thresholds from the local sanity_check test script.
+
+We *cannot* rely on ``from test.sanity_check import ...`` because the ``test``
+module name collides with Python’s stdlib package of the same name. Instead we
+dynamically load the file via its absolute path relative to this repository
+root.  The code is wrapped in a broad ``try`` so that the notifier still works
+when the file is missing (for example, in a stripped-down deployment).
+"""
+
+from importlib import util as _importlib_util
+
+
+def _load_model_criteria() -> dict[str, float]:
+    repo_root = Path(__file__).resolve().parent.parent  # <repo>/
+    sanity_path = repo_root / "test" / "sanity_check.py"
+
+    if not sanity_path.exists():
+        return {}
+
+    spec = _importlib_util.spec_from_file_location("_sg_sanity_check", sanity_path)
+    if spec is None or spec.loader is None:
+        return {}
+
+    module = _importlib_util.module_from_spec(spec)  # type: ignore[arg-type]
+    try:
+        spec.loader.exec_module(module)  # type: ignore[attr-defined]
+    except Exception:
+        return {}
+
+    DEFAULT_MODELS = getattr(module, "DEFAULT_MODELS", {})
+    return {
+        name: cfg.get("criteria", {}).get("accuracy")
+        for name, cfg in DEFAULT_MODELS.items()
+        if isinstance(cfg, dict)
+    }
+
+
+_MODEL_CRITERIA = _load_model_criteria()
+
 try:
     import pytz
 
@@ -1222,22 +1261,9 @@ class TeamsNotifier:
                 "isSubtle": True,
                 "spacing": "None",
             },
-            {
-                "type": "TextBlock",
-                "text": "**Overall Status:**",
-                "weight": "Bolder",
-                "size": "Medium",
-                "spacing": "Medium",
-            },
-            {
-                "type": "TextBlock",
-                "size": "Medium",
-                "weight": "Bolder",
-                "text": f"{config['icon']} {config['title']}",
-                "color": config["color"],
-                "wrap": True,
-                "spacing": "Small",
-            },
+            # The overall pass/fail banner is intentionally omitted to keep the
+            # card concise.  Operators can still infer the run health from the
+            # per-model summary and the aggregate "models passed" count below.
         ]
 
         # Add summary section
@@ -1339,10 +1365,24 @@ class TeamsNotifier:
                 # GSM8K accuracy as percentage if available
                 if avg_accuracy is not None:
                     accuracy_percent = avg_accuracy * 100
+
+                    # Look up the expected accuracy threshold for this model, if
+                    # defined in the sanity_check configuration.
+                    threshold = _MODEL_CRITERIA.get(model_name)
+
+                    if threshold is not None:
+                        threshold_percent = threshold * 100
+                        accuracy_line = (
+                            f"  GSM8K accuracy: {accuracy_percent:.1f}% "
+                            f"(threshold ≥ {threshold_percent:.1f}%)"
+                        )
+                    else:
+                        accuracy_line = f"  GSM8K accuracy: {accuracy_percent:.1f}%"
+
                     body_elements.append(
                         {
                             "type": "TextBlock",
-                            "text": f"  GSM8K accuracy: {accuracy_percent:.1f}%",
+                            "text": accuracy_line,
                             "wrap": True,
                             "size": "Small",
                             "spacing": "None",
@@ -1350,26 +1390,8 @@ class TeamsNotifier:
                         }
                     )
 
-        # Create actions
-        actions = []
-
-        # Add GitHub repository link
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "🐙 View Repository",
-                "url": "https://github.com/sgl-project/sglang",
-            }
-        )
-
-        # Add Docker Hub link
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "🐳 View Docker Hub",
-                "url": "https://hub.docker.com/r/rocm/sgl-dev/tags",
-            }
-        )
+        # We intentionally omit action buttons (GitHub/Docker links) to keep the
+        # card minimal per Ops request.
 
         # Create the adaptive card
         card = {
@@ -1382,7 +1404,7 @@ class TeamsNotifier:
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                         "version": "1.4",
                         "body": body_elements,
-                        "actions": actions,
+                        # No per-card actions
                     },
                 }
             ],
