@@ -19,7 +19,7 @@ HARDWARE_TYPE="mi30x"
 TEAMS_WEBHOOK_URL=""
 
 # Public log tree (for manual use or Teams messages)
-GITHUB_LOG="https://github.com/michael-amd/sglang-ci-data/tree/main"
+GITHUB_LOG=""
 
 # 10 PM PT (0 AM CT) - Grok 2 online serving benchmark + Teams notifications
 0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1 && bash cron/github_log_upload.sh

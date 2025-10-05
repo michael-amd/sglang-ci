@@ -19,7 +19,7 @@ HARDWARE_TYPE="mi35x"
 TEAMS_WEBHOOK_URL=""
 
 # Public log tree
-GITHUB_LOG="https://github.com/michael-amd/sglang-ci-data/tree/main"
+GITHUB_LOG=""
 
 # 8 AM PT (10 AM CT) - Docker image availability check with Teams notifications
 0 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1 && bash cron/github_log_upload.sh
