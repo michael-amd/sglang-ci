@@ -324,6 +324,11 @@ send_teams_notification() {
   local model="$1"
   local mode="$2"
 
+  if [[ "$TEAMS_WEBHOOK_FROM_CLI" != "true" ]]; then
+    echo "[nightly] Teams notifications skipped - --teams-webhook-url not provided"
+    return 0
+  fi
+
   # Check if Teams notifications are enabled
   if [[ "$ENABLE_TEAMS_NOTIFICATIONS" != "true" ]]; then
     echo "[nightly] Teams notifications disabled (ENABLE_TEAMS_NOTIFICATIONS != true)"
@@ -447,6 +452,7 @@ echo "[nightly] Docker daemon accessible - proceeding..."
 MODE="all" # Default to run both offline and online
 MODEL="grok" # Default to grok
 CLI_TEAMS_WEBHOOK_URL="" # Teams webhook URL from command line
+TEAMS_WEBHOOK_FROM_CLI="false" # Track whether webhook flag was provided on CLI
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
@@ -485,6 +491,7 @@ for arg in "$@"; do
       ;;
     --teams-webhook-url=*)
       CLI_TEAMS_WEBHOOK_URL="${arg#*=}"
+      TEAMS_WEBHOOK_FROM_CLI="true"
       ;;
     --teams-skip-analysis)
       CLI_TEAMS_SKIP_ANALYSIS="true"
@@ -560,10 +567,25 @@ for arg in "$@"; do
   esac
 done
 
-# Override Teams settings if provided via command line
-if [[ -n "$CLI_TEAMS_WEBHOOK_URL" ]]; then
-  TEAMS_WEBHOOK_URL="$CLI_TEAMS_WEBHOOK_URL"
-  echo "[nightly] Teams webhook URL provided via command line - notifications enabled"
+# Override Teams settings if provided via command line.  Only enable
+# notifications when the flag is explicitly passed with a non-empty value.
+if [[ "$TEAMS_WEBHOOK_FROM_CLI" == "true" ]]; then
+  if [[ -n "$CLI_TEAMS_WEBHOOK_URL" ]]; then
+    TEAMS_WEBHOOK_URL="$CLI_TEAMS_WEBHOOK_URL"
+    ENABLE_TEAMS_NOTIFICATIONS="true"
+    echo "[nightly] Teams webhook URL provided via command line - notifications enabled"
+  else
+    echo "[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled"
+    TEAMS_WEBHOOK_FROM_CLI="false"
+    TEAMS_WEBHOOK_URL=""
+    ENABLE_TEAMS_NOTIFICATIONS="false"
+  fi
+else
+  if [[ -n "$TEAMS_WEBHOOK_URL" ]]; then
+    echo "[nightly] INFO: Ignoring Teams webhook URL from environment (require --teams-webhook-url)"
+  fi
+  TEAMS_WEBHOOK_URL=""
+  ENABLE_TEAMS_NOTIFICATIONS="false"
 fi
 
 if [[ -n "$CLI_TEAMS_SKIP_ANALYSIS" ]]; then
@@ -1178,7 +1200,7 @@ fi
 
       # Upload now handled inside sanity_check.py when $GITHUB_LOG is set.
       # Send Teams notification for sanity check if webhook URL is configured
-      if [[ -n "$TEAMS_WEBHOOK_URL" ]]; then
+      if [[ "$TEAMS_WEBHOOK_FROM_CLI" == "true" && -n "$TEAMS_WEBHOOK_URL" ]]; then
         echo "[nightly] Sending Teams notification for sanity check results..."
 
         SANITY_TEAMS_EXIT_CODE=0
@@ -1196,7 +1218,7 @@ fi
           echo "[nightly] WARN: Teams notification failed for sanity check (exit code: $SANITY_TEAMS_EXIT_CODE)"
         fi
       else
-        echo "[nightly] Teams notifications disabled - no webhook URL configured"
+        echo "[nightly] Teams notifications disabled - --teams-webhook-url not provided"
       fi
 
       continue
