@@ -127,6 +127,16 @@ class DockerImageTeamsNotifier:
             title_date = current_date
 
         # Create card body elements
+        # Host where the script is executed – helpful when multiple machines run nightly checks
+        try:
+            import socket
+
+            host_name = socket.gethostname()
+        except Exception:
+            host_name = "unknown"
+
+        # Build the card body. Use separate TextBlocks for repo / host / timestamp so Teams renders
+        # each item on its own line (newline characters are ignored in Adaptive Cards).
         body_elements = [
             {
                 "type": "TextBlock",
@@ -137,7 +147,21 @@ class DockerImageTeamsNotifier:
             {
                 "type": "TextBlock",
                 "size": "Small",
-                "text": f"Repository: {self.repo} • Checked on {current_date} at {current_time}",
+                "text": f"Repository: {self.repo}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Host: {host_name}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Checked on {current_date} at {current_time}",
                 "isSubtle": True,
                 "spacing": "None",
             },
