@@ -5,17 +5,22 @@
 #
 # USAGE:
 #   # Run with Docker image (all default models)
-#   python3 sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x
+#   python3 test/sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x
 #
 #   # Run specific model with custom path
-#   python3 sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x \
+#   python3 test/sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x \
 #           --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --model-type=GROK1-IN4
 #
 #   # Run without Docker (direct execution)
-#   python3 sanity_check.py --hardware=mi30x --models GROK1-IN4 GROK2.5
+#   python3 test/sanity_check.py --hardware=mi30x --models GROK1-IN4 GROK2.5
 #
 #   # Run with custom models directory and log directory
-#   python3 sanity_check.py --hardware=mi30x --models-dir=/data/models --log-dir=/tmp/my_sanity_logs --trials=1
+#   python3 test/sanity_check.py --hardware=mi30x --models-dir=/data/models --log-dir=/tmp/my_sanity_logs --trials=1
+#
+#   # Upload an existing log directory to GitHub without running tests
+#   GITHUB_LOG=https://github.com/michael-amd/sglang-ci-data/tree/main \\
+#     python3 test/sanity_check.py --upload-log-dir=/path/to/test/sanity_check_log/mi30x/<docker_name>
+#     # (replace `mi30x` with `mi35x` when running on that platform)
 #
 # Available model types:
 #   GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
@@ -28,10 +33,161 @@ import argparse
 import atexit
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
 import time
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# GitHub log upload helper – extracted from perf_nightly.sh so it can be reused
+# programmatically *and* via the CLI.  Uploads a local sanity log directory into
+# the `sglang-ci-data` repository (or any compatible remote) when a
+# GITHUB_LOG=<view-url|git-url> environment variable is present or an explicit
+# --upload-log-dir argument is provided.
+# ---------------------------------------------------------------------------
+
+
+def upload_sanity_logs(
+    log_dir: str,
+    github_log_url: str,
+    github_token: str | None = None,
+    work_clone_dir: str | None = None,
+):
+    """Synchronise *log_dir* into test/sanity_check_log/<hw>/<docker_name>/ of the GITHUB_LOG repo.
+
+    The function is idempotent: it commits & pushes only when new/changed files
+    are detected.  When *github_log_url* contains `/tree/…` it derives the git
+    clone URL automatically; otherwise the value is treated as the clone URL
+    directly.  If *github_token* is provided the URL is rewritten to embed the
+    token (works for HTTPS remotes).
+    """
+
+    log_dir = os.path.abspath(log_dir)
+    if not os.path.isdir(log_dir):
+        print(f"[upload] ❌ Log directory not found: {log_dir}")
+        return False
+
+    if not github_log_url:
+        print("[upload] ⚠️  GITHUB_LOG not set – skipping upload.")
+        return False
+
+    # Derive clone URL when a view URL is provided (…/tree/main)
+    clone_url = github_log_url
+    if "/tree/" in clone_url and not clone_url.endswith(".git"):
+        clone_url = clone_url.split("/tree/")[0] + ".git"
+
+    # Inject token for HTTPS remotes (only when token provided and URL starts with https://)
+    if github_token and clone_url.startswith("https://") and "@" not in clone_url:
+        clone_url = "https://" + github_token + "@" + clone_url[len("https://") :]
+
+    if work_clone_dir is None:
+        repo_root = os.getenv("SGL_BENCHMARK_CI_DIR") or os.getcwd()
+        work_clone_dir = os.path.join(repo_root, ".sanity_log_repo")
+
+    os.makedirs(work_clone_dir, exist_ok=True)
+
+    # Clone or fetch the repository
+    if not os.path.isdir(os.path.join(work_clone_dir, ".git")):
+        print(f"[upload] 🛎️  Cloning data repo into {work_clone_dir}…")
+        result = subprocess.run(
+            ["git", "clone", "--quiet", clone_url, work_clone_dir],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if result.returncode != 0:
+            print("[upload] ❌ git clone failed:")
+            print(result.stderr.strip() or result.stdout.strip())
+            return False
+    else:
+        print(f"[upload] 🔄  Re-using existing clone at {work_clone_dir}")
+
+    # Work inside repo
+    cwd_orig = os.getcwd()
+    os.chdir(work_clone_dir)
+
+    try:
+        # Ensure we are on main (ignore errors for non-existent branch)
+        subprocess.run(["git", "fetch", "--quiet", "origin", "main"], check=False)
+        subprocess.run(["git", "checkout", "-q", "main"], check=False)
+        subprocess.run(["git", "pull", "--rebase", "--quiet"], check=False)
+
+        # Derive hardware label and docker folder name (expects .../test/sanity_check_log/<hw>/<docker_name>)
+        path_parts = Path(log_dir).parts
+        try:
+            # Locate "sanity_check_log" in the path and get the following parts
+            sc_idx = path_parts.index("sanity_check_log")
+            hardware_label = path_parts[sc_idx + 1]
+            docker_folder = path_parts[sc_idx + 2]
+        except (ValueError, IndexError):
+            # Fallback when pattern doesn't match
+            hardware_label = "mi30x"
+            docker_folder = Path(log_dir).name
+
+        dest = os.path.join("test", "sanity_check_log", hardware_label, docker_folder)
+        os.makedirs(dest, exist_ok=True)
+
+        # Sync contents (rsync preferred) – preserve the docker_folder layer
+        if shutil.which("rsync"):
+            subprocess.run(
+                [
+                    "rsync",
+                    "-a",
+                    "--delete",
+                    f"{log_dir}/",
+                    f"{dest}/",
+                ],
+                check=True,
+            )
+        else:
+            # Fallback to copytree (Python ≥3.8 has dirs_exist_ok)
+            if not os.path.exists(dest):
+                os.makedirs(dest, exist_ok=True)
+            for root, _, files in os.walk(log_dir):
+                rel_root = os.path.relpath(root, log_dir)
+                target_root = os.path.join(dest, rel_root)
+                os.makedirs(target_root, exist_ok=True)
+                for f in files:
+                    shutil.copy2(os.path.join(root, f), os.path.join(target_root, f))
+
+        # Stage & commit if there are changes
+        subprocess.run(["git", "add", dest], check=True)
+
+        diff_result = subprocess.run(["git", "diff", "--cached", "--quiet"])
+        if diff_result.returncode == 0:
+            print("[upload] 📁 No new changes – nothing to commit.")
+            return True
+
+        commit_msg = f"Backup sanity logs {time.strftime('%Y%m%d_%H%M')}"
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=ci-bot",
+                "-c",
+                "user.email=ci-bot@example.com",
+                "commit",
+                "-m",
+                commit_msg,
+                "--quiet",
+            ],
+            check=True,
+        )
+
+        push_res = subprocess.run(
+            ["git", "push", "--quiet", "origin", "main"], text=True
+        )
+        if push_res.returncode == 0:
+            print("[upload] ✅ Logs pushed successfully.")
+            return True
+        else:
+            print("[upload] ⚠️  git push failed – will retry next run.")
+            return False
+    finally:
+        os.chdir(cwd_orig)
+
 
 # Set timezone to PST/PDT
 os.environ["TZ"] = "America/Los_Angeles"
@@ -192,7 +348,7 @@ DEFAULT_MODELS = {
 # =======================
 PASS_MARK = "PASS [OK]"
 FAIL_MARK = "FAIL [X]"
-DEFAULT_LOG_DIR = "test/sanity_check_log"
+DEFAULT_LOG_DIR = os.path.join("test", "sanity_check_log", "mi30x")
 DEFAULT_WORK_DIR = "/mnt/raid/michael/sglang-ci"
 DEFAULT_DOCKER_IMAGE = "lmsysorg/sglang:v0.4.7-rocm630"
 DEFAULT_MODELS_DIR = "/mnt/raid/models/huggingface"
@@ -859,7 +1015,7 @@ def sanity_check(
 
     # Use custom log directory if provided
     if log_dir is None:
-        log_dir = DEFAULT_LOG_DIR
+        log_dir = os.path.join("test", "sanity_check_log", platform)
 
     os.makedirs(log_dir, mode=0o755, exist_ok=True)
 
@@ -1135,6 +1291,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--log-dir", help="Log output directory")
     parser.add_argument(
+        "--upload-log-dir",
+        help="Upload the given log directory to the GITHUB_LOG repo and exit",
+    )
+    parser.add_argument(
         "-t", "--trials", type=int, default=3, help="Number of client trials per model"
     )
     parser.add_argument(
@@ -1147,6 +1307,17 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # ---------------------------------------------------------------------
+    # Early exit: only perform GitHub upload when --upload-log-dir is given.
+    # ---------------------------------------------------------------------
+    if args.upload_log_dir:
+        success = upload_sanity_logs(
+            args.upload_log_dir,
+            os.getenv("GITHUB_LOG", ""),
+            os.getenv("GITHUB_TOKEN"),
+        )
+        sys.exit(0 if success else 1)
 
     # Handle Docker container management
     if not os.environ.get("INSIDE_CONTAINER") and args.docker_image:
@@ -1254,7 +1425,9 @@ if __name__ == "__main__":
     if args.log_dir:
         base_log_dir = os.path.abspath(args.log_dir)
     else:
-        base_log_dir = os.path.abspath(DEFAULT_LOG_DIR)
+        base_log_dir = os.path.abspath(
+            os.path.join("test", "sanity_check_log", platform)
+        )
 
     # Create subfolder based on Docker image tag if provided
     if args.docker_image:
@@ -1416,3 +1589,17 @@ if __name__ == "__main__":
     print(f"\n🧹 Final cleanup...")
     cleanup_servers()
     print(f"✅ All processes cleaned up successfully!")
+
+    # ------------------------------------------------------------------
+    # Automatic GitHub upload when GITHUB_LOG is set (and not already
+    # handled via --upload-log-dir).
+    # ------------------------------------------------------------------
+
+    github_log_env = os.getenv("GITHUB_LOG")
+    if github_log_env:
+        print("\n🚀 Uploading sanity logs to GitHub data repository…")
+        upload_sanity_logs(
+            log_dir_path,  # image-specific directory just used
+            github_log_env,
+            os.getenv("GITHUB_TOKEN"),
+        )

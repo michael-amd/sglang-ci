@@ -653,14 +653,15 @@ class BenchmarkAnalyzer:
 
 def find_sanity_check_log(
     docker_image: str,
-    base_log_dir: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+    base_log_root: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
 ) -> Optional[str]:
     """
     Find the most recent timing summary log file for a given Docker image
 
     Args:
         docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
-        base_log_dir: Base directory for sanity check logs
+        base_log_root: Root directory (`.../test`). The function selects the
+            subfolder matching the hardware extracted from *docker_image*.
 
     Returns:
         Path to the most recent timing summary log file, or None if not found
@@ -673,8 +674,12 @@ def find_sanity_check_log(
 
     image_date = date_match.group(1)
 
-    # Construct the log directory path
-    log_dir = os.path.join(base_log_dir, docker_image)
+    # Determine hardware (mi30x / mi35x) from the image tag
+    hw_match = re.search(r"mi[0-9]+x", docker_image)
+    hardware = hw_match.group(0) if hw_match else "mi30x"
+
+    # Construct the log directory path: test/sanity_check_log/<hardware>/<image-tag>
+    log_dir = os.path.join(base_log_root, hardware, docker_image)
 
     if not os.path.exists(log_dir):
         print(f"❌ Error: Log directory not found: {log_dir}")
@@ -2037,21 +2042,21 @@ class TeamsNotifier:
     def send_sanity_notification(
         self,
         docker_image: str,
-        base_log_dir: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+        base_log_root: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
     ) -> bool:
         """
         Send sanity check status notification to Teams
 
         Args:
             docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
-            base_log_dir: Base directory for sanity check logs
+            base_log_root: Root directory for sanity check logs (".../test")
 
         Returns:
             True if successful, False otherwise
         """
         try:
             # Find the log file
-            log_file_path = find_sanity_check_log(docker_image, base_log_dir)
+            log_file_path = find_sanity_check_log(docker_image, base_log_root)
             if log_file_path is None:
                 return False
 
