@@ -7,7 +7,17 @@
 # so the logs are permanently preserved.
 #
 # Usage (inside another script / cron entry):
-#     bash cron/github_log_upload.sh
+#     bash cron/github_log_upload.sh [DATE] [HARDWARE_TYPE]
+#
+# Examples:
+#     bash cron/github_log_upload.sh                    # Upload today's logs for $HARDWARE_TYPE
+#     bash cron/github_log_upload.sh 20251005           # Upload 2025-10-05 logs for $HARDWARE_TYPE
+#     bash cron/github_log_upload.sh 20251005 mi30x     # Upload 2025-10-05 logs for mi30x
+#     bash cron/github_log_upload.sh 20251005 mi35x     # Upload 2025-10-05 logs for mi35x
+#
+# Arguments:
+#   DATE          – Optional. Date in YYYYMMDD format (defaults to today)
+#   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
 #
 # Requirements:
 #   • GITHUB_TOKEN    – Personal access token with `repo` scope that can push
@@ -32,11 +42,13 @@ readonly REMOTE_REPO_URL_BASE="https://github.com/michael-amd/sglang-ci-data.git
 
 # Resolve required env variables (most are exported in crontab header)
 readonly GITHUB_TOKEN="${GITHUB_TOKEN:-}"  # optional – clone over https if empty
-readonly HARDWARE_TYPE="${HARDWARE_TYPE:-unknown}"
 readonly SGL_CI_DIR="${SGL_BENCHMARK_CI_DIR:-$(pwd)}"  # repository root
 
+# Parse arguments for date and hardware type
+readonly TODAY="${1:-$(date +%Y%m%d)}"
+readonly HARDWARE_TYPE="${2:-${HARDWARE_TYPE:-unknown}}"
+
 # Location where the logs are produced by the cron jobs
-readonly TODAY="$(date +%Y%m%d)"
 readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${TODAY}"
 
 # Skip gracefully if there is nothing to upload yet
@@ -114,4 +126,3 @@ else
 fi
 
 echo "[github_log_upload] ✅  Logs for $TODAY uploaded successfully."
-
