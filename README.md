@@ -25,7 +25,7 @@ This repository provides a comprehensive benchmarking and continuous integration
 **⚡ Flexible Configuration:**
 
 - **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
-- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), and DeepSeek models with FP8/INT4 quantization
+- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), DeepSeek, GPT-OSS, QWEN, and Llama models with FP8/INT4 quantization
 - **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
 
 **🔍 Advanced Comparison Tools:**
@@ -56,6 +56,8 @@ The toolkit is designed for both development teams conducting regular performanc
     - [nightly_image_check.sh](#nightly_image_checksh)
   - [Nightly Unit Test](#nightly-unit-test)
     - [test_nightly.sh](#test_nightlysh)
+  - [Nightly Sanity Check](#nightly-sanity-check)
+    - [sanity_check.py](#sanity_checkpy)
   - [Nightly Benchmarking](#nightly-benchmarking)
     - [perf_nightly.sh](#perf_nightlysh)
 - [Upstream SGLang Tool](#upstream-sglang-tool)
@@ -559,6 +561,75 @@ unit_test_results/
 - **Permission issues**: Ensure webhook URL has proper Teams permissions
 - **Missing analysis data**: Check `BENCHMARK_BASE_DIR` environment variable or use `--benchmark-dir` to specify custom benchmark directory
 - **Plot files not found**: Verify `--plot-dir` path to ensure plots exist with expected naming pattern
+
+### Nightly Sanity Check
+
+The automated nightly sanity check system provides comprehensive accuracy validation for multiple LLM models using GSM8K benchmarks across mi30x and mi35x hardware with Docker container management and GitHub log upload integration.
+
+#### sanity_check.py
+
+- **Purpose:** Automated accuracy testing that launches SGLang servers for multiple models and validates their GSM8K accuracy against predefined thresholds.
+- **Key Features:**
+  - **Multi-Model Support:** Tests 8 different model configurations with hardware-specific optimizations
+  - **Automatic Docker Management:** Creates/manages persistent containers with proper mounts and configuration
+  - **GPU Resource Management:** Checks GPU idle status and cleans up existing processes before testing
+  - **Multiple Trial Execution:** Runs configurable number of trials per model (default: 3) for reliability
+  - **Comprehensive Logging:** Creates detailed logs for server startup, benchmark execution, and timing analysis
+  - **GitHub Integration:** Automatic upload of test results to GitHub data repository
+  - **Error Detection:** Intelligent detection of memory errors, compilation timeouts, and server failures
+
+**Supported Models:**
+
+| Model | Accuracy Threshold | Hardware | Quantization |
+|-------|-------------------|----------|--------------|
+| **GPT-OSS-120B** | 82.0% | mi30x, mi35x | BF16 |
+| **GPT-OSS-20B** | 52.0% | mi30x, mi35x | BF16 |
+| **QWEN-30B** | 84.0% | mi30x, mi35x | FP8 |
+| **DeepSeek-V3** | 93.0% | mi30x, mi35x | FP8 |
+| **GROK1-IN4** | 80.0% | mi30x, mi35x | INT4 |
+| **GROK1-FP8** | 80.0% | mi30x, mi35x | FP8 |
+| **GROK2.5** | 91.5% | mi30x, mi35x | FP8 |
+| **llama4** | 80.0% | mi30x, mi35x | FP8 |
+
+**Parameters:**
+
+- `--docker-image`: Docker image to use
+- `--hardware`: Hardware platform (`mi30x` or `mi35x`, **required**)
+- `--models`: Specific models to test (space-separated list, default: all models)
+- `--model-path`: Custom model path for single model testing
+- `--model-type`: Model type when using custom model path
+- `--tokenizer-path`: Custom tokenizer path
+- `--models-dir`: Base directory for model files
+- `--work-dir`: Working directory
+- `--log-dir`: Log output directory (default: `test/sanity_check_log/{hardware}/{docker_tag}`)
+- `--trials`: Number of benchmark trials per model (default: 3)
+- `--upload-log-dir`: Upload existing log directory to GitHub and exit
+
+**Environment Variables:**
+
+- `GITHUB_LOG`: GitHub repository URL for automatic log upload
+- `GITHUB_TOKEN`: GitHub personal access token for authenticated uploads
+- `GPU_USAGE_THRESHOLD`: GPU usage threshold for idle check (default: 5%)
+- `VRAM_USAGE_THRESHOLD`: VRAM usage threshold for idle check (default: 5%)
+
+**Usage:**
+
+```bash
+# Run all models with Docker image
+python3 test/sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x
+
+# Run specific models only
+python3 test/sanity_check.py --docker-image=rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20250925 --hardware=mi30x \
+  --models GROK1-IN4 GROK2.5 DeepSeek-V3
+```
+
+**Workflow:**
+
+1. **GPU Idle Check:** Ensures GPU is not busy; stops running containers and cleans up SGLang processes if needed
+2. **Docker Container Management:** Creates/starts container with proper mounts and privileges (if using Docker)
+3. **Model Testing Loop:** For each model, launches server, runs multiple trials, validates accuracy against threshold
+4. **Results Summary:** Generates comprehensive timing and accuracy report
+5. **GitHub Upload:** Automatically uploads logs to GitHub data repository (if `GITHUB_LOG` is set)
 
 ### Nightly Benchmarking
 
