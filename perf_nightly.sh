@@ -1187,8 +1187,6 @@ fi
         -e LATEST_TAG="${SELECTED_TAG}" \
         -e FULL_IMAGE="${DOCKER_IMAGE}" \
         -e TZ='America/Los_Angeles' \
-        -e GITHUB_LOG="${GITHUB_LOG:-}" \
-        -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
         "${CONTAINER_NAME}" \
         bash -c "python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}" || SANITY_EXIT_CODE=$?
 
@@ -1198,7 +1196,7 @@ fi
         echo "[nightly] === Sanity check failed (exit code: $SANITY_EXIT_CODE) ==="
       fi
 
-      # Upload now handled inside sanity_check.py when $GITHUB_LOG is set.
+      # Upload handled by cron/github_log_upload.sh called from crontab after this script.
       # Send Teams notification for sanity check if webhook URL is configured
       if [[ "$TEAMS_WEBHOOK_FROM_CLI" == "true" && -n "$TEAMS_WEBHOOK_URL" ]]; then
         echo "[nightly] Sending Teams notification for sanity check results..."
