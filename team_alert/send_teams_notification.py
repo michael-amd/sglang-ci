@@ -15,6 +15,8 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi30x-20251001" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi35x-20251002" --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
@@ -48,6 +50,45 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
+"""Utility: load accuracy thresholds from the local sanity_check test script.
+
+We *cannot* rely on ``from test.sanity_check import ...`` because the ``test``
+module name collides with Python’s stdlib package of the same name. Instead we
+dynamically load the file via its absolute path relative to this repository
+root.  The code is wrapped in a broad ``try`` so that the notifier still works
+when the file is missing (for example, in a stripped-down deployment).
+"""
+
+from importlib import util as _importlib_util
+
+
+def _load_model_criteria() -> dict[str, float]:
+    repo_root = Path(__file__).resolve().parent.parent  # <repo>/
+    sanity_path = repo_root / "test" / "sanity_check.py"
+
+    if not sanity_path.exists():
+        return {}
+
+    spec = _importlib_util.spec_from_file_location("_sg_sanity_check", sanity_path)
+    if spec is None or spec.loader is None:
+        return {}
+
+    module = _importlib_util.module_from_spec(spec)  # type: ignore[arg-type]
+    try:
+        spec.loader.exec_module(module)  # type: ignore[attr-defined]
+    except Exception:
+        return {}
+
+    DEFAULT_MODELS = getattr(module, "DEFAULT_MODELS", {})
+    return {
+        name: cfg.get("criteria", {}).get("accuracy")
+        for name, cfg in DEFAULT_MODELS.items()
+        if isinstance(cfg, dict)
+    }
+
+
+_MODEL_CRITERIA = _load_model_criteria()
+
 try:
     import pytz
 
@@ -61,7 +102,11 @@ class BenchmarkAnalyzer:
     """Analyze benchmark results for accuracy and performance regressions"""
 
     def __init__(
-        self, base_dir: Optional[str] = None, check_dp_attention: bool = False, enable_torch_compile: bool = False, benchmark_date: Optional[str] = None
+        self,
+        base_dir: Optional[str] = None,
+        check_dp_attention: bool = False,
+        enable_torch_compile: bool = False,
+        benchmark_date: Optional[str] = None,
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
         self.base_dir = base_dir or os.getenv(
@@ -92,7 +137,9 @@ class BenchmarkAnalyzer:
             return self._extract_accuracy_from_log(timing_log_file)
         return None
 
-    def _find_timing_summary_log(self, model: str, mode: str, date_str: str) -> Optional[str]:
+    def _find_timing_summary_log(
+        self, model: str, mode: str, date_str: str
+    ) -> Optional[str]:
         """
         Find timing_summary log file for the given model, mode, and date
 
@@ -126,42 +173,54 @@ class BenchmarkAnalyzer:
             # Use more specific patterns to avoid matching longer suffixes
             if mode_suffix:
                 # For specific modes, ensure exact suffix match
-                search_patterns.extend([
-                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
-                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
-                ])
+                search_patterns.extend(
+                    [
+                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                        f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
+                    ]
+                )
             else:
                 # For standard mode, match folders ending with just the mode (no additional suffixes)
-                search_patterns.extend([
-                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
-                    f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
-                    # Also handle variant names like MOE-I4F8
-                    f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*_*_{mode}/timing_summary_*.log",
-                ])
+                search_patterns.extend(
+                    [
+                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                        f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
+                        # Also handle variant names like MOE-I4F8
+                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*_*_{mode}/timing_summary_*.log",
+                    ]
+                )
         else:
             if mode_suffix:
-                search_patterns.extend([
-                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
-                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
-                ])
+                search_patterns.extend(
+                    [
+                        f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
+                        f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
+                    ]
+                )
             else:
-                search_patterns.extend([
-                    f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
-                    f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
-                ])
+                search_patterns.extend(
+                    [
+                        f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
+                        f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
+                    ]
+                )
 
         # Find the most recent timing_summary log for the specific date
         timing_logs = []
         for pattern in search_patterns:
             timing_logs.extend(glob.glob(pattern))
-        
+
         if timing_logs:
             # Sort by modification time and return the most recent
             timing_logs.sort(key=os.path.getmtime, reverse=True)
-            print(f"   Found timing_summary log for {model} {mode} on {date_str}: {os.path.basename(timing_logs[0])}")
+            print(
+                f"   Found timing_summary log for {model} {mode} on {date_str}: {os.path.basename(timing_logs[0])}"
+            )
             return timing_logs[0]
-        
-        print(f"   No timing_summary log found for {model} {mode} on {date_str} - benchmark may not have run yet")
+
+        print(
+            f"   No timing_summary log found for {model} {mode} on {date_str} - benchmark may not have run yet"
+        )
         return None
 
     def _extract_accuracy_from_log(self, log_file: str) -> Optional[float]:
@@ -219,11 +278,11 @@ class BenchmarkAnalyzer:
         if timing_log_file:
             result["log_file"] = timing_log_file
             errors = self._extract_server_errors_from_timing_log(timing_log_file)
-            
+
             if errors:
                 result["status"] = "fail"
                 result["errors"].extend(errors)
-            
+
         return result
 
     def _extract_server_errors_from_timing_log(self, log_file: str) -> List[str]:
@@ -241,8 +300,10 @@ class BenchmarkAnalyzer:
                 if runtime_error_match:
                     error_count = int(runtime_error_match.group(1))
                     if error_count > 0:
-                        errors.append(f"RuntimeError: {error_count} error(s) found in server logs")
-                        
+                        errors.append(
+                            f"RuntimeError: {error_count} error(s) found in server logs"
+                        )
+
                         # Try to extract specific error messages
                         error_lines = re.findall(r"    (RuntimeError:.*)", content)
                         for error_line in error_lines[:3]:  # Limit to first 3 errors
@@ -253,7 +314,9 @@ class BenchmarkAnalyzer:
             if critical_error_match:
                 error_count = int(critical_error_match.group(1))
                 if error_count > 0:
-                    errors.append(f"Critical errors: {error_count} error(s) found in server logs")
+                    errors.append(
+                        f"Critical errors: {error_count} error(s) found in server logs"
+                    )
 
         except (FileNotFoundError, IOError) as e:
             print(f"   Warning: Could not read timing log {log_file}: {e}")
@@ -295,7 +358,7 @@ class BenchmarkAnalyzer:
         timing_log_file = self._find_timing_summary_log(model, mode, date_str)
         if timing_log_file:
             info = self._extract_additional_info_from_log(timing_log_file)
-            
+
             # Merge all information from timing_summary log
             for key, value in info.items():
                 if value is not None and (result[key] is None or result[key] is False):
@@ -350,12 +413,16 @@ class BenchmarkAnalyzer:
                 info["end_time"] = end_match.group(1).strip()
 
             # Check for torch compile status (timing_summary pattern)
-            torch_compile_match = re.search(r"Torch Compile:\s*(true|false)", content, re.IGNORECASE)
+            torch_compile_match = re.search(
+                r"Torch Compile:\s*(true|false)", content, re.IGNORECASE
+            )
             if torch_compile_match:
                 info["torch_compile"] = torch_compile_match.group(1).lower() == "true"
-            
+
             # Extract total runtime from timing summary logs (preferred method)
-            runtime_match = re.search(r'Total execution time: (\d+) seconds \((\d+) minutes\)', content)
+            runtime_match = re.search(
+                r"Total execution time: (\d+) seconds \((\d+) minutes\)", content
+            )
             if runtime_match:
                 info["total_runtime_seconds"] = runtime_match.group(1)
                 info["total_runtime_minutes"] = runtime_match.group(2)
@@ -368,7 +435,7 @@ class BenchmarkAnalyzer:
                     info["runtime"] = f"{hours}h {remaining_minutes}m"
                 else:
                     info["runtime"] = f"{minutes}m"
-            
+
             # Fallback: Calculate runtime if both start and end times are available
             elif info.get("start_time") and info.get("end_time"):
                 start_str = info["start_time"]
@@ -584,6 +651,232 @@ class BenchmarkAnalyzer:
         return {}, None
 
 
+def find_sanity_check_log(
+    docker_image: str,
+    base_log_root: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+) -> Optional[str]:
+    """
+    Find the most recent timing summary log file for a given Docker image
+
+    Args:
+        docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
+        base_log_root: Root directory (`.../test`). The function selects the
+            subfolder matching the hardware extracted from *docker_image*.
+
+    Returns:
+        Path to the most recent timing summary log file, or None if not found
+    """
+    # Extract date from docker image tag (last 8 digits)
+    date_match = re.search(r"(\d{8})$", docker_image)
+    if not date_match:
+        print(f"❌ Error: Could not extract date from Docker image tag: {docker_image}")
+        return None
+
+    image_date = date_match.group(1)
+
+    # Determine hardware (mi30x / mi35x) from the image tag
+    hw_match = re.search(r"mi[0-9]+x", docker_image)
+    hardware = hw_match.group(0) if hw_match else "mi30x"
+
+    # Construct the log directory path: test/sanity_check_log/<hardware>/<image-tag>
+    log_dir = os.path.join(base_log_root, hardware, docker_image)
+
+    if not os.path.exists(log_dir):
+        print(f"❌ Error: Log directory not found: {log_dir}")
+        return None
+
+    # Find all timing_summary logs for this date
+    pattern = os.path.join(log_dir, f"timing_summary_{image_date}_*.log")
+    log_files = glob.glob(pattern)
+
+    if not log_files:
+        print(f"❌ Error: No timing summary logs found in {log_dir}")
+        return None
+
+    # Return the most recent log file (sorted by timestamp in filename)
+    most_recent = sorted(log_files)[-1]
+    print(f"📋 Found sanity check log: {most_recent}")
+    return most_recent
+
+
+def parse_sanity_check_log(log_file_path: str) -> Dict:
+    """
+    Parse the sanity check timing summary log file
+
+    Args:
+        log_file_path: Path to the timing_summary log file
+
+    Returns:
+        Dictionary containing parsed sanity check information
+    """
+    parsed_data = {
+        "status": "unknown",
+        "docker_image": None,
+        "platform": None,
+        "models": [],
+        "trials": None,
+        "total_time": None,
+        "start_time": None,
+        "end_time": None,
+        "model_results": {},  # {model_name: {"status": "pass/fail", "accuracies": [], "time": "...", "average_accuracy": X.XX}}
+        "passed_count": 0,
+        "total_count": 0,
+    }
+
+    try:
+        with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+        # Extract Docker image
+        image_match = re.search(r"Docker image:\s*(.+)", content)
+        if image_match:
+            parsed_data["docker_image"] = image_match.group(1).strip()
+
+        # Extract platform
+        platform_match = re.search(r"Platform:\s*(.+)", content)
+        if platform_match:
+            parsed_data["platform"] = platform_match.group(1).strip()
+
+        # Extract models
+        models_match = re.search(r"Models:\s*(.+)", content)
+        if models_match:
+            models_str = models_match.group(1).strip()
+            parsed_data["models"] = [m.strip() for m in models_str.split(",")]
+
+        # Extract trials per model
+        trials_match = re.search(r"Trials per model:\s*(\d+)", content)
+        if trials_match:
+            parsed_data["trials"] = int(trials_match.group(1))
+
+        # Extract start and end times
+        start_match = re.search(r"Start time:\s*(.+?)(?:\n|$)", content)
+        if start_match:
+            parsed_data["start_time"] = start_match.group(1).strip()
+
+        # Look for end time in OVERALL SUMMARY section
+        end_match = re.search(r"End time:\s*(.+?)(?:\n|$)", content)
+        if end_match:
+            parsed_data["end_time"] = end_match.group(1).strip()
+
+        # Extract total execution time
+        total_time_match = re.search(
+            r"Total execution time:\s*([\d.]+)s\s*\(([\d.]+)\s*minutes\)", content
+        )
+        if total_time_match:
+            total_seconds = int(float(total_time_match.group(1)))
+            hours = total_seconds // 3600
+            minutes_part = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+
+            if hours > 0:
+                parsed_data["total_time"] = f"{hours}h {minutes_part}m {seconds}s"
+            else:
+                parsed_data["total_time"] = f"{minutes_part}m {seconds}s"
+
+        # Extract model results
+        # Pattern: === MODEL_NAME on PLATFORM ===
+        model_sections = re.findall(
+            r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
+        )
+
+        for model_name, platform, section_content in model_sections:
+            result_data = {
+                "status": "unknown",
+                "accuracies": [],
+                "time": None,
+                "average_accuracy": None,
+            }
+
+            # Extract final result
+            result_match = re.search(
+                r"Final result:\s*(PASS \[OK\]|FAIL \[X\])", section_content
+            )
+            if result_match:
+                result_data["status"] = (
+                    "pass" if "PASS" in result_match.group(1) else "fail"
+                )
+            else:
+                # Check if server startup failed (no final result means server didn't start)
+                startup_failed_match = re.search(
+                    r"Server startup:\s*FAILED", section_content
+                )
+                if startup_failed_match:
+                    result_data["status"] = "fail"
+
+            # Extract accuracies
+            accuracies_match = re.search(
+                r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
+            )
+            if accuracies_match:
+                acc_str = accuracies_match.group(1)
+                result_data["accuracies"] = [
+                    float(a.strip()) for a in acc_str.split(",") if a.strip()
+                ]
+
+            # Extract average accuracy from log
+            avg_acc_match = re.search(r"Average accuracy:\s*([\d.]+)", section_content)
+            if avg_acc_match:
+                result_data["average_accuracy"] = float(avg_acc_match.group(1))
+            elif result_data["accuracies"]:
+                # Calculate average from individual trial accuracies if not in log
+                result_data["average_accuracy"] = sum(result_data["accuracies"]) / len(
+                    result_data["accuracies"]
+                )
+
+            # Extract total time for this model
+            model_time_match = re.search(r"Total time:\s*([\d.]+)s", section_content)
+            if model_time_match:
+                total_sec = int(float(model_time_match.group(1)))
+                hours = total_sec // 3600
+                minutes = (total_sec % 3600) // 60
+                seconds = total_sec % 60
+
+                if hours > 0:
+                    result_data["time"] = f"{hours}h {minutes}m {seconds}s"
+                else:
+                    result_data["time"] = f"{minutes}m {seconds}s"
+
+            parsed_data["model_results"][model_name] = result_data
+
+        # Extract overall summary - models passed count
+        passed_match = re.search(r"Models passed:\s*(\d+)/(\d+)", content)
+        if passed_match:
+            parsed_data["passed_count"] = int(passed_match.group(1))
+            parsed_data["total_count"] = int(passed_match.group(2))
+            # Determine overall status
+            parsed_data["status"] = (
+                "pass"
+                if parsed_data["passed_count"] == parsed_data["total_count"]
+                else "fail"
+            )
+
+        # If we didn't find the summary, count from model results
+        if parsed_data["total_count"] == 0 and parsed_data["model_results"]:
+            parsed_data["total_count"] = len(parsed_data["model_results"])
+            parsed_data["passed_count"] = sum(
+                1
+                for result in parsed_data["model_results"].values()
+                if result["status"] == "pass"
+            )
+            parsed_data["status"] = (
+                "pass"
+                if parsed_data["passed_count"] == parsed_data["total_count"]
+                else "fail"
+            )
+
+    except FileNotFoundError:
+        print(f"❌ Error: Log file not found: {log_file_path}")
+        return None
+    except Exception as e:
+        print(f"❌ Error parsing sanity check log file: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return None
+
+    return parsed_data
+
+
 class TeamsNotifier:
     """Handle sending plot notifications to Microsoft Teams"""
 
@@ -628,7 +921,9 @@ class TeamsNotifier:
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
-        self.analyzer = BenchmarkAnalyzer(benchmark_dir, check_dp_attention, enable_torch_compile, benchmark_date)
+        self.analyzer = BenchmarkAnalyzer(
+            benchmark_dir, check_dp_attention, enable_torch_compile, benchmark_date
+        )
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
         """
@@ -668,18 +963,22 @@ class TeamsNotifier:
 
         # Check GSM8K accuracy
         gsm8k_accuracy = self.analyzer.parse_gsm8k_accuracy(model, mode, current_date)
-        
+
         # If no GSM8K data found, it means benchmark didn't run for this date
         if gsm8k_accuracy is None:
             # Check if this is due to no benchmark run for the date
-            timing_log = self.analyzer._find_timing_summary_log(model, mode, current_date)
+            timing_log = self.analyzer._find_timing_summary_log(
+                model, mode, current_date
+            )
             if timing_log is None:
                 alert["status"] = "info"
                 alert["title"] = "ℹ️ No Benchmark Run Found"
-                alert["details"] = [f"No benchmark results found for {current_date}", 
-                                 "Benchmark may not have run yet for this date"]
+                alert["details"] = [
+                    f"No benchmark results found for {current_date}",
+                    "Benchmark may not have run yet for this date",
+                ]
                 return alert
-        
+
         if gsm8k_accuracy is not None:
             alert["gsm8k_accuracy"] = gsm8k_accuracy
 
@@ -746,7 +1045,7 @@ class TeamsNotifier:
                     and alert["title"] == "✅ Good: No Issues Detected"
                 ):
                     alert["title"] = "✅ DP Attention Test Passed"
-                
+
         # Check torch compile status if enabled
         if self.enable_torch_compile and mode == "online":
             # Get additional info if not already retrieved
@@ -757,14 +1056,14 @@ class TeamsNotifier:
                 alert["additional_info"] = additional_info
             else:
                 additional_info = alert["additional_info"]
-            
+
             # If GSM8K benchmark completed successfully, torch compile test passed
             if alert.get("gsm8k_accuracy") is not None:
                 alert["details"].append("Torch compile test: No errors detected ✅")
             else:
                 # If no GSM8K results found, status is unclear
                 alert["details"].append("Torch compile test: Status unclear ⚠️")
-        
+
         # Add runtime information if available
         if mode == "online" and alert.get("additional_info"):
             runtime_info = alert["additional_info"].get("runtime")
@@ -902,6 +1201,221 @@ class TeamsNotifier:
         except json.JSONDecodeError as e:
             print(f"❌ JSON encoding error: {e}")
             return False
+
+    def create_sanity_check_card(self, parsed_data: Dict) -> dict:
+        """
+        Create adaptive card for sanity check status
+
+        Args:
+            parsed_data: Parsed sanity check data from parse_sanity_check_log()
+
+        Returns:
+            Adaptive card JSON structure
+        """
+        # Use San Francisco time (Pacific Time) if pytz is available
+        if PYTZ_AVAILABLE:
+            pacific_tz = pytz.timezone("America/Los_Angeles")
+            pacific_time = datetime.now(pacific_tz)
+            current_date = pacific_time.strftime("%Y-%m-%d")
+            # Determine if it's PST or PDT
+            tz_name = "PDT" if pacific_time.dst() else "PST"
+            current_time = pacific_time.strftime(f"%H:%M:%S {tz_name}")
+        else:
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.now().strftime("%H:%M:%S UTC")
+
+        # Determine status icon and color
+        status = parsed_data.get("status", "unknown")
+        status_config = {
+            "pass": {
+                "icon": "✅",
+                "color": "Good",
+                "title": "Sanity Check Passed",
+            },
+            "fail": {
+                "icon": "❌",
+                "color": "Attention",
+                "title": "Sanity Check Failed",
+            },
+        }
+
+        config = status_config.get(status, status_config["fail"])
+
+        # Create card body elements
+        body_elements = [
+            {
+                "type": "TextBlock",
+                "size": "Large",
+                "weight": "Bolder",
+                "text": f"{current_date} SGL Sanity Check Results",
+            },
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Completed on {current_date} at {current_time}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
+            # Emit the hostname of the machine that generated the report. This helps
+            # operators quickly locate the host that produced a failing sanity
+            # check without having to look at the log directory structure.
+            {
+                "type": "TextBlock",
+                "size": "Small",
+                "text": f"Hostname: {socket.gethostname()}",
+                "isSubtle": True,
+                "spacing": "None",
+            },
+            # The overall pass/fail banner is intentionally omitted to keep the
+            # card concise.  Operators can still infer the run health from the
+            # per-model summary and the aggregate "models passed" count below.
+        ]
+
+        # Add summary section
+        passed_count = parsed_data.get("passed_count", 0)
+        total_count = parsed_data.get("total_count", 0)
+        body_elements.append(
+            {
+                "type": "TextBlock",
+                "text": f"**Models: {passed_count}/{total_count} passed**",
+                "weight": "Bolder",
+                "size": "Medium",
+                "spacing": "Medium",
+            }
+        )
+
+        # Add Docker image if provided
+        docker_image = parsed_data.get("docker_image")
+        if docker_image:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Docker Image: **{docker_image}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                }
+            )
+
+        # Add platform if provided
+        platform = parsed_data.get("platform")
+        if platform:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Platform: **{platform}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add trials if provided
+        trials = parsed_data.get("trials")
+        if trials:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Trials per model: **{trials}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add total runtime if provided
+        total_time = parsed_data.get("total_time")
+        if total_time:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• Total Runtime: **{total_time}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                }
+            )
+
+        # Add model results section
+        model_results = parsed_data.get("model_results", {})
+        if model_results:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": "**Model Results:**",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium",
+                }
+            )
+
+            for model_name, result in model_results.items():
+                model_status = result.get("status", "unknown")
+                model_icon = "✅" if model_status == "pass" else "❌"
+                model_time = result.get("time", "N/A")
+                avg_accuracy = result.get("average_accuracy")
+
+                # Model name and status
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"{model_icon} **{model_name}** - {model_time}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                        "color": "Good" if model_status == "pass" else "Attention",
+                    }
+                )
+
+                # GSM8K accuracy as percentage if available
+                if avg_accuracy is not None:
+                    accuracy_percent = avg_accuracy * 100
+
+                    # Look up the expected accuracy threshold for this model, if
+                    # defined in the sanity_check configuration.
+                    threshold = _MODEL_CRITERIA.get(model_name)
+
+                    if threshold is not None:
+                        threshold_percent = threshold * 100
+                        accuracy_line = (
+                            f"  GSM8K accuracy: {accuracy_percent:.1f}% "
+                            f"(threshold ≥ {threshold_percent:.1f}%)"
+                        )
+                    else:
+                        accuracy_line = f"  GSM8K accuracy: {accuracy_percent:.1f}%"
+
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": accuracy_line,
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "None",
+                            "isSubtle": True,
+                        }
+                    )
+
+        # We intentionally omit action buttons (GitHub/Docker links) to keep the
+        # card minimal per Ops request.
+
+        # Create the adaptive card
+        card = {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.4",
+                        "body": body_elements,
+                        # No per-card actions
+                    },
+                }
+            ],
+        }
+
+        return card
 
     def upload_to_github(self, image_path: str, model: str, mode: str) -> Optional[str]:
         """
@@ -1192,11 +1706,13 @@ class TeamsNotifier:
             mode_description.append("DP Attention")
         if self.enable_torch_compile:
             mode_description.append("Torch Compile")
-            
+
         if mode_description:
             mode_text = " + ".join(mode_description)
             if self.check_dp_attention and not self.enable_torch_compile:
-                main_title = f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
+                main_title = (
+                    f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
+                )
             else:
                 main_title = f"{current_date} {model.upper()} {mode.title()} {mode_text} Benchmark"
         else:
@@ -1242,9 +1758,12 @@ class TeamsNotifier:
         )
 
         # Add summary alert section
-        alert_color = {"good": "Good", "warning": "Warning", "error": "Attention", "info": "Default"}.get(
-            summary_alert["status"], "Default"
-        )
+        alert_color = {
+            "good": "Good",
+            "warning": "Warning",
+            "error": "Attention",
+            "info": "Default",
+        }.get(summary_alert["status"], "Default")
 
         # Add status title directly (no container wrapper)
         body_elements.append(
@@ -1300,7 +1819,6 @@ class TeamsNotifier:
                     }
                 )
 
-
             # Runtime is already shown in the status details section, so don't duplicate it here
 
         # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
@@ -1311,7 +1829,11 @@ class TeamsNotifier:
             is_mi35x_machine = True
 
         # Add Plot section only if not in DP attention mode, torch compile mode, or MI35X machine
-        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
+        if (
+            not self.check_dp_attention
+            and not self.enable_torch_compile
+            and not is_mi35x_machine
+        ):
             # Add Plot section title
             body_elements.append(
                 {
@@ -1406,7 +1928,11 @@ class TeamsNotifier:
             pass
 
         # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
-        if not self.check_dp_attention and not self.enable_torch_compile and not is_mi35x_machine:
+        if (
+            not self.check_dp_attention
+            and not self.enable_torch_compile
+            and not is_mi35x_machine
+        ):
             if plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
@@ -1513,6 +2039,66 @@ class TeamsNotifier:
             print(f"❌ JSON encoding error: {e}")
             return False
 
+    def send_sanity_notification(
+        self,
+        docker_image: str,
+        base_log_root: str = "/mnt/raid/michael/sglang-ci/test/sanity_check_log",
+    ) -> bool:
+        """
+        Send sanity check status notification to Teams
+
+        Args:
+            docker_image: Docker image tag (e.g., "v0.5.3rc0-rocm630-mi30x-20250929")
+            base_log_root: Root directory for sanity check logs (".../test")
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Find the log file
+            log_file_path = find_sanity_check_log(docker_image, base_log_root)
+            if log_file_path is None:
+                return False
+
+            # Parse the log file
+            print(f"📋 Parsing sanity check log: {log_file_path}")
+            parsed_data = parse_sanity_check_log(log_file_path)
+            if parsed_data is None:
+                return False
+
+            # Create and send the card
+            card = self.create_sanity_check_card(parsed_data)
+            card_json = json.dumps(card)
+
+            headers = {"Content-Type": "application/json"}
+
+            response = requests.post(
+                self.webhook_url, data=card_json, headers=headers, timeout=30
+            )
+
+            if response.status_code in [200, 202]:
+                print(
+                    f"✅ Successfully sent sanity check {parsed_data['status']} alert to Teams"
+                )
+                if response.status_code == 202:
+                    print(
+                        "   (Power Automate flow accepted - message processing asynchronously)"
+                    )
+                return True
+            else:
+                print(
+                    f"❌ Failed to send Teams notification. Status: {response.status_code}"
+                )
+                print(f"Response: {response.text}")
+                return False
+
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Error sending Teams notification: {e}")
+            return False
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON encoding error: {e}")
+            return False
+
 
 def get_plot_server_base_url() -> str:
     """
@@ -1557,7 +2143,10 @@ def main():
     )
 
     parser.add_argument(
-        "--mode", type=str, choices=["online", "offline"], help="Benchmark mode"
+        "--mode",
+        type=str,
+        choices=["online", "offline", "sanity"],
+        help="Benchmark mode",
     )
 
     parser.add_argument(
@@ -1640,6 +2229,12 @@ def main():
         help="Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.",
     )
 
+    parser.add_argument(
+        "--docker-image",
+        type=str,
+        help="Docker image tag for sanity check mode (e.g., 'v0.5.3rc0-rocm630-mi30x-20251001')",
+    )
+
     args = parser.parse_args()
 
     # Get webhook URL
@@ -1652,7 +2247,9 @@ def main():
     # Handle test mode
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
-        notifier = TeamsNotifier(webhook_url, "", False, 7, None, False, None, None, False, False, None)
+        notifier = TeamsNotifier(
+            webhook_url, "", False, 7, None, False, None, None, False, False, None
+        )
         success = notifier.send_test_notification()
         if success:
             print("🎉 Test completed successfully!")
@@ -1662,9 +2259,25 @@ def main():
             print("💥 Test failed - check your webhook URL and Teams configuration")
             return 1
 
+    # Handle sanity mode first
+    if args.mode == "sanity":
+        if not args.docker_image:
+            print("❌ Error: --docker-image is required for sanity check mode")
+            print("   Example: --docker-image 'v0.5.3rc0-rocm630-mi30x-20251001'")
+            return 1
+
+        print("🔍 Sanity check mode: Processing sanity check results")
+        notifier = TeamsNotifier(
+            webhook_url, "", False, 7, None, False, None, None, False, False, None
+        )
+        success = notifier.send_sanity_notification(docker_image=args.docker_image)
+        return 0 if success else 1
+
     # Validate required arguments for normal operation
     if not args.model or not args.mode:
-        print("❌ Error: --model and --mode are required (unless using --test-mode)")
+        print(
+            "❌ Error: --model and --mode are required (unless using --test-mode or --mode sanity)"
+        )
         return 1
 
     # Validate GitHub upload configuration
@@ -1710,9 +2323,7 @@ def main():
         )
 
     if args.enable_torch_compile:
-        print(
-            "🔥 Torch compile mode: Looking for torch compile benchmark results"
-        )
+        print("🔥 Torch compile mode: Looking for torch compile benchmark results")
 
     # Create notifier and discover plots
     notifier = TeamsNotifier(

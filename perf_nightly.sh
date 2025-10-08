@@ -31,11 +31,11 @@
 #   perf_nightly.sh [OPTIONS]
 #
 # OPTIONS:
-#   --model=MODEL        Model to benchmark: grok, grok2, deepseek, DeepSeek-V3 [default: grok]
+#   --model=MODEL        Model to benchmark: grok, grok2, deepseek, DeepSeek-V3, sanity [default: grok]
 #   --model-path=PATH    Custom model path (overrides default model path)
 #   --tokenizer-path=PATH Custom tokenizer path (for grok2, overrides default tokenizer)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
-#   --mode=MODE          Benchmark mode: online, offline, all [default: all]
+#   --mode=MODE          Benchmark mode: online, offline, all, sanity [default: all]
 #   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
 #   --download-model=REPO  Download model from HuggingFace if not exists (no default)
 #   --continue-run-days=N    Run benchmarks for last N days' images [default: 1]
@@ -43,6 +43,7 @@
 #   --teams-skip-analysis    Skip GSM8K accuracy and performance analysis
 #   --teams-analysis-days=N  Days to look back for performance comparison [default: 7]
 #   --check-dp-attention     Enable DP attention mode error checking (for DeepSeek)
+#   --sanity-trials=N        Number of trials per model for sanity check [default: 1]
 #   --help, -h           Show detailed help message
 #
 # EXAMPLES:
@@ -60,6 +61,8 @@
 #   perf_nightly.sh --model=DeepSeek-V3 \                     # Combined custom paths
 #     --model-path=/raid/deepseek-ai/DeepSeek-V3 --work-dir=/home/user/workspace
 #   perf_nightly.sh --continue-run-days=7 --model=grok        # Run last 7 days' images
+#   perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=2  # Sanity check all models
+#   perf_nightly.sh --model=sanity --mode=sanity --hardware=mi35x     # Sanity check (alternative syntax)
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -78,31 +81,6 @@ echo "[nightly] Machine: $(hostname)"
 echo "[nightly] Working directory: $(pwd)"
 echo "[nightly] Script location: $(realpath "$0")"
 echo "[nightly] Process ID: $$"
-
-# Check for already running instances
-LOCKFILE="/tmp/perf_nightly.lock"
-if [ -f "$LOCKFILE" ]; then
-    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
-    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
-        echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
-        echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
-        exit 1
-    else
-        echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
-        rm -f "$LOCKFILE"
-    fi
-fi
-
-# Create lock file
-echo "$$" > "$LOCKFILE"
-echo "[nightly] Created process lock: $LOCKFILE"
-
-# Cleanup function
-cleanup() {
-    echo "[nightly] Cleaning up process lock..."
-    rm -f "$LOCKFILE"
-}
-trap cleanup EXIT
 
 echo "[nightly] =========================================="
 echo ""
@@ -346,6 +324,11 @@ send_teams_notification() {
   local model="$1"
   local mode="$2"
 
+  if [[ "$TEAMS_WEBHOOK_FROM_CLI" != "true" ]]; then
+    echo "[nightly] Teams notifications skipped - --teams-webhook-url not provided"
+    return 0
+  fi
+
   # Check if Teams notifications are enabled
   if [[ "$ENABLE_TEAMS_NOTIFICATIONS" != "true" ]]; then
     echo "[nightly] Teams notifications disabled (ENABLE_TEAMS_NOTIFICATIONS != true)"
@@ -374,7 +357,7 @@ send_teams_notification() {
   # Build the command with directory parameters to match where plots are actually created
   PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
   TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
-  
+
   # Add benchmark date if available (extracted from SELECTED_TAG)
   if [[ -n "${SELECTED_TAG:-}" ]]; then
     BENCHMARK_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
@@ -412,7 +395,7 @@ send_teams_notification() {
     TEAMS_CMD="${TEAMS_CMD} --check-dp-attention"
     echo "[nightly] Adding --check-dp-attention flag for Teams notification"
   fi
-  
+
   # Add torch compile flag for DeepSeek online mode
   if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --enable-torch-compile"
@@ -469,6 +452,7 @@ echo "[nightly] Docker daemon accessible - proceeding..."
 MODE="all" # Default to run both offline and online
 MODEL="grok" # Default to grok
 CLI_TEAMS_WEBHOOK_URL="" # Teams webhook URL from command line
+TEAMS_WEBHOOK_FROM_CLI="false" # Track whether webhook flag was provided on CLI
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
@@ -477,6 +461,7 @@ CLI_MODEL_PATH="" # Custom model path from command line
 CLI_TOKENIZER_PATH="" # Custom tokenizer path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
 CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
+CLI_SANITY_TRIALS="" # Number of trials per model for sanity check from command line
 
 for arg in "$@"; do
   case $arg in
@@ -506,6 +491,7 @@ for arg in "$@"; do
       ;;
     --teams-webhook-url=*)
       CLI_TEAMS_WEBHOOK_URL="${arg#*=}"
+      TEAMS_WEBHOOK_FROM_CLI="true"
       ;;
     --teams-skip-analysis)
       CLI_TEAMS_SKIP_ANALYSIS="true"
@@ -519,17 +505,20 @@ for arg in "$@"; do
     --enable-torch-compile)
       CLI_ENABLE_TORCH_COMPILE="true"
       ;;
+    --sanity-trials=*)
+      CLI_SANITY_TRIALS="${arg#*=}"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
       echo "Run SGL nightly benchmarks with optional Teams notifications"
       echo ""
       echo "Options:"
-      echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3) [default: grok]"
+      echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3, sanity) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
       echo "  --tokenizer-path=PATH            Custom tokenizer path (for grok2, overrides default tokenizer path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
-      echo "  --mode=MODE                      Benchmark mode (online, offline, all) [default: all]"
+      echo "  --mode=MODE                      Benchmark mode (online, offline, all, sanity) [default: all]"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
       echo "  --download-model=REPO            Download model from HuggingFace if not exists (no default)"
       echo "  --continue-run-days=DAYS         Run benchmarks for last N days' images [default: 1]"
@@ -538,6 +527,7 @@ for arg in "$@"; do
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
       echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
+      echo "  --sanity-trials=N                Number of trials per model for sanity check [default: 1]"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
@@ -577,10 +567,25 @@ for arg in "$@"; do
   esac
 done
 
-# Override Teams settings if provided via command line
-if [[ -n "$CLI_TEAMS_WEBHOOK_URL" ]]; then
-  TEAMS_WEBHOOK_URL="$CLI_TEAMS_WEBHOOK_URL"
-  echo "[nightly] Teams webhook URL provided via command line - notifications enabled"
+# Override Teams settings if provided via command line.  Only enable
+# notifications when the flag is explicitly passed with a non-empty value.
+if [[ "$TEAMS_WEBHOOK_FROM_CLI" == "true" ]]; then
+  if [[ -n "$CLI_TEAMS_WEBHOOK_URL" ]]; then
+    TEAMS_WEBHOOK_URL="$CLI_TEAMS_WEBHOOK_URL"
+    ENABLE_TEAMS_NOTIFICATIONS="true"
+    echo "[nightly] Teams webhook URL provided via command line - notifications enabled"
+  else
+    echo "[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled"
+    TEAMS_WEBHOOK_FROM_CLI="false"
+    TEAMS_WEBHOOK_URL=""
+    ENABLE_TEAMS_NOTIFICATIONS="false"
+  fi
+else
+  if [[ -n "$TEAMS_WEBHOOK_URL" ]]; then
+    echo "[nightly] INFO: Ignoring Teams webhook URL from environment (require --teams-webhook-url)"
+  fi
+  TEAMS_WEBHOOK_URL=""
+  ENABLE_TEAMS_NOTIFICATIONS="false"
 fi
 
 if [[ -n "$CLI_TEAMS_SKIP_ANALYSIS" ]]; then
@@ -637,11 +642,24 @@ if [[ -n "$CLI_CONTINUE_RUN_DAYS" ]]; then
   echo "[nightly] Will run benchmarks for last $CONTINUE_RUN_DAYS days' images"
 fi
 
+# Process sanity trials option
+SANITY_TRIALS=1  # Default to 1 trial per model
+if [[ -n "$CLI_SANITY_TRIALS" ]]; then
+  SANITY_TRIALS="$CLI_SANITY_TRIALS"
+  # Validate that it's a positive integer
+  if ! [[ "$SANITY_TRIALS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "[nightly] ERROR: --sanity-trials must be a positive integer (got: $SANITY_TRIALS)"
+    exit 1
+  fi
+  echo "[nightly] Will run $SANITY_TRIALS trials per model for sanity check"
+fi
+
 # Set script paths after CLI parameter processing (so custom work directory is used)
 GROK_OFFLINE_SCRIPT="${GROK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
 GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
 DEEPSEEK_OFFLINE_SCRIPT="${DEEPSEEK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_offline_csv.sh}"
 DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_online_csv.sh}"
+SANITY_CHECK_SCRIPT="${SANITY_CHECK_SCRIPT:-${BENCHMARK_CI_DIR}/test/sanity_check.py}"
 
 # Python scripts for processing and plotting (combined)
 PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/process_and_generate_offline_plots.py}"
@@ -651,8 +669,8 @@ PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SC
 TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/team_alert/send_teams_notification.py}"
 
 # Validate model parameter
-if [[ "$MODEL" != "grok" && "$MODEL" != "grok2" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" ]]; then
-    echo "[nightly] ERROR: Invalid --model value '$MODEL'. Must be 'grok', 'grok2', 'deepseek', or 'DeepSeek-V3'."
+if [[ "$MODEL" != "grok" && "$MODEL" != "grok2" && "$MODEL" != "deepseek" && "$MODEL" != "DeepSeek-V3" && "$MODEL" != "sanity" ]]; then
+    echo "[nightly] ERROR: Invalid --model value '$MODEL'. Must be 'grok', 'grok2', 'deepseek', 'DeepSeek-V3', or 'sanity'."
     exit 1
 fi
 
@@ -693,8 +711,14 @@ case "$MODEL" in
         OFFLINE_SCRIPT="$DEEPSEEK_OFFLINE_SCRIPT"
         ONLINE_SCRIPT="$DEEPSEEK_ONLINE_SCRIPT"
         ;;
+    "sanity")
+        MODEL_NAME="SANITY"
+        MODEL_VARIANT="CHECK"
+        OFFLINE_SCRIPT=""  # Not applicable for sanity check
+        ONLINE_SCRIPT=""   # Not applicable for sanity check
+        ;;
     *)
-        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'grok2', 'deepseek', or 'DeepSeek-V3'."
+        echo "[nightly] ERROR: Invalid model '$MODEL'. Must be 'grok', 'grok2', 'deepseek', 'DeepSeek-V3', or 'sanity'."
         exit 1
         ;;
 esac
@@ -702,17 +726,65 @@ esac
 # Determine modes to run based on user input
 MODES_TO_RUN=""
 if [[ "$MODE" == "all" || "$MODE" == "" ]]; then
-    MODES_TO_RUN="online offline"
+    if [[ "$MODEL" == "sanity" ]]; then
+        MODES_TO_RUN="sanity"
+    else
+        MODES_TO_RUN="online offline"
+    fi
 elif [[ "$MODE" == "offline" ]]; then
     MODES_TO_RUN="offline"
 elif [[ "$MODE" == "online" ]]; then
     MODES_TO_RUN="online"
+elif [[ "$MODE" == "sanity" ]]; then
+    MODES_TO_RUN="sanity"
 else
-    echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', or 'all'."
+    echo "[nightly] ERROR: Invalid --mode value. Must be 'offline', 'online', 'all', or 'sanity'."
     exit 1
 fi
 
+# Override model to sanity if mode is sanity (for convenience)
+if [[ "$MODE" == "sanity" && "$MODEL" != "sanity" ]]; then
+    echo "[nightly] Mode is 'sanity', setting model to 'sanity' as well"
+    MODEL="sanity"
+    MODEL_NAME="SANITY"
+    MODEL_VARIANT="CHECK"
+fi
+
 echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
+
+###############################################################################
+# Lock file management - Use separate lock files per model to prevent blocking
+###############################################################################
+# Use separate lock files for different modes to prevent unnecessary blocking
+if [ "$MODE" = "sanity" ]; then
+    LOCKFILE="/tmp/perf_nightly_sanity.lock"
+else
+    LOCKFILE="/tmp/perf_nightly_${MODEL}.lock"
+fi
+
+if [ -f "$LOCKFILE" ]; then
+    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
+    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
+        echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
+        echo "[nightly] Lock file: $LOCKFILE"
+        echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
+        exit 1
+    else
+        echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
+        rm -f "$LOCKFILE"
+    fi
+fi
+
+# Create lock file
+echo "$$" > "$LOCKFILE"
+echo "[nightly] Created process lock: $LOCKFILE"
+
+# Cleanup function
+cleanup() {
+    echo "[nightly] Cleaning up process lock..."
+    rm -f "$LOCKFILE"
+}
+trap cleanup EXIT
 
 ###############################################################################
 # 1. Ensure GPU is idle before starting
@@ -793,24 +865,24 @@ pull_image_with_retry() {
   local image="$1"
   local max_attempts=3
   local attempt=1
-  
+
   # First check if image already exists locally
   if check_local_image "$image"; then
     return 0
   fi
-  
+
   # Check Docker Hub connectivity before attempting pulls
   if ! check_docker_hub_connectivity; then
     echo "[nightly] WARNING: Docker Hub connectivity issues detected"
   fi
-  
+
   while [ $attempt -le $max_attempts ]; do
     echo "[nightly] Pull attempt $attempt/$max_attempts for $image..."
     if "${DOCKER_CMD[@]}" pull "$image" 2>&1; then
       echo "[nightly] Successfully pulled image: $image"
       return 0
     fi
-    
+
     if [ $attempt -lt $max_attempts ]; then
       local wait_time=$((30 * attempt))  # 30s, 60s, 90s delays
       echo "[nightly] Pull failed, retrying in ${wait_time}s..."
@@ -820,7 +892,7 @@ pull_image_with_retry() {
     fi
     ((attempt++))
   done
-  
+
   return 1
 }
 
@@ -830,7 +902,7 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
-  
+
   if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
     SELECTED_TAGS+=("$candidate_tag")
     echo "[nightly] Successfully obtained image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
@@ -963,6 +1035,11 @@ if "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$
     echo "[nightly] Benchmark CI directory not accessible in existing container. Recreating container..."
     "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
     "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
+  # Check if models directory is accessible inside the container (required for sanity checks)
+  elif ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "/mnt/raid/models" 2>/dev/null; then
+    echo "[nightly] Models directory not accessible in existing container. Recreating container..."
+    "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
+    "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
   # Check if custom model path is accessible inside the container (if provided)
   elif [[ -n "$CLI_MODEL_PATH" ]] && ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${CLI_MODEL_PATH}" 2>/dev/null; then
     echo "[nightly] Custom model path not accessible in existing container. Recreating container..."
@@ -977,6 +1054,9 @@ if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME
 
   # Create mount arguments - always mount MOUNT_DIR, and also mount benchmark CI directory if different
   mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+
+  # Always mount the models directory explicitly to ensure accessibility for sanity checks
+  mount_args="${mount_args} -v /mnt/raid/models:/mnt/raid/models"
 
   # If benchmark CI directory is not under MOUNT_DIR, mount it separately
   if [[ "${BENCHMARK_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
@@ -1073,25 +1153,86 @@ if [[ "$MODES_TO_RUN" == "online offline" ]]; then
     RUNNING_ALL_MODES=true
 fi
 
-# Only run benchmarks if they're not already complete
-if [[ "$all_modes_complete" != "true" ]]; then
-  echo "[nightly] === Starting benchmark execution ==="
-  for MODE_TO_RUN in $MODES_TO_RUN; do
-  # Note: Offline benchmark now handles GSM8K checking internally, so we always attempt it
+  # Only run benchmarks if they're not already complete
+  if [[ "$all_modes_complete" != "true" ]]; then
+    echo "[nightly] === Starting benchmark execution ==="
+    for MODE_TO_RUN in $MODES_TO_RUN; do
+    # Note: Offline benchmark now handles GSM8K checking internally, so we always attempt it
 
-  echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
+    echo "[nightly] === Starting nightly ${MODEL^^} ${MODE_TO_RUN} benchmark ==="
 
-  # Determine which benchmark script to run
-  if [ "$MODE_TO_RUN" == "offline" ]; then
-    SCRIPT="$OFFLINE_SCRIPT"
-  else
-    SCRIPT="$ONLINE_SCRIPT"
-  fi
+    # Handle sanity check mode
+    if [ "$MODE_TO_RUN" == "sanity" ]; then
+      echo "[nightly] Launching sanity check inside ${CONTAINER_NAME}"
 
-  if [ -z "$SCRIPT" ]; then
-    echo "[nightly] ERROR: No ${MODE_TO_RUN} script available for ${MODEL}"
-    continue
-  fi
+      SANITY_EXIT_CODE=0
+
+      # Build sanity check arguments
+      SANITY_ARGS="--docker-image='${DOCKER_IMAGE}' --hardware='${HARDWARE_TYPE}' --trials=${SANITY_TRIALS}"
+
+      # Add custom work directory if provided
+      if [[ -n "$CLI_WORK_DIR" ]]; then
+        SANITY_ARGS="${SANITY_ARGS} --work-dir='${CLI_WORK_DIR}'"
+        # Use work directory for sanity check logs as well
+        SANITY_ARGS="${SANITY_ARGS} --log-dir='${CLI_WORK_DIR}/test/sanity_check_log/${HARDWARE_TYPE}'"
+      else
+        # Use default log directory structure
+        SANITY_ARGS="${SANITY_ARGS} --log-dir='${BENCHMARK_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}'"
+      fi
+
+      echo "[nightly] Executing: python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}"
+
+      "${DOCKER_CMD[@]}" exec \
+        -e INSIDE_CONTAINER=1 \
+        -e LATEST_TAG="${SELECTED_TAG}" \
+        -e FULL_IMAGE="${DOCKER_IMAGE}" \
+        -e TZ='America/Los_Angeles' \
+        "${CONTAINER_NAME}" \
+        bash -c "python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}" || SANITY_EXIT_CODE=$?
+
+      if [ $SANITY_EXIT_CODE -eq 0 ]; then
+        echo "[nightly] === Sanity check completed successfully ==="
+      else
+        echo "[nightly] === Sanity check failed (exit code: $SANITY_EXIT_CODE) ==="
+      fi
+
+      # Upload handled by cron/github_log_upload.sh called from crontab after this script.
+      # Send Teams notification for sanity check if webhook URL is configured
+      if [[ "$TEAMS_WEBHOOK_FROM_CLI" == "true" && -n "$TEAMS_WEBHOOK_URL" ]]; then
+        echo "[nightly] Sending Teams notification for sanity check results..."
+
+        SANITY_TEAMS_EXIT_CODE=0
+
+        # Execute Teams notification inside the container
+        "${DOCKER_CMD[@]}" exec \
+          -e INSIDE_CONTAINER=1 \
+          -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+          "${CONTAINER_NAME}" \
+          bash -c "pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --mode sanity --docker-image '${SELECTED_TAG}'" || SANITY_TEAMS_EXIT_CODE=$?
+
+        if [ $SANITY_TEAMS_EXIT_CODE -eq 0 ]; then
+          echo "[nightly] Teams notification sent successfully for sanity check"
+        else
+          echo "[nightly] WARN: Teams notification failed for sanity check (exit code: $SANITY_TEAMS_EXIT_CODE)"
+        fi
+      else
+        echo "[nightly] Teams notifications disabled - --teams-webhook-url not provided"
+      fi
+
+      continue
+    fi
+
+    # Determine which benchmark script to run
+    if [ "$MODE_TO_RUN" == "offline" ]; then
+      SCRIPT="$OFFLINE_SCRIPT"
+    else
+      SCRIPT="$ONLINE_SCRIPT"
+    fi
+
+    if [ -z "$SCRIPT" ]; then
+      echo "[nightly] ERROR: No ${MODE_TO_RUN} script available for ${MODEL}"
+      continue
+    fi
 
   echo "[nightly] Launching $(basename "$SCRIPT") inside ${CONTAINER_NAME}"
 
@@ -1128,7 +1269,7 @@ if [[ "$all_modes_complete" != "true" ]]; then
   if [[ "$MODEL" == "grok2" ]]; then
     SCRIPT_ARGS="${SCRIPT_ARGS} --model-type=grok2"
     echo "[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark"
-    
+
     # Add custom tokenizer path for grok2 if provided
     if [[ -n "$CLI_TOKENIZER_PATH" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --tokenizer='${CLI_TOKENIZER_PATH}'"
@@ -1143,7 +1284,7 @@ if [[ "$all_modes_complete" != "true" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
       echo "[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark"
     fi
-    
+
     # Add --enable-torch-compile flag if enabled and running online mode
     if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
@@ -1245,7 +1386,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
-    
+
     # Extract date from image tag for plot filename
     PLOT_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
     if [[ $? -eq 0 && -n "$PLOT_DATE" ]]; then
@@ -1254,7 +1395,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     else
       echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
     fi
-    
+
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"
