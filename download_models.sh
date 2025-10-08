@@ -10,7 +10,7 @@
 #   bash download_models.sh --all                         # Download all missing models
 #   bash download_models.sh --hardware=mi30x              # Download models for mi30x
 #   bash download_models.sh --hardware=mi35x --dry-run    # Show mi35x models
-#   bash download_models.sh --model GPT-OSS-120B-LMSYS    # Download specific model
+#   bash download_models.sh --model=GPT-OSS-120B-LMSYS    # Download specific model
 #   bash download_models.sh --dry-run                     # Show what would be downloaded
 # ------------------------------------------------------------------------------
 
