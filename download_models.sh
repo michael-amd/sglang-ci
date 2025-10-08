@@ -36,6 +36,7 @@ declare -A MODELS=(
     ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
     ["GROK2"]="xai-org/grok-2"
     ["DEEPSEEK-V3"]="deepseek-ai/DeepSeek-V3-0324"
+    ["DEEPSEEK-R1-MXFP4"]="amd/DeepSeek-R1-MXFP4-Preview"
     ["LLAMA4-MAVERICK-17B"]="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
@@ -54,6 +55,7 @@ declare -A MODEL_PATHS=(
     ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
     ["GROK2"]="${BASE_DIR}/grok-2"
     ["DEEPSEEK-V3"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3-0324"
+    ["DEEPSEEK-R1-MXFP4"]="${BASE_DIR}/amd/DeepSeek-R1-MXFP4-Preview"
     ["LLAMA4-MAVERICK-17B"]="${BASE_DIR}/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="${BASE_DIR}/deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
@@ -191,7 +193,7 @@ get_models_for_hardware() {
     local models=()
 
     # Shared models for all hardware
-    local shared_models=("QWEN-30B" "GROK1-TOKENIZER" "GROK1-INT4" "GROK1-FP8" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
+    local shared_models=("QWEN-30B" "GROK1-TOKENIZER" "GROK1-INT4" "GROK1-FP8" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "DEEPSEEK-R1-MXFP4" "LLAMA4-MAVERICK-17B")
 
     if [[ "$hw" == "mi30x" ]]; then
         models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
@@ -243,6 +245,7 @@ estimate_space() {
     echo "GROK2:               ~300GB (if available)"
     echo "GROK2-TOKENIZER:     ~1GB"
     echo "DeepSeek-V3:         ~140GB"
+    echo "DeepSeek-R1-MXFP4:   ~35GB (MXFP4 quantized)"
     echo "LLAMA4-MAVERICK-17B: ~35GB (FP8 quantized)"
     echo "DeepSeek-V3.1:       ~140GB"
     echo "DeepSeek-R1:         ~140GB"
@@ -311,7 +314,7 @@ if [[ "$SHOW_HELP" == "true" ]]; then
     echo "  mi30x: GPT-OSS-120B-LMSYS, GPT-OSS-20B-LMSYS (+ shared models)"
     echo "  mi35x: GPT-OSS-120B-OPENAI, GPT-OSS-20B-OPENAI (+ shared models)"
     echo "  Shared: QWEN-30B, GROK1-TOKENIZER, GROK1-INT4, GROK1-FP8,"
-    echo "          GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
+    echo "          GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, DEEPSEEK-R1-MXFP4, LLAMA4-MAVERICK-17B"
     echo ""
     echo "Examples:"
     echo "  $0 --status                    # Show current status (all models)"
