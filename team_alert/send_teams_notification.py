@@ -106,6 +106,7 @@ class BenchmarkAnalyzer:
         base_dir: Optional[str] = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
@@ -116,7 +117,31 @@ class BenchmarkAnalyzer:
         self.online_dir = os.path.join(self.base_dir, "online")
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_mtp_test = enable_mtp_test
         self.benchmark_date = benchmark_date
+
+    def to_relative_path(self, path: Optional[str]) -> Optional[str]:
+        """Convert absolute paths under the benchmark directory to a friendly display path."""
+        if not path:
+            return None
+
+        try:
+            base_dir = self.base_dir
+            if not base_dir:
+                return path
+
+            normalized_base = os.path.abspath(base_dir)
+            normalized_path = os.path.abspath(path)
+
+            common_root = os.path.commonpath([normalized_base, normalized_path])
+            if common_root == normalized_base:
+                relative_path = os.path.relpath(normalized_path, normalized_base)
+                return f"/sglang-ci/{relative_path}".rstrip("/")
+
+        except Exception:
+            return path
+
+        return path
 
     def parse_gsm8k_accuracy(
         self, model: str, mode: str, date_str: str
@@ -353,6 +378,12 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "mtp_enabled": False,
+            "mtp_output_dir": None,
+            "mtp_csv": None,
+            "mtp_csv_status": None,
+            "mtp_plot": None,
+            "mtp_plot_status": None,
         }
 
         timing_log_file = self._find_timing_summary_log(model, mode, date_str)
@@ -361,6 +392,10 @@ class BenchmarkAnalyzer:
 
             # Merge all information from timing_summary log
             for key, value in info.items():
+                if key not in result:
+                    result[key] = value
+                    continue
+
                 if value is not None and (result[key] is None or result[key] is False):
                     result[key] = value
 
@@ -378,6 +413,12 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "mtp_enabled": False,
+            "mtp_output_dir": None,
+            "mtp_csv": None,
+            "mtp_csv_status": None,
+            "mtp_plot": None,
+            "mtp_plot_status": None,
         }
 
         try:
@@ -418,6 +459,56 @@ class BenchmarkAnalyzer:
             )
             if torch_compile_match:
                 info["torch_compile"] = torch_compile_match.group(1).lower() == "true"
+
+            # Capture MTP configuration flag
+            mtp_enabled_match = re.search(
+                r"MTP Test Enabled:\s*(true|false)", content, re.IGNORECASE
+            )
+            if mtp_enabled_match:
+                info["mtp_enabled"] = mtp_enabled_match.group(1).lower() == "true"
+
+            # Capture MTP artifact paths/status block when present
+            mtp_section_match = re.search(
+                r"MTP Benchmark Outputs:\s*\n((?:\s{2}.+\n)+)",
+                content,
+            )
+            if mtp_section_match:
+                info["mtp_enabled"] = True
+                mtp_block = mtp_section_match.group(1)
+                for line in mtp_block.splitlines():
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+
+                    lower = stripped.lower()
+                    if lower.startswith("output directory:"):
+                        info["mtp_output_dir"] = stripped.split(":", 1)[1].strip() or None
+                    elif lower.startswith("csv:"):
+                        value = stripped.split(":", 1)[1].strip()
+                        if not value:
+                            continue
+                        lowered_value = value.lower()
+                        if lowered_value.startswith("not ") or lowered_value.startswith(
+                            "failed"
+                        ):
+                            info["mtp_csv"] = None
+                            info["mtp_csv_status"] = value
+                        else:
+                            info["mtp_csv"] = value
+                            info["mtp_csv_status"] = "Generated"
+                    elif lower.startswith("plot:"):
+                        value = stripped.split(":", 1)[1].strip()
+                        if not value:
+                            continue
+                        lowered_value = value.lower()
+                        if lowered_value.startswith("not ") or lowered_value.startswith(
+                            "failed"
+                        ):
+                            info["mtp_plot"] = None
+                            info["mtp_plot_status"] = value
+                        else:
+                            info["mtp_plot"] = value
+                            info["mtp_plot_status"] = "Generated"
 
             # Extract total runtime from timing summary logs (preferred method)
             runtime_match = re.search(
@@ -892,6 +983,7 @@ class TeamsNotifier:
         github_token: str = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
         """
@@ -908,6 +1000,7 @@ class TeamsNotifier:
             github_token: GitHub personal access token
             check_dp_attention: If True, look for DP attention mode logs and check for errors
             enable_torch_compile: If True, look for torch compile mode logs
+            enable_mtp_test: If True, include DeepSeek MTP throughput artifacts in notifications
             benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
         """
         self.webhook_url = webhook_url
@@ -921,8 +1014,13 @@ class TeamsNotifier:
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_mtp_test = enable_mtp_test
         self.analyzer = BenchmarkAnalyzer(
-            benchmark_dir, check_dp_attention, enable_torch_compile, benchmark_date
+            benchmark_dir,
+            check_dp_attention,
+            enable_torch_compile,
+            enable_mtp_test,
+            benchmark_date,
         )
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
@@ -1006,6 +1104,18 @@ class TeamsNotifier:
             additional_info = self.analyzer.extract_additional_info(
                 model, mode, current_date
             )
+            if additional_info.get("mtp_output_dir"):
+                additional_info["mtp_output_dir_relative"] = (
+                    self.analyzer.to_relative_path(additional_info["mtp_output_dir"])
+                )
+            if additional_info.get("mtp_csv"):
+                additional_info["mtp_csv_relative"] = self.analyzer.to_relative_path(
+                    additional_info["mtp_csv"]
+                )
+            if additional_info.get("mtp_plot"):
+                additional_info["mtp_plot_relative"] = self.analyzer.to_relative_path(
+                    additional_info["mtp_plot"]
+                )
             alert["additional_info"] = additional_info
 
         # Check DP attention errors if enabled
@@ -1069,6 +1179,33 @@ class TeamsNotifier:
             runtime_info = alert["additional_info"].get("runtime")
             if runtime_info:
                 alert["details"].append(f"Runtime: {runtime_info}")
+
+        # Summarize MTP artifacts when enabled
+        if (
+            mode == "online"
+            and self.enable_mtp_test
+            and alert.get("additional_info")
+        ):
+            additional_info = alert["additional_info"]
+            if additional_info.get("mtp_enabled"):
+                csv_status = additional_info.get("mtp_csv_status")
+                plot_status = additional_info.get("mtp_plot_status")
+
+                if additional_info.get("mtp_csv"):
+                    alert["details"].append("MTP CSV artifacts generated ✅")
+                elif csv_status:
+                    alert["details"].append(f"MTP CSV: {csv_status}")
+                else:
+                    alert["details"].append("MTP CSV artifacts not available ⚠️")
+
+                if additional_info.get("mtp_plot"):
+                    alert["details"].append(
+                        "MTP latency/throughput plot generated ✅"
+                    )
+                elif plot_status:
+                    alert["details"].append(f"MTP plot: {plot_status}")
+                else:
+                    alert["details"].append("MTP plot not available ⚠️")
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -1638,6 +1775,7 @@ class TeamsNotifier:
                         "file_path": file_path,
                         "model": model_name,
                         "mode": mode,
+                        "category": "standard",
                     }
 
                     # Determine how to handle the image
@@ -1660,6 +1798,35 @@ class TeamsNotifier:
             # If we found plots for this date, return them (most recent first)
             if plots:
                 break
+
+        # Include MTP-specific plot artifacts when available
+        if self.enable_mtp_test and mode == "online":
+            mtp_plot_path: Optional[str] = None
+            for search_date in search_dates:
+                mtp_info = self.analyzer.extract_additional_info(
+                    model, mode, search_date
+                )
+                candidate_path = mtp_info.get("mtp_plot")
+                if candidate_path and os.path.exists(candidate_path):
+                    mtp_plot_path = candidate_path
+                    break
+
+            if mtp_plot_path:
+                mtp_plot_info = {
+                    "file_name": os.path.basename(mtp_plot_path),
+                    "file_path": mtp_plot_path,
+                    "model": model_name,
+                    "mode": mode,
+                    "category": "mtp",
+                }
+
+                if self.github_upload:
+                    public_url = self.upload_to_github(mtp_plot_path, model, mode)
+                    if public_url:
+                        mtp_plot_info["public_url"] = public_url
+                        mtp_plot_info["hosting_service"] = "GitHub"
+
+                plots.append(mtp_plot_info)
 
         return plots
 
@@ -1697,6 +1864,15 @@ class TeamsNotifier:
             print("📊 Generating plot summary (analysis skipped)...")
         summary_alert = self.create_summary_alert(model, mode)
 
+        # Separate standard plots from MTP-specific plots for nuanced presentation
+        standard_plots: List[Dict[str, str]] = []
+        mtp_plots: List[Dict[str, str]] = []
+        for plot in plots:
+            if plot.get("category") == "mtp":
+                mtp_plots.append(plot)
+            else:
+                standard_plots.append(plot)
+
         # Create card body elements starting with run name
         body_elements = []
 
@@ -1706,10 +1882,16 @@ class TeamsNotifier:
             mode_description.append("DP Attention")
         if self.enable_torch_compile:
             mode_description.append("Torch Compile")
+        if self.enable_mtp_test:
+            mode_description.append("MTP")
 
         if mode_description:
             mode_text = " + ".join(mode_description)
-            if self.check_dp_attention and not self.enable_torch_compile:
+            if (
+                self.check_dp_attention
+                and not self.enable_torch_compile
+                and not self.enable_mtp_test
+            ):
                 main_title = (
                     f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
                 )
@@ -1845,7 +2027,7 @@ class TeamsNotifier:
                 }
             )
 
-            if not plots:
+            if not standard_plots:
                 body_elements.append(
                     {
                         "type": "TextBlock",
@@ -1856,7 +2038,7 @@ class TeamsNotifier:
                 )
             else:
                 # Add plot information based on hosting method
-                for i, plot in enumerate(plots, 1):
+                for i, plot in enumerate(standard_plots, 1):
                     # Add plot title
                     body_elements.append(
                         {
@@ -1869,15 +2051,16 @@ class TeamsNotifier:
                     )
 
                 # Handle different hosting methods
-                if plot.get("public_url") and plot.get("hosting_service"):
+                latest_plot = standard_plots[-1]
+                if latest_plot.get("public_url") and latest_plot.get("hosting_service"):
                     # GitHub or external hosting - show actual image with maximum size
-                    service = plot["hosting_service"]
+                    service = latest_plot["hosting_service"]
 
                     body_elements.append(
                         {
                             "type": "Image",
-                            "url": plot["public_url"],
-                            "altText": plot["file_name"],
+                            "url": latest_plot["public_url"],
+                            "altText": latest_plot["file_name"],
                             "size": "Stretch",  # Use maximum size for all images
                             "spacing": "Small",
                             "width": "100%",  # Force full width display
@@ -1889,19 +2072,19 @@ class TeamsNotifier:
                         body_elements.append(
                             {
                                 "type": "TextBlock",
-                                "text": f"🔗 [Direct Link]({plot['public_url']}) (hosted on {service})",
+                                "text": f"🔗 [Direct Link]({latest_plot['public_url']}) (hosted on {service})",
                                 "wrap": True,
                                 "size": "Small",
                                 "spacing": "None",
                                 "isSubtle": True,
                             }
                         )
-                elif plot.get("plot_url"):
+                elif latest_plot.get("plot_url"):
                     # HTTP server mode - show link
                     body_elements.append(
                         {
                             "type": "TextBlock",
-                            "text": f"🔗 [View Plot]({plot['plot_url']})",
+                            "text": f"🔗 [View Plot]({latest_plot['plot_url']})",
                             "wrap": True,
                             "size": "Small",
                             "spacing": "Small",
@@ -1913,7 +2096,7 @@ class TeamsNotifier:
                     body_elements.append(
                         {
                             "type": "TextBlock",
-                            "text": f"📁 File: `{plot['file_path']}`",
+                            "text": f"📁 File: `{latest_plot['file_path']}`",
                             "wrap": True,
                             "size": "Small",
                             "spacing": "Small",
@@ -1927,13 +2110,155 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
+        # Surface MTP-specific artifacts in a dedicated section
+        if (
+            self.enable_mtp_test
+            and mode == "online"
+            and summary_alert.get("additional_info")
+            and summary_alert["additional_info"].get("mtp_enabled")
+        ):
+            mtp_info = summary_alert["additional_info"]
+
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": "**MTP Artifacts:**",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium",
+                }
+            )
+
+            if mtp_info.get("mtp_csv"):
+                csv_display = mtp_info.get("mtp_csv_relative") or mtp_info["mtp_csv"]
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• CSV: `{csv_display}`",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                        "fontType": "Monospace",
+                    }
+                )
+            elif mtp_info.get("mtp_csv_status"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• CSV: {mtp_info['mtp_csv_status']}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+            else:
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": "• CSV: Not available",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
+
+            if mtp_info.get("mtp_plot"):
+                plot_display = mtp_info.get("mtp_plot_relative") or mtp_info["mtp_plot"]
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Plot: `{plot_display}`",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                        "fontType": "Monospace",
+                    }
+                )
+            elif mtp_info.get("mtp_plot_status"):
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• Plot: {mtp_info['mtp_plot_status']}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                    }
+                )
+            else:
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": "• Plot: Not available",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                    }
+                )
+
+            # Visualize MTP plots when files exist
+            for plot in mtp_plots:
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"**{plot['file_name']}**",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                    }
+                )
+
+                if plot.get("public_url") and plot.get("hosting_service"):
+                    body_elements.append(
+                        {
+                            "type": "Image",
+                            "url": plot["public_url"],
+                            "altText": plot["file_name"],
+                            "size": "Stretch",
+                            "spacing": "Small",
+                            "width": "100%",
+                        }
+                    )
+
+                    if plot["hosting_service"] != "External":
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"🔗 [Direct Link]({plot['public_url']}) (hosted on {plot['hosting_service']})",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "None",
+                                "isSubtle": True,
+                            }
+                        )
+                elif plot.get("plot_url"):
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"🔗 [View Plot]({plot['plot_url']})",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "Small",
+                        }
+                    )
+                else:
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"📁 File: `{plot['file_path']}`",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "Small",
+                            "fontType": "Monospace",
+                        }
+                    )
+
         # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
         if (
             not self.check_dp_attention
             and not self.enable_torch_compile
             and not is_mi35x_machine
         ):
-            if plots:
+            if standard_plots:
                 # Add action to view all plots (link to the model's directory)
                 model_names = {
                     "grok": "GROK1",
@@ -2224,6 +2549,11 @@ def main():
         help="Enable torch compile mode for performance analysis (affects log file discovery)",
     )
     parser.add_argument(
+        "--enable-mtp-test",
+        action="store_true",
+        help="Include DeepSeek MTP throughput artifacts in the Teams summary",
+    )
+    parser.add_argument(
         "--benchmark-date",
         type=str,
         help="Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.",
@@ -2248,7 +2578,18 @@ def main():
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
         notifier = TeamsNotifier(
-            webhook_url, "", False, 7, None, False, None, None, False, False, None
+            webhook_url,
+            "",
+            False,
+            7,
+            None,
+            False,
+            None,
+            None,
+            False,
+            False,
+            False,
+            None,
         )
         success = notifier.send_test_notification()
         if success:
@@ -2268,7 +2609,18 @@ def main():
 
         print("🔍 Sanity check mode: Processing sanity check results")
         notifier = TeamsNotifier(
-            webhook_url, "", False, 7, None, False, None, None, False, False, None
+            webhook_url,
+            "",
+            False,
+            7,
+            None,
+            False,
+            None,
+            None,
+            False,
+            False,
+            False,
+            None,
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1
@@ -2325,6 +2677,9 @@ def main():
     if args.enable_torch_compile:
         print("🔥 Torch compile mode: Looking for torch compile benchmark results")
 
+    if args.enable_mtp_test:
+        print("🚀 MTP mode: Including DeepSeek R1 throughput artifacts")
+
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
@@ -2337,19 +2692,23 @@ def main():
         github_token=github_token,
         check_dp_attention=args.check_dp_attention,
         enable_torch_compile=args.enable_torch_compile,
+        enable_mtp_test=args.enable_mtp_test,
         benchmark_date=args.benchmark_date,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 
     print(f"🔍 Discovered {len(plots)} plot file(s) for {args.model} {args.mode}")
     for plot in plots:
+        prefix = "[MTP] " if plot.get("category") == "mtp" else ""
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
-            print(f"   - {plot['file_name']} -> ✅ uploaded to {service}")
+            print(
+                f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}"
+            )
         elif plot.get("plot_url"):
-            print(f"   - {plot['file_name']} -> {plot['plot_url']}")
+            print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
-            print(f"   - {plot['file_name']} -> 📁 {plot['file_path']}")
+            print(f"   - {prefix}{plot['file_name']} -> 📁 {plot['file_path']}")
 
     # Send notification
     success = notifier.send_notification(plots, args.model, args.mode)
