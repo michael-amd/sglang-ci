@@ -12,7 +12,7 @@ SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
 GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
 GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
 GROK2_TOKENIZER_PATH="/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer"
-DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
+DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/amd/DeepSeek-R1-MXFP4-Preview"
 HARDWARE_TYPE="mi35x"
 
 # Public Teams webhook left empty by default – fill in to enable alerts
@@ -45,5 +45,8 @@ GITHUB_LOG=""
 # 1 PM PT (3 PM CT) - Sanity check with latest nightly image
 0 15 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1 && bash cron/github_log_upload.sh
 
-# 230 PM PT (430 PM CT) - DeepSeek online serving benchmark + Teams notifications
-30 16 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
+# 2 PM PT (7 PM CT) - DeepSeek-R1-MXFP4-Preview MTP test + Teams notifications
+0 16 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-mtp-test > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_mtp.log 2>&1 && bash cron/github_log_upload.sh
+
+# 5 PM PT (4 PM CT) - DeepSeek online serving benchmark + Teams notifications
+0 19 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
