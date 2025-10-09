@@ -402,6 +402,12 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-torch-compile flag for Teams notification"
   fi
 
+  # Add MTP test flag for DeepSeek online mode
+  if [[ "$ENABLE_MTP_TEST" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-mtp-test"
+    echo "[nightly] Adding --enable-mtp-test flag for Teams notification"
+  fi
+
   "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
     -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
@@ -456,6 +462,7 @@ TEAMS_WEBHOOK_FROM_CLI="false" # Track whether webhook flag was provided on CLI
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
+CLI_ENABLE_MTP_TEST="" # MTP test mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_TOKENIZER_PATH="" # Custom tokenizer path from command line
@@ -505,6 +512,9 @@ for arg in "$@"; do
     --enable-torch-compile)
       CLI_ENABLE_TORCH_COMPILE="true"
       ;;
+    --enable-mtp-test)
+      CLI_ENABLE_MTP_TEST="true"
+      ;;
     --sanity-trials=*)
       CLI_SANITY_TRIALS="${arg#*=}"
       ;;
@@ -527,6 +537,7 @@ for arg in "$@"; do
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
       echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
+      echo "  --enable-mtp-test                Enable DeepSeek MTP throughput export (nightly online)"
       echo "  --sanity-trials=N                Number of trials per model for sanity check [default: 1]"
       echo "  --help, -h                       Show this help message"
       echo ""
@@ -605,6 +616,13 @@ ENABLE_TORCH_COMPILE="false"  # Default to false
 if [[ -n "$CLI_ENABLE_TORCH_COMPILE" ]]; then
   ENABLE_TORCH_COMPILE="$CLI_ENABLE_TORCH_COMPILE"
   echo "[nightly] Torch compile mode enabled via command line"
+fi
+
+# Process MTP test flag
+ENABLE_MTP_TEST="false"  # Default to false
+if [[ -n "$CLI_ENABLE_MTP_TEST" ]]; then
+  ENABLE_MTP_TEST="$CLI_ENABLE_MTP_TEST"
+  echo "[nightly] DeepSeek MTP test enabled via command line"
 fi
 
 # Override work directory and model path if provided via command line
@@ -1289,6 +1307,12 @@ fi
     if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
       echo "[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark"
+    fi
+
+    # Add --enable-mtp-test flag if enabled and running online mode
+    if [[ "$ENABLE_MTP_TEST" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-mtp-test"
+      echo "[nightly] Adding --enable-mtp-test flag for DeepSeek online benchmark"
     fi
 
     "${DOCKER_CMD[@]}" exec \
