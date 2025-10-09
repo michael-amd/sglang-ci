@@ -1890,6 +1890,11 @@ def main():
         default=None,
         help="Override model name in plot titles.",
     )
+    parser.add_argument(
+        "--enable-mtp-test",
+        action="store_true",
+        help="Enable DeepSeek MTP mode (uses concurrency-based metrics and MTP directories).",
+    )
 
     # Other arguments
     parser.add_argument(
@@ -1954,27 +1959,36 @@ def main():
         directory_name = (
             variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
         )
+    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        directory_for_paths = (args.model_name or directory_name).replace(" ", "_")
+    else:
+        directory_for_paths = directory_name
+
     if args.data_dir is None:
-        args.data_dir = os.path.join(args.base_dir, "online", directory_name)
+        args.data_dir = os.path.join(args.base_dir, "online", directory_for_paths)
     if args.output_prefix is None:
-        args.output_prefix = config["output_prefix_template"].format(
-            variant_name=variant_name
-        )
+        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+            prefix_base = (args.model_name or variant_name).replace(" ", "_")
+            args.output_prefix = f"{prefix_base}_online"
+        else:
+            args.output_prefix = config["output_prefix_template"].format(
+                variant_name=variant_name
+            )
     if args.plot_dir is None:
         args.plot_dir = os.path.join(
-            args.base_dir, "plots_server", directory_name, "online"
+            args.base_dir, "plots_server", directory_for_paths, "online"
         )
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        if args.model == "DeepSeek-V3":
+        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+            plot_directory_name = directory_for_paths
+        elif args.model == "DeepSeek-V3":
             plot_directory_name = "DeepSeek-V3"
         elif args.model == "deepseek":
-            plot_directory_name = "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
+            plot_directory_name = "DeepSeek-V3-0324"
         else:
-            plot_directory_name = (
-                variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
-            )
+            plot_directory_name = variant_name
         args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
@@ -1989,10 +2003,15 @@ def main():
             )
         except (ValueError, AttributeError):
             parser.error("--request-rates must be a comma-separated list of integers.")
+    elif args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        expected_rates = [1, 4, 16, 64, 128]
     else:
         expected_rates = config["expected_rates"]
 
-    load_metric_name = config["load_metric_name"]
+    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        load_metric_name = "concurrency"
+    else:
+        load_metric_name = config["load_metric_name"]
 
     # Validate mutually exclusive options
     if args.process_only and args.plot_only:
