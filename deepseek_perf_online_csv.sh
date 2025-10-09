@@ -128,6 +128,7 @@ NIGHTLY_COMMAND=""
 HARDWARE=""
 ROCM_VERSION=""
 ENABLE_MTP_TEST="false"
+ENABLE_DP_TEST="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -173,6 +174,9 @@ for arg in "$@"; do
     --enable-mtp-test)
       ENABLE_MTP_TEST="true"
       ;;
+    --enable-dp-test)
+      ENABLE_DP_TEST="true"
+      ;;
     --nightly-command=*)
       NIGHTLY_COMMAND="${arg#*=}"
       ;;
@@ -198,6 +202,7 @@ for arg in "$@"; do
       echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
       echo "  --enable-torch-compile Enable torch compile for performance optimization (default: false)"
       echo "  --enable-mtp-test      Generate MTP CSV/plot artifacts (DeepSeek-R1 MXFP4 on MI35x)"
+      echo "  --enable-dp-test       Run DP attention + throughput test (includes MTP-style serving runs)"
       echo "  --help                 Show this help message"
       echo ""
       echo "Environment Variables:"
@@ -285,6 +290,7 @@ manage_container() {
                 $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
                 $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention") \
                 $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile") \
+                $([ "$ENABLE_DP_TEST" = "true" ] && echo "--enable-dp-test") \
                 $([ "$ENABLE_MTP_TEST" = "true" ] && echo "--enable-mtp-test") \
                 $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
                 $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
@@ -701,6 +707,9 @@ fi
 if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     suffix="${suffix}_torch_compile"
 fi
+if [ "$ENABLE_MTP_TEST" = "true" ]; then
+    suffix="${suffix}_mtp_test"
+fi
 
 folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}"
 mkdir -p "${OUTPUT_DIR}/online/${MODEL_NAME}" || { echo "ERROR: Cannot create base output directory ${OUTPUT_DIR}/online/${MODEL_NAME}"; exit 1; }
@@ -732,6 +741,7 @@ export TIMING_LOG  # Make it available to all functions
     echo "DP Attention: ${CHECK_DP_ATTENTION}"
     echo "Torch Compile: ${ENABLE_TORCH_COMPILE}"
     echo "MTP Test Enabled: ${ENABLE_MTP_TEST}"
+    echo "DP Test Enabled: ${ENABLE_DP_TEST}"
     echo ""
 } > "$TIMING_LOG" || { echo "ERROR: Cannot create timing log ${TIMING_LOG}"; exit 1; }
 
@@ -951,6 +961,9 @@ if [ "$CHECK_DP_ATTENTION" = "true" ]; then
 fi
 if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     serving_suffix="${serving_suffix}_torch_compile"
+fi
+if [ "$ENABLE_MTP_TEST" = "true" ]; then
+    serving_suffix="${serving_suffix}_mtp_test"
 fi
 
 SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${serving_suffix}.csv"
@@ -1583,19 +1596,9 @@ else
     # Skip serving benchmarks if not in standard mode (GSM8K only)
     if ! should_run_serving_benchmarks; then
         # Build mode description for logging
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
-        echo "✅ ${mode_desc} mode enabled - skipping serving benchmarks (GSM8K only mode)"
-        echo "GSM8K benchmark completed. Serving benchmarks skipped in ${mode_desc} mode." >> "$TIMING_LOG"
+        mode_desc_skip=$(build_mode_description)
+        echo "✅ ${mode_desc_skip} mode enabled - skipping serving benchmarks (GSM8K only mode)"
+        echo "GSM8K benchmark completed. Serving benchmarks skipped in ${mode_desc_skip} mode." >> "$TIMING_LOG"
 
         # Set serving duration to 0 since we're skipping
         serving_start_time=$(date +%s)

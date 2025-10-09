@@ -402,6 +402,12 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-torch-compile flag for Teams notification"
   fi
 
+  # Add DP test flag for DeepSeek online mode
+  if [[ "$ENABLE_DP_TEST" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-dp-test"
+    echo "[nightly] Adding --enable-dp-test flag for Teams notification"
+  fi
+
   # Add MTP test flag for DeepSeek online mode
   if [[ "$ENABLE_MTP_TEST" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --enable-mtp-test"
@@ -463,6 +469,7 @@ CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
 CLI_ENABLE_MTP_TEST="" # MTP test mode flag from command line
+CLI_ENABLE_DP_TEST="" # DP test mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
 CLI_MODEL_NAME="" # Custom model name from command line
@@ -519,6 +526,9 @@ for arg in "$@"; do
     --enable-mtp-test)
       CLI_ENABLE_MTP_TEST="true"
       ;;
+    --enable-dp-test)
+      CLI_ENABLE_DP_TEST="true"
+      ;;
     --sanity-trials=*)
       CLI_SANITY_TRIALS="${arg#*=}"
       ;;
@@ -543,6 +553,7 @@ for arg in "$@"; do
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
       echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
       echo "  --enable-mtp-test                Enable DeepSeek MTP throughput export (nightly online)"
+      echo "  --enable-dp-test                 Enable DeepSeek DP throughput test (nightly online)"
       echo "  --sanity-trials=N                Number of trials per model for sanity check [default: 1]"
       echo "  --help, -h                       Show this help message"
       echo ""
@@ -628,6 +639,21 @@ ENABLE_MTP_TEST="false"  # Default to false
 if [[ -n "$CLI_ENABLE_MTP_TEST" ]]; then
   ENABLE_MTP_TEST="$CLI_ENABLE_MTP_TEST"
   echo "[nightly] DeepSeek MTP test enabled via command line"
+fi
+
+# Process DP test flag
+ENABLE_DP_TEST="false"  # Default to false
+if [[ -n "$CLI_ENABLE_DP_TEST" ]]; then
+  ENABLE_DP_TEST="$CLI_ENABLE_DP_TEST"
+  echo "[nightly] DeepSeek DP test enabled via command line"
+  if [[ "$ENABLE_MTP_TEST" != "true" ]]; then
+    ENABLE_MTP_TEST="true"
+    echo "[nightly] DP test implies MTP test - enabling MTP throughput artifacts"
+  fi
+  if [[ "$CHECK_DP_ATTENTION" != "true" ]]; then
+    CHECK_DP_ATTENTION="true"
+    echo "[nightly] DP test implies DP attention checks"
+  fi
 fi
 
 # Override work directory and model path if provided via command line
@@ -1338,6 +1364,12 @@ fi
     if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
       echo "[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark"
+    fi
+
+    # Add --enable-dp-test flag if enabled and running online mode
+    if [[ "$ENABLE_DP_TEST" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-dp-test"
+      echo "[nightly] Adding --enable-dp-test flag for DeepSeek online benchmark"
     fi
 
     # Add --enable-mtp-test flag if enabled and running online mode
