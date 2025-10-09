@@ -285,6 +285,7 @@ manage_container() {
                 $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
                 $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention") \
                 $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile") \
+                $([ "$ENABLE_MTP_TEST" = "true" ] && echo "--enable-mtp-test") \
                 $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
                 $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
                 $([ -n "$ROCM_VERSION" ] && echo "--rocm-version=\"$ROCM_VERSION\"")
