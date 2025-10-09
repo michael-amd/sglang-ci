@@ -581,8 +581,18 @@ start_sglang_server() {
             echo "[DEBUG] Torch compile enabled with DP attention"
         fi
 
+        local server_env=(env SGLANG_USE_AITER=1)
+        local normalized_rocm="${ROCM_VERSION,,}"
+        if [[ -z "$normalized_rocm" && "${FULL_IMAGE,,}" == *"rocm700"* ]]; then
+            normalized_rocm="rocm700"
+        fi
+        if [[ "$normalized_rocm" == *"rocm700"* ]]; then
+            server_env+=(SGLANG_USE_ROCM700A=1)
+            echo "[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image"
+        fi
+
         # Start server in background using DP attention command format
-        env SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
+        "${server_env[@]}" python3 -m sglang.launch_server \
             --model-path "${MODEL}" \
             --tp "${TP}" \
             --port "$GSM8K_PORT" \
