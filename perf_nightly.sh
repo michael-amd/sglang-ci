@@ -646,10 +646,6 @@ ENABLE_DP_TEST="false"  # Default to false
 if [[ -n "$CLI_ENABLE_DP_TEST" ]]; then
   ENABLE_DP_TEST="$CLI_ENABLE_DP_TEST"
   echo "[nightly] DeepSeek DP test enabled via command line"
-  if [[ "$ENABLE_MTP_TEST" != "true" ]]; then
-    ENABLE_MTP_TEST="true"
-    echo "[nightly] DP test implies MTP test - enabling MTP throughput artifacts"
-  fi
   if [[ "$CHECK_DP_ATTENTION" != "true" ]]; then
     CHECK_DP_ATTENTION="true"
     echo "[nightly] DP test implies DP attention checks"
