@@ -310,6 +310,8 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
   - `--download-model`: A flag to enable automatic model download if it's not found locally.
   - `--check-dp-attention`: Enable Data Parallel attention mode - runs GSM8K test only and checks for server errors (skips serving benchmarks).
   - `--enable-torch-compile`: Enable torch compile optimization - runs GSM8K test only for performance validation (skips serving benchmarks).
+  - `--enable-mtp-test`: Generate MTP CSV/plot artifacts (DeepSeek-R1 MXFP4 on MI35x) - runs both GSM8K and serving benchmarks with MTP-style outputs.
+  - `--enable-dp-test`: Run DP attention + throughput test (includes MTP-style serving runs) - runs GSM8K with DP attention configuration plus serving benchmarks.
   - `--help`: Displays the help message with all available options.
 - **Workflow:**
   1. **Container Management:** Automatically manages the Docker container lifecycle, re-invoking itself inside a container if run on a host machine.
@@ -318,9 +320,12 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
      - **Standard Mode:** Uses standard server configuration for both GSM8K and serving benchmarks.
      - **DP Attention Mode:** Uses Data Parallel attention settings with `--dp-size 8` and `--enable-dp-attention` flags.
      - **Torch Compile Mode:** Uses standard configuration with `--enable-torch-compile` flag for performance optimization.
+     - **MTP Test Mode:** Uses standard configuration with only 1 run per concurrency level for faster throughput testing.
+     - **DP Test Mode:** Uses Data Parallel attention settings with serving benchmarks enabled.
   4. **GSM8K Warm-up Test:** Runs an initial benchmark using the GSM8K script to validate model accuracy against the threshold.
   5. **Serving Benchmark:** Executes a series of load tests using `sglang.bench_serving` across multiple concurrency levels (e.g., 128, 64, 16, 4, 1).
      - **Note:** In DP attention mode (`--check-dp-attention`) or torch compile mode (`--enable-torch-compile`), serving benchmarks are skipped and only GSM8K testing is performed.
+     - **MTP/DP Test Modes:** In MTP test mode (`--enable-mtp-test`) or DP test mode (`--enable-dp-test`), serving benchmarks are included with specialized outputs.
 - **Metrics Captured:**
   - **GSM8K Test:** Average accuracy, throughput, and latency.
   - **Serving Test:** For each concurrency level, it captures the best results from multiple runs for Median End-to-End (E2E) Latency, Median Time-To-First-Token (TTFT), and Median Inter-Token Latency (ITL).
@@ -335,6 +340,13 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
   - **Torch Compile Mode:** Folder name includes `_torch_compile` suffix.
     - Server logs (`sglang_server.log`) with torch compile optimization enabled.
     - GSM8K test results only (serving benchmarks are skipped for focused performance validation).
+  - **MTP Test Mode:** Folder name includes `_mtp_test` suffix.
+    - Both GSM8K and serving benchmarks with only 1 run per concurrency level.
+    - Generates `bench_results.csv` with concurrency, median E2E latency, and throughput data.
+    - Generates `throughput_vs_median_e2e_latency.png` plot (DeepSeek-R1 MXFP4 on MI35x only).
+  - **DP Test Mode:** Folder name includes `_dp_attention` suffix (no `_mtp_test` suffix).
+    - GSM8K test with DP attention configuration plus serving benchmarks.
+    - Standard serving benchmark outputs with DP attention settings.
 - **Usage:**
 
   ```bash
@@ -367,6 +379,22 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
     --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
     --check-dp-attention \
     --enable-torch-compile
+
+  # MTP test mode - DeepSeek-R1 MXFP4 throughput export on MI35x
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008 \
+    --hardware=mi35x \
+    --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview \
+    --model-name=DeepSeek-R1-MXFP4-Preview \
+    --enable-mtp-test
+
+  # DP test mode - DP attention with serving benchmarks
+  bash deepseek_perf_online_csv.sh \
+    --docker_image=rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251010 \
+    --hardware=mi35x \
+    --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview \
+    --model-name=DeepSeek-R1-MXFP4-Preview \
+    --enable-dp-test
   ```
 
 **DP Attention Mode Features:**
@@ -394,6 +422,37 @@ The torch compile mode (`--enable-torch-compile`) is a specialized testing mode 
 - **Performance Focus:** Optimized for measuring torch compile impact on inference performance
 - **Output Naming:** Creates output folders with `_torch_compile` suffix for easy identification
 - **Use Cases:** Ideal for validating torch compile performance benefits, quick optimization testing, or regression detection
+
+**MTP Test Mode Features:**
+
+The MTP test mode (`--enable-mtp-test`) is a specialized testing mode designed for generating throughput export artifacts for DeepSeek-R1 MXFP4 Preview on MI35x:
+
+- **Purpose:** Generate MTP (Model Throughput Profile) CSV and plot artifacts for performance analysis
+- **Server Configuration:**
+  - Uses standard server configuration
+  - Automatically sets runs per concurrency to 1 for faster execution
+- **Testing Scope:** Runs both GSM8K accuracy tests and serving benchmarks
+- **Artifact Generation:**
+  - Creates `bench_results.csv` with concurrency, median E2E latency, and token throughput
+  - Generates `throughput_vs_median_e2e_latency.png` plot (requires matplotlib)
+  - Outputs saved to model-specific directory (e.g., `online/DeepSeek-R1-MXFP4-Preview/`)
+- **Output Naming:** Creates output folders with `_mtp_test` suffix for easy identification
+- **Hardware Requirements:** Designed for MI35x hardware with DeepSeek-R1 MXFP4 Preview model
+- **Use Cases:** Ideal for generating throughput profiles, performance documentation, or comparison across different configurations
+
+**DP Test Mode Features:**
+
+The DP test mode (`--enable-dp-test`) combines Data Parallel attention configuration with serving benchmarks:
+
+- **Purpose:** Run comprehensive DP attention validation including both accuracy and throughput testing
+- **Server Configuration:**
+  - Uses `SGLANG_USE_AITER=1` environment variable
+  - Launches server with `--dp-size 8`, `--enable-dp-attention`, and `--chunked-prefill-size 131072` flags
+  - Enables `SGLANG_USE_ROCM700A=1` for ROCm 7.0.0 images
+- **Testing Scope:** Runs both GSM8K accuracy tests and serving benchmarks with DP attention enabled
+- **Output Naming:** Creates output folders with `_dp_attention` suffix (no `_mtp_test` suffix)
+- **Error Detection:** Automatically monitors server logs for RuntimeError and critical errors during execution
+- **Use Cases:** Ideal for comprehensive DP attention validation, throughput testing with DP configuration, or performance regression detection
 
 ### Data Processing and Visualization
 
