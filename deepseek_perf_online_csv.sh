@@ -589,7 +589,7 @@ start_sglang_server() {
 
         local server_env=(env SGLANG_USE_AITER=1)
         local normalized_rocm="${ROCM_VERSION,,}"
-        if [[ -z "$normalized_rocm" && "${FULL_IMAGE,,}" == *"rocm700"* ]]; then
+        if [[ -z "$normalized_rocm" && -n "${FULL_IMAGE:-}" && "${FULL_IMAGE,,}" == *"rocm700"* ]]; then
             normalized_rocm="rocm700"
         fi
         if [[ "$normalized_rocm" == *"rocm700"* ]]; then
@@ -1245,6 +1245,9 @@ generate_mtp_outputs() {
 import csv
 import sys
 
+if len(sys.argv) < 3:
+    print("ERROR: Missing required arguments (csv_path, plot_path)")
+    sys.exit(1)
 csv_path, plot_path = sys.argv[1], sys.argv[2]
 
 try:
