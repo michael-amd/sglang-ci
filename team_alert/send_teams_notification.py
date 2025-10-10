@@ -11,8 +11,10 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online
     python send_teams_notification.py --model deepseek --mode offline
     python send_teams_notification.py --model deepseek --mode online --check-dp-attention
-    python send_teams_notification.py --model deepseek --mode online --check-dp-attention \
-        --enable-dp-test --enable-mtp-test
+    python send_teams_notification.py --model deepseek --mode online --enable-dp-test --enable-mtp-test
+    python send_teams_notification.py --model deepseek --mode online --benchmark-date 20251009 \
+        --benchmark-dir /mnt/raid/michael/sglang-ci --enable-dp-test --enable-mtp-test \
+        --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
@@ -1350,10 +1352,11 @@ class TeamsNotifier:
                     alert["details"].append(
                         "MTP latency/throughput plot generated ✅"
                     )
-                elif plot_status:
-                    alert["details"].append(f"MTP plot: {plot_status}")
-                else:
-                    alert["details"].append("MTP plot not available ⚠️")
+                elif not plot_status or "not generated" not in plot_status.lower():
+                    if plot_status:
+                        alert["details"].append(f"MTP plot: {plot_status}")
+                    else:
+                        alert["details"].append("MTP plot not available ⚠️")
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -1990,14 +1993,16 @@ class TeamsNotifier:
 
         # Customize title based on enabled modes
         mode_description = []
+        if self.enable_mtp_test:
+            mode_description.append("MTP")
         if self.enable_dp_test:
-            mode_description.append("DP Test")
-        if self.check_dp_attention:
+            mode_description.append("DP")
+        elif self.check_dp_attention:
+            # Only show "DP Attention" if enable_dp_test is not set
+            # (DP test already includes DP attention)
             mode_description.append("DP Attention")
         if self.enable_torch_compile:
             mode_description.append("Torch Compile")
-        if self.enable_mtp_test:
-            mode_description.append("MTP")
 
         if mode_description:
             mode_text = " + ".join(mode_description)
