@@ -692,7 +692,32 @@ start_sglang_server() {
 
 # Helper function to check if we should run serving benchmarks
 should_run_serving_benchmarks() {
+    if [ "$ENABLE_DP_TEST" = "true" ]; then
+        return 0
+    fi
+
     [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]
+}
+
+build_mode_description() {
+    local parts=()
+
+    if [ "$ENABLE_DP_TEST" = "true" ]; then
+        parts+=("DP test")
+    elif [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        parts+=("DP attention")
+    fi
+
+    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+        parts+=("torch compile")
+    fi
+
+    if [ "${#parts[@]}" -eq 0 ]; then
+        echo "standard"
+    else
+        local IFS=" + "
+        echo "${parts[*]}"
+    fi
 }
 
 ## 2.  Run-folder bookkeeping ---------------------------------------------------
@@ -995,21 +1020,8 @@ calculate_total_runs() {
 
     TOTAL_RUNS=$((gsm8k_runs + serving_runs))
 
-    # Build mode description
-    local mode_desc=""
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        mode_desc="DP attention"
-    fi
-    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        if [ -n "$mode_desc" ]; then
-            mode_desc="${mode_desc} + torch compile"
-        else
-            mode_desc="torch compile"
-        fi
-    fi
-    if [ -z "$mode_desc" ]; then
-        mode_desc="standard"
-    fi
+    local mode_desc
+    mode_desc=$(build_mode_description)
 
     if should_run_serving_benchmarks; then
         echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs}) - ${mode_desc} mode"
@@ -1473,18 +1485,8 @@ check_all_logs_complete() {
             done
         done
     else
-        # Build mode description for logging
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
+        local mode_desc
+        mode_desc=$(build_mode_description)
         echo "${mode_desc} mode - skipping serving benchmark log checks (GSM8K only)"
     fi
 
@@ -1509,6 +1511,8 @@ check_all_logs_complete() {
         # In DP attention mode or torch compile mode, only GSM8K needs to be complete
         if [ "$gsm8k_complete" = true ]; then
             benchmarks_complete=true
+            local mode_desc
+            mode_desc=$(build_mode_description)
             echo "✅ All benchmark logs (GSM8K only - ${mode_desc} mode) are present and complete! No server startup needed."
         else
             echo "❌ GSM8K benchmark is missing, empty, or incomplete."
@@ -1543,18 +1547,7 @@ if check_all_logs_complete; then
         echo "Serving benchmark results written to ${SERVING_CSV}"
         echo "Note: Both GSM8K and serving benchmarks were already complete"
     else
-        # Build mode description for final message
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
+        mode_desc=$(build_mode_description)
         echo "✅ GSM8K logs already complete (${mode_desc} mode - no serving benchmarks)."
     fi
 
@@ -1646,22 +1639,11 @@ serving_duration=$((serving_end_time - serving_start_time))
 
 # Only show serving benchmark completion messages if we actually ran serving benchmarks
 if ! should_run_serving_benchmarks; then
-    # Build mode description for final message
-    mode_desc=""
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        mode_desc="DP attention"
-    fi
-    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        if [ -n "$mode_desc" ]; then
-            mode_desc="${mode_desc} + torch compile"
-        else
-            mode_desc="torch compile"
-        fi
-    fi
+    mode_desc=$(build_mode_description)
     echo "✅ GSM8K benchmark completed in ${mode_desc} mode (serving benchmarks skipped)."
 else
-    # Build mode description for final message (standard mode only)
-    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (standard mode)."
+    mode_desc=$(build_mode_description)
+    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (${mode_desc} mode)."
     echo "Structured serving benchmark results written to ${SERVING_CSV}"
     echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
 fi
