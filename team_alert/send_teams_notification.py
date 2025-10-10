@@ -249,7 +249,7 @@ class BenchmarkAnalyzer:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
-        if self.enable_mtp_test or self.enable_dp_test:
+        if self.enable_mtp_test:
             mode_suffix += "_mtp_test"
 
         suffix_candidates: List[str] = []
@@ -769,7 +769,7 @@ class BenchmarkAnalyzer:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
-        if self.enable_mtp_test or self.enable_dp_test:
+        if self.enable_mtp_test:
             mode_suffix += "_mtp_test"
 
         suffix = f"online{mode_suffix}"
@@ -977,7 +977,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
             r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
         )
 
-        for model_name, platform, section_content in model_sections:
+        for model_name, _platform, section_content in model_sections:
             result_data = {
                 "status": "unknown",
                 "accuracies": [],
@@ -1511,23 +1511,6 @@ class TeamsNotifier:
         else:
             current_date = datetime.now().strftime("%Y-%m-%d")
             current_time = datetime.now().strftime("%H:%M:%S UTC")
-
-        # Determine status icon and color
-        status = parsed_data.get("status", "unknown")
-        status_config = {
-            "pass": {
-                "icon": "✅",
-                "color": "Good",
-                "title": "Sanity Check Passed",
-            },
-            "fail": {
-                "icon": "❌",
-                "color": "Attention",
-                "title": "Sanity Check Failed",
-            },
-        }
-
-        config = status_config.get(status, status_config["fail"])
 
         # Create card body elements
         body_elements = [
