@@ -50,6 +50,33 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
+
+def _format_duration(seconds: Optional[int]) -> Optional[str]:
+    """Convert seconds to a compact human-readable string."""
+    if seconds is None:
+        return None
+
+    try:
+        seconds = int(seconds)
+    except (TypeError, ValueError):
+        return None
+
+    if seconds < 0:
+        seconds = 0
+
+    minutes, rem_seconds = divmod(seconds, 60)
+    hours, rem_minutes = divmod(minutes, 60)
+
+    parts: List[str] = []
+    if hours:
+        parts.append(f"{hours}h")
+    if rem_minutes:
+        parts.append(f"{rem_minutes}m")
+    if rem_seconds or not parts:
+        parts.append(f"{rem_seconds}s")
+
+    return " ".join(parts)
+
 """Utility: load accuracy thresholds from the local sanity_check test script.
 
 We *cannot* rely on ``from test.sanity_check import ...`` because the ``test``
@@ -106,6 +133,7 @@ class BenchmarkAnalyzer:
         base_dir: Optional[str] = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_dp_test: bool = False,
         enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
@@ -117,6 +145,7 @@ class BenchmarkAnalyzer:
         self.online_dir = os.path.join(self.base_dir, "online")
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_dp_test = enable_dp_test
         self.enable_mtp_test = enable_mtp_test
         self.benchmark_date = benchmark_date
 
@@ -190,6 +219,8 @@ class BenchmarkAnalyzer:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
+        if self.enable_mtp_test or self.enable_dp_test:
+            mode_suffix += "_mtp_test"
 
         # Search for timing_summary logs in folders that contain the image date
         # The folder name contains the image date, but the timing log filename contains the run date
@@ -378,6 +409,11 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "server_startup_seconds": None,
+            "gsm8k_duration_seconds": None,
+            "serving_total_seconds": None,
+            "serving_per_concurrency": {},
+            "dp_test_enabled": False,
             "mtp_enabled": False,
             "mtp_output_dir": None,
             "mtp_csv": None,
@@ -394,6 +430,14 @@ class BenchmarkAnalyzer:
             for key, value in info.items():
                 if key not in result:
                     result[key] = value
+                    continue
+
+                if isinstance(value, dict):
+                    if not value:
+                        continue
+                    existing = result.get(key) or {}
+                    merged = {**existing, **value}
+                    result[key] = merged
                     continue
 
                 if value is not None and (result[key] is None or result[key] is False):
@@ -413,6 +457,11 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "server_startup_seconds": None,
+            "gsm8k_duration_seconds": None,
+            "serving_total_seconds": None,
+            "serving_per_concurrency": {},
+            "dp_test_enabled": False,
             "mtp_enabled": False,
             "mtp_output_dir": None,
             "mtp_csv": None,
@@ -466,6 +515,53 @@ class BenchmarkAnalyzer:
             )
             if mtp_enabled_match:
                 info["mtp_enabled"] = mtp_enabled_match.group(1).lower() == "true"
+
+            # Capture DP test configuration flag
+            dp_test_enabled_match = re.search(
+                r"DP Test Enabled:\s*(true|false)", content, re.IGNORECASE
+            )
+            if dp_test_enabled_match:
+                info["dp_test_enabled"] = (
+                    dp_test_enabled_match.group(1).lower() == "true"
+                )
+
+            # Extract server startup time
+            startup_match = re.search(
+                r"Server startup time:\s*(\d+)\s*seconds", content
+            )
+            if startup_match:
+                info["server_startup_seconds"] = int(startup_match.group(1))
+
+            # Extract GSM8K total duration
+            gsm_match = re.search(
+                r"GSM8K Test Results:\s*(?:\n\s+.+)*?\n\s+Total duration:\s*(\d+)\s*seconds",
+                content,
+            )
+            if gsm_match:
+                info["gsm8k_duration_seconds"] = int(gsm_match.group(1))
+
+            # Extract serving benchmark duration and per-concurrency breakdown
+            serving_total_match = re.search(
+                r"Serving Benchmark Results:\s*(?:\n\s+.+)*?\n\s+Total duration:\s*(\d+)\s*seconds",
+                content,
+            )
+            if serving_total_match:
+                info["serving_total_seconds"] = int(serving_total_match.group(1))
+
+            per_concurrency_matches = re.findall(
+                r"Completed concurrency\s+(\d+)\s+-\s+Total time:\s*(\d+)\s*seconds",
+                content,
+            )
+            if per_concurrency_matches:
+                per_concurrency: Dict[str, int] = {}
+                total_from_breakdown = 0
+                for conc, secs in per_concurrency_matches:
+                    seconds = int(secs)
+                    per_concurrency[conc] = seconds
+                    total_from_breakdown += seconds
+                info["serving_per_concurrency"] = per_concurrency
+                if info["serving_total_seconds"] is None and total_from_breakdown:
+                    info["serving_total_seconds"] = total_from_breakdown
 
             # Capture MTP artifact paths/status block when present
             mtp_section_match = re.search(
@@ -669,6 +765,8 @@ class BenchmarkAnalyzer:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
+        if self.enable_mtp_test or self.enable_dp_test:
+            mode_suffix += "_mtp_test"
 
         # Look for CSV files with online metrics
         csv_patterns = [
@@ -983,6 +1081,7 @@ class TeamsNotifier:
         github_token: str = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_dp_test: bool = False,
         enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
@@ -1000,6 +1099,7 @@ class TeamsNotifier:
             github_token: GitHub personal access token
             check_dp_attention: If True, look for DP attention mode logs and check for errors
             enable_torch_compile: If True, look for torch compile mode logs
+            enable_dp_test: If True, highlight DeepSeek DP throughput test results
             enable_mtp_test: If True, include DeepSeek MTP throughput artifacts in notifications
             benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
         """
@@ -1014,11 +1114,13 @@ class TeamsNotifier:
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_dp_test = enable_dp_test
         self.enable_mtp_test = enable_mtp_test
         self.analyzer = BenchmarkAnalyzer(
             benchmark_dir,
             check_dp_attention,
             enable_torch_compile,
+            enable_dp_test,
             enable_mtp_test,
             benchmark_date,
         )
@@ -1118,6 +1220,56 @@ class TeamsNotifier:
                 )
             alert["additional_info"] = additional_info
 
+            if model.lower().startswith("deepseek") and (
+                self.enable_dp_test or self.enable_mtp_test
+            ):
+                server_display = _format_duration(
+                    additional_info.get("server_startup_seconds")
+                )
+                if server_display:
+                    alert["details"].append(
+                        f"Server startup: {server_display}"
+                    )
+
+                gsm_display = _format_duration(
+                    additional_info.get("gsm8k_duration_seconds")
+                )
+                if gsm_display:
+                    alert["details"].append(f"GSM8K runtime: {gsm_display}")
+
+                if self.enable_dp_test or self.enable_mtp_test:
+                    serving_display = _format_duration(
+                        additional_info.get("serving_total_seconds")
+                    )
+                    if serving_display:
+                        alert["details"].append(
+                            f"Serving runtime: {serving_display}"
+                        )
+
+                    breakdown = additional_info.get("serving_per_concurrency") or {}
+                    breakdown_items: List[str] = []
+                    for conc, secs in sorted(
+                        breakdown.items(), key=lambda item: int(item[0]), reverse=True
+                    ):
+                        formatted = _format_duration(secs)
+                        if formatted:
+                            breakdown_items.append(f"C{conc}: {formatted}")
+                    if serving_display and breakdown_items:
+                        alert["details"].append(
+                            "Serving breakdown: " + ", ".join(breakdown_items)
+                        )
+
+            if self.enable_dp_test:
+                dp_flag = additional_info.get("dp_test_enabled")
+                if dp_flag:
+                    alert["details"].append(
+                        "DP throughput test: Serving benchmarks executed ✅"
+                    )
+                elif dp_flag is False:
+                    alert["details"].append(
+                        "DP throughput test requested but not confirmed in timing log ⚠️"
+                    )
+
         # Check DP attention errors if enabled
         if self.check_dp_attention:
             dp_error_results = self.analyzer.check_dp_attention_errors(
@@ -1183,7 +1335,7 @@ class TeamsNotifier:
         # Summarize MTP artifacts when enabled
         if (
             mode == "online"
-            and self.enable_mtp_test
+            and (self.enable_mtp_test or self.enable_dp_test)
             and alert.get("additional_info")
         ):
             additional_info = alert["additional_info"]
@@ -1800,7 +1952,7 @@ class TeamsNotifier:
                 break
 
         # Include MTP-specific plot artifacts when available
-        if self.enable_mtp_test and mode == "online":
+        if (self.enable_mtp_test or self.enable_dp_test) and mode == "online":
             mtp_plot_path: Optional[str] = None
             for search_date in search_dates:
                 mtp_info = self.analyzer.extract_additional_info(
@@ -1878,6 +2030,8 @@ class TeamsNotifier:
 
         # Customize title based on enabled modes
         mode_description = []
+        if self.enable_dp_test:
+            mode_description.append("DP Test")
         if self.check_dp_attention:
             mode_description.append("DP Attention")
         if self.enable_torch_compile:
@@ -1891,6 +2045,7 @@ class TeamsNotifier:
                 self.check_dp_attention
                 and not self.enable_torch_compile
                 and not self.enable_mtp_test
+                and not self.enable_dp_test
             ):
                 main_title = (
                     f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
@@ -2000,6 +2155,94 @@ class TeamsNotifier:
                         "spacing": "None",
                     }
                 )
+
+            if self.enable_dp_test:
+                dp_flag = additional_info.get("dp_test_enabled")
+                if dp_flag:
+                    dp_text = "• DP Test: **Enabled** ✅"
+                    dp_color = "Good"
+                else:
+                    dp_text = "• DP Test: Not recorded in timing log ⚠️"
+                    dp_color = "Warning"
+
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": dp_text,
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                        "color": dp_color,
+                    }
+                )
+
+            if model.lower().startswith("deepseek") and (
+                self.enable_dp_test or self.enable_mtp_test
+            ):
+                server_display = _format_duration(
+                    additional_info.get("server_startup_seconds")
+                )
+                if server_display:
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"• Server Startup: **{server_display}**",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "None",
+                        }
+                    )
+
+                gsm_display = _format_duration(
+                    additional_info.get("gsm8k_duration_seconds")
+                )
+                if gsm_display:
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": f"• GSM8K Runtime: **{gsm_display}**",
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "None",
+                        }
+                    )
+
+                if self.enable_dp_test or self.enable_mtp_test:
+                    serving_display = _format_duration(
+                        additional_info.get("serving_total_seconds")
+                    )
+                    if serving_display:
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"• Serving Runtime: **{serving_display}**",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "None",
+                            }
+                        )
+
+                        breakdown = additional_info.get(
+                            "serving_per_concurrency", {}
+                        )
+                        breakdown_items: List[str] = []
+                        for conc, secs in sorted(
+                            breakdown.items(), key=lambda item: int(item[0]), reverse=True
+                        ):
+                            formatted = _format_duration(secs)
+                            if formatted:
+                                breakdown_items.append(f"C{conc}: {formatted}")
+                        if breakdown_items:
+                            body_elements.append(
+                                {
+                                    "type": "TextBlock",
+                                    "text": "• Serving Breakdown: "
+                                    + ", ".join(breakdown_items),
+                                    "wrap": True,
+                                    "size": "Small",
+                                    "spacing": "None",
+                                }
+                            )
 
             # Runtime is already shown in the status details section, so don't duplicate it here
 
@@ -2549,6 +2792,11 @@ def main():
         help="Enable torch compile mode for performance analysis (affects log file discovery)",
     )
     parser.add_argument(
+        "--enable-dp-test",
+        action="store_true",
+        help="Highlight DeepSeek DP throughput test (enables serving benchmark summaries)",
+    )
+    parser.add_argument(
         "--enable-mtp-test",
         action="store_true",
         help="Include DeepSeek MTP throughput artifacts in the Teams summary",
@@ -2589,6 +2837,7 @@ def main():
             False,
             False,
             False,
+            False,
             None,
         )
         success = notifier.send_test_notification()
@@ -2617,6 +2866,7 @@ def main():
             False,
             None,
             None,
+            False,
             False,
             False,
             False,
@@ -2677,6 +2927,9 @@ def main():
     if args.enable_torch_compile:
         print("🔥 Torch compile mode: Looking for torch compile benchmark results")
 
+    if args.enable_dp_test:
+        print("🧬 DP test mode: Highlighting DP throughput benchmark and serving logs")
+
     if args.enable_mtp_test:
         print("🚀 MTP mode: Including DeepSeek R1 throughput artifacts")
 
@@ -2692,6 +2945,7 @@ def main():
         github_token=github_token,
         check_dp_attention=args.check_dp_attention,
         enable_torch_compile=args.enable_torch_compile,
+        enable_dp_test=args.enable_dp_test,
         enable_mtp_test=args.enable_mtp_test,
         benchmark_date=args.benchmark_date,
     )
