@@ -114,6 +114,7 @@ class OnlineDataProcessor:
         days=30,
         expected_rates=None,
         load_metric_name="request_rate",
+        variant_filter=None,
     ):
         """
         Initializes the OnlineDataProcessor.
@@ -128,11 +129,19 @@ class OnlineDataProcessor:
             days: Number of days to look back for processing (default: 30)
             expected_rates: A list of integers for expected request rates.
             load_metric_name: The name for the load metric column (e.g. 'request_rate', 'concurrency')
+            variant_filter: Variant(s) to process. Can be:
+                - None: Process all variants (default)
+                - "standard": Process only standard (no DP, no MTP)
+                - "mtp": Process only MTP test
+                - "dp": Process only DP attention test
+                - "dp_mtp": Process only DP + MTP test
+                - list of variants: e.g., ["standard", "mtp"]
         """
         self.data_dir = data_dir
         self.output_model_name_prefix = output_model_name_prefix
         self.mode_filter = mode_filter
         self.load_metric_name = load_metric_name
+        self.variant_filter = variant_filter
         self.all_records = []
         current_date = datetime.today().date()
         # Generate list of dates for last N days including today
@@ -169,6 +178,21 @@ class OnlineDataProcessor:
                 f"Invalid mode_filter: {mode_filter}. Must be 'all', a string mode name, or a list of mode names."
             )
 
+        # Convert variant_filter to a set for efficient checking
+        if variant_filter is None:
+            self.variants_to_process = None  # None means process all variants
+        elif isinstance(variant_filter, str):
+            if variant_filter.lower() == "all":
+                self.variants_to_process = None
+            else:
+                self.variants_to_process = {variant_filter}
+        elif isinstance(variant_filter, list):
+            self.variants_to_process = set(variant_filter)
+        else:
+            raise ValueError(
+                f"Invalid variant_filter: {variant_filter}. Must be None, 'all', a string variant name, or a list of variant names."
+            )
+
         # Get hostname for node identification
         self.hostname = self._get_hostname()
 
@@ -185,6 +209,29 @@ class OnlineDataProcessor:
         if self.modes_to_process is None:  # Process all modes
             return True
         return mode in self.modes_to_process
+
+    def _detect_variant_from_folder(self, folder_name):
+        """
+        Detect the test variant from folder name.
+        Returns: "standard", "mtp", "dp", or "dp_mtp"
+        """
+        # Check for DP + MTP combination first (most specific)
+        if "_dp_attention_mtp_test" in folder_name or "_mtp_test_dp_attention" in folder_name:
+            return "dp_mtp"
+        # Check for individual variants
+        elif "_mtp_test" in folder_name:
+            return "mtp"
+        elif "_dp_attention" in folder_name:
+            return "dp"
+        else:
+            # Standard variant (no DP, no MTP)
+            return "standard"
+
+    def _should_process_variant(self, variant):
+        """Check if a variant should be processed based on the filter."""
+        if self.variants_to_process is None:  # Process all variants
+            return True
+        return variant in self.variants_to_process
 
     def _parse_kv_cache_info(self, csv_dir):
         """
@@ -498,12 +545,16 @@ class OnlineDataProcessor:
 
         return metrics_data
 
-    def _parse_single_online_csv(self, file_path, date_str):
+    def _parse_single_online_csv(self, file_path, date_str, variant):
         """
         Parses a single online benchmark summary CSV file.
         The CSV contains multiple tables for E2E Latency, TTFT, and ITL.
         Dynamically extracts backend modes (aiter, triton, etc.) from row labels.
         Also parses KV cache info from server log files in the same directory.
+        Args:
+            file_path: Path to the CSV file
+            date_str: Date string (YYYYMMDD)
+            variant: Test variant ("standard", "mtp", "dp", or "dp_mtp")
         """
         file_records = []
         num_tokens, kv_size_gb = self._parse_kv_cache_info(os.path.dirname(file_path))
@@ -577,6 +628,7 @@ class OnlineDataProcessor:
 
             record = {
                 "date": date_str,
+                "variant": variant,
                 "mode": mode,
                 self.load_metric_name: rate,
                 "node_name": self.hostname,
@@ -636,8 +688,16 @@ class OnlineDataProcessor:
         for folder_name in folder_list:
             folder_path = os.path.join(self.data_dir, folder_name)
             if os.path.isdir(folder_path):
-                # Check if folder ends with exactly "_online" (not "_online_old" etc.)
-                if not folder_name.endswith(("_online", "_serving")):
+                # Check if folder contains "_online" or "_serving" in the name
+                # This allows for variants like "_online_mtp_test", "_online_dp_attention", etc.
+                if not ("_online" in folder_name or "_serving" in folder_name):
+                    continue
+
+                # Detect variant from folder name
+                variant = self._detect_variant_from_folder(folder_name)
+
+                # Check if this variant should be processed
+                if not self._should_process_variant(variant):
                     continue
 
                 # Extract date from folder name supporting both old and new formats
@@ -658,8 +718,8 @@ class OnlineDataProcessor:
                         # CSV filename supports both formats
                         # Old: YYYYMMDD_MODEL_VARIANT_online.csv
                         # New: v0.4.9.post2-rocm630-mi30x-YYYYMMDD_MODEL_VARIANT_online.csv
-                        # And serving variants like _serving.csv
-                        if file_name.endswith(("_online.csv", "_serving.csv")):
+                        # And serving variants like _serving.csv, _serving_mtp_test.csv, etc.
+                        if ("_online" in file_name or "_serving" in file_name) and file_name.endswith(".csv"):
                             date_str_from_file = self._extract_date_from_name(file_name)
                             if not date_str_from_file:
                                 print(
@@ -680,13 +740,13 @@ class OnlineDataProcessor:
                                 continue
 
                             file_specific_records = self._parse_single_online_csv(
-                                file_path, date_str_from_file
+                                file_path, date_str_from_file, variant
                             )
                             self.all_records.extend(file_specific_records)
 
     def filter_complete_dates(self):
         """
-        Filters records to only keep dates that have valid data for all expected request rates (1, 2, 4, 8, 16).
+        Filters records to only keep date+variant combinations that have valid data for all expected request rates.
         Valid data means ALL performance metrics (GSM8K_Accuracy, E2E_Latency_ms, TTFT_ms, ITL_ms) are not NA.
         """
         if not self.all_records:
@@ -698,87 +758,93 @@ class OnlineDataProcessor:
         # Performance metric columns to check
         metric_columns = ["GSM8K_Accuracy", "E2E_Latency_ms", "TTFT_ms", "ITL_ms"]
 
-        # Group by date and mode to check completeness
-        complete_dates = set()
+        # Group by date, variant, and mode to check completeness
+        complete_date_variants = set()
 
         for date in df["date"].unique():
             date_df = df[df["date"] == date]
 
-            # Get unique modes for this date
-            modes_in_date = date_df["mode"].unique()
+            # Get unique variants for this date
+            variants_in_date = date_df["variant"].unique()
 
-            # Check if each mode has all expected request rates with valid data
-            is_complete = True
-            for mode in modes_in_date:
-                mode_df = date_df[date_df["mode"] == mode]
+            for variant in variants_in_date:
+                variant_df = date_df[date_df["variant"] == variant]
 
-                # Check request rates
-                request_rates_found = sorted(mode_df[self.load_metric_name].unique())
-                if request_rates_found != self.expected_request_rates:
-                    is_complete = False
-                    missing_rates = set(self.expected_request_rates) - set(
-                        request_rates_found
-                    )
-                    extra_rates = set(request_rates_found) - set(
-                        self.expected_request_rates
-                    )
-                    if missing_rates:
-                        print(
-                            f"Date {date}, Mode {mode}: Missing {self.load_metric_name}s: {sorted(missing_rates)}"
-                        )
-                    if extra_rates:
-                        print(
-                            f"Date {date}, Mode {mode}: Extra {self.load_metric_name}s: {sorted(extra_rates)}"
-                        )
-                    break
+                # Get unique modes for this date+variant
+                modes_in_date_variant = variant_df["mode"].unique()
 
-                # Check that each request rate has valid data (at least one non-NA metric)
-                for rr in self.expected_request_rates:
-                    rr_df = mode_df[mode_df[self.load_metric_name] == rr]
-                    if rr_df.empty:
+                # Check if each mode has all expected request rates with valid data
+                is_complete = True
+                for mode in modes_in_date_variant:
+                    mode_df = variant_df[variant_df["mode"] == mode]
+
+                    # Check request rates
+                    request_rates_found = sorted(mode_df[self.load_metric_name].unique())
+                    if request_rates_found != self.expected_request_rates:
                         is_complete = False
-                        print(
-                            f"Date {date}, Mode {mode}: No data for {self.load_metric_name} {rr}"
+                        missing_rates = set(self.expected_request_rates) - set(
+                            request_rates_found
                         )
+                        extra_rates = set(request_rates_found) - set(
+                            self.expected_request_rates
+                        )
+                        if missing_rates:
+                            print(
+                                f"Date {date}, Variant {variant}, Mode {mode}: Missing {self.load_metric_name}s: {sorted(missing_rates)}"
+                            )
+                        if extra_rates:
+                            print(
+                                f"Date {date}, Variant {variant}, Mode {mode}: Extra {self.load_metric_name}s: {sorted(extra_rates)}"
+                            )
                         break
 
-                    # Check if ALL performance metrics have valid data
-                    has_valid_data = True
-                    for metric in metric_columns:
-                        if metric not in rr_df.columns or pd.isna(
-                            rr_df[metric].iloc[0]
-                        ):
-                            has_valid_data = False
+                    # Check that each request rate has valid data (at least one non-NA metric)
+                    for rr in self.expected_request_rates:
+                        rr_df = mode_df[mode_df[self.load_metric_name] == rr]
+                        if rr_df.empty:
+                            is_complete = False
+                            print(
+                                f"Date {date}, Variant {variant}, Mode {mode}: No data for {self.load_metric_name} {rr}"
+                            )
                             break
 
-                    if not has_valid_data:
-                        is_complete = False
-                        print(
-                            f"Date {date}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
-                        )
+                        # Check if ALL performance metrics have valid data
+                        has_valid_data = True
+                        for metric in metric_columns:
+                            if metric not in rr_df.columns or pd.isna(
+                                rr_df[metric].iloc[0]
+                            ):
+                                has_valid_data = False
+                                break
+
+                        if not has_valid_data:
+                            is_complete = False
+                            print(
+                                f"Date {date}, Variant {variant}, Mode {mode}, {self.load_metric_name.capitalize()} {rr}: Missing valid data for one or more performance metrics"
+                            )
+                            break
+
+                    if not is_complete:
                         break
 
-                if not is_complete:
-                    break
+                if is_complete:
+                    complete_date_variants.add((date, variant))
+                    print(
+                        f"Date {date}, Variant {variant}: Complete and valid data for all modes and {self.load_metric_name}s"
+                    )
 
-            if is_complete:
-                complete_dates.add(date)
-                print(
-                    f"Date {date}: Complete and valid data for all modes and {self.load_metric_name}s"
-                )
-
-        # Filter records to only keep complete dates
-        if complete_dates:
+        # Filter records to only keep complete date+variant combinations
+        if complete_date_variants:
             self.all_records = [
-                r for r in self.all_records if r["date"] in complete_dates
+                r for r in self.all_records if (r["date"], r["variant"]) in complete_date_variants
             ]
             print(
-                f"\nKept {len(complete_dates)} dates with complete and valid data: {sorted(complete_dates)}"
+                f"\nKept {len(complete_date_variants)} date+variant combinations with complete and valid data: {sorted(complete_date_variants)}"
             )
             print(f"Total records after filtering: {len(self.all_records)}")
         else:
             print(
-                f"\nNo dates found with complete and valid data for all {self.load_metric_name}s {self.expected_request_rates}"
+                f"\nNo date+variant combinations found with complete and valid data for all {self.load_metric_name}s {self.expected_request_rates}"
             )
             self.all_records = []
 
@@ -801,24 +867,30 @@ class OnlineDataProcessor:
             print("No records to save after processing. Skipping CSV generation.")
             return None
 
-        # Sort by date, then mode, then request_rate for consistent output
+        # Sort by date, variant, mode, then request_rate for consistent output
         try:
             summary_df = summary_df.sort_values(
-                by=["date", "mode", self.load_metric_name]
+                by=["date", "variant", "mode", self.load_metric_name]
             )
         except KeyError as e:
             print(f"Error: Missing expected columns for sorting: {e}")
             # Try to save anyway without sorting
 
+        # Add variant suffix to output filename
+        if self.variants_to_process is not None:
+            variant_suffix = "_" + "_".join(sorted(self.variants_to_process))
+        else:
+            variant_suffix = "_all_variants"
+
         # Add mode suffix to output filename if not processing all modes
         if self.modes_to_process is not None:
             mode_suffix = "_" + "_".join(sorted(self.modes_to_process))
         else:
-            mode_suffix = "_all"
+            mode_suffix = "_all_modes"
 
         output_file = os.path.join(
             self.data_dir,
-            f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv",
+            f"{self.output_model_name_prefix}{variant_suffix}{mode_suffix}_summary_{self.hostname}.csv",
         )
         try:
             # Ensure the directory exists
@@ -826,14 +898,22 @@ class OnlineDataProcessor:
             summary_df.to_csv(output_file, index=False)
             print(f"Online summary CSV saved to: {output_file}")
 
+            # Print summary of processed variants
+            if self.variants_to_process is None:
+                print("Processed all variants")
+            else:
+                print(f"Processed variants: {', '.join(sorted(self.variants_to_process))}")
+
             # Print summary of processed modes
             if self.modes_to_process is None:
                 print("Processed all modes")
             else:
                 print(f"Processed modes: {', '.join(sorted(self.modes_to_process))}")
 
-            # Show unique modes found in the data
+            # Show unique variants and modes found in the data
+            unique_variants = summary_df["variant"].unique()
             unique_modes = summary_df["mode"].unique()
+            print(f"Variants found in output: {', '.join(sorted(unique_variants))}")
             print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
 
             return output_file
@@ -869,13 +949,19 @@ class OnlineDataProcessor:
             except Exception as chmod_e:
                 print(f"Could not make directory writable: {chmod_e}")
                 # Fall back to current directory if making writable fails
-                fallback_output_file = f"{self.output_model_name_prefix}{mode_suffix}_summary_{self.hostname}.csv"
+                fallback_output_file = f"{self.output_model_name_prefix}{variant_suffix}{mode_suffix}_summary_{self.hostname}.csv"
                 try:
                     summary_df.to_csv(fallback_output_file, index=False)
                     print(f"Permission denied for {output_file}")
                     print(
                         f"Online summary CSV saved to fallback location: {fallback_output_file}"
                     )
+
+                    # Print summary of processed variants
+                    if self.variants_to_process is None:
+                        print("Processed all variants")
+                    else:
+                        print(f"Processed variants: {', '.join(sorted(self.variants_to_process))}")
 
                     # Print summary of processed modes
                     if self.modes_to_process is None:
@@ -885,8 +971,10 @@ class OnlineDataProcessor:
                             f"Processed modes: {', '.join(sorted(self.modes_to_process))}"
                         )
 
-                    # Show unique modes found in the data
+                    # Show unique variants and modes found in the data
+                    unique_variants = summary_df["variant"].unique()
                     unique_modes = summary_df["mode"].unique()
+                    print(f"Variants found in output: {', '.join(sorted(unique_variants))}")
                     print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
 
                     return fallback_output_file
@@ -1263,26 +1351,45 @@ class OnlineGraphPlotter:
         plot_data_collections = []
         all_annotations = []
 
-        # Collect data for each mode and request rate combination
-        for mode in unique_modes:
-            for rr in unique_load_values:
-                subset = self.df[
-                    (self.df["mode"] == mode)
-                    & (self.df[self.load_metric_name] == rr)
-                    & self.df[metric_col].notna()
-                ]
-                if not subset.empty:
-                    plotted_dates.update(subset["date"])
-                    label_prefix = (
-                        "Conc" if self.load_metric_name == "concurrency" else "RR"
-                    )
-                    plot_data_collections.append(
-                        {
-                            "dates": subset["date"],
-                            "values": subset[metric_col],
-                            "label": f"{mode} {label_prefix}={rr}",
-                        }
-                    )
+        # Check if we have variants in the data
+        has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
+        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+
+        # Collect data for each variant, mode, and request rate combination
+        for variant in unique_variants:
+            for mode in unique_modes:
+                for rr in unique_load_values:
+                    if has_variants:
+                        subset = self.df[
+                            (self.df["variant"] == variant)
+                            & (self.df["mode"] == mode)
+                            & (self.df[self.load_metric_name] == rr)
+                            & self.df[metric_col].notna()
+                        ]
+                    else:
+                        subset = self.df[
+                            (self.df["mode"] == mode)
+                            & (self.df[self.load_metric_name] == rr)
+                            & self.df[metric_col].notna()
+                        ]
+
+                    if not subset.empty:
+                        plotted_dates.update(subset["date"])
+                        label_prefix = (
+                            "Conc" if self.load_metric_name == "concurrency" else "RR"
+                        )
+                        if has_variants:
+                            label = f"{variant}-{mode} {label_prefix}={rr}"
+                        else:
+                            label = f"{mode} {label_prefix}={rr}"
+
+                        plot_data_collections.append(
+                            {
+                                "dates": subset["date"],
+                                "values": subset[metric_col],
+                                "label": label,
+                            }
+                        )
 
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -1324,7 +1431,7 @@ class OnlineGraphPlotter:
         )
 
     def _plot_num_tokens(self, ax, unique_modes):
-        """Plot num_tokens as a line plot aggregated by mode."""
+        """Plot num_tokens as a line plot aggregated by mode and variant."""
         metric_col = "num_tokens"
         y_label = "# Tokens*"
 
@@ -1338,21 +1445,37 @@ class OnlineGraphPlotter:
         plot_data_collections = []
         all_annotations = []
 
-        # Process data for each mode
-        for mode in unique_modes:
-            mode_data = self.df[self.df["mode"] == mode]
-            mode_data = mode_data[mode_data[metric_col].notna()]
-            if not mode_data.empty:
-                data_by_date = mode_data.groupby("date")[metric_col].mean()
-                if not data_by_date.empty:
-                    plotted_dates.update(data_by_date.index)
-                    plot_data_collections.append(
-                        {
-                            "dates": data_by_date.index,
-                            "values": data_by_date.values,
-                            "label": f"{mode} - # Tokens",
-                        }
-                    )
+        # Check if we have variants in the data
+        has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
+        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+
+        # Process data for each variant and mode
+        for variant in unique_variants:
+            for mode in unique_modes:
+                if has_variants:
+                    mode_data = self.df[
+                        (self.df["variant"] == variant) & (self.df["mode"] == mode)
+                    ]
+                else:
+                    mode_data = self.df[self.df["mode"] == mode]
+
+                mode_data = mode_data[mode_data[metric_col].notna()]
+                if not mode_data.empty:
+                    data_by_date = mode_data.groupby("date")[metric_col].mean()
+                    if not data_by_date.empty:
+                        plotted_dates.update(data_by_date.index)
+                        if has_variants:
+                            label = f"{variant}-{mode} - # Tokens"
+                        else:
+                            label = f"{mode} - # Tokens"
+
+                        plot_data_collections.append(
+                            {
+                                "dates": data_by_date.index,
+                                "values": data_by_date.values,
+                                "label": label,
+                            }
+                        )
 
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -1404,7 +1527,7 @@ class OnlineGraphPlotter:
         )
 
     def _plot_kv_cache_usage(self, ax, unique_modes):
-        """Plot KV cache usage as a bar plot aggregated by mode."""
+        """Plot KV cache usage as a bar plot aggregated by mode and variant."""
         metric_col = "KV_size_GB"
         y_label = "KV Cache Usage (GB)"
 
@@ -1417,22 +1540,40 @@ class OnlineGraphPlotter:
         plotted_dates = set()
         plot_data_collections = []
 
-        # Process data for each mode
-        for mode_idx, mode in enumerate(unique_modes):
-            mode_data = self.df[self.df["mode"] == mode]
-            mode_data = mode_data[mode_data[metric_col].notna()]
-            if not mode_data.empty:
-                data_by_date = mode_data.groupby("date")[metric_col].mean()
-                if not data_by_date.empty:
-                    plotted_dates.update(data_by_date.index)
-                    plot_data_collections.append(
-                        {
-                            "mode_idx": mode_idx,
-                            "dates": data_by_date.index,
-                            "values": data_by_date.values,
-                            "label": f"{mode} - KV Cache Usage",
-                        }
-                    )
+        # Check if we have variants in the data
+        has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
+        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+
+        # Process data for each variant and mode
+        combo_idx = 0
+        for variant in unique_variants:
+            for mode in unique_modes:
+                if has_variants:
+                    mode_data = self.df[
+                        (self.df["variant"] == variant) & (self.df["mode"] == mode)
+                    ]
+                else:
+                    mode_data = self.df[self.df["mode"] == mode]
+
+                mode_data = mode_data[mode_data[metric_col].notna()]
+                if not mode_data.empty:
+                    data_by_date = mode_data.groupby("date")[metric_col].mean()
+                    if not data_by_date.empty:
+                        plotted_dates.update(data_by_date.index)
+                        if has_variants:
+                            label = f"{variant}-{mode} - KV Cache Usage"
+                        else:
+                            label = f"{mode} - KV Cache Usage"
+
+                        plot_data_collections.append(
+                            {
+                                "mode_idx": combo_idx,
+                                "dates": data_by_date.index,
+                                "values": data_by_date.values,
+                                "label": label,
+                            }
+                        )
+                        combo_idx += 1
 
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -1445,16 +1586,16 @@ class OnlineGraphPlotter:
         date_to_idx = {date_obj: k for k, date_obj in enumerate(ordered_dates)}
 
         # Bar plot settings
-        num_modes = len(unique_modes)
-        bar_width = 0.8 / num_modes if num_modes > 0 else 0.4
+        num_combinations = len(plot_data_collections)
+        bar_width = 0.8 / num_combinations if num_combinations > 0 else 0.4
 
-        # Plot bars for each mode
+        # Plot bars for each variant-mode combination
         for data_item in plot_data_collections:
             x_indices = [date_to_idx[d] for d in data_item["dates"]]
             values = data_item["values"]
 
-            # Calculate offset for this mode
-            offset = (data_item["mode_idx"] - (num_modes - 1) / 2) * bar_width
+            # Calculate offset for this variant-mode combination
+            offset = (data_item["mode_idx"] - (num_combinations - 1) / 2) * bar_width
             x_positions = [x + offset for x in x_indices]
 
             ax.bar(x_positions, values, label=data_item["label"], width=bar_width)
@@ -1469,7 +1610,7 @@ class OnlineGraphPlotter:
         )
 
     def _plot_gsm8k_accuracy(self, ax, unique_modes):
-        """Plot GSM8K accuracy as a line plot aggregated by mode."""
+        """Plot GSM8K accuracy as a line plot aggregated by mode and variant."""
         metric_col = "GSM8K_Accuracy"
         y_label = "GSM8K Accuracy (%)"
 
@@ -1483,23 +1624,38 @@ class OnlineGraphPlotter:
         plot_data_collections = []
         all_annotations = []
 
-        # Process data for each mode
-        for mode in unique_modes:
-            mode_data = self.df[self.df["mode"] == mode]
-            mode_data = mode_data[mode_data[metric_col].notna()]
-            if not mode_data.empty:
-                data_by_date = mode_data.groupby("date")[metric_col].mean()
-                if not data_by_date.empty:
-                    plotted_dates.update(data_by_date.index)
-                    # Convert to percentage (multiply by 100)
-                    plot_data_collections.append(
-                        {
-                            "dates": data_by_date.index,
-                            "values": data_by_date.values
-                            * 100,  # Convert to percentage
-                            "label": f"{mode} - GSM8K Accuracy",
-                        }
-                    )
+        # Check if we have variants in the data
+        has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
+        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+
+        # Process data for each variant and mode
+        for variant in unique_variants:
+            for mode in unique_modes:
+                if has_variants:
+                    mode_data = self.df[
+                        (self.df["variant"] == variant) & (self.df["mode"] == mode)
+                    ]
+                else:
+                    mode_data = self.df[self.df["mode"] == mode]
+
+                mode_data = mode_data[mode_data[metric_col].notna()]
+                if not mode_data.empty:
+                    data_by_date = mode_data.groupby("date")[metric_col].mean()
+                    if not data_by_date.empty:
+                        plotted_dates.update(data_by_date.index)
+                        if has_variants:
+                            label = f"{variant}-{mode} - GSM8K Accuracy"
+                        else:
+                            label = f"{mode} - GSM8K Accuracy"
+
+                        # Convert to percentage (multiply by 100)
+                        plot_data_collections.append(
+                            {
+                                "dates": data_by_date.index,
+                                "values": data_by_date.values * 100,  # Convert to percentage
+                                "label": label,
+                            }
+                        )
 
         if not plotted_dates:
             ax.set_title(f"{y_label} vs. Date for {self.model_name_in_plot} (No Data)")
@@ -1657,10 +1813,20 @@ class OnlineGraphPlotter:
             current_date_str = datetime.now().strftime("%Y%m%d")
 
         # Extract base model name for filename (e.g. GROK1 from "GROK1 MOE-I4F8 Online")
-        # Generate filename format: YYYYMMDD_MODEL_Online.png (e.g. 20250717_GROK1_Online.png)
         base_model_name = self.model_name_in_plot.split()[0]
 
-        plot_filename = f"{current_date_str}_{base_model_name}_online.png"
+        # Add variant suffix to filename
+        if "variant" in self.df.columns:
+            unique_variants = sorted(self.df["variant"].unique())
+            if len(unique_variants) == 1:
+                variant_suffix = f"_{unique_variants[0]}"
+            else:
+                variant_suffix = "_all"
+        else:
+            variant_suffix = ""
+
+        # Generate filename format: YYYYMMDD_MODEL_online_VARIANT.png
+        plot_filename = f"{current_date_str}_{base_model_name}_online{variant_suffix}.png"
         output_file_path = os.path.join(self.plot_dir, plot_filename)
 
         try:
@@ -1683,6 +1849,16 @@ class OnlineGraphPlotter:
 
         # Extract base model name for filename (e.g. GROK1 from "GROK1 MOE-I4F8 Online")
         base_model_name = self.model_name_in_plot.split()[0]
+
+        # Add variant suffix to filename
+        if "variant" in self.df.columns:
+            unique_variants = sorted(self.df["variant"].unique())
+            if len(unique_variants) == 1:
+                variant_suffix = f"_{unique_variants[0]}"
+            else:
+                variant_suffix = "_all"
+        else:
+            variant_suffix = ""
 
         print(
             f"\nCreating combined plot with low {self.load_metric_name}: {low_rr} and high {self.load_metric_name}: {high_rr}"
@@ -1777,7 +1953,7 @@ class OnlineGraphPlotter:
         )  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot with split request rates filename format
-        plot_filename = f"{current_date_str}_{base_model_name}_online_split.png"
+        plot_filename = f"{current_date_str}_{base_model_name}_online{variant_suffix}_split.png"
         output_file_path = os.path.join(self.plot_dir, plot_filename)
 
         try:
@@ -1811,6 +1987,20 @@ def parse_mode_filter(mode_str):
     else:
         # Single mode
         return mode_str.strip()
+
+
+def parse_variant_filter(variant_str):
+    """Parse variant filter string into appropriate format."""
+    if not variant_str or variant_str.lower() == "none":
+        return None
+    elif variant_str.lower() == "all":
+        return None  # None means process/plot all variants
+    elif "," in variant_str:
+        # Multiple variants separated by comma
+        return [v.strip() for v in variant_str.split(",") if v.strip()]
+    else:
+        # Single variant
+        return variant_str.strip()
 
 
 def main():
@@ -1890,6 +2080,11 @@ def main():
         default=None,
         help="Override model name in plot titles.",
     )
+    parser.add_argument(
+        "--enable-mtp-test",
+        action="store_true",
+        help="Enable DeepSeek MTP mode (uses concurrency-based metrics and MTP directories).",
+    )
 
     # Other arguments
     parser.add_argument(
@@ -1914,6 +2109,12 @@ def main():
         type=str,
         default="aiter",
         help="Mode(s) to process/plot. Options: 'all', 'aiter', 'triton', or comma-separated list like 'aiter,triton'",
+    )
+    parser.add_argument(
+        "--variant-filter",
+        type=str,
+        default=None,
+        help="Variant(s) to process/plot. Options: 'all', 'standard', 'mtp', 'dp', 'dp_mtp', or comma-separated list like 'mtp,dp'",
     )
     parser.add_argument(
         "--process-only",
@@ -1954,27 +2155,36 @@ def main():
         directory_name = (
             variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
         )
+    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        directory_for_paths = (args.model_name or directory_name).replace(" ", "_")
+    else:
+        directory_for_paths = directory_name
+
     if args.data_dir is None:
-        args.data_dir = os.path.join(args.base_dir, "online", directory_name)
+        args.data_dir = os.path.join(args.base_dir, "online", directory_for_paths)
     if args.output_prefix is None:
-        args.output_prefix = config["output_prefix_template"].format(
-            variant_name=variant_name
-        )
+        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+            prefix_base = (args.model_name or variant_name).replace(" ", "_")
+            args.output_prefix = f"{prefix_base}_online"
+        else:
+            args.output_prefix = config["output_prefix_template"].format(
+                variant_name=variant_name
+            )
     if args.plot_dir is None:
         args.plot_dir = os.path.join(
-            args.base_dir, "plots_server", directory_name, "online"
+            args.base_dir, "plots_server", directory_for_paths, "online"
         )
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        if args.model == "DeepSeek-V3":
+        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+            plot_directory_name = directory_for_paths
+        elif args.model == "DeepSeek-V3":
             plot_directory_name = "DeepSeek-V3"
         elif args.model == "deepseek":
-            plot_directory_name = "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
+            plot_directory_name = "DeepSeek-V3-0324"
         else:
-            plot_directory_name = (
-                variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
-            )
+            plot_directory_name = variant_name
         args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
@@ -1989,17 +2199,23 @@ def main():
             )
         except (ValueError, AttributeError):
             parser.error("--request-rates must be a comma-separated list of integers.")
+    elif args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        expected_rates = [1, 4, 16, 64, 128]
     else:
         expected_rates = config["expected_rates"]
 
-    load_metric_name = config["load_metric_name"]
+    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
+        load_metric_name = "concurrency"
+    else:
+        load_metric_name = config["load_metric_name"]
 
     # Validate mutually exclusive options
     if args.process_only and args.plot_only:
         parser.error("--process-only and --plot-only are mutually exclusive")
 
-    # Parse mode filter
+    # Parse mode and variant filters
     mode_filter = parse_mode_filter(args.mode_filter)
+    variant_filter = parse_variant_filter(args.variant_filter)
 
     # Print configuration
     print("=== CONFIGURATION ===")
@@ -2009,6 +2225,7 @@ def main():
     print(f"Plot directory: {args.plot_dir}")
     print(f"Model name: {args.model_name}")
     print(f"Mode filter: {mode_filter if mode_filter is not None else 'all modes'}")
+    print(f"Variant filter: {variant_filter if variant_filter is not None else 'all variants'}")
     print(f"Load metric: {load_metric_name}")
     print(f"Expected {load_metric_name}s: {expected_rates}")
     print(f"Days to process: {args.days}")
@@ -2028,6 +2245,7 @@ def main():
             args.days,
             expected_rates=expected_rates,
             load_metric_name=load_metric_name,
+            variant_filter=variant_filter,
         )
         summary_csv_path = processor.process_and_save()
 
@@ -2046,15 +2264,24 @@ def main():
             if args.summary_csv:
                 summary_csv_path = args.summary_csv
             else:
-                # Auto-generate path based on mode filter
+                # Auto-generate path based on variant and mode filter
+                if variant_filter is None:
+                    variant_suffix = "_all_variants"
+                elif isinstance(variant_filter, str):
+                    variant_suffix = f"_{variant_filter}"
+                elif isinstance(variant_filter, list):
+                    variant_suffix = "_" + "_".join(sorted(variant_filter))
+                else:
+                    variant_suffix = "_all_variants"
+
                 if mode_filter is None:
-                    mode_suffix = "_all"
+                    mode_suffix = "_all_modes"
                 elif isinstance(mode_filter, str):
                     mode_suffix = f"_{mode_filter}"
                 elif isinstance(mode_filter, list):
                     mode_suffix = "_" + "_".join(sorted(mode_filter))
                 else:
-                    mode_suffix = "_all"
+                    mode_suffix = "_all_modes"
 
                 # Get hostname for consistent naming with processor output
                 try:
@@ -2064,7 +2291,7 @@ def main():
 
                 summary_csv_path = os.path.join(
                     args.data_dir,
-                    f"{args.output_prefix}{mode_suffix}_summary_{hostname}.csv",
+                    f"{args.output_prefix}{variant_suffix}{mode_suffix}_summary_{hostname}.csv",
                 )
 
         if not summary_csv_path or not os.path.exists(summary_csv_path):

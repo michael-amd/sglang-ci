@@ -402,6 +402,18 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-torch-compile flag for Teams notification"
   fi
 
+  # Add DP test flag for DeepSeek online mode
+  if [[ "$ENABLE_DP_TEST" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-dp-test"
+    echo "[nightly] Adding --enable-dp-test flag for Teams notification"
+  fi
+
+  # Add MTP test flag for DeepSeek online mode
+  if [[ "$ENABLE_MTP_TEST" == "true" && "$model" == "deepseek" && "$mode" == "online" ]]; then
+    TEAMS_CMD="${TEAMS_CMD} --enable-mtp-test"
+    echo "[nightly] Adding --enable-mtp-test flag for Teams notification"
+  fi
+
   "${DOCKER_CMD[@]}" exec \
     -e INSIDE_CONTAINER=1 \
     -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
@@ -456,8 +468,11 @@ TEAMS_WEBHOOK_FROM_CLI="false" # Track whether webhook flag was provided on CLI
 CLI_TEAMS_SKIP_ANALYSIS="" # Skip analysis flag from command line
 CLI_CHECK_DP_ATTENTION="" # DP attention mode flag from command line
 CLI_ENABLE_TORCH_COMPILE="" # Torch compile mode flag from command line
+CLI_ENABLE_MTP_TEST="" # MTP test mode flag from command line
+CLI_ENABLE_DP_TEST="" # DP test mode flag from command line
 CLI_WORK_DIR="" # Custom work directory from command line
 CLI_MODEL_PATH="" # Custom model path from command line
+CLI_MODEL_NAME="" # Custom model name from command line
 CLI_TOKENIZER_PATH="" # Custom tokenizer path from command line
 CLI_DOWNLOAD_MODEL="" # HuggingFace model repository to download from command line
 CLI_CONTINUE_RUN_DAYS="" # Number of days to run benchmarks for from command line
@@ -473,6 +488,9 @@ for arg in "$@"; do
       ;;
     --model-path=*)
       CLI_MODEL_PATH="${arg#*=}"
+      ;;
+    --model-name=*)
+      CLI_MODEL_NAME="${arg#*=}"
       ;;
     --tokenizer-path=*)
       CLI_TOKENIZER_PATH="${arg#*=}"
@@ -505,6 +523,12 @@ for arg in "$@"; do
     --enable-torch-compile)
       CLI_ENABLE_TORCH_COMPILE="true"
       ;;
+    --enable-mtp-test)
+      CLI_ENABLE_MTP_TEST="true"
+      ;;
+    --enable-dp-test)
+      CLI_ENABLE_DP_TEST="true"
+      ;;
     --sanity-trials=*)
       CLI_SANITY_TRIALS="${arg#*=}"
       ;;
@@ -516,6 +540,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --model=MODEL                    Model to benchmark (grok, grok2, deepseek, DeepSeek-V3, sanity) [default: grok]"
       echo "  --model-path=PATH                Custom model path (overrides default model path)"
+      echo "  --model-name=NAME                Custom model name used for output directories"
       echo "  --tokenizer-path=PATH            Custom tokenizer path (for grok2, overrides default tokenizer path)"
       echo "  --work-dir=PATH                  Custom work directory (overrides default work directory)"
       echo "  --mode=MODE                      Benchmark mode (online, offline, all, sanity) [default: all]"
@@ -527,6 +552,8 @@ for arg in "$@"; do
       echo "  --teams-analysis-days=DAYS       Days to look back for performance comparison [default: 7]"
       echo "  --check-dp-attention             Enable DP attention mode error checking (for DeepSeek)"
       echo "  --enable-torch-compile           Enable torch compile optimization (for DeepSeek)"
+      echo "  --enable-mtp-test                Enable DeepSeek MTP throughput export (nightly online)"
+      echo "  --enable-dp-test                 Enable DeepSeek DP throughput test (nightly online)"
       echo "  --sanity-trials=N                Number of trials per model for sanity check [default: 1]"
       echo "  --help, -h                       Show this help message"
       echo ""
@@ -605,6 +632,24 @@ ENABLE_TORCH_COMPILE="false"  # Default to false
 if [[ -n "$CLI_ENABLE_TORCH_COMPILE" ]]; then
   ENABLE_TORCH_COMPILE="$CLI_ENABLE_TORCH_COMPILE"
   echo "[nightly] Torch compile mode enabled via command line"
+fi
+
+# Process MTP test flag
+ENABLE_MTP_TEST="false"  # Default to false
+if [[ -n "$CLI_ENABLE_MTP_TEST" ]]; then
+  ENABLE_MTP_TEST="$CLI_ENABLE_MTP_TEST"
+  echo "[nightly] DeepSeek MTP test enabled via command line"
+fi
+
+# Process DP test flag
+ENABLE_DP_TEST="false"  # Default to false
+if [[ -n "$CLI_ENABLE_DP_TEST" ]]; then
+  ENABLE_DP_TEST="$CLI_ENABLE_DP_TEST"
+  echo "[nightly] DeepSeek DP test enabled via command line"
+  if [[ "$CHECK_DP_ATTENTION" != "true" ]]; then
+    CHECK_DP_ATTENTION="true"
+    echo "[nightly] DP test implies DP attention checks"
+  fi
 fi
 
 # Override work directory and model path if provided via command line
@@ -722,6 +767,30 @@ case "$MODEL" in
         exit 1
         ;;
 esac
+
+# Override model name when provided explicitly
+if [[ -n "$CLI_MODEL_NAME" ]]; then
+    MODEL_NAME="$CLI_MODEL_NAME"
+    echo "[nightly] Custom model name provided: $MODEL_NAME"
+fi
+
+# Ensure DeepSeek output directory exists for online benchmarks
+if [[ "$MODEL" == "deepseek" || "$MODEL" == "DeepSeek-V3" ]]; then
+    MODEL_ONLINE_DIR="${BENCHMARK_CI_DIR}/online/${MODEL_NAME}"
+    if [[ ! -d "$MODEL_ONLINE_DIR" ]]; then
+        if mkdir -p "$MODEL_ONLINE_DIR" 2>/dev/null; then
+            echo "[nightly] Created DeepSeek online output directory: $MODEL_ONLINE_DIR"
+        else
+            if command -v sudo >/dev/null 2>&1 && sudo mkdir -p "$MODEL_ONLINE_DIR" 2>/dev/null; then
+                # Match ownership with current user so subsequent writes succeed
+                sudo chown "$(id -u)":"$(id -g)" "$MODEL_ONLINE_DIR" 2>/dev/null || true
+                echo "[nightly] Created DeepSeek online output directory with sudo: $MODEL_ONLINE_DIR"
+            else
+                echo "[nightly] WARN: Unable to create DeepSeek online directory ($MODEL_ONLINE_DIR); proceeding without host directory"
+            fi
+        fi
+    fi
+fi
 
 # Determine modes to run based on user input
 MODES_TO_RUN=""
@@ -1277,8 +1346,10 @@ fi
     fi
   fi
 
-  if [[ "$MODEL" == "deepseek" ]]; then
+  if [[ "$MODEL" == "deepseek" || "$MODEL" == "DeepSeek-V3" ]]; then
     # For DeepSeek, pass additional parameters if needed
+    SCRIPT_ARGS="${SCRIPT_ARGS} --model-name='${MODEL_NAME}'"
+    echo "[nightly] Passing --model-name='${MODEL_NAME}' to DeepSeek benchmark"
     # Add --check-dp-attention flag if enabled and running online mode
     if [[ "$CHECK_DP_ATTENTION" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --check-dp-attention"
@@ -1289,6 +1360,18 @@ fi
     if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$MODE_TO_RUN" == "online" ]]; then
       SCRIPT_ARGS="${SCRIPT_ARGS} --enable-torch-compile"
       echo "[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark"
+    fi
+
+    # Add --enable-dp-test flag if enabled and running online mode
+    if [[ "$ENABLE_DP_TEST" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-dp-test"
+      echo "[nightly] Adding --enable-dp-test flag for DeepSeek online benchmark"
+    fi
+
+    # Add --enable-mtp-test flag if enabled and running online mode
+    if [[ "$ENABLE_MTP_TEST" == "true" && "$MODE_TO_RUN" == "online" ]]; then
+      SCRIPT_ARGS="${SCRIPT_ARGS} --enable-mtp-test"
+      echo "[nightly] Adding --enable-mtp-test flag for DeepSeek online benchmark"
     fi
 
     "${DOCKER_CMD[@]}" exec \
