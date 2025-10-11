@@ -10,7 +10,7 @@
 #   bash download_models.sh --all                         # Download all missing models
 #   bash download_models.sh --hardware=mi30x              # Download models for mi30x
 #   bash download_models.sh --hardware=mi35x --dry-run    # Show mi35x models
-#   bash download_models.sh --model GPT-OSS-120B-LMSYS    # Download specific model
+#   bash download_models.sh --model=GPT-OSS-120B-LMSYS    # Download specific model
 #   bash download_models.sh --dry-run                     # Show what would be downloaded
 # ------------------------------------------------------------------------------
 
@@ -36,6 +36,7 @@ declare -A MODELS=(
     ["GROK2-TOKENIZER"]="alvarobartt/grok-2-tokenizer"
     ["GROK2"]="xai-org/grok-2"
     ["DEEPSEEK-V3"]="deepseek-ai/DeepSeek-V3-0324"
+    ["DEEPSEEK-R1-MXFP4"]="amd/DeepSeek-R1-MXFP4-Preview"
     ["LLAMA4-MAVERICK-17B"]="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
@@ -54,6 +55,7 @@ declare -A MODEL_PATHS=(
     ["GROK2-TOKENIZER"]="${BASE_DIR}/alvarobartt--grok-2-tokenizer"
     ["GROK2"]="${BASE_DIR}/grok-2"
     ["DEEPSEEK-V3"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3-0324"
+    ["DEEPSEEK-R1-MXFP4"]="${BASE_DIR}/amd/DeepSeek-R1-MXFP4-Preview"
     ["LLAMA4-MAVERICK-17B"]="${BASE_DIR}/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
     # ["DEEPSEEK-V3.1"]="${BASE_DIR}/deepseek-ai/DeepSeek-V3.1"  # Commented out - only one DeepSeek version needed
     # ["DEEPSEEK-R1"]="${BASE_DIR}/deepseek-ai/DeepSeek-R1-0528"  # Commented out - only one DeepSeek version needed
@@ -191,7 +193,7 @@ get_models_for_hardware() {
     local models=()
 
     # Shared models for all hardware
-    local shared_models=("QWEN-30B" "GROK1-TOKENIZER" "GROK1-INT4" "GROK1-FP8" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "LLAMA4-MAVERICK-17B")
+    local shared_models=("QWEN-30B" "GROK1-TOKENIZER" "GROK1-INT4" "GROK1-FP8" "GROK2" "GROK2-TOKENIZER" "DEEPSEEK-V3" "DEEPSEEK-R1-MXFP4" "LLAMA4-MAVERICK-17B")
 
     if [[ "$hw" == "mi30x" ]]; then
         models+=("GPT-OSS-120B-LMSYS" "GPT-OSS-20B-LMSYS")
@@ -232,22 +234,23 @@ show_status() {
 estimate_space() {
     log_info "Estimated Disk Space Requirements:"
     echo "=================================="
-    echo "GPT-OSS-120B-LMSYS:  ~240GB (bf16)"
-    echo "GPT-OSS-120B-OPENAI: ~240GB"
-    echo "GPT-OSS-20B-LMSYS:   ~40GB (bf16)"
-    echo "GPT-OSS-20B-OPENAI:  ~40GB"
-    echo "QWEN-30B:            ~60GB"
-    echo "GROK1-TOKENIZER:     ~1GB"
-    echo "GROK1-INT4:          ~100GB (W4A8KV8 quantized)"
-    echo "GROK1-FP8:           ~160GB (FP8 quantized)"
-    echo "GROK2:               ~300GB (if available)"
-    echo "GROK2-TOKENIZER:     ~1GB"
-    echo "DeepSeek-V3:         ~140GB"
-    echo "LLAMA4-MAVERICK-17B: ~35GB (FP8 quantized)"
-    echo "DeepSeek-V3.1:       ~140GB"
-    echo "DeepSeek-R1:         ~140GB"
+    echo "GPT-OSS-120B-LMSYS:  ~111GB (bf16)"
+    echo "GPT-OSS-120B-OPENAI: ~111GB"
+    echo "GPT-OSS-20B-LMSYS:   ~22GB (bf16)"
+    echo "GPT-OSS-20B-OPENAI:  ~39GB"
+    echo "QWEN-30B:            ~57GB"
+    echo "GROK1-TOKENIZER:     ~9MB"
+    echo "GROK1-INT4:          ~223GB (W4A8KV8 quantized)"
+    echo "GROK1-FP8:           ~685GB (FP8 quantized)"
+    echo "GROK2:               ~503GB"
+    echo "GROK2-TOKENIZER:     ~18MB"
+    echo "DeepSeek-V3:         ~642GB"
+    echo "DeepSeek-R1-MXFP4:   ~455GB (MXFP4 quantized, 72 shards)"
+    echo "LLAMA4-MAVERICK-17B: ~389GB (FP8 quantized)"
+    echo "DeepSeek-V3.1:       ~640GB"
+    echo "DeepSeek-R1:         ~640GB"
     echo ""
-    echo "Total estimated: ~1.3TB+ (depending on which models are downloaded)"
+    echo "Total estimated: ~4TB+ (depending on which models are downloaded)"
     echo ""
 }
 
@@ -311,7 +314,7 @@ if [[ "$SHOW_HELP" == "true" ]]; then
     echo "  mi30x: GPT-OSS-120B-LMSYS, GPT-OSS-20B-LMSYS (+ shared models)"
     echo "  mi35x: GPT-OSS-120B-OPENAI, GPT-OSS-20B-OPENAI (+ shared models)"
     echo "  Shared: QWEN-30B, GROK1-TOKENIZER, GROK1-INT4, GROK1-FP8,"
-    echo "          GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, LLAMA4-MAVERICK-17B"
+    echo "          GROK2, GROK2-TOKENIZER, DEEPSEEK-V3, DEEPSEEK-R1-MXFP4, LLAMA4-MAVERICK-17B"
     echo ""
     echo "Examples:"
     echo "  $0 --status                    # Show current status (all models)"

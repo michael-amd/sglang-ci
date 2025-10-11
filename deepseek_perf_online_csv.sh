@@ -18,6 +18,14 @@
 #   # Torch compile with DP attention (GSM8K only):
 #   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --enable-torch-compile
 #
+#   # MTP throughput export (MI35x + DeepSeek-R1 MXFP4 Preview):
+#   bash deepseek_perf_online_csv.sh \
+#       --docker_image=rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008 \
+#       --hardware=mi35x \
+#       --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview \
+#       --model-name=DeepSeek-R1-MXFP4-Preview \
+#       --enable-mtp-test
+#
 #   # Custom model and paths:
 #   bash deepseek_perf_online_csv.sh --model-path=/raid/deepseek-v3 --model-name=DeepSeek-V3-0324
 #   bash deepseek_perf_online_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
@@ -119,6 +127,8 @@ ENABLE_TORCH_COMPILE="false"
 NIGHTLY_COMMAND=""
 HARDWARE=""
 ROCM_VERSION=""
+ENABLE_MTP_TEST="false"
+ENABLE_DP_TEST="false"
 SCRIPT_PATH="$0"  # Get the script path from how it was called
 
 # Get absolute path of the script
@@ -161,6 +171,12 @@ for arg in "$@"; do
     --enable-torch-compile)
       ENABLE_TORCH_COMPILE="true"
       ;;
+    --enable-mtp-test)
+      ENABLE_MTP_TEST="true"
+      ;;
+    --enable-dp-test)
+      ENABLE_DP_TEST="true"
+      ;;
     --nightly-command=*)
       NIGHTLY_COMMAND="${arg#*=}"
       ;;
@@ -185,6 +201,8 @@ for arg in "$@"; do
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
       echo "  --enable-torch-compile Enable torch compile for performance optimization (default: false)"
+      echo "  --enable-mtp-test      Generate MTP CSV/plot artifacts (DeepSeek-R1 MXFP4 on MI35x)"
+      echo "  --enable-dp-test       Run DP attention + throughput test (includes MTP-style serving runs)"
       echo "  --help                 Show this help message"
       echo ""
       echo "Environment Variables:"
@@ -208,6 +226,12 @@ WORK_DIR="${WORK_DIR:-$DEFAULT_WORK_DIR}"
 OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
+
+# Override runs per concurrency for MTP test (only 1 run per concurrency)
+if [ "$ENABLE_MTP_TEST" = "true" ]; then
+    BENCHMARK_RUNS_PER_CONCURRENCY=1
+    echo "[mtp] MTP test enabled - setting runs per concurrency to 1"
+fi
 
 # If not provided by flag, use positional argument or default
 docker_image="${docker_image:-${1:-$DOCKER_IMAGE_DEFAULT}}"
@@ -266,6 +290,8 @@ manage_container() {
                 $([ "$DOWNLOAD_MODEL" = "true" ] && echo "--download-model") \
                 $([ "$CHECK_DP_ATTENTION" = "true" ] && echo "--check-dp-attention") \
                 $([ "$ENABLE_TORCH_COMPILE" = "true" ] && echo "--enable-torch-compile") \
+                $([ "$ENABLE_DP_TEST" = "true" ] && echo "--enable-dp-test") \
+                $([ "$ENABLE_MTP_TEST" = "true" ] && echo "--enable-mtp-test") \
                 $([ -n "$NIGHTLY_COMMAND" ] && echo "--nightly-command=\"$NIGHTLY_COMMAND\"") \
                 $([ -n "$HARDWARE" ] && echo "--hardware=\"$HARDWARE\"") \
                 $([ -n "$ROCM_VERSION" ] && echo "--rocm-version=\"$ROCM_VERSION\"")
@@ -561,8 +587,18 @@ start_sglang_server() {
             echo "[DEBUG] Torch compile enabled with DP attention"
         fi
 
+        local server_env=(env SGLANG_USE_AITER=1)
+        local normalized_rocm="${ROCM_VERSION,,}"
+        if [[ -z "$normalized_rocm" && -n "${FULL_IMAGE:-}" && "${FULL_IMAGE,,}" == *"rocm700"* ]]; then
+            normalized_rocm="rocm700"
+        fi
+        if [[ "$normalized_rocm" == *"rocm700"* ]]; then
+            server_env+=(SGLANG_USE_ROCM700A=1)
+            echo "[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image"
+        fi
+
         # Start server in background using DP attention command format
-        env SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
+        "${server_env[@]}" python3 -m sglang.launch_server \
             --model-path "${MODEL}" \
             --tp "${TP}" \
             --port "$GSM8K_PORT" \
@@ -656,7 +692,32 @@ start_sglang_server() {
 
 # Helper function to check if we should run serving benchmarks
 should_run_serving_benchmarks() {
+    if [ "$ENABLE_DP_TEST" = "true" ]; then
+        return 0
+    fi
+
     [ "$CHECK_DP_ATTENTION" = "false" ] && [ "$ENABLE_TORCH_COMPILE" = "false" ]
+}
+
+build_mode_description() {
+    local parts=()
+
+    if [ "$ENABLE_DP_TEST" = "true" ]; then
+        parts+=("DP test")
+    elif [ "$CHECK_DP_ATTENTION" = "true" ]; then
+        parts+=("DP attention")
+    fi
+
+    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+        parts+=("torch compile")
+    fi
+
+    if [ "${#parts[@]}" -eq 0 ]; then
+        echo "standard"
+    else
+        local IFS=" + "
+        echo "${parts[*]}"
+    fi
 }
 
 ## 2.  Run-folder bookkeeping ---------------------------------------------------
@@ -671,8 +732,12 @@ fi
 if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     suffix="${suffix}_torch_compile"
 fi
+if [ "$ENABLE_MTP_TEST" = "true" ]; then
+    suffix="${suffix}_mtp_test"
+fi
 
 folder="${OUTPUT_DIR}/online/${MODEL_NAME}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${suffix}"
+mkdir -p "${OUTPUT_DIR}/online/${MODEL_NAME}" || { echo "ERROR: Cannot create base output directory ${OUTPUT_DIR}/online/${MODEL_NAME}"; exit 1; }
 mkdir -p "$folder" || { echo "ERROR: Cannot create output folder ${folder}"; exit 1; }
 SERVER_LOG_FILE="${folder}/sglang_server.log" # Define server log path
 GSM8K_LOG_FILE="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k.log" # Define GSM8K log path
@@ -700,6 +765,8 @@ export TIMING_LOG  # Make it available to all functions
     echo "Mode: online"
     echo "DP Attention: ${CHECK_DP_ATTENTION}"
     echo "Torch Compile: ${ENABLE_TORCH_COMPILE}"
+    echo "MTP Test Enabled: ${ENABLE_MTP_TEST}"
+    echo "DP Test Enabled: ${ENABLE_DP_TEST}"
     echo ""
 } > "$TIMING_LOG" || { echo "ERROR: Cannot create timing log ${TIMING_LOG}"; exit 1; }
 
@@ -920,11 +987,14 @@ fi
 if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     serving_suffix="${serving_suffix}_torch_compile"
 fi
+if [ "$ENABLE_MTP_TEST" = "true" ]; then
+    serving_suffix="${serving_suffix}_mtp_test"
+fi
 
 SERVING_CSV="${folder}/${LATEST_TAG}_${MODEL_NAME}_${MODEL_VARIANT}_${serving_suffix}.csv"
 
 # Global arrays for storing metrics per concurrency
-declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics
+declare -A best_e2e_metrics best_ttft_metrics best_itl_metrics best_output_throughput_metrics
 
 # Concurrency levels for organized output
 read -a concurrency_values <<< "$BENCHMARK_CONCURRENCY_LEVELS"
@@ -950,21 +1020,8 @@ calculate_total_runs() {
 
     TOTAL_RUNS=$((gsm8k_runs + serving_runs))
 
-    # Build mode description
-    local mode_desc=""
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        mode_desc="DP attention"
-    fi
-    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        if [ -n "$mode_desc" ]; then
-            mode_desc="${mode_desc} + torch compile"
-        else
-            mode_desc="torch compile"
-        fi
-    fi
-    if [ -z "$mode_desc" ]; then
-        mode_desc="standard"
-    fi
+    local mode_desc
+    mode_desc=$(build_mode_description)
 
     if should_run_serving_benchmarks; then
         echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS} (GSM8K: ${gsm8k_runs}, Serving: ${serving_runs}) - ${mode_desc} mode"
@@ -1090,8 +1147,9 @@ update_serving_csv_for_concurrency() {
     best_e2e_metrics[$concurrency]="$e2e"
     best_ttft_metrics[$concurrency]="$ttft"
     best_itl_metrics[$concurrency]="$itl"
+    best_output_throughput_metrics[$concurrency]="$output_throughput"
 
-    echo "[online] Updating CSV for concurrency ${concurrency}: E2E=${e2e}ms, TTFT=${ttft}ms, ITL=${itl}ms"
+    echo "[online] Updating CSV for concurrency ${concurrency}: E2E=${e2e}ms, TTFT=${ttft}ms, ITL=${itl}ms, Output=${output_throughput} tok/s"
 
     # Rebuild the entire CSV with current data
     if ! generate_serving_csv_content > "$SERVING_CSV"; then
@@ -1101,6 +1159,153 @@ update_serving_csv_for_concurrency() {
 
     echo "[online] CSV updated with results for concurrency ${concurrency}"
 }
+
+# Determine if we should run the MTP benchmark artifacts
+should_generate_mtp_outputs() {
+    if [ "$ENABLE_MTP_TEST" != "true" ]; then
+        return 1
+    fi
+
+    if ! should_run_serving_benchmarks; then
+        return 1
+    fi
+
+    if [[ -z "$HARDWARE" ]]; then
+        return 1
+    fi
+
+    if [[ "${HARDWARE,,}" != "mi35x" ]]; then
+        return 1
+    fi
+
+    local model_name_lc="${MODEL_NAME,,}"
+    local model_path_lc="${MODEL,,}"
+    local hf_model_lc="${HF_MODEL_ID,,}"
+
+    if [[ "$model_name_lc" == *"deepseek-r1-mxfp4-preview"* ]] || \
+       [[ "$model_path_lc" == *"deepseek-r1-mxfp4-preview"* ]] || \
+       [[ "$hf_model_lc" == *"deepseek-r1-mxfp4-preview"* ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+# Generate CSV and plot artifacts for the MTP benchmark using collected metrics
+generate_mtp_outputs() {
+    local mtp_output_dir="${OUTPUT_DIR}/online/${MODEL_NAME}"
+    mkdir -p "$mtp_output_dir" || { echo "WARNING: Unable to create ${mtp_output_dir}" >&2; return; }
+
+    local csv_path="${mtp_output_dir}/bench_results.csv"
+    local plot_path="${mtp_output_dir}/throughput_vs_median_e2e_latency.png"
+
+    echo "[mtp] Generating CSV at ${csv_path}"
+    if ! echo "concurrency,median_e2e_ms,total_token_throughput_tok_s" > "$csv_path"; then
+        echo "WARNING: Unable to create ${csv_path}. Skipping MTP outputs." >&2
+        return
+    fi
+
+    local sorted_concurrency=()
+    while IFS= read -r value; do
+        [[ -n "$value" ]] && sorted_concurrency+=("$value")
+    done < <(printf "%s\n" "${concurrency_values[@]}" | sort -n)
+
+    local has_numeric_data=0
+    for concurrency in "${sorted_concurrency[@]}"; do
+        local e2e="${best_e2e_metrics[$concurrency]:-NA}"
+        local throughput="${best_output_throughput_metrics[$concurrency]:-NA}"
+
+        [[ -z "$e2e" ]] && e2e="NA"
+        [[ -z "$throughput" ]] && throughput="NA"
+
+        echo "${concurrency},${e2e},${throughput}" >> "$csv_path"
+
+        if [[ "$e2e" =~ ^[0-9]+(\.[0-9]+)?$ ]] && [[ "$throughput" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            has_numeric_data=1
+        fi
+    done
+
+    echo "[mtp] CSV populated with ${#sorted_concurrency[@]} entries"
+
+    echo "" >> "$TIMING_LOG"
+    echo "[mtp] Output directory: ${mtp_output_dir}"
+    echo "[mtp] CSV written to: ${csv_path}"
+
+    echo "MTP Benchmark Outputs:" >> "$TIMING_LOG"
+    echo "  Output directory: ${mtp_output_dir}" >> "$TIMING_LOG"
+    echo "  CSV: ${csv_path}" >> "$TIMING_LOG"
+
+    if [ "$has_numeric_data" -eq 0 ]; then
+        echo "[mtp] No numeric data detected. Skipping plot generation." >&2
+        echo "  Plot: Not generated (missing numeric data)" >> "$TIMING_LOG"
+        return
+    fi
+
+    if python3 - <<'PY' "$csv_path" "$plot_path"; then
+import csv
+import sys
+
+if len(sys.argv) < 3:
+    print("ERROR: Missing required arguments (csv_path, plot_path)")
+    sys.exit(1)
+csv_path, plot_path = sys.argv[1], sys.argv[2]
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except Exception as exc:  # pragma: no cover - optional dependency
+    print(f"WARNING: Matplotlib unavailable for MTP plot generation: {exc}")
+    sys.exit(2)
+
+latencies = []
+throughputs = []
+concurrencies = []
+
+with open(csv_path, newline="") as csv_file:
+    reader = csv.DictReader(csv_file)
+    for row in reader:
+        try:
+            lat = float(row["median_e2e_ms"])
+            thr = float(row["total_token_throughput_tok_s"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        latencies.append(lat)
+        throughputs.append(thr)
+        concurrencies.append(row.get("concurrency", ""))
+
+if not latencies:
+    print("WARNING: Insufficient numeric data for MTP plot.")
+    sys.exit(2)
+
+plt.figure(figsize=(8, 5))
+plt.plot(latencies, throughputs, marker="o")
+
+for lat, thr, label in zip(latencies, throughputs, concurrencies):
+    if label:
+        plt.annotate(f"C{label}", (lat, thr), textcoords="offset points", xytext=(5, 5), fontsize=8)
+
+plt.xlabel("Median E2E Latency (ms)")
+plt.ylabel("Total Token Throughput (tok/s)")
+plt.title("DeepSeek-R1 MTP: Throughput vs Median E2E Latency")
+plt.grid(True, linestyle=":", linewidth=0.6)
+plt.tight_layout()
+plt.savefig(plot_path)
+PY
+        echo "[mtp] Plot saved to ${plot_path}"
+        echo "  Plot: ${plot_path}" >> "$TIMING_LOG"
+    else
+        local plot_status=$?
+        if [ "$plot_status" -eq 2 ]; then
+            echo "[mtp] Plot generation skipped (missing dependency or numeric data)."
+            echo "  Plot: Not generated (dependency or data missing)" >> "$TIMING_LOG"
+        else
+            echo "WARNING: Failed to generate MTP plot at ${plot_path}." >&2
+            echo "  Plot: Failed to generate" >> "$TIMING_LOG"
+        fi
+    fi
+}
+
 
 # Function to run a single benchmark run
 run_single_concurrency_benchmark() {
@@ -1283,18 +1488,8 @@ check_all_logs_complete() {
             done
         done
     else
-        # Build mode description for logging
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
+        local mode_desc
+        mode_desc=$(build_mode_description)
         echo "${mode_desc} mode - skipping serving benchmark log checks (GSM8K only)"
     fi
 
@@ -1319,6 +1514,8 @@ check_all_logs_complete() {
         # In DP attention mode or torch compile mode, only GSM8K needs to be complete
         if [ "$gsm8k_complete" = true ]; then
             benchmarks_complete=true
+            local mode_desc
+            mode_desc=$(build_mode_description)
             echo "✅ All benchmark logs (GSM8K only - ${mode_desc} mode) are present and complete! No server startup needed."
         else
             echo "❌ GSM8K benchmark is missing, empty, or incomplete."
@@ -1353,18 +1550,7 @@ if check_all_logs_complete; then
         echo "Serving benchmark results written to ${SERVING_CSV}"
         echo "Note: Both GSM8K and serving benchmarks were already complete"
     else
-        # Build mode description for final message
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
+        mode_desc=$(build_mode_description)
         echo "✅ GSM8K logs already complete (${mode_desc} mode - no serving benchmarks)."
     fi
 
@@ -1406,19 +1592,9 @@ else
     # Skip serving benchmarks if not in standard mode (GSM8K only)
     if ! should_run_serving_benchmarks; then
         # Build mode description for logging
-        mode_desc=""
-        if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-            mode_desc="DP attention"
-        fi
-        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            if [ -n "$mode_desc" ]; then
-                mode_desc="${mode_desc} + torch compile"
-            else
-                mode_desc="torch compile"
-            fi
-        fi
-        echo "✅ ${mode_desc} mode enabled - skipping serving benchmarks (GSM8K only mode)"
-        echo "GSM8K benchmark completed. Serving benchmarks skipped in ${mode_desc} mode." >> "$TIMING_LOG"
+        mode_desc_skip=$(build_mode_description)
+        echo "✅ ${mode_desc_skip} mode enabled - skipping serving benchmarks (GSM8K only mode)"
+        echo "GSM8K benchmark completed. Serving benchmarks skipped in ${mode_desc_skip} mode." >> "$TIMING_LOG"
 
         # Set serving duration to 0 since we're skipping
         serving_start_time=$(date +%s)
@@ -1453,6 +1629,11 @@ else
             sleep 3
         fi
     done
+
+    if should_generate_mtp_outputs; then
+        echo "[mtp] Generating DeepSeek-R1 MTP artifacts..."
+        generate_mtp_outputs
+    fi
     fi  # Close the else part of CHECK_DP_ATTENTION
 fi      # Close the else part of check_all_logs_complete
 
@@ -1461,22 +1642,11 @@ serving_duration=$((serving_end_time - serving_start_time))
 
 # Only show serving benchmark completion messages if we actually ran serving benchmarks
 if ! should_run_serving_benchmarks; then
-    # Build mode description for final message
-    mode_desc=""
-    if [ "$CHECK_DP_ATTENTION" = "true" ]; then
-        mode_desc="DP attention"
-    fi
-    if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-        if [ -n "$mode_desc" ]; then
-            mode_desc="${mode_desc} + torch compile"
-        else
-            mode_desc="torch compile"
-        fi
-    fi
+    mode_desc=$(build_mode_description)
     echo "✅ GSM8K benchmark completed in ${mode_desc} mode (serving benchmarks skipped)."
 else
-    # Build mode description for final message (standard mode only)
-    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (standard mode)."
+    mode_desc=$(build_mode_description)
+    echo "✅ Serving benchmark completed successfully in ${serving_duration} seconds (${mode_desc} mode)."
     echo "Structured serving benchmark results written to ${SERVING_CSV}"
     echo "Individual concurrency logs saved to ${folder}/sglang_serving_benchmark_concurrency_*_run*.log"
 fi
@@ -1494,6 +1664,7 @@ for conc in "${concurrency_values[@]}"; do
     echo "  E2E Latency: ${best_e2e_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  TTFT: ${best_ttft_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
     echo "  ITL: ${best_itl_metrics[$conc]:-NA} ms" >> "$TIMING_LOG"
+    echo "  Output throughput: ${best_output_throughput_metrics[$conc]:-NA} tok/s" >> "$TIMING_LOG"
     echo "" >> "$TIMING_LOG"
 done
 

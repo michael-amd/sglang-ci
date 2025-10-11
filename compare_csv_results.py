@@ -464,7 +464,7 @@ def compare_online_results(
 def main():
     # Declare global variables at the start of the function
     global GSM8K_ACCURACY_THRESHOLD, PERFORMANCE_THRESHOLD
-    
+
     parser = argparse.ArgumentParser(
         description="Compare SGLang benchmark CSV results",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

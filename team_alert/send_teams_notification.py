@@ -11,6 +11,10 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online
     python send_teams_notification.py --model deepseek --mode offline
     python send_teams_notification.py --model deepseek --mode online --check-dp-attention
+    python send_teams_notification.py --model deepseek --mode online --enable-dp-test --enable-mtp-test
+    python send_teams_notification.py --model deepseek --mode online --benchmark-date 20251009 \
+        --benchmark-dir /mnt/raid/michael/sglang-ci --enable-dp-test --enable-mtp-test \
+        --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --webhook-url "https://teams.webhook.url"
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
@@ -46,9 +50,56 @@ import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import requests
+
+
+MODEL_NAME_VARIANTS = {
+    "grok": ["GROK1"],
+    "grok2": ["GROK2"],
+    "deepseek": [
+        "DeepSeek-R1-MXFP4-Preview",
+        "DeepSeek-V3",
+        "DeepSeek-V3-0324",
+    ],
+    "DeepSeek-V3": ["DeepSeek-V3", "DeepSeek-V3-0324"],
+}
+
+
+def _format_duration(seconds: Optional[int]) -> Optional[str]:
+    """Convert seconds to a compact human-readable string."""
+    if seconds is None:
+        return None
+
+    try:
+        seconds = int(seconds)
+    except (TypeError, ValueError):
+        return None
+
+    if seconds < 0:
+        seconds = 0
+
+    minutes, rem_seconds = divmod(seconds, 60)
+    hours, rem_minutes = divmod(minutes, 60)
+
+    parts: List[str] = []
+    if hours:
+        parts.append(f"{hours}h")
+    if rem_minutes:
+        parts.append(f"{rem_minutes}m")
+    if rem_seconds or not parts:
+        parts.append(f"{rem_seconds}s")
+
+    return " ".join(parts)
+
+
+def _normalize_detail_text(text: str) -> str:
+    """Create a case-insensitive, punctuation-light key for duplicate suppression."""
+    cleaned = re.sub(r"[•*`_]+", " ", text)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip().lower()
+
 
 """Utility: load accuracy thresholds from the local sanity_check test script.
 
@@ -106,6 +157,8 @@ class BenchmarkAnalyzer:
         base_dir: Optional[str] = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_dp_test: bool = False,
+        enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
         # Use the provided base_dir, environment variable BENCHMARK_BASE_DIR, or a default path
@@ -116,7 +169,46 @@ class BenchmarkAnalyzer:
         self.online_dir = os.path.join(self.base_dir, "online")
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_dp_test = enable_dp_test
+        self.enable_mtp_test = enable_mtp_test
         self.benchmark_date = benchmark_date
+
+    def get_model_variants(self, model: str) -> List[str]:
+        """Return ordered list of directory names to search for a model."""
+        variants = MODEL_NAME_VARIANTS.get(model)
+        if variants:
+            return variants
+
+        fallback = [model.upper()]
+        if model not in fallback:
+            fallback.append(model)
+        lower = model.lower()
+        if lower not in fallback:
+            fallback.append(lower)
+        return list(dict.fromkeys(fallback))
+
+    def to_relative_path(self, path: Optional[str]) -> Optional[str]:
+        """Convert absolute paths under the benchmark directory to a friendly display path."""
+        if not path:
+            return None
+
+        try:
+            base_dir = self.base_dir
+            if not base_dir:
+                return path
+
+            normalized_base = os.path.abspath(base_dir)
+            normalized_path = os.path.abspath(path)
+
+            common_root = os.path.commonpath([normalized_base, normalized_path])
+            if common_root == normalized_base:
+                relative_path = os.path.relpath(normalized_path, normalized_base)
+                return f"/sglang-ci/{relative_path}".rstrip("/")
+
+        except Exception:
+            return path
+
+        return path
 
     def parse_gsm8k_accuracy(
         self, model: str, mode: str, date_str: str
@@ -151,72 +243,48 @@ class BenchmarkAnalyzer:
         Returns:
             Path to timing_summary log file or None if not found or benchmark didn't run for this date
         """
-        model_names = {
-            "grok": "GROK1",
-            "grok2": "GROK2",
-            "deepseek": "DeepSeek-V3-0324",
-            "DeepSeek-V3": "DeepSeek-V3",
-        }
-        model_name = model_names.get(model, model.upper())
-
-        # Build mode suffix for DP attention and torch compile
+        # Build mode suffix for DP attention, torch compile, and MTP flags
         mode_suffix = ""
         if self.check_dp_attention:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
+        if self.enable_mtp_test:
+            mode_suffix += "_mtp_test"
 
-        # Search for timing_summary logs in folders that contain the image date
-        # The folder name contains the image date, but the timing log filename contains the run date
-        search_patterns = []
-        if mode == "online":
-            # Use more specific patterns to avoid matching longer suffixes
-            if mode_suffix:
-                # For specific modes, ensure exact suffix match
-                search_patterns.extend(
-                    [
-                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
-                        f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
-                    ]
-                )
-            else:
-                # For standard mode, match folders ending with just the mode (no additional suffixes)
-                search_patterns.extend(
-                    [
-                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
-                        f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
-                        # Also handle variant names like MOE-I4F8
-                        f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*_*_{mode}/timing_summary_*.log",
-                    ]
-                )
-        else:
-            if mode_suffix:
-                search_patterns.extend(
-                    [
-                        f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}{mode_suffix}/timing_summary_*.log",
-                        f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}{mode_suffix}/timing_summary_*.log",
-                    ]
-                )
-            else:
-                search_patterns.extend(
-                    [
-                        f"{self.offline_dir}/{model_name}/*{date_str}*{model_name}*{mode}/timing_summary_*.log",
-                        f"{self.offline_dir}/{model_name}/*{date_str}*{model.lower()}*{mode}/timing_summary_*.log",
-                    ]
-                )
+        suffix_candidates: List[str] = []
+        if mode_suffix:
+            suffix_candidates.append(f"{mode}{mode_suffix}")
+        suffix_candidates.append(mode)
 
-        # Find the most recent timing_summary log for the specific date
-        timing_logs = []
-        for pattern in search_patterns:
-            timing_logs.extend(glob.glob(pattern))
+        search_root = self.online_dir if mode == "online" else self.offline_dir
+        model_variants = self.get_model_variants(model)
 
-        if timing_logs:
-            # Sort by modification time and return the most recent
-            timing_logs.sort(key=os.path.getmtime, reverse=True)
-            print(
-                f"   Found timing_summary log for {model} {mode} on {date_str}: {os.path.basename(timing_logs[0])}"
-            )
-            return timing_logs[0]
+        for model_name in model_variants:
+            timing_logs: List[str] = []
+            variant_root = os.path.join(search_root, model_name)
+
+            for suffix in suffix_candidates:
+                # Match directories that include the expected suffix (e.g., _online_dp_attention_mtp_test)
+                patterns = [
+                    f"{variant_root}/*{date_str}*{suffix}*/timing_summary_*.log",
+                    f"{variant_root}/*{date_str}*{suffix}/timing_summary_*.log",
+                ]
+                for pattern in patterns:
+                    timing_logs.extend(glob.glob(pattern))
+
+            # Fallback: look for any timing summary that contains the date if suffix match failed
+            if not timing_logs:
+                fallback_pattern = f"{variant_root}/*{date_str}*/timing_summary_*.log"
+                timing_logs.extend(glob.glob(fallback_pattern))
+
+            if timing_logs:
+                timing_logs.sort(key=os.path.getmtime, reverse=True)
+                print(
+                    "   Found timing_summary log for "
+                    f"{model} {mode} on {date_str}: {os.path.basename(timing_logs[0])}"
+                )
+                return timing_logs[0]
 
         print(
             f"   No timing_summary log found for {model} {mode} on {date_str} - benchmark may not have run yet"
@@ -353,6 +421,17 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "server_startup_seconds": None,
+            "gsm8k_duration_seconds": None,
+            "serving_total_seconds": None,
+            "serving_per_concurrency": {},
+            "dp_test_enabled": False,
+            "mtp_enabled": False,
+            "mtp_output_dir": None,
+            "mtp_csv": None,
+            "mtp_csv_status": None,
+            "mtp_plot": None,
+            "mtp_plot_status": None,
         }
 
         timing_log_file = self._find_timing_summary_log(model, mode, date_str)
@@ -361,6 +440,18 @@ class BenchmarkAnalyzer:
 
             # Merge all information from timing_summary log
             for key, value in info.items():
+                if key not in result:
+                    result[key] = value
+                    continue
+
+                if isinstance(value, dict):
+                    if not value:
+                        continue
+                    existing = result.get(key) or {}
+                    merged = {**existing, **value}
+                    result[key] = merged
+                    continue
+
                 if value is not None and (result[key] is None or result[key] is False):
                     result[key] = value
 
@@ -378,6 +469,17 @@ class BenchmarkAnalyzer:
             "torch_compile": False,
             "total_runtime_seconds": None,
             "total_runtime_minutes": None,
+            "server_startup_seconds": None,
+            "gsm8k_duration_seconds": None,
+            "serving_total_seconds": None,
+            "serving_per_concurrency": {},
+            "dp_test_enabled": False,
+            "mtp_enabled": False,
+            "mtp_output_dir": None,
+            "mtp_csv": None,
+            "mtp_csv_status": None,
+            "mtp_plot": None,
+            "mtp_plot_status": None,
         }
 
         try:
@@ -418,6 +520,103 @@ class BenchmarkAnalyzer:
             )
             if torch_compile_match:
                 info["torch_compile"] = torch_compile_match.group(1).lower() == "true"
+
+            # Capture MTP configuration flag
+            mtp_enabled_match = re.search(
+                r"MTP Test Enabled:\s*(true|false)", content, re.IGNORECASE
+            )
+            if mtp_enabled_match:
+                info["mtp_enabled"] = mtp_enabled_match.group(1).lower() == "true"
+
+            # Capture DP test configuration flag
+            dp_test_enabled_match = re.search(
+                r"DP Test Enabled:\s*(true|false)", content, re.IGNORECASE
+            )
+            if dp_test_enabled_match:
+                info["dp_test_enabled"] = (
+                    dp_test_enabled_match.group(1).lower() == "true"
+                )
+
+            # Extract server startup time
+            startup_match = re.search(
+                r"Server startup time:\s*(\d+)\s*seconds", content
+            )
+            if startup_match:
+                info["server_startup_seconds"] = int(startup_match.group(1))
+
+            # Extract GSM8K total duration
+            gsm_match = re.search(
+                r"GSM8K Test Results:\s*(?:\n\s+.+)*?\n\s+Total duration:\s*(\d+)\s*seconds",
+                content,
+            )
+            if gsm_match:
+                info["gsm8k_duration_seconds"] = int(gsm_match.group(1))
+
+            # Extract serving benchmark duration and per-concurrency breakdown
+            serving_total_match = re.search(
+                r"Serving Benchmark Results:\s*(?:\n\s+.+)*?\n\s+Total duration:\s*(\d+)\s*seconds",
+                content,
+            )
+            if serving_total_match:
+                info["serving_total_seconds"] = int(serving_total_match.group(1))
+
+            per_concurrency_matches = re.findall(
+                r"Completed concurrency\s+(\d+)\s+-\s+Total time:\s*(\d+)\s*seconds",
+                content,
+            )
+            if per_concurrency_matches:
+                per_concurrency: Dict[str, int] = {}
+                total_from_breakdown = 0
+                for conc, secs in per_concurrency_matches:
+                    seconds = int(secs)
+                    per_concurrency[conc] = seconds
+                    total_from_breakdown += seconds
+                info["serving_per_concurrency"] = per_concurrency
+                if info["serving_total_seconds"] is None and total_from_breakdown:
+                    info["serving_total_seconds"] = total_from_breakdown
+
+            # Capture MTP artifact paths/status block when present
+            mtp_section_match = re.search(
+                r"MTP Benchmark Outputs:\s*\n((?:\s{2}.+\n)+)",
+                content,
+            )
+            if mtp_section_match:
+                info["mtp_enabled"] = True
+                mtp_block = mtp_section_match.group(1)
+                for line in mtp_block.splitlines():
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+
+                    lower = stripped.lower()
+                    if lower.startswith("output directory:"):
+                        info["mtp_output_dir"] = stripped.split(":", 1)[1].strip() or None
+                    elif lower.startswith("csv:"):
+                        value = stripped.split(":", 1)[1].strip()
+                        if not value:
+                            continue
+                        lowered_value = value.lower()
+                        if lowered_value.startswith("not ") or lowered_value.startswith(
+                            "failed"
+                        ):
+                            info["mtp_csv"] = None
+                            info["mtp_csv_status"] = value
+                        else:
+                            info["mtp_csv"] = value
+                            info["mtp_csv_status"] = "Generated"
+                    elif lower.startswith("plot:"):
+                        value = stripped.split(":", 1)[1].strip()
+                        if not value:
+                            continue
+                        lowered_value = value.lower()
+                        if lowered_value.startswith("not ") or lowered_value.startswith(
+                            "failed"
+                        ):
+                            info["mtp_plot"] = None
+                            info["mtp_plot_status"] = value
+                        else:
+                            info["mtp_plot"] = value
+                            info["mtp_plot_status"] = "Generated"
 
             # Extract total runtime from timing summary logs (preferred method)
             runtime_match = re.search(
@@ -564,33 +763,32 @@ class BenchmarkAnalyzer:
 
     def _get_online_metrics(self, model: str, date_str: str) -> Dict:
         """Get online performance metrics for a specific date"""
-        model_names = {
-            "grok": "GROK1",
-            "grok2": "GROK2",
-            "deepseek": "DeepSeek-V3-0324",
-            "DeepSeek-V3": "DeepSeek-V3-0324",
-        }
-        model_name = model_names.get(model, model.upper())
-
-        # Build mode suffix for DP attention and torch compile
+        # Build mode suffix for DP attention, torch compile, and MTP flags
         mode_suffix = ""
         if self.check_dp_attention:
             mode_suffix += "_dp_attention"
         if self.enable_torch_compile:
             mode_suffix += "_torch_compile"
+        if self.enable_mtp_test:
+            mode_suffix += "_mtp_test"
 
-        # Look for CSV files with online metrics
-        csv_patterns = [
-            f"{self.online_dir}/{model_name}/*{date_str}*{model_name}*online{mode_suffix}*/*.csv",
-            f"{self.online_dir}/{model_name}/*{date_str}*{model.lower()}*online{mode_suffix}*/*.csv",
-        ]
+        suffix = f"online{mode_suffix}"
+        model_variants = self.get_model_variants(model)
 
-        for pattern in csv_patterns:
-            csv_files = glob.glob(pattern)
-            for csv_file in csv_files:
-                metrics = self._parse_online_csv(csv_file)
-                if metrics:
-                    return metrics
+        for model_name in model_variants:
+            variant_root = os.path.join(self.online_dir, model_name)
+            csv_patterns = [
+                f"{variant_root}/*{date_str}*{model_name}*{suffix}*/*.csv",
+                f"{variant_root}/*{date_str}*{model.lower()}*{suffix}*/*.csv",
+                f"{variant_root}/*{date_str}*{suffix}*/*.csv",
+            ]
+
+            for pattern in csv_patterns:
+                csv_files = glob.glob(pattern)
+                for csv_file in csv_files:
+                    metrics = self._parse_online_csv(csv_file)
+                    if metrics:
+                        return metrics
 
         return {}
 
@@ -779,7 +977,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
             r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
         )
 
-        for model_name, platform, section_content in model_sections:
+        for model_name, _platform, section_content in model_sections:
             result_data = {
                 "status": "unknown",
                 "accuracies": [],
@@ -892,6 +1090,8 @@ class TeamsNotifier:
         github_token: str = None,
         check_dp_attention: bool = False,
         enable_torch_compile: bool = False,
+        enable_dp_test: bool = False,
+        enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
     ):
         """
@@ -908,6 +1108,8 @@ class TeamsNotifier:
             github_token: GitHub personal access token
             check_dp_attention: If True, look for DP attention mode logs and check for errors
             enable_torch_compile: If True, look for torch compile mode logs
+            enable_dp_test: If True, highlight DeepSeek DP throughput test results
+            enable_mtp_test: If True, include DeepSeek MTP throughput artifacts in notifications
             benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
         """
         self.webhook_url = webhook_url
@@ -921,8 +1123,15 @@ class TeamsNotifier:
         self.github_token = github_token
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
+        self.enable_dp_test = enable_dp_test
+        self.enable_mtp_test = enable_mtp_test
         self.analyzer = BenchmarkAnalyzer(
-            benchmark_dir, check_dp_attention, enable_torch_compile, benchmark_date
+            benchmark_dir,
+            check_dp_attention,
+            enable_torch_compile,
+            enable_dp_test,
+            enable_mtp_test,
+            benchmark_date,
         )
 
     def create_summary_alert(self, model: str, mode: str) -> Dict:
@@ -1006,7 +1215,58 @@ class TeamsNotifier:
             additional_info = self.analyzer.extract_additional_info(
                 model, mode, current_date
             )
+            if additional_info.get("mtp_output_dir"):
+                additional_info["mtp_output_dir_relative"] = (
+                    self.analyzer.to_relative_path(additional_info["mtp_output_dir"])
+                )
+            if additional_info.get("mtp_csv"):
+                additional_info["mtp_csv_relative"] = self.analyzer.to_relative_path(
+                    additional_info["mtp_csv"]
+                )
+            if additional_info.get("mtp_plot"):
+                additional_info["mtp_plot_relative"] = self.analyzer.to_relative_path(
+                    additional_info["mtp_plot"]
+                )
             alert["additional_info"] = additional_info
+
+            if model.lower().startswith("deepseek") and (
+                self.enable_dp_test or self.enable_mtp_test
+            ):
+                server_display = _format_duration(
+                    additional_info.get("server_startup_seconds")
+                )
+                if server_display:
+                    alert["details"].append(
+                        f"Server startup: {server_display}"
+                    )
+
+                gsm_display = _format_duration(
+                    additional_info.get("gsm8k_duration_seconds")
+                )
+                if gsm_display:
+                    alert["details"].append(f"GSM8K runtime: {gsm_display}")
+
+                if self.enable_dp_test or self.enable_mtp_test:
+                    serving_display = _format_duration(
+                        additional_info.get("serving_total_seconds")
+                    )
+                    if serving_display:
+                        alert["details"].append(
+                            f"Serving runtime: {serving_display}"
+                        )
+
+                    # Serving breakdown details are verbose; omit them from the summary.
+
+            if self.enable_dp_test:
+                dp_flag = additional_info.get("dp_test_enabled")
+                if dp_flag:
+                    alert["details"].append(
+                        "DP throughput test: Serving benchmarks executed ✅"
+                    )
+                elif dp_flag is False:
+                    alert["details"].append(
+                        "DP throughput test requested but not confirmed in timing log ⚠️"
+                    )
 
         # Check DP attention errors if enabled
         if self.check_dp_attention:
@@ -1069,6 +1329,34 @@ class TeamsNotifier:
             runtime_info = alert["additional_info"].get("runtime")
             if runtime_info:
                 alert["details"].append(f"Runtime: {runtime_info}")
+
+        # Summarize MTP artifacts when enabled
+        if (
+            mode == "online"
+            and (self.enable_mtp_test or self.enable_dp_test)
+            and alert.get("additional_info")
+        ):
+            additional_info = alert["additional_info"]
+            if additional_info.get("mtp_enabled"):
+                csv_status = additional_info.get("mtp_csv_status")
+                plot_status = additional_info.get("mtp_plot_status")
+
+                if additional_info.get("mtp_csv"):
+                    alert["details"].append("MTP CSV artifacts generated ✅")
+                elif csv_status:
+                    alert["details"].append(f"MTP CSV: {csv_status}")
+                else:
+                    alert["details"].append("MTP CSV artifacts not available ⚠️")
+
+                if additional_info.get("mtp_plot"):
+                    alert["details"].append(
+                        "MTP latency/throughput plot generated ✅"
+                    )
+                elif not plot_status or "not generated" not in plot_status.lower():
+                    if plot_status:
+                        alert["details"].append(f"MTP plot: {plot_status}")
+                    else:
+                        alert["details"].append("MTP plot not available ⚠️")
 
         # Check performance regressions (online mode only)
         if mode == "online":
@@ -1223,23 +1511,6 @@ class TeamsNotifier:
         else:
             current_date = datetime.now().strftime("%Y-%m-%d")
             current_time = datetime.now().strftime("%H:%M:%S UTC")
-
-        # Determine status icon and color
-        status = parsed_data.get("status", "unknown")
-        status_config = {
-            "pass": {
-                "icon": "✅",
-                "color": "Good",
-                "title": "Sanity Check Passed",
-            },
-            "fail": {
-                "icon": "❌",
-                "color": "Attention",
-                "title": "Sanity Check Failed",
-            },
-        }
-
-        config = status_config.get(status, status_config["fail"])
 
         # Create card body elements
         body_elements = [
@@ -1446,13 +1717,8 @@ class TeamsNotifier:
             filename = os.path.basename(image_path)
 
             # Map model names to match directory structure
-            model_names = {
-                "grok": "GROK1",
-                "grok2": "GROK2",
-                "deepseek": "DeepSeek-V3",
-                "DeepSeek-V3": "DeepSeek-V3",
-            }
-            model_dir = model_names.get(model, model.upper())
+            model_variants = self.analyzer.get_model_variants(model)
+            model_dir = model_variants[0]
 
             repo_path = f"{model_dir}/{mode}/{filename}"
 
@@ -1585,81 +1851,82 @@ class TeamsNotifier:
             )
             search_dates.append(search_date)
 
-        # Model name mapping for file search
-        model_names = {
-            "grok": "GROK1",
-            "grok2": "GROK2",
-            "deepseek": "DeepSeek-V3-0324",
-            "DeepSeek-V3": "DeepSeek-V3",
-        }
-
-        model_name = model_names.get(model, model.upper())
+        model_variants = self.analyzer.get_model_variants(model)
+        seen_paths: Set[str] = set()
 
         # Search through each date (most recent first)
         for search_date in search_dates:
-            # Search for plot files with flexible naming patterns
-            # Support both uppercase model names (GROK1) and lowercase (grok)
-            search_patterns = [
-                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model_name}_{mode}.png",
-                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model_name}_{mode}_split.png",
-                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model.lower()}_{mode}.png",
-                f"{plot_dir}/{model_name}/{mode}/{search_date}_{model.lower()}_{mode}_split.png",
-            ]
+            date_found = False
+            for model_name in model_variants:
+                variant_dir = os.path.join(plot_dir, model_name, mode)
+                search_patterns = [
+                    f"{variant_dir}/{search_date}_*_{mode}.png",
+                    f"{variant_dir}/{search_date}_*_{mode}_split.png",
+                ]
 
-            # For deepseek model, also search for the actual generated filename pattern "DeepSeek-V3"
-            # This handles the change in filename format from DeepSeek-V3-0324 to DeepSeek-V3
-            if model == "deepseek":
-                search_patterns.extend(
-                    [
-                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3_{mode}.png",
-                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3_{mode}_split.png",
-                    ]
-                )
+                for pattern in search_patterns:
+                    files = glob.glob(pattern)
+                    for file_path in files:
+                        if file_path in seen_paths:
+                            continue
+                        seen_paths.add(file_path)
 
-            # For DeepSeek-V3 model, also search for the legacy filename pattern "DeepSeek-V3-0324"
-            # to maintain backward compatibility
-            if model == "DeepSeek-V3":
-                search_patterns.extend(
-                    [
-                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3-0324_{mode}.png",
-                        f"{plot_dir}/{model_name}/{mode}/{search_date}_DeepSeek-V3-0324_{mode}_split.png",
-                    ]
-                )
+                        file_name = os.path.basename(file_path)
+                        relative_path = file_path.replace(plot_dir, "").lstrip("/")
 
-            # Check each pattern for this date
-            for pattern in search_patterns:
-                files = glob.glob(pattern)
-                for file_path in files:
-                    file_name = os.path.basename(file_path)
-                    relative_path = file_path.replace(plot_dir, "").lstrip("/")
+                        plot_info = {
+                            "file_name": file_name,
+                            "file_path": file_path,
+                            "model": model_name,
+                            "mode": mode,
+                            "category": "standard",
+                        }
 
-                    plot_info = {
-                        "file_name": file_name,
-                        "file_path": file_path,
-                        "model": model_name,
-                        "mode": mode,
-                    }
+                        if self.github_upload:
+                            plot_info["public_url"] = self.upload_to_github(
+                                file_path, model, mode
+                            )
+                            if plot_info.get("public_url"):
+                                plot_info["hosting_service"] = "GitHub"
+                        elif self.plot_server_base_url:
+                            plot_info["plot_url"] = (
+                                f"{self.plot_server_base_url}/{relative_path}"
+                            )
 
-                    # Determine how to handle the image
-                    if self.github_upload:
-                        # Upload to GitHub and get public URL
-                        plot_info["public_url"] = self.upload_to_github(
-                            file_path, model, mode
-                        )
-                        if plot_info["public_url"]:
-                            plot_info["hosting_service"] = "GitHub"
-                    elif self.plot_server_base_url:
-                        # Use HTTP URL for server-hosted images
-                        plot_info["plot_url"] = (
-                            f"{self.plot_server_base_url}/{relative_path}"
-                        )
-                    # If no GitHub upload or server URL, file_path will be used as fallback
+                        plots.append(plot_info)
+                        date_found = True
 
-                    plots.append(plot_info)
-
-            # If we found plots for this date, return them (most recent first)
-            if plots:
+            if date_found:
                 break
+
+        # Include MTP-specific plot artifacts when available
+        if (self.enable_mtp_test or self.enable_dp_test) and mode == "online":
+            mtp_plot_path: Optional[str] = None
+            for search_date in search_dates:
+                mtp_info = self.analyzer.extract_additional_info(
+                    model, mode, search_date
+                )
+                candidate_path = mtp_info.get("mtp_plot")
+                if candidate_path and os.path.exists(candidate_path):
+                    mtp_plot_path = candidate_path
+                    break
+
+            if mtp_plot_path:
+                mtp_plot_info = {
+                    "file_name": os.path.basename(mtp_plot_path),
+                    "file_path": mtp_plot_path,
+                    "model": model_name,
+                    "mode": mode,
+                    "category": "mtp",
+                }
+
+                if self.github_upload:
+                    public_url = self.upload_to_github(mtp_plot_path, model, mode)
+                    if public_url:
+                        mtp_plot_info["public_url"] = public_url
+                        mtp_plot_info["hosting_service"] = "GitHub"
+
+                plots.append(mtp_plot_info)
 
         return plots
 
@@ -1697,19 +1964,37 @@ class TeamsNotifier:
             print("📊 Generating plot summary (analysis skipped)...")
         summary_alert = self.create_summary_alert(model, mode)
 
+        # Separate standard plots from MTP-specific plots for nuanced presentation
+        standard_plots: List[Dict[str, str]] = []
+        for plot in plots:
+            if plot.get("category") == "mtp":
+                continue  # Skip dedicated MTP plots to keep the card concise
+            standard_plots.append(plot)
+
         # Create card body elements starting with run name
         body_elements = []
 
         # Customize title based on enabled modes
         mode_description = []
-        if self.check_dp_attention:
+        if self.enable_mtp_test:
+            mode_description.append("MTP")
+        if self.enable_dp_test:
+            mode_description.append("DP")
+        elif self.check_dp_attention:
+            # Only show "DP Attention" if enable_dp_test is not set
+            # (DP test already includes DP attention)
             mode_description.append("DP Attention")
         if self.enable_torch_compile:
             mode_description.append("Torch Compile")
 
         if mode_description:
             mode_text = " + ".join(mode_description)
-            if self.check_dp_attention and not self.enable_torch_compile:
+            if (
+                self.check_dp_attention
+                and not self.enable_torch_compile
+                and not self.enable_mtp_test
+                and not self.enable_dp_test
+            ):
                 main_title = (
                     f"{current_date} {model.upper()} {mode.title()} {mode_text} Check"
                 )
@@ -1778,6 +2063,8 @@ class TeamsNotifier:
             }
         )
 
+        existing_detail_keys: Set[str] = set()
+
         # Add alert details as individual bullet points
         if summary_alert["details"]:
             for detail in summary_alert["details"]:
@@ -1790,6 +2077,7 @@ class TeamsNotifier:
                         "spacing": "None",
                     }
                 )
+                existing_detail_keys.add(_normalize_detail_text(detail))
 
         # Add additional information for online mode
         if mode == "online" and summary_alert.get("additional_info"):
@@ -1819,6 +2107,96 @@ class TeamsNotifier:
                     }
                 )
 
+            if self.enable_dp_test:
+                dp_flag = additional_info.get("dp_test_enabled")
+                if dp_flag:
+                    dp_text = "• DP Test: **Enabled** ✅"
+                    dp_color = "Good"
+                else:
+                    dp_text = "• DP Test: Not recorded in timing log ⚠️"
+                    dp_color = "Warning"
+
+                if not any(
+                    "dp throughput" in detail.lower()
+                    for detail in summary_alert.get("details", [])
+                ):
+                    body_elements.append(
+                        {
+                            "type": "TextBlock",
+                            "text": dp_text,
+                            "wrap": True,
+                            "size": "Small",
+                            "spacing": "None",
+                            "color": dp_color,
+                        }
+                    )
+
+            if model.lower().startswith("deepseek") and (
+                self.enable_dp_test or self.enable_mtp_test
+            ):
+                server_display = _format_duration(
+                    additional_info.get("server_startup_seconds")
+                )
+                if server_display:
+                    plain_server = f"Server startup: {server_display}"
+                    if _normalize_detail_text(plain_server) not in existing_detail_keys:
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"• Server startup: **{server_display}**",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "None",
+                            }
+                        )
+                        existing_detail_keys.add(
+                            _normalize_detail_text(plain_server)
+                        )
+
+                gsm_display = _format_duration(
+                    additional_info.get("gsm8k_duration_seconds")
+                )
+                if gsm_display:
+                    plain_gsm = f"GSM8K runtime: {gsm_display}"
+                    if _normalize_detail_text(plain_gsm) not in existing_detail_keys:
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"• GSM8K runtime: **{gsm_display}**",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "None",
+                            }
+                        )
+                        existing_detail_keys.add(
+                            _normalize_detail_text(plain_gsm)
+                        )
+
+                if self.enable_dp_test or self.enable_mtp_test:
+                    serving_display = _format_duration(
+                        additional_info.get("serving_total_seconds")
+                    )
+                    if serving_display:
+                        plain_serving = f"Serving runtime: {serving_display}"
+                        if (
+                            _normalize_detail_text(plain_serving)
+                            not in existing_detail_keys
+                        ):
+                            body_elements.append(
+                                {
+                                    "type": "TextBlock",
+                                    "text": f"• Serving runtime: **{serving_display}**",
+                                    "wrap": True,
+                                    "size": "Small",
+                                    "spacing": "None",
+                                }
+                            )
+                            existing_detail_keys.add(
+                                _normalize_detail_text(plain_serving)
+                            )
+
+                        # Skip serving breakdown list in the detailed section to keep the card concise.
+
             # Runtime is already shown in the status details section, so don't duplicate it here
 
         # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
@@ -1845,7 +2223,7 @@ class TeamsNotifier:
                 }
             )
 
-            if not plots:
+            if not standard_plots:
                 body_elements.append(
                     {
                         "type": "TextBlock",
@@ -1856,7 +2234,7 @@ class TeamsNotifier:
                 )
             else:
                 # Add plot information based on hosting method
-                for i, plot in enumerate(plots, 1):
+                for i, plot in enumerate(standard_plots, 1):
                     # Add plot title
                     body_elements.append(
                         {
@@ -1869,15 +2247,16 @@ class TeamsNotifier:
                     )
 
                 # Handle different hosting methods
-                if plot.get("public_url") and plot.get("hosting_service"):
+                latest_plot = standard_plots[-1]
+                if latest_plot.get("public_url") and latest_plot.get("hosting_service"):
                     # GitHub or external hosting - show actual image with maximum size
-                    service = plot["hosting_service"]
+                    service = latest_plot["hosting_service"]
 
                     body_elements.append(
                         {
                             "type": "Image",
-                            "url": plot["public_url"],
-                            "altText": plot["file_name"],
+                            "url": latest_plot["public_url"],
+                            "altText": latest_plot["file_name"],
                             "size": "Stretch",  # Use maximum size for all images
                             "spacing": "Small",
                             "width": "100%",  # Force full width display
@@ -1889,19 +2268,19 @@ class TeamsNotifier:
                         body_elements.append(
                             {
                                 "type": "TextBlock",
-                                "text": f"🔗 [Direct Link]({plot['public_url']}) (hosted on {service})",
+                                "text": f"🔗 [Direct Link]({latest_plot['public_url']}) (hosted on {service})",
                                 "wrap": True,
                                 "size": "Small",
                                 "spacing": "None",
                                 "isSubtle": True,
                             }
                         )
-                elif plot.get("plot_url"):
+                elif latest_plot.get("plot_url"):
                     # HTTP server mode - show link
                     body_elements.append(
                         {
                             "type": "TextBlock",
-                            "text": f"🔗 [View Plot]({plot['plot_url']})",
+                            "text": f"🔗 [View Plot]({latest_plot['plot_url']})",
                             "wrap": True,
                             "size": "Small",
                             "spacing": "Small",
@@ -1913,7 +2292,7 @@ class TeamsNotifier:
                     body_elements.append(
                         {
                             "type": "TextBlock",
-                            "text": f"📁 File: `{plot['file_path']}`",
+                            "text": f"📁 File: `{latest_plot['file_path']}`",
                             "wrap": True,
                             "size": "Small",
                             "spacing": "Small",
@@ -1933,16 +2312,13 @@ class TeamsNotifier:
             and not self.enable_torch_compile
             and not is_mi35x_machine
         ):
-            if plots:
+            if standard_plots:
                 # Add action to view all plots (link to the model's directory)
-                model_names = {
-                    "grok": "GROK1",
-                    "grok2": "GROK2",
-                    "deepseek": "DeepSeek-V3-0324",
-                    "DeepSeek-V3": "DeepSeek-V3",
-                }
-                model_name = model_names.get(model, model.upper())
-                all_plots_url = f"{self.plot_server_base_url}/{model_name}/{mode}/"
+                model_variants = self.analyzer.get_model_variants(model)
+                primary_model_name = model_variants[0]
+                all_plots_url = (
+                    f"{self.plot_server_base_url}/{primary_model_name}/{mode}/"
+                )
 
                 actions.append(
                     {
@@ -2224,6 +2600,16 @@ def main():
         help="Enable torch compile mode for performance analysis (affects log file discovery)",
     )
     parser.add_argument(
+        "--enable-dp-test",
+        action="store_true",
+        help="Highlight DeepSeek DP throughput test (enables serving benchmark summaries)",
+    )
+    parser.add_argument(
+        "--enable-mtp-test",
+        action="store_true",
+        help="Include DeepSeek MTP throughput artifacts in the Teams summary",
+    )
+    parser.add_argument(
         "--benchmark-date",
         type=str,
         help="Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.",
@@ -2248,7 +2634,19 @@ def main():
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
         notifier = TeamsNotifier(
-            webhook_url, "", False, 7, None, False, None, None, False, False, None
+            webhook_url,
+            "",
+            False,
+            7,
+            None,
+            False,
+            None,
+            None,
+            False,
+            False,
+            False,
+            False,
+            None,
         )
         success = notifier.send_test_notification()
         if success:
@@ -2268,7 +2666,19 @@ def main():
 
         print("🔍 Sanity check mode: Processing sanity check results")
         notifier = TeamsNotifier(
-            webhook_url, "", False, 7, None, False, None, None, False, False, None
+            webhook_url,
+            "",
+            False,
+            7,
+            None,
+            False,
+            None,
+            None,
+            False,
+            False,
+            False,
+            False,
+            None,
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1
@@ -2325,6 +2735,12 @@ def main():
     if args.enable_torch_compile:
         print("🔥 Torch compile mode: Looking for torch compile benchmark results")
 
+    if args.enable_dp_test:
+        print("🧬 DP test mode: Highlighting DP throughput benchmark and serving logs")
+
+    if args.enable_mtp_test:
+        print("🚀 MTP mode: Including DeepSeek R1 throughput artifacts")
+
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
@@ -2337,19 +2753,24 @@ def main():
         github_token=github_token,
         check_dp_attention=args.check_dp_attention,
         enable_torch_compile=args.enable_torch_compile,
+        enable_dp_test=args.enable_dp_test,
+        enable_mtp_test=args.enable_mtp_test,
         benchmark_date=args.benchmark_date,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 
     print(f"🔍 Discovered {len(plots)} plot file(s) for {args.model} {args.mode}")
     for plot in plots:
+        prefix = "[MTP] " if plot.get("category") == "mtp" else ""
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
-            print(f"   - {plot['file_name']} -> ✅ uploaded to {service}")
+            print(
+                f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}"
+            )
         elif plot.get("plot_url"):
-            print(f"   - {plot['file_name']} -> {plot['plot_url']}")
+            print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
-            print(f"   - {plot['file_name']} -> 📁 {plot['file_path']}")
+            print(f"   - {prefix}{plot['file_name']} -> 📁 {plot['file_path']}")
 
     # Send notification
     success = notifier.send_notification(plots, args.model, args.mode)
