@@ -1136,6 +1136,7 @@ class TeamsNotifier:
         enable_dp_test: bool = False,
         enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
+        hardware: str = "mi30x",
     ):
         """
         Initialize Teams notifier
@@ -1154,6 +1155,7 @@ class TeamsNotifier:
             enable_dp_test: If True, highlight DeepSeek DP throughput test results
             enable_mtp_test: If True, include DeepSeek MTP throughput artifacts in notifications
             benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
+            hardware: Hardware type (mi30x or mi35x) for GitHub upload path structure
         """
         self.webhook_url = webhook_url
         self.plot_server_base_url = (
@@ -1164,6 +1166,7 @@ class TeamsNotifier:
         self.github_upload = github_upload
         self.github_repo = github_repo
         self.github_token = github_token
+        self.hardware = hardware
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
         self.enable_dp_test = enable_dp_test
@@ -1829,14 +1832,26 @@ class TeamsNotifier:
 
             base64_content = base64.b64encode(image_data).decode("utf-8")
 
-            # Create file path matching plots_server structure: plot/model/mode/filename.png
+            # Create file path: plot/hardware/model/mode/filename.png
             filename = os.path.basename(image_path)
 
-            # Map model names to match directory structure
-            model_variants = self.analyzer.get_model_variants(model)
-            model_dir = model_variants[0]
+            # Extract model directory name from the actual image path for accurate naming
+            # e.g., /plots_server/DeepSeek-V3-0324/online/file.png -> DeepSeek-V3-0324
+            path_parts = image_path.split(os.sep)
+            if "plots_server" in path_parts:
+                idx = path_parts.index("plots_server")
+                if len(path_parts) > idx + 2:
+                    model_dir = path_parts[idx + 1]
+                else:
+                    # Fallback to model variants
+                    model_variants = self.analyzer.get_model_variants(model)
+                    model_dir = model_variants[0]
+            else:
+                # Fallback to model variants
+                model_variants = self.analyzer.get_model_variants(model)
+                model_dir = model_variants[0]
 
-            repo_path = f"plot/{model_dir}/{mode}/{filename}"
+            repo_path = f"plot/{self.hardware}/{model_dir}/{mode}/{filename}"
 
             # GitHub API endpoint for main branch
             api_url = (
@@ -2769,6 +2784,14 @@ def main():
     )
 
     parser.add_argument(
+        "--hardware",
+        type=str,
+        choices=["mi30x", "mi35x"],
+        default="mi30x",
+        help="Hardware type (mi30x or mi35x) for GitHub upload path structure",
+    )
+
+    parser.add_argument(
         "--docker-image",
         type=str,
         help="Docker image tag for sanity check mode (e.g., 'v0.5.3rc0-rocm630-mi30x-20251001')",
@@ -2800,6 +2823,7 @@ def main():
             False,
             False,
             None,
+            "mi30x",
         )
         success = notifier.send_test_notification()
         if success:
@@ -2832,6 +2856,7 @@ def main():
             False,
             False,
             None,
+            "mi30x",
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1
@@ -2909,6 +2934,7 @@ def main():
         enable_dp_test=args.enable_dp_test,
         enable_mtp_test=args.enable_mtp_test,
         benchmark_date=args.benchmark_date,
+        hardware=args.hardware,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 

@@ -356,7 +356,7 @@ send_teams_notification() {
 
   # Build the command with directory parameters to match where plots are actually created
   PLOT_DIR_PATH="${BENCHMARK_CI_DIR}/plots_server"
-  TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}'"
+  TEAMS_CMD="python3 -c 'import requests, pytz' 2>/dev/null || pip install requests pytz > /dev/null 2>&1; python3 '${TEAMS_NOTIFICATION_SCRIPT}' --model '${model}' --mode '${mode}' --plot-dir '${PLOT_DIR_PATH}' --benchmark-dir '${BENCHMARK_CI_DIR}' --hardware '${HARDWARE_TYPE}'"
 
   # Add benchmark date if available (extracted from SELECTED_TAG)
   if [[ -n "${SELECTED_TAG:-}" ]]; then
@@ -375,7 +375,7 @@ send_teams_notification() {
   elif [[ -n "${GITHUB_REPO:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --github-upload --github-repo '${GITHUB_REPO}' --github-token '${GITHUB_TOKEN}'"
     echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
-    echo "[nightly] Images will be stored in main branch with structure: plot/model/mode/filename.png"
+    echo "[nightly] Images will be stored in main branch with structure: plot/${HARDWARE_TYPE}/model/mode/filename.png"
   else
     echo "[nightly] GitHub credentials not provided via environment - using plot server links only"
     echo "[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables"
