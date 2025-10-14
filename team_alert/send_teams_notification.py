@@ -1705,22 +1705,64 @@ class TeamsNotifier:
                         }
                     )
 
-        # We intentionally omit action buttons (GitHub/Docker links) to keep the
-        # card minimal per Ops request.
+        # Add action buttons
+        actions = []
+
+        # Add sanity log link
+        hardware_type = None
+        docker_image = parsed_data.get("docker_image", "")
+        if docker_image:
+            hw_match = re.search(r"mi[0-9]+x", docker_image)
+            if hw_match:
+                hardware_type = hw_match.group(0)
+
+        # For sanity checks, link to the hardware directory
+        if hardware_type:
+            sanity_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/test/sanity_check_log/{hardware_type}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Sanity Logs",
+                    "url": sanity_log_url,
+                }
+            )
+
+            # Add cron log link (sanity checks are triggered from cron jobs)
+            # Extract date from docker image tag (last 8 digits: YYYYMMDD)
+            date_match = re.search(r"(\d{8})$", docker_image)
+            if date_match:
+                log_date = date_match.group(1)
+            else:
+                # Fallback to current date if we can't extract from docker image
+                log_date = datetime.now().strftime("%Y%m%d")
+
+            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hardware_type}/{log_date}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Cron Logs",
+                    "url": cron_log_url,
+                }
+            )
 
         # Create the adaptive card
+        card_content = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4",
+            "body": body_elements,
+        }
+
+        # Only add actions if the list is not empty
+        if actions:
+            card_content["actions"] = actions
+
         card = {
             "type": "message",
             "attachments": [
                 {
                     "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "type": "AdaptiveCard",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "version": "1.4",
-                        "body": body_elements,
-                        # No per-card actions
-                    },
+                    "content": card_content,
                 }
             ],
         }
@@ -2337,6 +2379,33 @@ class TeamsNotifier:
 
         # Create actions
         actions = []
+
+        # Add cron log link
+        hardware_type = None
+        if summary_alert.get("additional_info"):
+            docker_image = summary_alert["additional_info"].get("docker_image", "")
+            if docker_image:
+                hw_match = re.search(r"mi[0-9]+x", docker_image)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+
+        # Determine date for cron log link
+        if self.analyzer.benchmark_date:
+            log_date = self.analyzer.benchmark_date
+        else:
+            log_date = datetime.now().strftime("%Y%m%d")
+
+        # Add cron log link if we have hardware type
+        if hardware_type:
+            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hardware_type}/{log_date}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Cron Logs",
+                    "url": cron_log_url,
+                }
+            )
+
         if self.plot_server_base_url:
             # Add HTTP server links
             pass
@@ -2373,18 +2442,23 @@ class TeamsNotifier:
             )
 
         # Create the adaptive card
+        card_content = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4",
+            "body": body_elements,
+        }
+
+        # Only add actions if the list is not empty
+        if actions:
+            card_content["actions"] = actions
+
         card = {
             "type": "message",
             "attachments": [
                 {
                     "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "type": "AdaptiveCard",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "version": "1.4",
-                        "body": body_elements,
-                        "actions": actions,
-                    },
+                    "content": card_content,
                 }
             ],
         }
