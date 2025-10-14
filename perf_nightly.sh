@@ -1434,6 +1434,12 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    
+    # Pass model-name to Python script for proper directory naming
+    if [[ -n "$MODEL_NAME" ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --model-name '${MODEL_NAME}'"
+    fi
+    
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"
@@ -1477,6 +1483,11 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
+    
+    # Pass model-name to Python script for proper directory naming
+    if [[ -n "$MODEL_NAME" ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --model-name '${MODEL_NAME}'"
+    fi
 
     # Extract date from image tag for plot filename
     PLOT_DATE=$(extract_date_from_tag "${SELECTED_TAG}")
