@@ -2324,18 +2324,10 @@ class TeamsNotifier:
 
             # Runtime is already shown in the status details section, so don't duplicate it here
 
-        # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
-        is_mi35x_machine = False
-        additional_info = summary_alert.get("additional_info", {})
-        docker_image = additional_info.get("docker_image", "")
-        if "mi35x" in docker_image.lower():
-            is_mi35x_machine = True
-
-        # Add Plot section only if not in DP attention mode, torch compile mode, or MI35X machine
+        # Add Plot section only if not in DP attention mode or torch compile mode
         if (
             not self.check_dp_attention
             and not self.enable_torch_compile
-            and not is_mi35x_machine
         ):
             # Add Plot section title
             body_elements.append(
@@ -2478,11 +2470,10 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
+        # Only add plot-related actions if not in DP attention mode or torch compile mode
         if (
             not self.check_dp_attention
             and not self.enable_torch_compile
-            and not is_mi35x_machine
         ):
             if standard_plots:
                 # Add action to view all plots (link to the model's directory)
