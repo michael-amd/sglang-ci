@@ -2148,24 +2148,27 @@ def main():
     if args.model == "DeepSeek-V3":
         directory_name = "DeepSeek-V3"
     elif args.model == "deepseek":
-        directory_name = (
-            "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
-        )
+        # If model-name is explicitly provided, use it for directory structure
+        # Otherwise, default to DeepSeek-V3-0324 for backward compatibility
+        if args.model_name:
+            directory_name = args.model_name.replace(" ", "_")
+        else:
+            directory_name = "DeepSeek-V3-0324"  # Default for backward compatibility
     else:
         directory_name = (
             variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
         )
-    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-        directory_for_paths = (args.model_name or directory_name).replace(" ", "_")
-    else:
-        directory_for_paths = directory_name
+    
+    # Use the directory_name directly, which now respects --model-name
+    directory_for_paths = directory_name
 
     if args.data_dir is None:
         args.data_dir = os.path.join(args.base_dir, "online", directory_for_paths)
     if args.output_prefix is None:
-        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-            prefix_base = (args.model_name or variant_name).replace(" ", "_")
-            args.output_prefix = f"{prefix_base}_online"
+        # For deepseek model, use the directory_name which already respects --model-name
+        if args.model in {"deepseek", "DeepSeek-V3"}:
+            prefix_base = directory_name.replace(" ", "_")
+            args.output_prefix = f"{prefix_base}_FP8_online"
         else:
             args.output_prefix = config["output_prefix_template"].format(
                 variant_name=variant_name
@@ -2177,19 +2180,17 @@ def main():
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-            plot_directory_name = directory_for_paths
-        elif args.model == "DeepSeek-V3":
-            plot_directory_name = "DeepSeek-V3"
-        elif args.model == "deepseek":
-            plot_directory_name = "DeepSeek-V3-0324"
-        else:
-            plot_directory_name = variant_name
+        # Use directory_for_paths which already respects --model-name
+        plot_directory_name = directory_for_paths
         args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name
         )
+    # For deepseek model, ensure model_name matches directory structure if provided
+    elif args.model in {"deepseek", "DeepSeek-V3"}:
+        # Model name is already set from command line, no need to override
+        pass
 
     # Determine expected request rates and load metric name
     if args.request_rates:

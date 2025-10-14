@@ -227,10 +227,13 @@ OUTPUT_DIR="${OUTPUT_DIR:-$WORK_DIR}"
 GSM8K_SCRIPT="${GSM8K_SCRIPT:-$DEFAULT_GSM8K_SCRIPT}"
 THRESHOLD="${THRESHOLD:-$DEFAULT_THRESHOLD}"
 
-# Override runs per concurrency for MTP test (only 1 run per concurrency)
+# Override runs per concurrency for MTP test or DP test (only 1 run per concurrency)
 if [ "$ENABLE_MTP_TEST" = "true" ]; then
     BENCHMARK_RUNS_PER_CONCURRENCY=1
     echo "[mtp] MTP test enabled - setting runs per concurrency to 1"
+elif [ "$ENABLE_DP_TEST" = "true" ]; then
+    BENCHMARK_RUNS_PER_CONCURRENCY=1
+    echo "[dp] DP test enabled - setting runs per concurrency to 1"
 fi
 
 # If not provided by flag, use positional argument or default
