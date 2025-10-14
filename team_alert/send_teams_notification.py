@@ -19,8 +19,8 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
-    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi30x-20251001" --webhook-url "https://teams.webhook.url"
-    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi35x-20251002" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm700-mi30x-20251011" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm700-mi35x-20251011" --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
@@ -884,9 +884,14 @@ def find_sanity_check_log(
         print(f"❌ Error: Log directory not found: {log_dir}")
         return None
 
-    # Find all timing_summary logs for this date
+    # Find all timing_summary logs (try matching date first, then any log in directory)
     pattern = os.path.join(log_dir, f"timing_summary_{image_date}_*.log")
     log_files = glob.glob(pattern)
+
+    # If no logs found matching the image date, try finding any timing_summary logs
+    if not log_files:
+        pattern = os.path.join(log_dir, "timing_summary_*.log")
+        log_files = glob.glob(pattern)
 
     if not log_files:
         print(f"❌ Error: No timing summary logs found in {log_dir}")
@@ -1588,24 +1593,6 @@ class TeamsNotifier:
                 "spacing": "Medium",
             }
         )
-
-        skipped_count = parsed_data.get("skipped_count", 0)
-        if skipped_count:
-            total_models = parsed_data.get("total_models") or (
-                skipped_count + tested_count
-            )
-            body_elements.append(
-                {
-                    "type": "TextBlock",
-                    "text": (
-                        f"• Skipped: {skipped_count}/{total_models} models "
-                        "(not counted in pass/fail stats)"
-                    ),
-                    "wrap": True,
-                    "size": "Small",
-                    "spacing": "Small",
-                }
-            )
 
         # Add Docker image if provided
         docker_image = parsed_data.get("docker_image")

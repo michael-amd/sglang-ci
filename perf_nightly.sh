@@ -734,6 +734,12 @@ if [[ "$MODEL" == "grok2" ]]; then
     echo "[nightly] Using rocm700 for grok2 on ${HARDWARE_TYPE} hardware"
 fi
 
+# sanity check uses rocm700 for mi30x (better FP8 accuracy: 0.826 vs 0.750)
+if [[ "$MODE" == "sanity" && "$HARDWARE_TYPE" == "mi30x" ]]; then
+    ROCM_VERSION="rocm700"
+    echo "[nightly] Using rocm700 for sanity check on ${HARDWARE_TYPE} hardware (improved FP8 accuracy)"
+fi
+
 echo "[nightly] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
 
 # Set model-specific variables
