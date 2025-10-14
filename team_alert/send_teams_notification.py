@@ -1974,6 +1974,7 @@ class TeamsNotifier:
                 variant_dir = os.path.join(plot_dir, model_name, mode)
                 search_patterns = [
                     f"{variant_dir}/{search_date}_*_{mode}.png",
+                    f"{variant_dir}/{search_date}_*_{mode}_standard.png",
                     f"{variant_dir}/{search_date}_*_{mode}_split.png",
                 ]
 
@@ -2355,59 +2356,44 @@ class TeamsNotifier:
                         }
                     )
 
-                # Handle different hosting methods
-                latest_plot = standard_plots[-1]
-                if latest_plot.get("public_url") and latest_plot.get("hosting_service"):
-                    # GitHub or external hosting - show actual image with maximum size
-                    service = latest_plot["hosting_service"]
+                    # Handle different hosting methods for each plot
+                    if plot.get("public_url") and plot.get("hosting_service"):
+                        # GitHub hosting - show as clickable link
+                        service = plot["hosting_service"]
 
-                    body_elements.append(
-                        {
-                            "type": "Image",
-                            "url": latest_plot["public_url"],
-                            "altText": latest_plot["file_name"],
-                            "size": "Stretch",  # Use maximum size for all images
-                            "spacing": "Small",
-                            "width": "100%",  # Force full width display
-                        }
-                    )
-
-                    # Only show direct link for GitHub uploads, not external uploads
-                    if service != "External":
                         body_elements.append(
                             {
                                 "type": "TextBlock",
-                                "text": f"🔗 [Direct Link]({latest_plot['public_url']}) (hosted on {service})",
+                                "text": f"🔗 [View Plot]({plot['public_url']}) (hosted on {service})",
                                 "wrap": True,
-                                "size": "Small",
-                                "spacing": "None",
-                                "isSubtle": True,
+                                "size": "Medium",
+                                "spacing": "Small",
                             }
                         )
-                elif latest_plot.get("plot_url"):
-                    # HTTP server mode - show link
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"🔗 [View Plot]({latest_plot['plot_url']})",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                        }
-                    )
+                    elif plot.get("plot_url"):
+                        # HTTP server mode - show link
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"🔗 [View Plot]({plot['plot_url']})",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "Small",
+                            }
+                        )
 
-                else:
-                    # Fallback - show file path
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"📁 File: `{latest_plot['file_path']}`",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                            "fontType": "Monospace",
-                        }
-                    )
+                    else:
+                        # Fallback - show file path
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"📁 File: `{plot['file_path']}`",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "Small",
+                                "fontType": "Monospace",
+                            }
+                        )
 
         # Create actions
         actions = []
@@ -2540,6 +2526,15 @@ class TeamsNotifier:
                     f"🔍 Sending adaptive card with {image_count} image(s) hosted on GitHub"
                 )
                 print(f"📊 Total payload size: {payload_size_mb:.2f}MB")
+                # Debug: Print image URLs being sent
+                for plot in plots:
+                    if plot.get("public_url"):
+                        print(f"   📷 Image URL: {plot['public_url']}")
+                # Save card JSON for debugging
+                debug_file = "/tmp/teams_card_debug.json"
+                with open(debug_file, "w") as f:
+                    json.dump(card, f, indent=2)
+                print(f"   💾 Debug: Card JSON saved to {debug_file}")
             else:
                 print("🔍 Sending adaptive card with plot links")
                 print(f"📊 Payload size: {payload_size_mb:.2f}MB")
