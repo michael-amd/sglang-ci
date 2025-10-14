@@ -375,9 +375,9 @@ send_teams_notification() {
   elif [[ -n "${GITHUB_REPO:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --github-upload --github-repo '${GITHUB_REPO}' --github-token '${GITHUB_TOKEN}'"
     echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
-    echo "[nightly] Images will be stored in plots branch with structure: /model/mode/filename.png"
+    echo "[nightly] Images will be stored in main branch with structure: plot/model/mode/filename.png"
   else
-    echo "[nightly] No GitHub credentials configured - using plot server links only"
+    echo "[nightly] GitHub credentials not provided via environment - using plot server links only"
     echo "[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables"
   fi
 
@@ -421,6 +421,8 @@ send_teams_notification() {
     -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
     -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
     -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
+    -e GITHUB_REPO="${GITHUB_REPO:-}" \
+    -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
     "${CONTAINER_NAME}" \
     bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
 

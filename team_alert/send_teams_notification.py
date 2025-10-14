@@ -1829,16 +1829,16 @@ class TeamsNotifier:
 
             base64_content = base64.b64encode(image_data).decode("utf-8")
 
-            # Create file path matching plots_server structure: /model/mode/filename.png
+            # Create file path matching plots_server structure: plot/model/mode/filename.png
             filename = os.path.basename(image_path)
 
             # Map model names to match directory structure
             model_variants = self.analyzer.get_model_variants(model)
             model_dir = model_variants[0]
 
-            repo_path = f"{model_dir}/{mode}/{filename}"
+            repo_path = f"plot/{model_dir}/{mode}/{filename}"
 
-            # GitHub API endpoint for plots branch
+            # GitHub API endpoint for main branch
             api_url = (
                 f"https://api.github.com/repos/{self.github_repo}/contents/{repo_path}"
             )
@@ -1848,11 +1848,8 @@ class TeamsNotifier:
                 "Accept": "application/vnd.github.v3+json",
             }
 
-            # First, ensure the plots branch exists
-            self._ensure_plots_branch_exists(headers)
-
-            # Check if file already exists on plots branch
-            params = {"ref": "plots"}
+            # Check if file already exists on main branch
+            params = {"ref": "main"}
             existing_response = requests.get(api_url, headers=headers, params=params)
             sha = None
             if existing_response.status_code == 200:
@@ -1861,12 +1858,12 @@ class TeamsNotifier:
             else:
                 print(f"   📄 Creating new file: {repo_path}")
 
-            # Upload or update file on plots branch
+            # Upload or update file on main branch
             current_date = datetime.now().strftime("%Y-%m-%d")
             payload = {
                 "message": f"Add {model} {mode} plot for {current_date}",
                 "content": base64_content,
-                "branch": "plots",
+                "branch": "main",
             }
 
             if sha:
@@ -1875,9 +1872,9 @@ class TeamsNotifier:
             response = requests.put(api_url, json=payload, headers=headers)
 
             if response.status_code in [200, 201]:
-                # Return public URL from plots branch
-                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/plots/{repo_path}"
-                print(f"   ✅ Uploaded to GitHub (plots branch): {filename}")
+                # Return public URL from main branch
+                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/main/{repo_path}"
+                print(f"   ✅ Uploaded to GitHub (main branch): {filename}")
                 print(f"   🔗 GitHub URL: {public_url}")
                 return public_url
             else:
@@ -2490,26 +2487,8 @@ class TeamsNotifier:
                 # Add action to view all plots (link to the model's directory)
                 model_variants = self.analyzer.get_model_variants(model)
                 primary_model_name = model_variants[0]
-                all_plots_url = (
-                    f"{self.plot_server_base_url}/{primary_model_name}/{mode}/"
-                )
-
-                actions.append(
-                    {
-                        "type": "Action.OpenUrl",
-                        "title": f"📁 Browse All",
-                        "url": all_plots_url,
-                    }
-                )
-
-            # Add dashboard link
-            actions.append(
-                {
-                    "type": "Action.OpenUrl",
-                    "title": "🌐 Dashboard",
-                    "url": self.plot_server_base_url,
-                }
-            )
+                # Browse All and Dashboard links removed per user request
+                pass
 
         # Create the adaptive card
         card_content = {
