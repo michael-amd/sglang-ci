@@ -1709,12 +1709,47 @@ class TeamsNotifier:
         actions = []
 
         # Add sanity log link
+        # Priority 1: Extract from hardware info (docker image)
         hardware_type = None
         docker_image = parsed_data.get("docker_image", "")
         if docker_image:
             hw_match = re.search(r"mi[0-9]+x", docker_image)
             if hw_match:
                 hardware_type = hw_match.group(0)
+
+        # Priority 2: Extract from hostname
+        if not hardware_type:
+            try:
+                hostname_str = socket.gethostname()
+                # Try full pattern first (mi30x, mi35x)
+                hw_match = re.search(r"mi[0-9]+x", hostname_str)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+                else:
+                    # Try abbreviated patterns and convert to mi30x, mi35x
+                    # Pattern 1: 300x, 350x, 355x (with 'x')
+                    abbrev_match = re.search(r"([0-9]+)x", hostname_str)
+                    if abbrev_match:
+                        abbrev = abbrev_match.group(1)
+                        # Map 300x -> mi30x, 350x/355x -> mi35x
+                        if abbrev in ["300", "30"]:
+                            hardware_type = "mi30x"
+                        elif abbrev in ["350", "355", "35"]:
+                            hardware_type = "mi35x"
+                    # Pattern 2: 300, 355 (without 'x')
+                    elif not hardware_type:
+                        abbrev_match = re.search(
+                            r"\b(300|355|350|30|35)\b", hostname_str
+                        )
+                        if abbrev_match:
+                            abbrev = abbrev_match.group(1)
+                            # Map 300 -> mi30x, 355/350 -> mi35x
+                            if abbrev in ["300", "30"]:
+                                hardware_type = "mi30x"
+                            elif abbrev in ["350", "355", "35"]:
+                                hardware_type = "mi35x"
+            except Exception:
+                pass
 
         # For sanity checks, link to the hardware directory
         if hardware_type:
@@ -2381,6 +2416,7 @@ class TeamsNotifier:
         actions = []
 
         # Add cron log link
+        # Priority 1: Extract from hardware info (docker image)
         hardware_type = None
         if summary_alert.get("additional_info"):
             docker_image = summary_alert["additional_info"].get("docker_image", "")
@@ -2388,6 +2424,40 @@ class TeamsNotifier:
                 hw_match = re.search(r"mi[0-9]+x", docker_image)
                 if hw_match:
                     hardware_type = hw_match.group(0)
+
+        # Priority 2: Extract from hostname
+        if not hardware_type:
+            try:
+                hostname_str = socket.gethostname()
+                # Try full pattern first (mi30x, mi35x)
+                hw_match = re.search(r"mi[0-9]+x", hostname_str)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+                else:
+                    # Try abbreviated patterns and convert to mi30x, mi35x
+                    # Pattern 1: 300x, 350x, 355x (with 'x')
+                    abbrev_match = re.search(r"([0-9]+)x", hostname_str)
+                    if abbrev_match:
+                        abbrev = abbrev_match.group(1)
+                        # Map 300x -> mi30x, 350x/355x -> mi35x
+                        if abbrev in ["300", "30"]:
+                            hardware_type = "mi30x"
+                        elif abbrev in ["350", "355", "35"]:
+                            hardware_type = "mi35x"
+                    # Pattern 2: 300, 355 (without 'x')
+                    elif not hardware_type:
+                        abbrev_match = re.search(
+                            r"\b(300|355|350|30|35)\b", hostname_str
+                        )
+                        if abbrev_match:
+                            abbrev = abbrev_match.group(1)
+                            # Map 300 -> mi30x, 355/350 -> mi35x
+                            if abbrev in ["300", "30"]:
+                                hardware_type = "mi30x"
+                            elif abbrev in ["350", "355", "35"]:
+                                hardware_type = "mi35x"
+            except Exception:
+                pass
 
         # Determine date for cron log link
         if self.analyzer.benchmark_date:

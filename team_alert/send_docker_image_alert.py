@@ -273,6 +273,71 @@ class DockerImageTeamsNotifier:
 
         # Create actions
         actions = []
+
+        # Add cron log link
+        # Try to determine hardware type from multiple sources
+        hardware_type = None
+        try:
+            import re
+
+            # Priority 1: Extract from available_images list (hardware info)
+            if available_images:
+                for image_str in available_images:
+                    hw_match = re.search(r"mi[0-9]+x", image_str)
+                    if hw_match:
+                        hardware_type = hw_match.group(0)
+                        break
+
+            # Priority 2: Extract from hostname
+            if not hardware_type:
+                import socket
+
+                hostname = socket.gethostname()
+                # Try full pattern first (mi30x, mi35x)
+                hw_match = re.search(r"mi[0-9]+x", hostname)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+                else:
+                    # Try abbreviated patterns and convert to mi30x, mi35x
+                    # Pattern 1: 300x, 350x (with 'x')
+                    abbrev_match = re.search(r"([0-9]+)x", hostname)
+                    if abbrev_match:
+                        abbrev = abbrev_match.group(1)
+                        # Map 300x -> mi30x, 350x -> mi35x, 355x -> mi35x
+                        if abbrev in ["300", "30"]:
+                            hardware_type = "mi30x"
+                        elif abbrev in ["350", "355", "35"]:
+                            hardware_type = "mi35x"
+                    # Pattern 2: 300, 355 (without 'x')
+                    elif not hardware_type:
+                        abbrev_match = re.search(r"\b(300|355|350|30|35)\b", hostname)
+                        if abbrev_match:
+                            abbrev = abbrev_match.group(1)
+                            # Map 300 -> mi30x, 355/350 -> mi35x
+                            if abbrev in ["300", "30"]:
+                                hardware_type = "mi30x"
+                            elif abbrev in ["350", "355", "35"]:
+                                hardware_type = "mi35x"
+        except Exception:
+            pass
+
+        # Determine date for cron log link
+        if date_checked:
+            log_date = date_checked
+        else:
+            log_date = datetime.now().strftime("%Y%m%d")
+
+        # Add cron log link if we have hardware type
+        if hardware_type:
+            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hardware_type}/{log_date}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Cron Logs",
+                    "url": cron_log_url,
+                }
+            )
+
         if status in ["warning", "error"]:
             actions.append(
                 {
