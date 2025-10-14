@@ -54,7 +54,6 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import requests
 
-
 MODEL_NAME_VARIANTS = {
     "grok": ["GROK1"],
     "grok2": ["GROK2"],
@@ -590,7 +589,9 @@ class BenchmarkAnalyzer:
 
                     lower = stripped.lower()
                     if lower.startswith("output directory:"):
-                        info["mtp_output_dir"] = stripped.split(":", 1)[1].strip() or None
+                        info["mtp_output_dir"] = (
+                            stripped.split(":", 1)[1].strip() or None
+                        )
                     elif lower.startswith("csv:"):
                         value = stripped.split(":", 1)[1].strip()
                         if not value:
@@ -912,6 +913,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         "docker_image": None,
         "platform": None,
         "models": [],
+        "total_models": 0,
         "trials": None,
         "total_time": None,
         "start_time": None,
@@ -919,6 +921,8 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         "model_results": {},  # {model_name: {"status": "pass/fail", "accuracies": [], "time": "...", "average_accuracy": X.XX}}
         "passed_count": 0,
         "total_count": 0,
+        "tested_count": 0,
+        "skipped_count": 0,
     }
 
     try:
@@ -940,6 +944,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         if models_match:
             models_str = models_match.group(1).strip()
             parsed_data["models"] = [m.strip() for m in models_str.split(",")]
+            parsed_data["total_models"] = len(parsed_data["models"])
 
         # Extract trials per model
         trials_match = re.search(r"Trials per model:\s*(\d+)", content)
@@ -1037,10 +1042,26 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
             parsed_data["model_results"][model_name] = result_data
 
         # Extract overall summary - models passed count
+        tested_match = re.search(r"Models tested:\s*(\d+)/(\d+)", content)
+        if tested_match:
+            parsed_data["tested_count"] = int(tested_match.group(1))
+            parsed_data["total_models"] = max(
+                parsed_data.get("total_models", 0), int(tested_match.group(2))
+            )
+
+        skipped_match = re.search(r"Models skipped:\s*(\d+)/(\d+)", content)
+        if skipped_match:
+            parsed_data["skipped_count"] = int(skipped_match.group(1))
+            parsed_data["total_models"] = max(
+                parsed_data.get("total_models", 0), int(skipped_match.group(2))
+            )
+
         passed_match = re.search(r"Models passed:\s*(\d+)/(\d+)", content)
         if passed_match:
             parsed_data["passed_count"] = int(passed_match.group(1))
             parsed_data["total_count"] = int(passed_match.group(2))
+            if parsed_data["tested_count"] == 0:
+                parsed_data["tested_count"] = parsed_data["total_count"]
             # Determine overall status
             parsed_data["status"] = (
                 "pass"
@@ -1051,6 +1072,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         # If we didn't find the summary, count from model results
         if parsed_data["total_count"] == 0 and parsed_data["model_results"]:
             parsed_data["total_count"] = len(parsed_data["model_results"])
+            parsed_data["tested_count"] = parsed_data["total_count"]
             parsed_data["passed_count"] = sum(
                 1
                 for result in parsed_data["model_results"].values()
@@ -1061,6 +1083,22 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                 if parsed_data["passed_count"] == parsed_data["total_count"]
                 else "fail"
             )
+
+        # Derive skipped count when not explicitly reported
+        if parsed_data["skipped_count"] == 0 and parsed_data["models"]:
+            parsed_data["skipped_count"] = max(
+                len(parsed_data["models"]) - len(parsed_data["model_results"]), 0
+            )
+
+        # Ensure tested count excludes skipped models when total counts are known
+        if parsed_data["tested_count"] == 0 and parsed_data["total_models"]:
+            parsed_data["tested_count"] = max(
+                parsed_data["total_models"] - parsed_data["skipped_count"], 0
+            )
+
+        # Keep total_count aligned with tested_count so pass/fail ratios ignore skips
+        if parsed_data["tested_count"]:
+            parsed_data["total_count"] = parsed_data["tested_count"]
 
     except FileNotFoundError:
         print(f"❌ Error: Log file not found: {log_file_path}")
@@ -1236,9 +1274,7 @@ class TeamsNotifier:
                     additional_info.get("server_startup_seconds")
                 )
                 if server_display:
-                    alert["details"].append(
-                        f"Server startup: {server_display}"
-                    )
+                    alert["details"].append(f"Server startup: {server_display}")
 
                 gsm_display = _format_duration(
                     additional_info.get("gsm8k_duration_seconds")
@@ -1251,9 +1287,7 @@ class TeamsNotifier:
                         additional_info.get("serving_total_seconds")
                     )
                     if serving_display:
-                        alert["details"].append(
-                            f"Serving runtime: {serving_display}"
-                        )
+                        alert["details"].append(f"Serving runtime: {serving_display}")
 
                     # Serving breakdown details are verbose; omit them from the summary.
 
@@ -1349,9 +1383,7 @@ class TeamsNotifier:
                     alert["details"].append("MTP CSV artifacts not available ⚠️")
 
                 if additional_info.get("mtp_plot"):
-                    alert["details"].append(
-                        "MTP latency/throughput plot generated ✅"
-                    )
+                    alert["details"].append("MTP latency/throughput plot generated ✅")
                 elif not plot_status or "not generated" not in plot_status.lower():
                     if plot_status:
                         alert["details"].append(f"MTP plot: {plot_status}")
@@ -1544,16 +1576,36 @@ class TeamsNotifier:
 
         # Add summary section
         passed_count = parsed_data.get("passed_count", 0)
-        total_count = parsed_data.get("total_count", 0)
+        tested_count = parsed_data.get("tested_count")
+        if tested_count is None or tested_count == 0:
+            tested_count = parsed_data.get("total_count", 0)
         body_elements.append(
             {
                 "type": "TextBlock",
-                "text": f"**Models: {passed_count}/{total_count} passed**",
+                "text": f"**Models: {passed_count}/{tested_count} passed**",
                 "weight": "Bolder",
                 "size": "Medium",
                 "spacing": "Medium",
             }
         )
+
+        skipped_count = parsed_data.get("skipped_count", 0)
+        if skipped_count:
+            total_models = parsed_data.get("total_models") or (
+                skipped_count + tested_count
+            )
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": (
+                        f"• Skipped: {skipped_count}/{total_models} models "
+                        "(not counted in pass/fail stats)"
+                    ),
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                }
+            )
 
         # Add Docker image if provided
         docker_image = parsed_data.get("docker_image")
@@ -2149,9 +2201,7 @@ class TeamsNotifier:
                                 "spacing": "None",
                             }
                         )
-                        existing_detail_keys.add(
-                            _normalize_detail_text(plain_server)
-                        )
+                        existing_detail_keys.add(_normalize_detail_text(plain_server))
 
                 gsm_display = _format_duration(
                     additional_info.get("gsm8k_duration_seconds")
@@ -2168,9 +2218,7 @@ class TeamsNotifier:
                                 "spacing": "None",
                             }
                         )
-                        existing_detail_keys.add(
-                            _normalize_detail_text(plain_gsm)
-                        )
+                        existing_detail_keys.add(_normalize_detail_text(plain_gsm))
 
                 if self.enable_dp_test or self.enable_mtp_test:
                     serving_display = _format_duration(
@@ -2764,9 +2812,7 @@ def main():
         prefix = "[MTP] " if plot.get("category") == "mtp" else ""
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
-            print(
-                f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}"
-            )
+            print(f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}")
         elif plot.get("plot_url"):
             print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
