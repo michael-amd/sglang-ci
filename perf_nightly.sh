@@ -27,6 +27,13 @@
 #   • Automatically checks available disk space before downloading
 #   • Supports download resumption if interrupted (using huggingface-cli)
 #
+# TEAMS NOTIFICATIONS & PLOT HOSTING:
+#   • Teams notifications require --teams-webhook-url
+#   • Plot images are automatically uploaded to GitHub when GITHUB_REPO and GITHUB_TOKEN
+#     environment variables are set (plots appear as GitHub URLs in Teams)
+#   • If GitHub credentials are not set, falls back to local plot server URLs
+#   • Set GITHUB_REPO=owner/repo and GITHUB_TOKEN=ghp_xxx for auto-upload
+#
 # USAGE:
 #   perf_nightly.sh [OPTIONS]
 #
@@ -134,6 +141,7 @@ ENABLE_TEAMS_NOTIFICATIONS="${ENABLE_TEAMS_NOTIFICATIONS:-true}"  # Enabled if w
 TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES:-false}"  # Set to true for text-only notifications (when plot server is not public)
 TEAMS_SKIP_ANALYSIS="${TEAMS_SKIP_ANALYSIS:-false}"  # Set to true to skip GSM8K accuracy and performance analysis
 TEAMS_ANALYSIS_DAYS="${TEAMS_ANALYSIS_DAYS:-7}"  # Number of days to look back for performance comparison
+# Plot server configuration (only used when GITHUB_REPO/GITHUB_TOKEN are not set for auto-upload)
 PLOT_SERVER_HOST="${PLOT_SERVER_HOST:-}"
 PLOT_SERVER_PORT="${PLOT_SERVER_PORT:-8000}"
 PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL:-}"
@@ -370,10 +378,12 @@ send_teams_notification() {
   echo "[nightly] Teams notification using plot directory: ${PLOT_DIR_PATH}"
 
   # Add GitHub upload if configured
+  USE_GITHUB_UPLOAD=false
   if [[ "$TEAMS_NO_IMAGES" == "true" ]]; then
     echo "[nightly] Using text-only mode (no embedded images) - no upload flags added"
   elif [[ -n "${GITHUB_REPO:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
     TEAMS_CMD="${TEAMS_CMD} --github-upload --github-repo '${GITHUB_REPO}' --github-token '${GITHUB_TOKEN}'"
+    USE_GITHUB_UPLOAD=true
     echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
     echo "[nightly] Images will be stored in main branch with structure: plot/${HARDWARE_TYPE}/model/mode/filename.png"
   else
@@ -414,17 +424,28 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-mtp-test flag for Teams notification"
   fi
 
-  "${DOCKER_CMD[@]}" exec \
-    -e INSIDE_CONTAINER=1 \
-    -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-    -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
-    -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
-    -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
-    -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
-    -e GITHUB_REPO="${GITHUB_REPO:-}" \
-    -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
-    "${CONTAINER_NAME}" \
-    bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
+  # Build docker exec command with appropriate environment variables
+  # When using GitHub upload, don't set PLOT_SERVER_* to avoid fallback to local URLs
+  if [[ "$USE_GITHUB_UPLOAD" == "true" ]]; then
+    "${DOCKER_CMD[@]}" exec \
+      -e INSIDE_CONTAINER=1 \
+      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
+      -e GITHUB_REPO="${GITHUB_REPO:-}" \
+      -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
+      "${CONTAINER_NAME}" \
+      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
+  else
+    "${DOCKER_CMD[@]}" exec \
+      -e INSIDE_CONTAINER=1 \
+      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
+      -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
+      -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
+      -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
+      "${CONTAINER_NAME}" \
+      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
+  fi
 
   if [ $TEAMS_EXIT_CODE -eq 0 ]; then
     echo "[nightly] Teams notification sent successfully for ${model} ${mode}"
@@ -1434,12 +1455,12 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
-    
+
     # Pass model-name to Python script for proper directory naming
     if [[ -n "$MODEL_NAME" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --model-name '${MODEL_NAME}'"
     fi
-    
+
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"
@@ -1483,7 +1504,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
 
     # Build Python script arguments with custom directories when work-dir is provided
     PYTHON_ARGS="--model '${MODEL}'"
-    
+
     # Pass model-name to Python script for proper directory naming
     if [[ -n "$MODEL_NAME" ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --model-name '${MODEL_NAME}'"

@@ -6,6 +6,8 @@
 # - DEEPSEEK_MODEL_PATH: Path to DeepSeek model (e.g., /data/deepseek-ai/DeepSeek-V3)
 # - HARDWARE_TYPE: Hardware type for all jobs (mi30x, mi35x)
 # - TEAMS_WEBHOOK_URL: Teams webhook URL for notifications
+# - GITHUB_REPO: Repository identifier (owner/repo) for uploading logs and plots
+# - GITHUB_TOKEN: Personal access token with push access to the repository
 #
 # Environment variables (set these before running crontab):
 SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
@@ -18,8 +20,9 @@ HARDWARE_TYPE="mi30x"
 # Public Teams webhook left empty by default – fill in to enable alerts
 TEAMS_WEBHOOK_URL=""
 
-# Public log tree (for manual use or Teams messages)
-GITHUB_LOG=""
+# GitHub repository configuration (fill in to enable log/plot uploads)
+GITHUB_REPO="michael-amd/sglang-ci-data"
+GITHUB_TOKEN=""
 
 # 10 PM PT (0 AM CT) - Grok 2 online benchmark + Teams notifications
 0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
