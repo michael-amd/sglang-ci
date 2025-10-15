@@ -30,6 +30,7 @@
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
+#   • GITHUB_REPO     – Repository identifier in 'owner/repo' format (defaults to 'michael-amd/sglang-ci-data')
 #   • GITHUB_TOKEN    – Personal access token with `repo` scope that can push
 #   • HARDWARE_TYPE   – The machine descriptor (mi30x / mi35x …).
 #
@@ -45,12 +46,13 @@ set -euo pipefail
 # 1. Basic environment
 ###########################################################################
 
-# Repository that stores the published logs – do **not** include the token
-readonly REMOTE_REPO_URL_BASE="https://github.com/michael-amd/sglang-ci-data.git"
-
 # Resolve required env variables (most are exported in crontab header)
+readonly GITHUB_REPO="${GITHUB_REPO:-michael-amd/sglang-ci-data}"  # Repository in owner/repo format
 readonly GITHUB_TOKEN="${GITHUB_TOKEN:-}"  # optional – clone over https if empty
 readonly SGL_CI_DIR="${SGL_BENCHMARK_CI_DIR:-$(pwd)}"  # repository root
+
+# Build repository URL from GITHUB_REPO
+readonly REMOTE_REPO_URL_BASE="https://github.com/${GITHUB_REPO}.git"
 
 # Parse arguments
 readonly ARG_DATE="${1:-}"
@@ -127,10 +129,10 @@ readonly WORK_CLONE_DIR="/mnt/raid/michael/sglang-ci-data"
 ###########################################################################
 
 if [[ ! -d "$WORK_CLONE_DIR/.git" ]]; then
-  echo "[github_log_upload] Cloning data repository…"
+  echo "[github_log_upload] Cloning data repository (${GITHUB_REPO})…"
   # When a token is available inject it into the clone URL so pushes succeed.
   if [[ -n "$GITHUB_TOKEN" ]]; then
-    git clone "https://${GITHUB_TOKEN}@github.com/michael-amd/sglang-ci-data.git" "$WORK_CLONE_DIR"
+    git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "$WORK_CLONE_DIR"
   else
     git clone "$REMOTE_REPO_URL_BASE" "$WORK_CLONE_DIR"
   fi
@@ -192,11 +194,11 @@ fi
 
 git -c user.name="ci-bot" -c user.email="ci-bot@example.com" commit -m "$COMMIT_MSG" --quiet
 
-echo "[github_log_upload] Pushing commit to remote…"
+echo "[github_log_upload] Pushing commit to remote (${GITHUB_REPO})…"
 
 if [[ -n "$GITHUB_TOKEN" ]]; then
   # Use token-authenticated remote for push only (clone may have been unauthenticated)
-  git push "https://${GITHUB_TOKEN}@github.com/michael-amd/sglang-ci-data.git" main --quiet
+  git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" main --quiet
 else
   git push origin main --quiet
 fi

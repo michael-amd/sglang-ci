@@ -6,6 +6,8 @@
 # - DEEPSEEK_MODEL_PATH: Path to DeepSeek model (e.g., /data/deepseek-ai/DeepSeek-V3)
 # - HARDWARE_TYPE: Hardware type for all jobs (mi30x, mi35x)
 # - TEAMS_WEBHOOK_URL: Teams webhook URL for notifications
+# - GITHUB_REPO: Repository identifier (owner/repo) for uploading logs and plots
+# - GITHUB_TOKEN: Personal access token with push access to the repository
 #
 # Environment variables (set these before running crontab):
 SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
@@ -18,8 +20,9 @@ HARDWARE_TYPE="mi35x"
 # Public Teams webhook left empty by default – fill in to enable alerts
 TEAMS_WEBHOOK_URL=""
 
-# Public log tree
-GITHUB_LOG=""
+# GitHub repository configuration (fill in to enable log/plot uploads)
+GITHUB_REPO="michael-amd/sglang-ci-data"
+GITHUB_TOKEN=""
 
 # 6 AM PT (8 AM CT) - DeepSeek online serving benchmark + Teams notifications
 0 8 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
