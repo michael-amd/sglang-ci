@@ -26,12 +26,14 @@
 #
 # OPTIONS:
 #   --hardware=HW            Hardware type: mi30x, mi35x [default: mi30x]
+#   --test-type=TYPE         Test type: unit, pd [default: unit]
 #   --teams-webhook-url=URL  Teams webhook URL for test result notifications
 #   --help, -h               Show detailed help message
 #
 # EXAMPLES:
-#   test_nightly.sh                          # Test latest mi30x image
-#   test_nightly.sh --hardware=mi35x         # Test latest mi35x image
+#   test_nightly.sh                          # Run unit test on latest mi30x image
+#   test_nightly.sh --hardware=mi35x         # Run unit test on latest mi35x image
+#   test_nightly.sh --test-type=pd           # Run PD disaggregation test on latest mi30x image
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -92,12 +94,21 @@ CONTAINER_SHM_SIZE="${CONTAINER_SHM_SIZE:-32g}"
 # Hardware configuration
 HARDWARE_TYPE="${HARDWARE_TYPE:-mi30x}"
 
+# Test type configuration
+TEST_TYPE="${TEST_TYPE:-unit}"
+
 # Teams notification configuration
 TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
 
-# ROCM version mapping based on hardware
+# ROCM version mapping based on hardware (for unit tests)
 declare -A ROCM_VERSIONS=(
   ["mi30x"]="rocm630"
+  ["mi35x"]="rocm700"
+)
+
+# ROCM version for PD tests (use rocm700 for both hardware types)
+declare -A PD_ROCM_VERSIONS=(
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
 )
 
@@ -109,10 +120,16 @@ GPU_IDLE_WAIT_TIME="${GPU_IDLE_WAIT_TIME:-15}"
 # Timezone for date calculations (San Francisco time)
 TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 
-# Test configuration
+# Test configuration (for unit tests)
 TEST_DIR="${TEST_DIR:-/sgl-workspace/sglang/test/srt}"
 TEST_LOG_BASE_DIR="${TEST_LOG_BASE_DIR:-${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd}"
 TEST_COMMAND="CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce"
+
+# PD test configuration
+PD_TEST_DIR="${PD_TEST_DIR:-${MOUNT_DIR}/test/pd}"
+PD_LOG_BASE_DIR="${PD_LOG_BASE_DIR:-${MOUNT_DIR}/test/pd/pd_log}"
+PD_MODEL_PATH="${PD_MODEL_PATH:-/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16}"
+PD_MODEL_NAME="${PD_MODEL_NAME:-GPT-OSS-20B}"
 
 ###############################################################################
 # GPU idle check function
@@ -201,28 +218,40 @@ for arg in "$@"; do
     --hardware=*)
       HARDWARE_TYPE="${arg#*=}"
       ;;
+    --test-type=*)
+      TEST_TYPE="${arg#*=}"
+      ;;
     --teams-webhook-url=*)
       TEAMS_WEBHOOK_URL="${arg#*=}"
       ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
-      echo "Run SGL nightly unit tests for test_custom_allreduce"
+      echo "Run SGL nightly tests"
       echo ""
       echo "Options:"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
+      echo "  --test-type=TYPE                 Test type (unit, pd) [default: unit]"
       echo "  --teams-webhook-url=URL          Teams webhook URL for test result notifications"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
-      echo "  $0                              # Test latest mi30x image"
-      echo "  $0 --hardware=mi35x             # Test latest mi35x image"
+      echo "  $0                              # Run unit test on latest mi30x image"
+      echo "  $0 --hardware=mi35x             # Run unit test on latest mi35x image"
+      echo "  $0 --test-type=pd               # Run PD test on latest mi30x image"
       echo ""
       echo "Test Details:"
-      echo "  Unit Test: test_custom_allreduce.TestCustomAllReduce"
-      echo "  Test Directory: /sgl-workspace/sglang/test/srt"
-      echo "  GPUs Used: 0,1,2,3,4,5,6,7 (8 GPUs)"
-      echo "  Log Directory: \${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/[image-name].log"
+      echo "  Unit Test:"
+      echo "    - Test: test_custom_allreduce.TestCustomAllReduce"
+      echo "    - Test Directory: /sgl-workspace/sglang/test/srt"
+      echo "    - GPUs Used: 0,1,2,3,4,5,6,7 (8 GPUs)"
+      echo "    - Log Directory: \${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/[image-name].log"
+      echo ""
+      echo "  PD Test:"
+      echo "    - Test: Prefill/Decode Disaggregation"
+      echo "    - Model: ${PD_MODEL_NAME} (${PD_MODEL_PATH})"
+      echo "    - GPUs Used: 0-3 (Prefill TP=4), 4-7 (Decode TP=4)"
+      echo "    - Log Directory: \${MOUNT_DIR}/test/pd/pd_log/[datetime]_[model]_[image]/"
       exit 0 ;;
     *)
       echo "Unknown argument: $arg"
@@ -237,9 +266,21 @@ if [[ "$HARDWARE_TYPE" != "mi30x" && "$HARDWARE_TYPE" != "mi35x" ]]; then
     exit 1
 fi
 
-# Set ROCM version based on hardware type
-ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
-echo "[test] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
+# Validate test type parameter
+if [[ "$TEST_TYPE" != "unit" && "$TEST_TYPE" != "pd" ]]; then
+    echo "[test] ERROR: Invalid --test-type value. Must be 'unit' or 'pd'."
+    exit 1
+fi
+
+# Set ROCM version based on hardware type and test type
+if [[ "$TEST_TYPE" == "pd" ]]; then
+  ROCM_VERSION="${PD_ROCM_VERSIONS[$HARDWARE_TYPE]}"
+  echo "[test] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION (PD test - using rocm700)"
+else
+  ROCM_VERSION="${ROCM_VERSIONS[$HARDWARE_TYPE]}"
+  echo "[test] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
+fi
+echo "[test] Test Type: $TEST_TYPE"
 
 ###############################################################################
 # Ensure GPU is idle before starting
@@ -339,7 +380,8 @@ echo "[test] Selected image to run tests on: ${IMAGE_REPO}:${SELECTED_TAG}"
 
 echo ""
 echo "[test] =========================================="
-echo "[test] Starting unit tests for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+echo "[test] Starting tests for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+echo "[test] Test type: ${TEST_TYPE}"
 echo "[test] =========================================="
 
 # Ensure GPU is idle before starting tests for this image
@@ -356,107 +398,166 @@ echo "[test] Using Docker image: $DOCKER_IMAGE"
 echo "[test] Container name: $CONTAINER_NAME"
 
 ###############################################################################
-# Ensure container is running
+# Run tests based on test type
 ###############################################################################
-if "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-  echo "[test] Reusing container ${CONTAINER_NAME}"
-  "${DOCKER_CMD[@]}" start "${CONTAINER_NAME}" >/dev/null || true
 
-  # Check if test directory is accessible inside the container
-  if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${TEST_DIR}" 2>/dev/null; then
-    echo "[test] Test directory not accessible in existing container. Recreating container..."
-    "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
-    "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
+if [[ "$TEST_TYPE" == "pd" ]]; then
+  ###############################################################################
+  # PD Test Execution
+  ###############################################################################
+  echo "[test] =========================================="
+  echo "[test] Running PD Disaggregation Test"
+  echo "[test] =========================================="
+
+  # For PD tests, we run components inside Docker containers
+  # The PD test script will handle Docker image passing via DOCKER_IMAGE env var
+  export DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
+
+  # Create PD log base directory
+  mkdir -p "$PD_LOG_BASE_DIR"
+
+  # Run Docker-based PD test script
+  TEST_EXIT_CODE=0
+  PD_TEST_SCRIPT="${PD_TEST_DIR}/run_pd_docker.sh"
+
+  if [ ! -f "$PD_TEST_SCRIPT" ]; then
+    echo "[test] ERROR: PD test script not found: $PD_TEST_SCRIPT"
+    exit 1
   fi
-fi
 
-# Create container if it doesn't exist or was removed due to validation failure
-if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-  echo "[test] Creating container ${CONTAINER_NAME}"
+  echo "[test] Running PD test script: $PD_TEST_SCRIPT"
+  echo "[test] Model: ${PD_MODEL_NAME} (${PD_MODEL_PATH})"
+  echo "[test] Docker Image: ${DOCKER_IMAGE}"
 
-  # Create mount arguments - always mount MOUNT_DIR
-  mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+  bash "$PD_TEST_SCRIPT" "$PD_MODEL_PATH" "$PD_MODEL_NAME" || TEST_EXIT_CODE=$?
 
-  # If test CI directory is not under MOUNT_DIR, mount it separately
-  if [[ "${TEST_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
-      echo "[test] Test CI directory ${TEST_CI_DIR} is not under ${MOUNT_DIR}, mounting separately..."
-      mount_args="${mount_args} -v ${TEST_CI_DIR}:${TEST_CI_DIR}"
-  fi
+  # Find the PD log directory (structure: pd_log/{hardware}/{docker_tag})
+  LATEST_PD_LOG="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}"
 
-  "${DOCKER_CMD[@]}" run -d --name "${CONTAINER_NAME}" \
-    --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
-    --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
-    ${mount_args} --group-add video --privileged \
-    -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
-fi
-
-###############################################################################
-# Create log directory and run unit test
-###############################################################################
-
-# Create log file name with image tag only (will overwrite existing)
-LOG_FILE="${TEST_LOG_BASE_DIR}/${SELECTED_TAG}.log"
-
-# Ensure log directory exists both locally and in container
-LOG_DIR=$(dirname "$LOG_FILE")
-mkdir -p "$LOG_DIR"
-"${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$LOG_DIR"
-
-echo "[test] === Starting test_custom_allreduce unit test ==="
-echo "[test] Test directory: ${TEST_DIR}"
-echo "[test] Log file: ${LOG_FILE}"
-echo "[test] Test command: ${TEST_COMMAND}"
-
-# Execute the unit test and capture exit code
-TEST_EXIT_CODE=0
-
-echo "[test] Running unit test inside ${CONTAINER_NAME}..."
-
-# Start logging with header information
-{
-  echo "=========================================="
-  echo "SGL Unit Test Log"
-  echo "=========================================="
-  echo "Test: test_custom_allreduce.TestCustomAllReduce"
-  echo "Image: ${DOCKER_IMAGE}"
-  echo "Container: ${CONTAINER_NAME}"
-  echo "Hardware: ${HARDWARE_TYPE}"
-  echo "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-  echo "Test directory: ${TEST_DIR}"
-  echo "Command: ${TEST_COMMAND}"
-  echo "=========================================="
-  echo ""
-} > "$LOG_FILE"
-
-# Run the test and append output to log file
-"${DOCKER_CMD[@]}" exec \
-  -e INSIDE_CONTAINER=1 \
-  -e CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
-  "${CONTAINER_NAME}" \
-  bash -c "cd '${TEST_DIR}' && ${TEST_COMMAND}" >> "$LOG_FILE" 2>&1 || TEST_EXIT_CODE=$?
-
-# Add footer to log file
-{
-  echo ""
-  echo "=========================================="
-  echo "End time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-  echo "Exit code: ${TEST_EXIT_CODE}"
-  if [ $TEST_EXIT_CODE -eq 0 ]; then
-    echo "Result: PASSED"
+  if [ -d "$LATEST_PD_LOG" ]; then
+    LOG_FILE="${LATEST_PD_LOG}/timing_summary.txt"
+    echo "[test] PD test log directory: ${LATEST_PD_LOG}"
   else
-    echo "Result: FAILED"
+    LOG_FILE="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/pd_test_${SELECTED_TAG}.log"
+    echo "[test] WARNING: Could not find PD log directory, using default log file"
   fi
-  echo "=========================================="
-} >> "$LOG_FILE"
 
-# Report results
-if [ $TEST_EXIT_CODE -eq 0 ]; then
-  echo "[test] === Unit test PASSED for ${DOCKER_IMAGE} ==="
-  echo "[test] Log saved to: ${LOG_FILE}"
+  # Report results
+  if [ $TEST_EXIT_CODE -eq 0 ]; then
+    echo "[test] === PD test PASSED for ${DOCKER_IMAGE} ==="
+    echo "[test] Logs saved to: ${LATEST_PD_LOG}"
+  else
+    echo "[test] === PD test FAILED for ${DOCKER_IMAGE} (exit code: $TEST_EXIT_CODE) ==="
+    echo "[test] Logs saved to: ${LATEST_PD_LOG}"
+    echo "[test] Check the log directory for detailed error information"
+  fi
+
 else
-  echo "[test] === Unit test FAILED for ${DOCKER_IMAGE} (exit code: $TEST_EXIT_CODE) ==="
-  echo "[test] Log saved to: ${LOG_FILE}"
-  echo "[test] Check the log file for detailed error information"
+  ###############################################################################
+  # Unit Test Execution (original logic)
+  ###############################################################################
+
+  # Ensure container is running
+  if "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "[test] Reusing container ${CONTAINER_NAME}"
+    "${DOCKER_CMD[@]}" start "${CONTAINER_NAME}" >/dev/null || true
+
+    # Check if test directory is accessible inside the container
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" test -d "${TEST_DIR}" 2>/dev/null; then
+      echo "[test] Test directory not accessible in existing container. Recreating container..."
+      "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1
+      "${DOCKER_CMD[@]}" rm "${CONTAINER_NAME}" >/dev/null 2>&1
+    fi
+  fi
+
+  # Create container if it doesn't exist or was removed due to validation failure
+  if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "[test] Creating container ${CONTAINER_NAME}"
+
+    # Create mount arguments - always mount MOUNT_DIR
+    mount_args="-v ${MOUNT_DIR}:${MOUNT_DIR}"
+
+    # If test CI directory is not under MOUNT_DIR, mount it separately
+    if [[ "${TEST_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
+        echo "[test] Test CI directory ${TEST_CI_DIR} is not under ${MOUNT_DIR}, mounting separately..."
+        mount_args="${mount_args} -v ${TEST_CI_DIR}:${TEST_CI_DIR}"
+    fi
+
+    "${DOCKER_CMD[@]}" run -d --name "${CONTAINER_NAME}" \
+      --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
+      --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+      ${mount_args} --group-add video --privileged \
+      -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
+  fi
+
+  # Create log file name with image tag only (will overwrite existing)
+  LOG_FILE="${TEST_LOG_BASE_DIR}/${SELECTED_TAG}.log"
+
+  # Ensure log directory exists both locally and in container
+  LOG_DIR=$(dirname "$LOG_FILE")
+  mkdir -p "$LOG_DIR"
+  "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$LOG_DIR"
+
+  echo "[test] === Starting test_custom_allreduce unit test ==="
+  echo "[test] Test directory: ${TEST_DIR}"
+  echo "[test] Log file: ${LOG_FILE}"
+  echo "[test] Test command: ${TEST_COMMAND}"
+
+  # Execute the unit test and capture exit code
+  TEST_EXIT_CODE=0
+
+  echo "[test] Running unit test inside ${CONTAINER_NAME}..."
+
+  # Start logging with header information
+  {
+    echo "=========================================="
+    echo "SGL Unit Test Log"
+    echo "=========================================="
+    echo "Test: test_custom_allreduce.TestCustomAllReduce"
+    echo "Image: ${DOCKER_IMAGE}"
+    echo "Container: ${CONTAINER_NAME}"
+    echo "Hardware: ${HARDWARE_TYPE}"
+    echo "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+    echo "Test directory: ${TEST_DIR}"
+    echo "Command: ${TEST_COMMAND}"
+    echo "=========================================="
+    echo ""
+  } > "$LOG_FILE"
+
+  # Run the test and append output to log file
+  "${DOCKER_CMD[@]}" exec \
+    -e INSIDE_CONTAINER=1 \
+    -e CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
+    "${CONTAINER_NAME}" \
+    bash -c "cd '${TEST_DIR}' && ${TEST_COMMAND}" >> "$LOG_FILE" 2>&1 || TEST_EXIT_CODE=$?
+
+  # Add footer to log file
+  {
+    echo ""
+    echo "=========================================="
+    echo "End time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+    echo "Exit code: ${TEST_EXIT_CODE}"
+    if [ $TEST_EXIT_CODE -eq 0 ]; then
+      echo "Result: PASSED"
+    else
+      echo "Result: FAILED"
+    fi
+    echo "=========================================="
+  } >> "$LOG_FILE"
+
+  # Report results
+  if [ $TEST_EXIT_CODE -eq 0 ]; then
+    echo "[test] === Unit test PASSED for ${DOCKER_IMAGE} ==="
+    echo "[test] Log saved to: ${LOG_FILE}"
+  else
+    echo "[test] === Unit test FAILED for ${DOCKER_IMAGE} (exit code: $TEST_EXIT_CODE) ==="
+    echo "[test] Log saved to: ${LOG_FILE}"
+    echo "[test] Check the log file for detailed error information"
+  fi
+
+  # Stop container to free up resources
+  echo "[test] Stopping container ${CONTAINER_NAME} to release resources..."
+  "${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 fi
 
 # Send Teams notification if webhook URL is provided
@@ -477,10 +578,7 @@ else
   echo "[test] No Teams webhook URL provided - skipping notification"
 fi
 
-# Stop container to free up resources
-echo "[test] Stopping container ${CONTAINER_NAME} to release resources..."
-"${DOCKER_CMD[@]}" stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-
 echo "[test] =========================================="
-echo "[test] Unit test completed for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+echo "[test] Test completed for image: ${IMAGE_REPO}:${SELECTED_TAG}"
+echo "[test] Test type: ${TEST_TYPE}"
 echo "[test] =========================================="
