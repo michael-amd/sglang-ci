@@ -31,9 +31,6 @@ LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
 # Docker command with sudo
 DOCKER_CMD=(sudo /usr/bin/docker)
 
-# Main execution log file
-MAIN_LOG="${LOG_DIR}/main_execution.log"
-
 # Create log directory with proper permissions
 if [ ! -d "${LOG_DIR}" ]; then
   if mkdir -p "${LOG_DIR}" 2>/dev/null; then
@@ -46,8 +43,6 @@ if [ ! -d "${LOG_DIR}" ]; then
   fi
 fi
 
-# Setup logging - redirect all output to main log while still showing on terminal
-exec > >(tee -a "${MAIN_LOG}") 2>&1
 echo "==================================================="
 echo "PD Test Execution Started: $(date)"
 echo "==================================================="
@@ -353,7 +348,6 @@ if [ "$HEALTH_CHECK_PASSED" = false ]; then
   grep -i "error\|exception\|failed" "${LOG_DIR}/decode.log" | tail -10 || echo "No errors found in decode log"
   echo ""
   echo "[pd-test] Logs saved to: ${LOG_DIR}"
-  echo "[pd-test] Main execution log: ${MAIN_LOG}"
   echo "[pd-test] Check prefill.log and decode.log for startup errors"
   exit 1
 fi
