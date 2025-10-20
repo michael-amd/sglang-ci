@@ -443,15 +443,18 @@ echo ""
 
 # Test 6: GSM8K Accuracy Test
 echo "[pd-test] Test 6: GSM8K Accuracy Test"
-echo "[pd-test] Running GSM8K benchmark (200 questions, parallel 128, 5-shot)..."
+echo "[pd-test] Running GSM8K benchmark (200 questions, parallel 32, 5-shot)..."
 echo "[pd-test] Using official implementation (bench_gsm8k_pd.py based on sglang/benchmark/gsm8k/bench_sglang.py)"
+echo "[pd-test] Note: Using parallel=32 instead of 128 to avoid PD timeout issues with long prompts"
 GSM8K_START=$(date +%s)
 
 # Use official implementation based on sglang/benchmark/gsm8k/bench_sglang.py
+# Reduced parallelism from 128 to 32 to prevent PD disaggregation timeouts
+# PD has more limited concurrent request capacity than monolithic serving
 "${DOCKER_CMD[@]}" exec sglang-pd-router \
   python3 /mnt/raid/michael/sglang-ci/test/pd/bench_gsm8k_pd.py \
     --num-questions 200 \
-    --parallel 128 \
+    --parallel 32 \
     --num-shots 5 \
     --max-new-tokens 512 \
     --model "${COMPLETION_MODEL}" \
