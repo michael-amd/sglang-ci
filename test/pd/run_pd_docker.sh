@@ -530,6 +530,7 @@ Hardware: ${HARDWARE}
 Model: ${MODEL_NAME}
 Model Path: ${MODEL_PATH}
 Docker Image: ${DOCKER_IMAGE}
+Hostname: $(hostname)
 
 Configuration:
 - IP Address: ${HOST_IP}
