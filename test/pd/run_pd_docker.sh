@@ -115,6 +115,7 @@ cleanup
 echo "[pd-test] =========================================="
 echo "[pd-test] Step 1: Starting Load Balancer/Router..."
 echo "[pd-test] =========================================="
+STEP1_START=$(date +%s)
 
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-router \
   --network=host \
@@ -144,12 +145,15 @@ if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-router; then
   exit 1
 fi
 echo "[pd-test] ✓ Router started successfully"
+STEP1_END=$(date +%s)
+STEP1_DURATION=$((STEP1_END - STEP1_START))
 echo ""
 
 # Step 2: Start Prefill Server in Docker
 echo "[pd-test] =========================================="
 echo "[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)..."
 echo "[pd-test] =========================================="
+STEP2_START=$(date +%s)
 
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-prefill \
   --network=host --ipc=host --cap-add=SYS_PTRACE \
@@ -189,12 +193,15 @@ if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-prefill; then
   exit 1
 fi
 echo "[pd-test] ✓ Prefill Server started successfully"
+STEP2_END=$(date +%s)
+STEP2_DURATION=$((STEP2_END - STEP2_START))
 echo ""
 
 # Step 3: Start Decode Server in Docker
 echo "[pd-test] =========================================="
 echo "[pd-test] Step 3: Starting Decode Server (GPUs 4-7)..."
 echo "[pd-test] =========================================="
+STEP3_START=$(date +%s)
 
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-decode \
   --network=host --ipc=host --cap-add=SYS_PTRACE \
@@ -233,12 +240,15 @@ if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-decode; then
   exit 1
 fi
 echo "[pd-test] ✓ Decode Server started successfully"
+STEP3_END=$(date +%s)
+STEP3_DURATION=$((STEP3_END - STEP3_START))
 echo ""
 
 # Step 4: Wait for all services to be healthy
 echo "[pd-test] =========================================="
 echo "[pd-test] Step 4: Waiting for services to be healthy..."
 echo "[pd-test] =========================================="
+STEP4_START=$(date +%s)
 echo "[pd-test] Waiting additional 30 seconds..."
 sleep 30
 
@@ -316,6 +326,8 @@ for i in $(seq 1 ${HEALTH_CHECK_MAX_ATTEMPTS}); do
 
   sleep ${HEALTH_CHECK_SLEEP}
 done
+STEP4_END=$(date +%s)
+STEP4_DURATION=$((STEP4_END - STEP4_START))
 echo ""
 
 if [ "$HEALTH_CHECK_PASSED" = false ]; then
@@ -355,28 +367,37 @@ TEST_EXIT_CODE=0
 
 # Test 1: Health check
 echo "[pd-test] Test 1: Health Check"
-if curl -s "http://${HOST_IP}:30028/health" | tee "${LOG_DIR}/test_health.json"; then
+TEST1_START=$(date +%s)
+if curl -s "http://${HOST_IP}:30028/health" > /dev/null; then
   echo "[pd-test] ✓ Health check passed"
+  TEST1_RESULT="PASS"
 else
   echo "[pd-test] ✗ Health check failed"
   TEST_EXIT_CODE=1
+  TEST1_RESULT="FAIL"
 fi
-echo ""
+TEST1_END=$(date +%s)
+TEST1_DURATION=$((TEST1_END - TEST1_START))
 echo ""
 
 # Test 2: Model info
 echo "[pd-test] Test 2: Model Info"
-if curl -s "http://${HOST_IP}:30028/v1/models" | tee "${LOG_DIR}/test_models.json"; then
+TEST2_START=$(date +%s)
+if curl -s "http://${HOST_IP}:30028/v1/models" > /dev/null; then
   echo "[pd-test] ✓ Model info passed"
+  TEST2_RESULT="PASS"
 else
   echo "[pd-test] ✗ Model info failed"
   TEST_EXIT_CODE=1
+  TEST2_RESULT="FAIL"
 fi
-echo ""
+TEST2_END=$(date +%s)
+TEST2_DURATION=$((TEST2_END - TEST2_START))
 echo ""
 
 # Test 3: Simple completion
 echo "[pd-test] Test 3: Simple Completion"
+TEST3_START=$(date +%s)
 if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
   -H 'Content-Type: application/json' \
   -d "{
@@ -384,17 +405,21 @@ if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
     \"prompt\": \"Hello, how are you?\",
     \"max_tokens\": 50,
     \"temperature\": 0.7
-  }" | tee "${LOG_DIR}/test_completion_1.json"; then
+  }" > /dev/null; then
   echo "[pd-test] ✓ Simple completion passed"
+  TEST3_RESULT="PASS"
 else
   echo "[pd-test] ✗ Simple completion failed"
   TEST_EXIT_CODE=1
+  TEST3_RESULT="FAIL"
 fi
-echo ""
+TEST3_END=$(date +%s)
+TEST3_DURATION=$((TEST3_END - TEST3_START))
 echo ""
 
 # Test 4: Code generation
 echo "[pd-test] Test 4: Code Generation"
+TEST4_START=$(date +%s)
 if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
   -H 'Content-Type: application/json' \
   -d "{
@@ -402,13 +427,16 @@ if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
     \"prompt\": \"Write a Python function to calculate fibonacci numbers:\\n\\ndef fibonacci(n):\",
     \"max_tokens\": 100,
     \"temperature\": 0.3
-  }" | tee "${LOG_DIR}/test_completion_2.json"; then
+  }" > /dev/null; then
   echo "[pd-test] ✓ Code generation passed"
+  TEST4_RESULT="PASS"
 else
   echo "[pd-test] ✗ Code generation failed"
   TEST_EXIT_CODE=1
+  TEST4_RESULT="FAIL"
 fi
-echo ""
+TEST4_END=$(date +%s)
+TEST4_DURATION=$((TEST4_END - TEST4_START))
 echo ""
 
 # # Test 5: Concurrent requests
@@ -475,10 +503,12 @@ if [ $GSM8K_EXIT_CODE -eq 0 ]; then
     echo "[pd-test] ✓ GSM8K test completed (Duration: ${GSM8K_DURATION}s)"
     GSM8K_ACCURACY="N/A"
   fi
+  TEST6_RESULT="PASS"
 else
   echo "[pd-test] ✗ GSM8K test failed (exit code: ${GSM8K_EXIT_CODE}, Duration: ${GSM8K_DURATION}s)"
   TEST_EXIT_CODE=1
   GSM8K_ACCURACY="FAILED"
+  TEST6_RESULT="FAIL"
 fi
 echo ""
 
@@ -515,26 +545,32 @@ Configuration:
 - Network: Loopback (lo)
 - Execution: Docker containers
 
-Test Results:
-- Health Check: $([ -f "${LOG_DIR}/test_health.json" ] && echo "PASS" || echo "FAIL")
-- Model Info: $([ -f "${LOG_DIR}/test_models.json" ] && echo "PASS" || echo "FAIL")
-- Simple Completion: $([ -f "${LOG_DIR}/test_completion_1.json" ] && echo "PASS" || echo "FAIL")
-- Code Generation: $([ -f "${LOG_DIR}/test_completion_2.json" ] && echo "PASS" || echo "FAIL")
-- Concurrent Requests: $([ -f "${LOG_DIR}/test_concurrent_5.json" ] && echo "PASS" || echo "FAIL")
-- GSM8K Accuracy: ${GSM8K_ACCURACY:-N/A}
+Setup Steps (with runtime):
+- Step 1 - Router Startup: ${STEP1_DURATION:-0}s
+- Step 2 - Prefill Server Startup: ${STEP2_DURATION:-0}s
+- Step 3 - Decode Server Startup: ${STEP3_DURATION:-0}s
+- Step 4 - Health Check Wait: ${STEP4_DURATION:-0}s
+
+Test Results (with runtime):
+- Test 1 - Health Check: ${TEST1_RESULT:-FAIL} (${TEST1_DURATION:-0}s)
+- Test 2 - Model Info: ${TEST2_RESULT:-FAIL} (${TEST2_DURATION:-0}s)
+- Test 3 - Simple Completion: ${TEST3_RESULT:-FAIL} (${TEST3_DURATION:-0}s)
+- Test 4 - Code Generation: ${TEST4_RESULT:-FAIL} (${TEST4_DURATION:-0}s)
+- Test 6 - GSM8K Accuracy: ${GSM8K_ACCURACY:-N/A} [${TEST6_RESULT:-FAIL}] (${GSM8K_DURATION}s)
 
 Timing Summary:
+- Total Test Runtime: ${TOTAL_TEST_TIME}s
+- Setup Time (Steps 1-4): $((STEP1_DURATION + STEP2_DURATION + STEP3_DURATION + STEP4_DURATION))s
 - GSM8K Test Duration: ${GSM8K_DURATION}s
 - GSM8K Questions per Second: $(awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}")
 - GSM8K Parallelism: 32 concurrent requests
-- Total Test Time: ${TOTAL_TEST_TIME}s
 
 Log Files:
 - Load Balancer: ${LOG_DIR}/load_balance.log
 - Prefill Server: ${LOG_DIR}/prefill.log
 - Decode Server: ${LOG_DIR}/decode.log
-- Test Results: ${LOG_DIR}/test_*.json
 - GSM8K Results: ${LOG_DIR}/test_gsm8k.log
+- Main Execution: ${MAIN_LOG}
 
 Test completed in nightly mode (Docker-based).
 EOF
