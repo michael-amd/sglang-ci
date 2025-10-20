@@ -565,7 +565,6 @@ Log Files:
 - Prefill Server: ${LOG_DIR}/prefill.log
 - Decode Server: ${LOG_DIR}/decode.log
 - GSM8K Results: ${LOG_DIR}/test_gsm8k.log
-- Main Execution: ${MAIN_LOG}
 
 Test completed in nightly mode (Docker-based).
 EOF
@@ -575,7 +574,6 @@ echo ""
 
 echo "[pd-test] =========================================="
 echo "[pd-test] Tests complete! Logs saved to: ${LOG_DIR}"
-echo "[pd-test] Main execution log: ${MAIN_LOG}"
 echo "[pd-test] =========================================="
 
 # Print summary of test results

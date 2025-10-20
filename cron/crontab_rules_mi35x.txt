@@ -24,6 +24,9 @@ TEAMS_WEBHOOK_URL=""
 GITHUB_REPO="michael-amd/sglang-ci-data"
 GITHUB_TOKEN=""
 
+# 5 AM PT (7 AM CT) - PD (Prefill-Decode Disaggregation) Test + Teams notifications
+0 7 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --test-type=pd --hardware="$HARDWARE_TYPE" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/pd_test_nightly.log 2>&1 && bash cron/github_log_upload.sh
+
 # 6 AM PT (8 AM CT) - DeepSeek online serving benchmark + Teams notifications
 0 8 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
 
