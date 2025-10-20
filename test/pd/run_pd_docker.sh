@@ -488,10 +488,15 @@ echo "[pd-test] Collecting logs from Docker containers..."
 "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
 "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
 
-# Create summary
+# Create summary with timing information
 echo "[pd-test] =========================================="
 echo "[pd-test] Creating Test Summary"
 echo "[pd-test] =========================================="
+
+# Calculate total test time
+TEST_END_TIME=$(date +%s)
+TOTAL_TEST_TIME=$((TEST_END_TIME - GSM8K_START))
+
 cat > "${LOG_DIR}/test_summary.txt" << EOF
 SGLang PD Disaggregation Test Summary
 ======================================
@@ -518,34 +523,23 @@ Test Results:
 - Concurrent Requests: $([ -f "${LOG_DIR}/test_concurrent_5.json" ] && echo "PASS" || echo "FAIL")
 - GSM8K Accuracy: ${GSM8K_ACCURACY:-N/A}
 
+Timing Summary:
+- GSM8K Test Duration: ${GSM8K_DURATION}s
+- GSM8K Questions per Second: $(awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}")
+- GSM8K Parallelism: 32 concurrent requests
+- Total Test Time: ${TOTAL_TEST_TIME}s
+
 Log Files:
 - Load Balancer: ${LOG_DIR}/load_balance.log
 - Prefill Server: ${LOG_DIR}/prefill.log
 - Decode Server: ${LOG_DIR}/decode.log
 - Test Results: ${LOG_DIR}/test_*.json
+- GSM8K Results: ${LOG_DIR}/test_gsm8k.log
 
 Test completed in nightly mode (Docker-based).
 EOF
 
 cat "${LOG_DIR}/test_summary.txt"
-echo ""
-
-# Generate timing summary
-echo "[pd-test] =========================================="
-echo "[pd-test] Generating timing summary..."
-echo "[pd-test] =========================================="
-TIMING_SUMMARY_SCRIPT="${TEST_DIR}/generate_timing_summary.py"
-if [ -f "${TIMING_SUMMARY_SCRIPT}" ]; then
-  sudo python3 "${TIMING_SUMMARY_SCRIPT}" --log-dir "${LOG_DIR}" 2>/dev/null || \
-    python3 "${TIMING_SUMMARY_SCRIPT}" --log-dir "${LOG_DIR}"
-  if [ -f "${LOG_DIR}/timing_summary.txt" ]; then
-    echo "[pd-test] ✓ Timing summary generated: ${LOG_DIR}/timing_summary.txt"
-  else
-    echo "[pd-test] WARNING: Failed to generate timing summary"
-  fi
-else
-  echo "[pd-test] WARNING: Timing summary script not found: ${TIMING_SUMMARY_SCRIPT}"
-fi
 echo ""
 
 echo "[pd-test] =========================================="
