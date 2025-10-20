@@ -31,9 +31,9 @@
 #   --help, -h               Show detailed help message
 #
 # EXAMPLES:
-#   test_nightly.sh                          # Run unit test on latest mi30x image
-#   test_nightly.sh --hardware=mi35x         # Run unit test on latest mi35x image
-#   test_nightly.sh --test-type=pd           # Run PD disaggregation test on latest mi30x image
+#   bash test_nightly.sh                          # Run unit test on latest mi30x image
+#   bash test_nightly.sh --hardware=mi35x         # Run unit test on latest mi35x image
+#   bash test_nightly.sh --test-type=pd           # Run PD disaggregation test on latest mi30x image
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -128,8 +128,17 @@ TEST_COMMAND="CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_cust
 # PD test configuration
 PD_TEST_DIR="${PD_TEST_DIR:-${MOUNT_DIR}/test/pd}"
 PD_LOG_BASE_DIR="${PD_LOG_BASE_DIR:-${MOUNT_DIR}/test/pd/pd_log}"
-PD_MODEL_PATH="${PD_MODEL_PATH:-/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16}"
-PD_MODEL_NAME="${PD_MODEL_NAME:-GPT-OSS-20B}"
+
+# PD model paths by hardware type
+declare -A PD_MODEL_PATHS=(
+  ["mi30x"]="/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16"
+  ["mi35x"]="/data2/models/amd-DeepSeek-R1-MXFP4-Preview"
+)
+
+declare -A PD_MODEL_NAMES=(
+  ["mi30x"]="GPT-OSS-20B"
+  ["mi35x"]="DeepSeek-R1-MXFP4-Preview"
+)
 
 ###############################################################################
 # GPU idle check function
@@ -154,31 +163,74 @@ check_gpu_idle() {
   fi
 }
 
+check_conflicting_processes() {
+  echo "[test] Checking for conflicting SGLang processes..."
+
+  # Check for non-Docker SGLang processes
+  local sglang_procs=$(ps aux | grep -E "python.*sglang\.(launch_server|bench_serving)" | grep -v grep || true)
+
+  if [[ -n "$sglang_procs" ]]; then
+    echo "[test] ERROR: Found running SGLang processes that may conflict with tests:"
+    echo "$sglang_procs" | sed 's/^/[test]   /'
+    echo "[test]"
+    echo "[test] Please stop these processes before running tests:"
+    echo "[test]   sudo pkill -f 'sglang.launch_server'"
+    echo "[test]   sudo pkill -f 'sglang.bench_serving'"
+    return 1
+  fi
+
+  echo "[test] No conflicting SGLang processes found."
+  return 0
+}
+
+cleanup_docker_containers() {
+  echo "[test] Cleaning up Docker containers..."
+
+  if ! "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
+    echo "[test] WARN: Docker not accessible; skipping container cleanup."
+    return 1
+  fi
+
+  # Stop all running containers
+  local running_ids="$("${DOCKER_CMD[@]}" ps -q 2>/dev/null || true)"
+  if [[ -n "$running_ids" ]]; then
+    echo "[test] Stopping running containers: $(echo "$running_ids" | tr '\\n' ' ')"
+    "${DOCKER_CMD[@]}" stop $running_ids >/dev/null 2>&1 || true
+  else
+    echo "[test] No running containers to stop."
+  fi
+
+  # Remove stopped test containers to free up resources
+  local stopped_test_containers="$("${DOCKER_CMD[@]}" ps -a --filter "name=sglang-pd-" --format "{{.Names}}" 2>/dev/null || true)"
+  if [[ -n "$stopped_test_containers" ]]; then
+    echo "[test] Removing stopped PD test containers: $(echo "$stopped_test_containers" | tr '\\n' ' ')"
+    echo "$stopped_test_containers" | xargs -r "${DOCKER_CMD[@]}" rm -f >/dev/null 2>&1 || true
+  fi
+
+  echo "[test] Docker container cleanup complete."
+  return 0
+}
+
 ensure_gpu_idle() {
+  # Always clean up Docker containers first
+  cleanup_docker_containers
+
+  # Check for conflicting non-Docker processes
+  if ! check_conflicting_processes; then
+    echo "[test] ERROR: Cannot proceed with conflicting processes running."
+    exit 1
+  fi
+
+  # Wait for GPU to become idle
   if ! check_gpu_idle; then
-    echo "[test] GPU is busy. Attempting to stop running Docker containers..."
-    # Stop all running containers, ignoring errors if some are already stopped.
-    if "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
-      running_ids="$("${DOCKER_CMD[@]}" ps -q 2>/dev/null || true)"
-      if [[ -n "$running_ids" ]]; then
-        echo "[test] Stopping running containers: $(echo "$running_ids" | tr '\\n' ' ')"
-        "${DOCKER_CMD[@]}" stop $running_ids >/dev/null 2>&1 || true
-      else
-        echo "[test] No running containers to stop."
-      fi
-    else
-      echo "[test] WARN: Docker not accessible; skipping container stop."
-      echo "[test] Docker error details:"
-      "${DOCKER_CMD[@]}" info 2>&1 | sed 's/^/[test]   /' || true
-    fi
-    echo "[test] Waiting ${GPU_IDLE_WAIT_TIME}s for GPU to become idle..."
+    echo "[test] GPU is still busy after cleanup. Waiting ${GPU_IDLE_WAIT_TIME}s for GPU to become idle..."
     sleep "$GPU_IDLE_WAIT_TIME"
   fi
 
   if check_gpu_idle; then
       echo "[test] GPU is idle. Proceeding..."
   else
-      echo "[test] WARN: GPU may still be busy, but proceeding as requested."
+      echo "[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding..."
   fi
 }
 
@@ -249,9 +301,11 @@ for arg in "$@"; do
       echo ""
       echo "  PD Test:"
       echo "    - Test: Prefill/Decode Disaggregation"
-      echo "    - Model: ${PD_MODEL_NAME} (${PD_MODEL_PATH})"
+      echo "    - Models:"
+      echo "      • mi30x: GPT-OSS-20B (/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16)"
+      echo "      • mi35x: DeepSeek-R1-MXFP4-Preview (/data2/models/amd-DeepSeek-R1-MXFP4-Preview)"
       echo "    - GPUs Used: 0-3 (Prefill TP=4), 4-7 (Decode TP=4)"
-      echo "    - Log Directory: \${MOUNT_DIR}/test/pd/pd_log/[datetime]_[model]_[image]/"
+      echo "    - Log Directory: \${MOUNT_DIR}/test/pd/pd_log/{hardware}/{docker_tag}/"
       exit 0 ;;
     *)
       echo "Unknown argument: $arg"
@@ -412,6 +466,14 @@ if [[ "$TEST_TYPE" == "pd" ]]; then
   # For PD tests, we run components inside Docker containers
   # The PD test script will handle Docker image passing via DOCKER_IMAGE env var
   export DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
+
+  # Set model path and name based on hardware type
+  PD_MODEL_PATH="${PD_MODEL_PATHS[$HARDWARE_TYPE]}"
+  PD_MODEL_NAME="${PD_MODEL_NAMES[$HARDWARE_TYPE]}"
+
+  echo "[test] Hardware type: ${HARDWARE_TYPE}"
+  echo "[test] Model path: ${PD_MODEL_PATH}"
+  echo "[test] Model name: ${PD_MODEL_NAME}"
 
   # Create PD log base directory
   mkdir -p "$PD_LOG_BASE_DIR"
