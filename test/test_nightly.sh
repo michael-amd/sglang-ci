@@ -497,7 +497,7 @@ if [[ "$TEST_TYPE" == "pd" ]]; then
   LATEST_PD_LOG="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}"
 
   if [ -d "$LATEST_PD_LOG" ]; then
-    LOG_FILE="${LATEST_PD_LOG}/timing_summary.txt"
+    LOG_FILE="${LATEST_PD_LOG}/test_summary.txt"
     echo "[test] PD test log directory: ${LATEST_PD_LOG}"
   else
     LOG_FILE="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/pd_test_${SELECTED_TAG}.log"
