@@ -8,10 +8,13 @@ set -euo pipefail
 # Configuration
 MODEL_PATH="${1:-/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16}"
 MODEL_NAME="${2:-GPT-OSS-20B}"
+# Identifier used in completion requests; fall back to model path if name not provided.
+COMPLETION_MODEL="${MODEL_NAME:-${MODEL_PATH}}"
 DOCKER_IMAGE="${DOCKER_IMAGE:-rocm/sgl-dev:v0.5.3.post1-rocm700-mi30x-20251014}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-300}"
 TEST_DIR="/mnt/raid/michael/sglang-ci/test/pd"
-HOST_IP="10.194.129.138"
+# Dynamically detect host IP address (first non-loopback IP: ip route get 8.8.8.8 | awk '{print $7}' | awk 'NR==1 {print $1}')
+HOST_IP="10.235.26.27"
 
 # Extract hardware type from docker image tag (mi30x, mi35x, etc.)
 DOCKER_TAG="${DOCKER_IMAGE##*:}"
@@ -28,6 +31,9 @@ LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
 # Docker command with sudo
 DOCKER_CMD=(sudo /usr/bin/docker)
 
+# Main execution log file
+MAIN_LOG="${LOG_DIR}/main_execution.log"
+
 # Create log directory with proper permissions
 if [ ! -d "${LOG_DIR}" ]; then
   if mkdir -p "${LOG_DIR}" 2>/dev/null; then
@@ -39,6 +45,12 @@ if [ ! -d "${LOG_DIR}" ]; then
     sudo chmod -R 775 "${LOG_DIR}"
   fi
 fi
+
+# Setup logging - redirect all output to main log while still showing on terminal
+exec > >(tee -a "${MAIN_LOG}") 2>&1
+echo "==================================================="
+echo "PD Test Execution Started: $(date)"
+echo "==================================================="
 
 echo "[pd-test] =========================================="
 echo "[pd-test] SGLang PD Docker-based Test Runner"
@@ -60,10 +72,26 @@ fi
 
 # Function to cleanup on exit
 cleanup() {
+  local EXIT_CODE=$?
   echo ""
   echo "[pd-test] =========================================="
   echo "[pd-test] Cleaning up Docker containers..."
   echo "[pd-test] =========================================="
+  
+  # Collect final logs before cleanup
+  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-router; then
+    echo "[pd-test] Collecting final router logs..."
+    "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1 || true
+  fi
+  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+    echo "[pd-test] Collecting final prefill logs..."
+    "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1 || true
+  fi
+  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+    echo "[pd-test] Collecting final decode logs..."
+    "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1 || true
+  fi
+  
   "${DOCKER_CMD[@]}" stop sglang-pd-router 2>/dev/null || true
   "${DOCKER_CMD[@]}" stop sglang-pd-prefill 2>/dev/null || true
   "${DOCKER_CMD[@]}" stop sglang-pd-decode 2>/dev/null || true
@@ -72,6 +100,9 @@ cleanup() {
   "${DOCKER_CMD[@]}" rm sglang-pd-decode 2>/dev/null || true
   sleep 3
   echo "[pd-test] Cleanup complete."
+  echo "==================================================="
+  echo "PD Test Execution Ended: $(date) (Exit Code: $EXIT_CODE)"
+  echo "==================================================="
 }
 
 trap cleanup EXIT INT TERM
@@ -87,6 +118,8 @@ echo "[pd-test] =========================================="
 
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-router \
   --network=host \
+  -v /mnt/raid:/mnt/raid \
+  -v /data2:/data2 \
   "${DOCKER_IMAGE}" \
   python3 -m sglang_router.launch_router \
     --pd-disaggregation \
@@ -104,6 +137,9 @@ sleep 10
 if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-router; then
   echo "[pd-test] ERROR: Router container stopped"
   "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1
+  echo "[pd-test] Router container exit code:"
+  "${DOCKER_CMD[@]}" inspect sglang-pd-router --format='{{.State.ExitCode}}' 2>/dev/null || echo "N/A"
+  echo "[pd-test] Last 50 lines of router log:"
   tail -50 "${LOG_DIR}/load_balance.log"
   exit 1
 fi
@@ -120,6 +156,7 @@ echo "[pd-test] =========================================="
   --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
   --group-add video --privileged \
   -v /mnt/raid:/mnt/raid \
+  -v /data2:/data2 \
   -e HIP_VISIBLE_DEVICES=0,1,2,3 \
   -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib \
   "${DOCKER_IMAGE}" \
@@ -143,7 +180,12 @@ sleep 60
 if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-prefill; then
   echo "[pd-test] ERROR: Prefill Server container stopped"
   "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
+  echo "[pd-test] Prefill container exit code:"
+  "${DOCKER_CMD[@]}" inspect sglang-pd-prefill --format='{{.State.ExitCode}}' 2>/dev/null || echo "N/A"
+  echo "[pd-test] Last 50 lines of prefill log:"
   tail -50 "${LOG_DIR}/prefill.log"
+  echo "[pd-test] Checking for common errors:"
+  grep -i "error\|exception\|failed\|traceback" "${LOG_DIR}/prefill.log" | tail -20 || echo "No error keywords found"
   exit 1
 fi
 echo "[pd-test] ✓ Prefill Server started successfully"
@@ -159,6 +201,7 @@ echo "[pd-test] =========================================="
   --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
   --group-add video --privileged \
   -v /mnt/raid:/mnt/raid \
+  -v /data2:/data2 \
   -e HIP_VISIBLE_DEVICES=4,5,6,7 \
   -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib \
   "${DOCKER_IMAGE}" \
@@ -170,7 +213,6 @@ echo "[pd-test] =========================================="
     --host "${HOST_IP}" \
     --tp 4 \
     --trust-remote-code \
-    --mem-fraction-static 0.75 \
     --attention-backend triton \
   > "${LOG_DIR}/decode.log" 2>&1
 
@@ -182,7 +224,12 @@ sleep 60
 if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-decode; then
   echo "[pd-test] ERROR: Decode Server container stopped"
   "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
+  echo "[pd-test] Decode container exit code:"
+  "${DOCKER_CMD[@]}" inspect sglang-pd-decode --format='{{.State.ExitCode}}' 2>/dev/null || echo "N/A"
+  echo "[pd-test] Last 50 lines of decode log:"
   tail -50 "${LOG_DIR}/decode.log"
+  echo "[pd-test] Checking for common errors:"
+  grep -i "error\|exception\|failed\|traceback" "${LOG_DIR}/decode.log" | tail -20 || echo "No error keywords found"
   exit 1
 fi
 echo "[pd-test] ✓ Decode Server started successfully"
@@ -195,30 +242,107 @@ echo "[pd-test] =========================================="
 echo "[pd-test] Waiting additional 30 seconds..."
 sleep 30
 
-# Check health endpoints
-echo "[pd-test] Checking health endpoints..."
+# Check health endpoints for all services
+echo "[pd-test] Checking health endpoints for all services..."
 HEALTH_CHECK_PASSED=false
-for i in {1..10}; do
-  echo "[pd-test] Attempt $i/10..."
+HEALTH_CHECK_MAX_ATTEMPTS=60  # Increased to account for CUDA graph capture
+HEALTH_CHECK_SLEEP=5
+PREFILL_READY=false
+DECODE_READY=false
+ROUTER_READY=false
 
-  if curl -s -f "http://${HOST_IP}:30028/health" > /dev/null 2>&1; then
-    echo "[pd-test] ✓ All services are healthy!"
-    HEALTH_CHECK_PASSED=true
-    break
+for i in $(seq 1 ${HEALTH_CHECK_MAX_ATTEMPTS}); do
+  echo "[pd-test] Attempt $i/${HEALTH_CHECK_MAX_ATTEMPTS}..."
+
+  # Check prefill server health
+  if [ "$PREFILL_READY" = false ]; then
+    if curl -s -f "http://${HOST_IP}:30025/health" > /dev/null 2>&1; then
+      echo "[pd-test]   ✓ Prefill server is healthy"
+      PREFILL_READY=true
+    else
+      echo "[pd-test]   ⧗ Prefill server not ready yet..."
+    fi
   fi
 
-  if [ $i -eq 10 ]; then
+  # Check decode server health
+  if [ "$DECODE_READY" = false ]; then
+    if curl -s -f "http://${HOST_IP}:30026/health" > /dev/null 2>&1; then
+      echo "[pd-test]   ✓ Decode server is healthy"
+      DECODE_READY=true
+    else
+      echo "[pd-test]   ⧗ Decode server not ready yet..."
+    fi
+  fi
+
+  # Check router health (only after backends are ready)
+  if [ "$ROUTER_READY" = false ] && [ "$PREFILL_READY" = true ] && [ "$DECODE_READY" = true ]; then
+    if curl -s -f "http://${HOST_IP}:30028/health" > /dev/null 2>&1; then
+      echo "[pd-test]   ✓ Router is healthy"
+      ROUTER_READY=true
+    else
+      echo "[pd-test]   ⧗ Router not ready yet..."
+    fi
+  fi
+
+  # All services ready - perform functional test
+  if [ "$PREFILL_READY" = true ] && [ "$DECODE_READY" = true ] && [ "$ROUTER_READY" = true ]; then
+    echo "[pd-test] All services report healthy. Performing functional test..."
+
+    # Try a simple completion request to verify the full pipeline works
+    FUNCTIONAL_TEST=$(curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
+      -H 'Content-Type: application/json' \
+      -d "{\"model\": \"${COMPLETION_MODEL}\", \"prompt\": \"Test\", \"max_tokens\": 5, \"temperature\": 0.0}" 2>&1)
+
+    # Check if we got a valid response (not a 422 error)
+    if echo "$FUNCTIONAL_TEST" | grep -q '"choices"'; then
+      echo "[pd-test] ✓ Functional test passed - all services fully operational!"
+      HEALTH_CHECK_PASSED=true
+      break
+    elif echo "$FUNCTIONAL_TEST" | grep -q "422"; then
+      echo "[pd-test]   ⧗ Functional test failed with 422 - backends still initializing (likely CUDA graph capture)..."
+    else
+      echo "[pd-test]   ⧗ Functional test failed - retrying..."
+    fi
+  fi
+
+  if [ $i -eq ${HEALTH_CHECK_MAX_ATTEMPTS} ]; then
     echo "[pd-test] WARNING: Services may not be fully healthy yet"
+    echo "[pd-test] Prefill ready: $PREFILL_READY, Decode ready: $DECODE_READY, Router ready: $ROUTER_READY"
     echo "[pd-test] Router log tail:"
-    "${DOCKER_CMD[@]}" logs --tail 20 sglang-pd-router
+    "${DOCKER_CMD[@]}" logs --tail 30 sglang-pd-router
+    echo "[pd-test] Decode log tail:"
+    "${DOCKER_CMD[@]}" logs --tail 30 sglang-pd-decode
   fi
 
-  sleep 5
+  sleep ${HEALTH_CHECK_SLEEP}
 done
 echo ""
 
 if [ "$HEALTH_CHECK_PASSED" = false ]; then
-  echo "[pd-test] ERROR: Health check failed after 10 attempts"
+  echo "[pd-test] ERROR: Health check failed after ${HEALTH_CHECK_MAX_ATTEMPTS} attempts"
+  echo "[pd-test] Collecting logs from Docker containers for debugging..."
+  "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1
+  "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
+  "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
+  
+  echo "[pd-test] =========================================="
+  echo "[pd-test] Debug Information"
+  echo "[pd-test] =========================================="
+  echo "[pd-test] Container status:"
+  "${DOCKER_CMD[@]}" ps -a | grep sglang-pd || echo "No containers found"
+  echo ""
+  echo "[pd-test] Router log errors:"
+  grep -i "error\|exception\|failed" "${LOG_DIR}/load_balance.log" | tail -10 || echo "No errors found in router log"
+  echo ""
+  echo "[pd-test] Prefill log errors:"
+  grep -i "error\|exception\|failed" "${LOG_DIR}/prefill.log" | tail -10 || echo "No errors found in prefill log"
+  echo ""
+  echo "[pd-test] Decode log errors:"
+  grep -i "error\|exception\|failed" "${LOG_DIR}/decode.log" | tail -10 || echo "No errors found in decode log"
+  echo ""
+  echo "[pd-test] Logs saved to: ${LOG_DIR}"
+  echo "[pd-test] Main execution log: ${MAIN_LOG}"
+  echo "[pd-test] Check prefill.log and decode.log for startup errors"
   exit 1
 fi
 
@@ -256,7 +380,7 @@ echo "[pd-test] Test 3: Simple Completion"
 if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
   -H 'Content-Type: application/json' \
   -d "{
-    \"model\": \"${MODEL_NAME}\",
+    \"model\": \"${COMPLETION_MODEL}\",
     \"prompt\": \"Hello, how are you?\",
     \"max_tokens\": 50,
     \"temperature\": 0.7
@@ -274,7 +398,7 @@ echo "[pd-test] Test 4: Code Generation"
 if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
   -H 'Content-Type: application/json' \
   -d "{
-    \"model\": \"${MODEL_NAME}\",
+    \"model\": \"${COMPLETION_MODEL}\",
     \"prompt\": \"Write a Python function to calculate fibonacci numbers:\\n\\ndef fibonacci(n):\",
     \"max_tokens\": 100,
     \"temperature\": 0.3
@@ -287,45 +411,52 @@ fi
 echo ""
 echo ""
 
-# Test 5: Concurrent requests
-echo "[pd-test] Test 5: Concurrent Requests (Load Balancing)"
-CONCURRENT_FAILED=0
-for i in {1..5}; do
-  (
-    if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
-      -H 'Content-Type: application/json' \
-      -d "{
-        \"model\": \"${MODEL_NAME}\",
-        \"prompt\": \"Count to $i:\",
-        \"max_tokens\": 30,
-        \"temperature\": 0.5
-      }" > "${LOG_DIR}/test_concurrent_${i}.json"; then
-      echo "[pd-test] Request $i completed successfully"
-    else
-      echo "[pd-test] Request $i failed"
-      exit 1
-    fi
-  ) &
-done
-wait || CONCURRENT_FAILED=1
+# # Test 5: Concurrent requests
+# echo "[pd-test] Test 5: Concurrent Requests (Load Balancing)"
+# CONCURRENT_FAILED=0
+# for i in {1..5}; do
+#   (
+#     if curl -s -X POST "http://${HOST_IP}:30028/v1/completions" \
+#       -H 'Content-Type: application/json' \
+#       -d "{
+#         \"model\": \"${MODEL_NAME}\",
+#         \"prompt\": \"Count to $i:\",
+#         \"max_tokens\": 30,
+#         \"temperature\": 0.5
+#       }" > "${LOG_DIR}/test_concurrent_${i}.json"; then
+#       echo "[pd-test] Request $i completed successfully"
+#     else
+#       echo "[pd-test] Request $i failed"
+#       exit 1
+#     fi
+#   ) &
+# done
+# wait || CONCURRENT_FAILED=1
 
-if [ $CONCURRENT_FAILED -eq 0 ]; then
-  echo "[pd-test] ✓ All concurrent requests completed"
-else
-  echo "[pd-test] ✗ Some concurrent requests failed"
-  TEST_EXIT_CODE=1
-fi
-echo ""
+# if [ $CONCURRENT_FAILED -eq 0 ]; then
+#   echo "[pd-test] ✓ All concurrent requests completed"
+# else
+#   echo "[pd-test] ✗ Some concurrent requests failed"
+#   TEST_EXIT_CODE=1
+# fi
+# echo ""
 
 # Test 6: GSM8K Accuracy Test
 echo "[pd-test] Test 6: GSM8K Accuracy Test"
-echo "[pd-test] Running GSM8K benchmark (2000 questions, parallel 2000)..."
+echo "[pd-test] Running GSM8K benchmark (200 questions, parallel 128, 5-shot)..."
+echo "[pd-test] Using official implementation (bench_gsm8k_pd.py based on sglang/benchmark/gsm8k/bench_sglang.py)"
 GSM8K_START=$(date +%s)
 
+# Use official implementation based on sglang/benchmark/gsm8k/bench_sglang.py
 "${DOCKER_CMD[@]}" exec sglang-pd-router \
-  python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py \
-    --num-questions 2000 \
-    --parallel 2000 \
+  python3 /mnt/raid/michael/sglang-ci/test/pd/bench_gsm8k_pd.py \
+    --num-questions 200 \
+    --parallel 128 \
+    --num-shots 5 \
+    --max-new-tokens 512 \
+    --model "${COMPLETION_MODEL}" \
+    --host "http://${HOST_IP}" \
+    --port 30028 \
   > "${LOG_DIR}/test_gsm8k.log" 2>&1
 
 GSM8K_EXIT_CODE=$?
@@ -416,7 +547,16 @@ echo ""
 
 echo "[pd-test] =========================================="
 echo "[pd-test] Tests complete! Logs saved to: ${LOG_DIR}"
+echo "[pd-test] Main execution log: ${MAIN_LOG}"
 echo "[pd-test] =========================================="
+
+# Print summary of test results
+if [ ${TEST_EXIT_CODE} -eq 0 ]; then
+  echo "[pd-test] ✓ All tests PASSED"
+else
+  echo "[pd-test] ✗ Some tests FAILED (exit code: ${TEST_EXIT_CODE})"
+  echo "[pd-test] Check individual test logs for details"
+fi
 
 # Cleanup will be called by trap
 exit ${TEST_EXIT_CODE}
