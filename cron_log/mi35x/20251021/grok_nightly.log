@@ -1,0 +1,289 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-21 10:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 2052420
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 480c7573868a
+cc3d478ea850
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251021...
+[nightly] Found candidate tag for day -0: v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021...
+v0.5.3.post3-rocm700-mi35x-20251021: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+e3982d29c977: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+a9cb1a133e0d: Pulling fs layer
+8ba268f60e6b: Pulling fs layer
+0f9bba6277e5: Pulling fs layer
+a122fa2249e0: Pulling fs layer
+9a46bcd4de8f: Pulling fs layer
+5888bfd575fc: Pulling fs layer
+5486e9b295cf: Pulling fs layer
+106c1289fdc5: Pulling fs layer
+427c927c73cb: Pulling fs layer
+730ef6b34532: Pulling fs layer
+62c9c5ce30dd: Pulling fs layer
+471eec3cd28e: Pulling fs layer
+88489aff7dc0: Pulling fs layer
+0f9bba6277e5: Waiting
+c1c7dd520e3b: Pulling fs layer
+a122fa2249e0: Waiting
+fb01a7834206: Pulling fs layer
+9a46bcd4de8f: Waiting
+8ba268f60e6b: Waiting
+62c9c5ce30dd: Waiting
+5888bfd575fc: Waiting
+471eec3cd28e: Waiting
+88489aff7dc0: Waiting
+c1c7dd520e3b: Waiting
+fb01a7834206: Waiting
+5486e9b295cf: Waiting
+106c1289fdc5: Waiting
+427c927c73cb: Waiting
+730ef6b34532: Waiting
+4f4fb700ef54: Download complete
+e3982d29c977: Verifying Checksum
+e3982d29c977: Download complete
+e3982d29c977: Pull complete
+4f4fb700ef54: Pull complete
+8ba268f60e6b: Verifying Checksum
+8ba268f60e6b: Download complete
+a9cb1a133e0d: Verifying Checksum
+a9cb1a133e0d: Download complete
+a9cb1a133e0d: Pull complete
+8ba268f60e6b: Pull complete
+0f9bba6277e5: Verifying Checksum
+0f9bba6277e5: Download complete
+5888bfd575fc: Verifying Checksum
+5888bfd575fc: Download complete
+0f9bba6277e5: Pull complete
+5486e9b295cf: Verifying Checksum
+5486e9b295cf: Download complete
+106c1289fdc5: Download complete
+427c927c73cb: Verifying Checksum
+427c927c73cb: Download complete
+a122fa2249e0: Download complete
+730ef6b34532: Verifying Checksum
+730ef6b34532: Download complete
+471eec3cd28e: Download complete
+a122fa2249e0: Pull complete
+9a46bcd4de8f: Verifying Checksum
+9a46bcd4de8f: Download complete
+c1c7dd520e3b: Verifying Checksum
+c1c7dd520e3b: Download complete
+fb01a7834206: Verifying Checksum
+fb01a7834206: Download complete
+9a46bcd4de8f: Pull complete
+5888bfd575fc: Pull complete
+5486e9b295cf: Pull complete
+106c1289fdc5: Pull complete
+427c927c73cb: Pull complete
+730ef6b34532: Pull complete
+88489aff7dc0: Verifying Checksum
+88489aff7dc0: Download complete
+62c9c5ce30dd: Verifying Checksum
+62c9c5ce30dd: Download complete
+62c9c5ce30dd: Pull complete
+471eec3cd28e: Pull complete
+88489aff7dc0: Pull complete
+c1c7dd520e3b: Pull complete
+fb01a7834206: Pull complete
+Digest: sha256:9bca678d1afe21cbe78e8e44d13cf3430fdf20a15b6e5e1ab78cf48c5c89300e
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Successfully obtained image for date 20251021: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 1ffce65e72c8
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Creating container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+03d4eb8aa9ff648535563566173aae446a68d21cf39d7c898df3cd09d8330dfa
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[online] Auto-detected model type: grok1 from path: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Script started at: 2025-10-21 10:06:05 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.3.post3-rocm700-mi35x-20251021_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/15 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok1 environment: SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 7, in <module>
+    from sglang.srt.server_args import prepare_server_args
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 30, in <module>
+    from sglang.srt.function_call.function_call_parser import FunctionCallParser
+  File "/sgl-workspace/sglang/python/sglang/srt/function_call/function_call_parser.py", line 4, in <module>
+    from sglang.srt.entrypoints.openai.protocol import (
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/protocol.py", line 40, in <module>
+    from xgrammar import StructuralTag
+ImportError: cannot import name 'StructuralTag' from 'xgrammar' (/opt/venv/lib/python3.10/site-packages/xgrammar/__init__.py)
+[nightly] === Online benchmark dispatched for GROK; check logs in sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.3.post3-rocm700-mi35x-20251021_GROK1_MOE-I4F8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251021
+[nightly] Sending Teams notification for grok online plots...
+[nightly] Adding benchmark date to Teams notification: 20251021
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] GitHub credentials not provided via environment - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+📡 Plot server base URL: http://10.235.26.27:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 Discovered 1 plot file(s) for grok online
+   - 20251021_GROK1_online_standard.png -> http://10.235.26.27:8000/GROK1/online/20251021_GROK1_online_standard.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok online on 20251021: timing_summary_20251021_100605.log
+   Found timing_summary log for grok online on 20251021: timing_summary_20251021_100605.log
+   Found timing_summary log for grok online on 20251021: timing_summary_20251021_100605.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for grok online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok online
+[nightly] === Online post-processing completed for GROK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Stopping container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
