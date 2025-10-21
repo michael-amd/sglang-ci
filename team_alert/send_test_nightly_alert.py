@@ -296,7 +296,7 @@ def parse_pd_test_summary(summary_file_path: str) -> Dict:
                     }
 
         # Extract timing information
-        total_runtime_match = re.search(r"Total Test Runtime:\s*(\d+)s", content)
+        total_runtime_match = re.search(r"Total Time \(Setup \+ Tests\):\s*(\d+)s", content)
         if total_runtime_match:
             total_seconds = int(total_runtime_match.group(1))
             hours = total_seconds // 3600
