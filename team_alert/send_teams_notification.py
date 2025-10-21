@@ -1164,7 +1164,7 @@ class TeamsNotifier:
         self.skip_analysis = skip_analysis
         self.analysis_days = analysis_days
         self.github_upload = github_upload
-        self.github_repo = github_repo
+        self.github_repo = github_repo or os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
         self.github_token = github_token
         self.hardware = hardware
         self.check_dp_attention = check_dp_attention
@@ -1756,7 +1756,7 @@ class TeamsNotifier:
 
         # For sanity checks, link to the hardware directory
         if hardware_type:
-            sanity_log_url = f"https://github.com/ROCm/sglang-ci/tree/log/test/sanity_check_log/{hardware_type}"
+            sanity_log_url = f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{hardware_type}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",
@@ -1774,7 +1774,7 @@ class TeamsNotifier:
                 # Fallback to current date if we can't extract from docker image
                 log_date = datetime.now().strftime("%Y%m%d")
 
-            cron_log_url = f"https://github.com/ROCm/sglang-ci/tree/log/cron_log/{hardware_type}/{log_date}"
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",
@@ -2457,7 +2457,7 @@ class TeamsNotifier:
 
         # Add cron log link if we have hardware type
         if hardware_type:
-            cron_log_url = f"https://github.com/ROCm/sglang-ci/tree/log/cron_log/{hardware_type}/{log_date}"
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",
