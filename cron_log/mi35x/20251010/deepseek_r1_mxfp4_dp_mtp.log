@@ -1,0 +1,104 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-dp-test --enable-mtp-test --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-10 15:50:02 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 1324509
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DeepSeek MTP test enabled via command line
+[nightly] DeepSeek DP test enabled via command line
+[nightly] DP test implies DP attention checks
+[nightly] Custom model path provided: /data/models/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] ERROR: Another instance is already running (PID: 1269630)
+[nightly] Lock file: /tmp/perf_nightly_deepseek.lock
+[nightly] If this is incorrect, remove /tmp/perf_nightly_deepseek.lock and try again
+Concurrency 1, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 12393.95ms E2E latency (1594s)
+[progress] [==================================================] 10/10 (100%) ✅ Complete!
+ | Serving: C1 R1
+✅ Best results for concurrency 1: E2E=12393.95ms, TTFT=452.34ms, ITL=14.38ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 1: E2E=12393.95ms, TTFT=452.34ms, ITL=14.38ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 1
+[mtp] Generating DeepSeek-R1 MTP artifacts...
+[mtp] Generating CSV at /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/bench_results.csv
+[mtp] CSV populated with 5 entries
+[mtp] Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview
+[mtp] CSV written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/bench_results.csv
+[mtp] No numeric data detected. Skipping plot generation.
+✅ Serving benchmark completed successfully in 2567 seconds (DP test mode).
+Structured serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_serving_dp_attention_mtp_test.csv
+Individual concurrency logs saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_serving_benchmark_concurrency_*_run*.log
+GSM8K accuracy results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log
+Shutting down SGLang server...
+/mnt/raid/michael/sglang-ci/deepseek_perf_online_csv.sh: line 788: [: 0
+0: integer expression expected
+/mnt/raid/michael/sglang-ci/deepseek_perf_online_csv.sh: line 800: [: 0
+0: integer expression expected
+Server shutdown completed in 0 seconds
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-10-10 16:00:24 PDT
+Total execution time: 2935 seconds (48 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+Serving CSV: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_serving_dp_attention_mtp_test.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/timing_summary_20251010_151129.log
+===========================================
+Cleaning up...
+Killing background SGLang server (PID: 46)...
+Server process 46 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3.post1-rocm700-mi35x-20251010 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251010_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251010
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251010
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+[nightly] Adding --enable-dp-test flag for Teams notification
+[nightly] Adding --enable-mtp-test flag for Teams notification
+📡 Plot server base URL: http://10.235.26.27:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🧬 DP test mode: Highlighting DP throughput benchmark and serving logs
+🚀 MTP mode: Including DeepSeek R1 throughput artifacts
+   Found timing_summary log for deepseek online on 20251010: timing_summary_20251010_151129.log
+   Found timing_summary log for deepseek online on 20251009: timing_summary_20251009_180424.log
+   Found timing_summary log for deepseek online on 20251008: timing_summary_20251008_174242.log
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251010_DeepSeek-V3_online.png -> http://10.235.26.27:8000/DeepSeek-V3-0324/online/20251010_DeepSeek-V3_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251010: timing_summary_20251010_151129.log
+   Found timing_summary log for deepseek online on 20251010: timing_summary_20251010_151129.log
+   Found timing_summary log for deepseek online on 20251010: timing_summary_20251010_151129.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251010
+[nightly] Stopping container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251010 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

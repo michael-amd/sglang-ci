@@ -1,0 +1,103 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi35x --check-dp-attention --enable-torch-compile --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-08 12:35:01 PDT
+[nightly] Machine: smci355-ccs-aus-m12-17
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 1164354
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /data/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 3541024e9f0f
+2b52ed1f5bca
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251008...
+[nightly] Found candidate tag for day -0: v0.5.3-rocm700-mi35x-20251008
+[nightly] Found local image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008
+[nightly] Successfully obtained image for date 20251008: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 3898ac204c13
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251008_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008
+[nightly] Container name: sgl-dev_v0.5.3-rocm700-mi35x-20251008
+[nightly] Reusing container sgl-dev_v0.5.3-rocm700-mi35x-20251008
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3-rocm700-mi35x-20251008
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-10-08 12:35:52 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251008_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention + torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Torch compile enabled with DP attention
+Waiting for SGLang server (PID: 40) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251008_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_server.log
+..............................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251008_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_server.log:
+--- Error details ---
+
+[2025-10-08 12:38:18 DP2 TP2] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2927, in run_scheduler_process
+--
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 432, in initialize
+    self.init_memory_pool(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1496, in init_memory_pool
+    raise RuntimeError(
+RuntimeError: Not enough memory. Please try to increase --mem-fraction-static. Current value: self.server_args.mem_fraction_static=0.262
+
+[2025-10-08 12:38:18 DP1 TP1] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2927, in run_scheduler_process
+--
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 432, in initialize
+    self.init_memory_pool(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1496, in init_memory_pool
+    raise RuntimeError(
+RuntimeError: Not enough memory. Please try to increase --mem-fraction-static. Current value: self.server_args.mem_fraction_static=0.262
+
+[rank0]:[W1008 12:38:19.662611156 ProcessGroupNCCL.cpp:1522] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 40)...
+Server process 40 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3-rocm700-mi35x-20251008 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251008_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251008
+[nightly] Cleaning up process lock...

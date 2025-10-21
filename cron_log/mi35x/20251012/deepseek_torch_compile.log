@@ -1,0 +1,135 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-torch-compile --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-12 12:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 2300365
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /data/models/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 00bf4d531c1c
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251012...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251011...
+[nightly] Fallback found candidate tag: v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Found local image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Successfully obtained fallback image for date 20251011: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 15a49386feac
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251011_DeepSeek-R1-MXFP4-Preview_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Container name: sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Reusing container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-10-12 12:00:38 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Empty: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251011_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log)
+torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+[DEBUG] Torch compile enabled with standard settings
+Waiting for SGLang server (PID: 44) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251011_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log
+.................../mnt/raid/michael/sglang-ci/deepseek_perf_online_csv.sh: line 577:    44 Killed                  env ${aiter_env_var}=1 python3 -m sglang.launch_server --model-path "${MODEL}" --tp-size "${TP}" --port "$GSM8K_PORT" --trust-remote-code --mem-fraction-static "$SERVER_MEM_FRACTION" --max-running-requests "$SERVER_MAX_REQUESTS" ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1
+
+SGLang server process (PID: 44) has terminated unexpectedly!
+Check /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251011_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log for error details:
+--- Last 20 lines of server log ---
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 833, in forward
+    combine_input = self.quant_method.apply(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/quark/quark_moe.py", line 199, in apply
+    output = fused_moe(
+  File "/sgl-workspace/aiter/aiter/fused_moe.py", line 103, in fused_moe
+    return fused_moe_(
+  File "/sgl-workspace/aiter/aiter/jit/utils/torch_guard.py", line 64, in outer_wrapper
+    return getattr(torch.ops.aiter, op_name)(dummy, *args, **kwargs)
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+Possible solutions:
+1. set --mem-fraction-static to a smaller value (e.g., 0.8 or 0.7)
+2. set --cuda-graph-max-bs to a smaller value (e.g., 16)
+3. disable torch compile by not using --enable-torch-compile
+4. disable CUDA graph by --disable-cuda-graph. (Not recommended. Huge performance loss)
+Open an issue on GitHub https://github.com/sgl-project/sglang/issues/new/choose 
+
+
+[2025-10-12 12:02:11] Received sigquit from a child process. It usually means the child failed.
+--- End of server log ---
+Cleaning up...
+Background SGLang server (PID: 44) already stopped.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post1-rocm700-mi35x-20251011_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251011
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251011
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --enable-torch-compile flag for Teams notification
+📡 Plot server base URL: http://10.235.26.27:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔥 Torch compile mode: Looking for torch compile benchmark results
+🔍 Discovered 2 plot file(s) for deepseek online
+   - 20251010_DeepSeek-R1-MXFP4-Preview_online.png -> http://10.235.26.27:8000/DeepSeek-R1-MXFP4-Preview/online/20251010_DeepSeek-R1-MXFP4-Preview_online.png
+   - 20251010_DeepSeek-V3_online.png -> http://10.235.26.27:8000/DeepSeek-V3-0324/online/20251010_DeepSeek-V3_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251011: timing_summary_20251012_120038.log
+   Found timing_summary log for deepseek online on 20251011: timing_summary_20251012_120038.log
+   Found timing_summary log for deepseek online on 20251011: timing_summary_20251012_120038.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[nightly] Stopping container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

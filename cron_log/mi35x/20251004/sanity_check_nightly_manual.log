@@ -1,0 +1,84 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=1
+[nightly] Start time: 2025-10-04 14:48:29 PDT
+[nightly] Machine: smci355-ccs-aus-m12-17
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 3681263
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh video kvm... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Will run 1 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: af48bdc21ccb
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251004...
+[nightly] Found candidate tag for day -0: v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Successfully obtained image for date 20251004: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: c8dd9652225e
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004' --hardware='mi35x' --trials=1 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 1
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/v0.5.3rc0-rocm700-mi35x-20251004
+
+🚀 [1/8] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/8 (0.0%)
+Traceback (most recent call last):
+  File "/mnt/raid/michael/sglang-ci/test/sanity_check.py", line 1339, in <module>
+    results[model_name] = sanity_check(
+  File "/mnt/raid/michael/sglang-ci/test/sanity_check.py", line 852, in sanity_check
+    launch_cmd, error_msg = build_launch_command(
+  File "/mnt/raid/michael/sglang-ci/test/sanity_check.py", line 815, in build_launch_command
+    valid, error_msg, final_model_path, final_tokenizer_path = validate_model_paths(
+ValueError: not enough values to unpack (expected 4, got 2)
+[nightly] === Sanity check failed (exit code: 1) ===
+[nightly] Teams notifications disabled - no webhook URL configured
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Stopping container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

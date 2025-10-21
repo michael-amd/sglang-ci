@@ -1,0 +1,179 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data/deepseek-ai/DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --check-dp-attention --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-15 12:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m12-17
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 362237
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /data/deepseek-ai/DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 39a15fb11362
+bfbe4f787b9b
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251015...
+[nightly] Found candidate tag for day -0: v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015...
+v0.5.3.post1-rocm700-mi35x-20251015: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+048cd84c4bc1: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+16c88cbc6a2f: Pulling fs layer
+cdb6c188ba76: Pulling fs layer
+100c5b79fb86: Pulling fs layer
+b6ecf14a5be5: Pulling fs layer
+94198a425ea1: Pulling fs layer
+b0019f5e0e8e: Pulling fs layer
+85e53d3ccb2d: Pulling fs layer
+ef22822eb452: Pulling fs layer
+135efb05fdee: Pulling fs layer
+b881432d3abd: Pulling fs layer
+cd11804ee365: Pulling fs layer
+7af1627f75b4: Pulling fs layer
+5cb2e691a527: Pulling fs layer
+135fc7652ec1: Pulling fs layer
+e28341b9297c: Pulling fs layer
+cdb6c188ba76: Waiting
+100c5b79fb86: Waiting
+b6ecf14a5be5: Waiting
+cd11804ee365: Waiting
+7af1627f75b4: Waiting
+5cb2e691a527: Waiting
+135fc7652ec1: Waiting
+e28341b9297c: Waiting
+b881432d3abd: Waiting
+85e53d3ccb2d: Waiting
+ef22822eb452: Waiting
+135efb05fdee: Waiting
+b0019f5e0e8e: Waiting
+94198a425ea1: Waiting
+16c88cbc6a2f: Verifying Checksum
+16c88cbc6a2f: Download complete
+cdb6c188ba76: Verifying Checksum
+cdb6c188ba76: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+048cd84c4bc1: Download complete
+048cd84c4bc1: Pull complete
+4f4fb700ef54: Pull complete
+16c88cbc6a2f: Pull complete
+cdb6c188ba76: Pull complete
+b6ecf14a5be5: Verifying Checksum
+b6ecf14a5be5: Download complete
+b0019f5e0e8e: Verifying Checksum
+b0019f5e0e8e: Download complete
+85e53d3ccb2d: Verifying Checksum
+85e53d3ccb2d: Download complete
+ef22822eb452: Verifying Checksum
+ef22822eb452: Download complete
+135efb05fdee: Download complete
+100c5b79fb86: Verifying Checksum
+100c5b79fb86: Download complete
+100c5b79fb86: Pull complete
+b6ecf14a5be5: Pull complete
+94198a425ea1: Verifying Checksum
+94198a425ea1: Download complete
+7af1627f75b4: Verifying Checksum
+7af1627f75b4: Download complete
+b881432d3abd: Verifying Checksum
+b881432d3abd: Download complete
+135fc7652ec1: Verifying Checksum
+135fc7652ec1: Download complete
+e28341b9297c: Download complete
+94198a425ea1: Pull complete
+b0019f5e0e8e: Pull complete
+85e53d3ccb2d: Pull complete
+ef22822eb452: Pull complete
+135efb05fdee: Pull complete
+cd11804ee365: Verifying Checksum
+cd11804ee365: Download complete
+b881432d3abd: Pull complete
+5cb2e691a527: Verifying Checksum
+5cb2e691a527: Download complete
+cd11804ee365: Pull complete
+7af1627f75b4: Pull complete
+5cb2e691a527: Pull complete
+135fc7652ec1: Pull complete
+e28341b9297c: Pull complete
+Digest: sha256:b7cf92c8a9aa9425a3b969d0506750491588f570f91a8f7d3d45be8e95856f5f
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+docker.io/rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Successfully obtained image for date 20251015: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 41589849abb0
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Container name: sgl-dev_v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Creating container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Custom model path /data/deepseek-ai/DeepSeek-R1-MXFP4-Preview requires mounting /data...
+e02b077422ed2bc154d87a929686b08ba0a76a35f90d3508a9b00a2473981794
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3.post1-rocm700-mi35x-20251015
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+ERROR: Model directory not found at: /data/deepseek-ai/DeepSeek-R1-MXFP4-Preview
+       Use --download-model to download the model or provide correct path with --model
+ERROR: Found 1 validation error(s). Please fix them and try again.
+Cleaning up...
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3.post1-rocm700-mi35x-20251015 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3.post1-rocm700-mi35x-20251015_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251015
+[nightly] Cleaning up process lock...

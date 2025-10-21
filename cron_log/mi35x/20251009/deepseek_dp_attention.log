@@ -1,0 +1,120 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --check-dp-attention --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-09 12:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 81660
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /data/models/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 0953be2838cf
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251009...
+[nightly] Found candidate tag for day -0: v0.5.3-rocm700-mi35x-20251009
+[nightly] Found local image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+[nightly] Successfully obtained image for date 20251009: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: af5f04113ee0
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+[nightly] Container name: sgl-dev_v0.5.3-rocm700-mi35x-20251009
+[nightly] Reusing container sgl-dev_v0.5.3-rocm700-mi35x-20251009
+[nightly] Custom model path not accessible in existing container. Recreating container...
+[nightly] Creating container sgl-dev_v0.5.3-rocm700-mi35x-20251009
+[nightly] Custom model path /data/models/amd-DeepSeek-R1-MXFP4-Preview requires mounting /data...
+ca356f0c74b9dce9065c11f29a6bf190b175e41c7e6d0d965628ed050cc6b16c
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3-rocm700-mi35x-20251009
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-10-09 12:00:45 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251009_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+Waiting for SGLang server (PID: 23) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251009_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log
+................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251009_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log:
+--- Error details ---
+frame #4: <unknown function> + 0x94ac3 (0x7fa5c0eaeac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #5: <unknown function> + 0x126850 (0x7fa5c0f40850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+Fatal Python error: Aborted
+
+Thread 0x00007f51fc9ff640 (most recent call first):
+  File "/usr/lib/python3.10/threading.py", line 324 in wait
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 23)...
+Server process 23 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3-rocm700-mi35x-20251009 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3-rocm700-mi35x-20251009_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251009
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251009
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+📡 Plot server base URL: http://10.235.26.27:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251009_DeepSeek-V3_online.png -> http://10.235.26.27:8000/DeepSeek-V3-0324/online/20251009_DeepSeek-V3_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251009: timing_summary_20251009_120045.log
+   Found timing_summary log for deepseek online on 20251009: timing_summary_20251009_120045.log
+   Found timing_summary log for deepseek online on 20251009: timing_summary_20251009_120045.log
+   Found timing_summary log for deepseek online on 20251009: timing_summary_20251009_120045.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+[nightly] Stopping container sgl-dev_v0.5.3-rocm700-mi35x-20251009 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

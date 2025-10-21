@@ -1,0 +1,102 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-19 09:33:12 PDT
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251019
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-10-19 09:33:12 PDT
+Server startup: 165.70s
+Trial 1: PASS [OK] (Accuracy: 0.851, Time: 139.14s)
+Trial 2: PASS [OK] (Accuracy: 0.841, Time: 124.12s)
+Trial 3: PASS [OK] (Accuracy: 0.863, Time: 125.12s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.851, 0.841, 0.863]
+Average accuracy: 0.852 (Required: 0.820)
+Total time: 554.58s
+End time: 2025-10-19 09:42:27 PDT
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-10-19 09:42:27 PDT
+Server startup: 88.10s
+Trial 1: PASS [OK] (Accuracy: 0.527, Time: 91.09s)
+Trial 2: FAIL [X] (Accuracy: 0.518, Time: 80.08s)
+Trial 3: PASS [OK] (Accuracy: 0.538, Time: 78.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.527, 0.518, 0.538]
+Average accuracy: 0.528 (Required: 0.520)
+Total time: 337.85s
+End time: 2025-10-19 09:48:05 PDT
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-10-19 09:48:05 PDT
+Server startup: 151.68s
+Trial 1: PASS [OK] (Accuracy: 0.862, Time: 90.09s)
+Trial 2: PASS [OK] (Accuracy: 0.860, Time: 136.13s)
+Trial 3: PASS [OK] (Accuracy: 0.859, Time: 93.09s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.862, 0.86, 0.859]
+Average accuracy: 0.860 (Required: 0.840)
+Total time: 471.50s
+End time: 2025-10-19 09:55:56 PDT
+==================================================
+DeepSeek-V3: SKIPPED (no launch command for mi30x)
+==================================================
+GROK1-IN4: SKIPPED (no launch command for mi30x)
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-10-19 09:55:56 PDT
+Server startup: 230.30s
+Trial 1: PASS [OK] (Accuracy: 0.811, Time: 35.03s)
+Trial 2: PASS [OK] (Accuracy: 0.820, Time: 77.07s)
+Trial 3: PASS [OK] (Accuracy: 0.825, Time: 33.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.811, 0.82, 0.825]
+Average accuracy: 0.819 (Required: 0.800)
+Total time: 375.94s
+End time: 2025-10-19 10:02:12 PDT
+==================================================
+GROK2.5: SKIPPED (no launch command for mi30x)
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-10-19 10:02:12 PDT
+Server startup: 178.22s
+Trial 1: PASS [OK] (Accuracy: 0.927, Time: 31.03s)
+Trial 2: PASS [OK] (Accuracy: 0.923, Time: 30.03s)
+Trial 3: PASS [OK] (Accuracy: 0.928, Time: 30.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.927, 0.923, 0.928]
+Average accuracy: 0.926 (Required: 0.800)
+Total time: 269.81s
+End time: 2025-10-19 10:06:42 PDT
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-19 10:06:42 PDT
+Total execution time: 2009.68s (33.5 minutes)
+Average time per model: 251.21s
+Models tested: 5/8
+Models passed: 5/5
+Models failed: 0/5
+Models skipped: 3/8
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  DeepSeek-V3: SKIPPED
+  GROK1-IN4: SKIPPED
+  GROK1-FP8: PASS
+  GROK2.5: SKIPPED
+  llama4: PASS

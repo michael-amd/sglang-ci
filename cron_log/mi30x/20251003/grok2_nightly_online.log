@@ -1,0 +1,84 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2627cd9f12c64fd785fd6b5f476c8929/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NW18x_-_wiyn8dPFp84GfbiAFjlyUb_KqtII9qzx8M
+[nightly] Start time: 2025-10-02 22:00:01 PDT
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 4186469
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi30x hardware
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 6ef596e697f5
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251002...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251001...
+[nightly] Fallback found candidate tag: v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Successfully obtained fallback image for date 20251001: rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: ca096f0cf14a
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.3rc0-rocm700-mi30x-20251001_GROK2_FP8_online
+[nightly] Found 15 completed benchmark runs
+[nightly] INFO: All 15 runs for rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001 (online) are already complete.
+[nightly] INFO: All runs for all requested modes are complete for rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001. Skipping benchmark execution but proceeding with post-processing.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] === Skipping benchmark execution - all benchmarks already complete ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.3rc0-rocm700-mi30x-20251001_GROK2_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251001
+[nightly] Sending Teams notification for grok2 online plots...
+[nightly] Adding benchmark date to Teams notification: 20251001
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+📡 Plot server base URL: http://10.194.129.138:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 Discovered 1 plot file(s) for grok2 online
+   - 20251001_GROK2_online.png -> http://10.194.129.138:8000/GROK2/online/20251001_GROK2_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok2 online on 20251001: timing_summary_20251001_220207.log
+   Found timing_summary log for grok2 online on 20251001: timing_summary_20251001_220207.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for grok2 online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok2 online
+[nightly] === Online post-processing completed for GROK2 ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi30x-20251001
+[nightly] Stopping container sgl-dev_v0.5.3rc0-rocm700-mi30x-20251001 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

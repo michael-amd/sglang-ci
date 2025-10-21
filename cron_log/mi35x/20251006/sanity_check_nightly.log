@@ -1,0 +1,32 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3
+[nightly] Start time: 2025-10-06 13:00:02 PDT
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 4071272
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo spack... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] INFO: Ignoring Teams webhook URL from environment (require --teams-webhook-url)
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b5d0ea34a3e9
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251006...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251005...
+[nightly] No fallback image found for yesterday either.
+[nightly] ERROR: Could not find and obtain any valid non-SRT images for the last 1 days.
+[nightly] Cleaning up process lock...

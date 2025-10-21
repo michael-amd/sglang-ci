@@ -1,0 +1,103 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-05 18:38:16 PDT
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, llama4
+Trials per model: 1
+Docker image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251005
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-10-05 18:38:16 PDT
+Server startup: 164.55s
+Trial 1: PASS [OK] (Accuracy: 0.855, Time: 107.01s)
+Server shutdown: 0.05s
+Final result: PASS [OK]
+Accuracies: [0.855]
+Average accuracy: 0.855 (Required: 0.820)
+Total time: 271.60s
+End time: 2025-10-05 18:42:47 PDT
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-10-05 18:42:47 PDT
+Server startup: 64.02s
+Trial 1: PASS [OK] (Accuracy: 0.525, Time: 71.01s)
+Server shutdown: 0.07s
+Final result: PASS [OK]
+Accuracies: [0.525]
+Average accuracy: 0.525 (Required: 0.520)
+Total time: 135.10s
+End time: 2025-10-05 18:45:02 PDT
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-10-05 18:45:02 PDT
+Server startup: 139.05s
+Trial 1: PASS [OK] (Accuracy: 0.841, Time: 91.01s)
+Server shutdown: 0.04s
+Final result: PASS [OK]
+Accuracies: [0.841]
+Average accuracy: 0.841 (Required: 0.840)
+Total time: 230.11s
+End time: 2025-10-05 18:48:52 PDT
+==================================================
+
+=== DeepSeek-V3 on mi30x ===
+Start time: 2025-10-05 18:48:52 PDT
+Server startup: FAILED after 300.15s
+Error: Out of memory (current mem_fraction_static=0.85)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-10-05 18:53:54 PDT
+Server startup: 288.45s
+Trial 1: PASS [OK] (Accuracy: 0.813, Time: 43.00s)
+Server shutdown: 0.03s
+Final result: PASS [OK]
+Accuracies: [0.813]
+Average accuracy: 0.813 (Required: 0.800)
+Total time: 331.49s
+End time: 2025-10-05 18:59:25 PDT
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-10-05 18:59:25 PDT
+Server startup: 310.63s
+Trial 1: FAIL [X] (Accuracy: 0.751, Time: 43.00s)
+Server shutdown: 0.08s
+Final result: FAIL [X]
+Accuracies: [0.751]
+Average accuracy: 0.751 (Required: 0.800)
+Total time: 353.72s
+End time: 2025-10-05 19:05:19 PDT
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-10-05 19:05:19 PDT
+Server startup: 197.06s
+Trial 1: PASS [OK] (Accuracy: 0.922, Time: 43.00s)
+Server shutdown: 0.05s
+Final result: PASS [OK]
+Accuracies: [0.922]
+Average accuracy: 0.922 (Required: 0.800)
+Total time: 240.11s
+End time: 2025-10-05 19:09:19 PDT
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-05 19:09:19 PDT
+Total execution time: 1863.33s (31.1 minutes)
+Average time per model: 266.19s
+Models tested: 7/7
+Models passed: 5/7
+Models failed: 2/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  DeepSeek-V3: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: FAIL
+  llama4: PASS

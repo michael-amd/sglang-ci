@@ -1,0 +1,366 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3
+[nightly] Start time: 2025-10-14 13:00:02 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 23189
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] INFO: Ignoring Teams webhook URL from environment (require --teams-webhook-url)
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 9cd60b34d3d2
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251014...
+[nightly] Found candidate tag for day -0: v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Found local image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Successfully obtained image for date 20251014: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 94b6adae0117
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Container name: sgl-dev_v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Reusing container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014' --hardware='mi35x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, DeepSeek-R1-MXFP4, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014
+
+🚀 [1/9] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/9 (0.0%)
+
+=== Testing GPT-OSS-120B on mi35x ===
+🚀 Starting server for GPT-OSS-120B...
+✅ Server ready in 158.74s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.842, Time: 78.08s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.839, Time: 68.07s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.853, Time: 68.07s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-120B on mi35x: PASS [OK]
+   Accuracies: [0.842, 0.839, 0.853]
+   Average Accuracy: 0.845 (Required: 0.820)
+   Total Time: 373.47s
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/9 (11.1%) ✅ GPT-OSS-120B completed in 373.5s
+
+🚀 [2/9] Starting GPT-OSS-20B...
+============================================================
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/9 (11.1%)
+
+=== Testing GPT-OSS-20B on mi35x ===
+🚀 Starting server for GPT-OSS-20B...
+✅ Server ready in 70.60s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.522, Time: 56.06s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.536, Time: 48.05s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.550, Time: 48.05s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-20B on mi35x: PASS [OK]
+   Accuracies: [0.522, 0.536, 0.55]
+   Average Accuracy: 0.536 (Required: 0.520)
+   Total Time: 223.26s
+Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/9 (22.2%) ✅ GPT-OSS-20B completed in 223.3s
+
+🚀 [3/9] Starting QWEN-30B...
+============================================================
+Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/9 (22.2%)
+
+=== Testing QWEN-30B on mi35x ===
+🚀 Starting server for QWEN-30B...
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (4 kernels)
+✅ Server ready in 89.69s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.844, Time: 56.06s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.850, Time: 84.09s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.848, Time: 57.06s)
+🛑 Stopping server...
+📋 Result for QWEN-30B on mi35x: PASS [OK]
+   Accuracies: [0.844, 0.85, 0.848]
+   Average Accuracy: 0.847 (Required: 0.840)
+   Total Time: 287.40s
+Progress: [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/9 (33.3%) ✅ QWEN-30B completed in 287.4s
+
+🚀 [4/9] Starting DeepSeek-V3...
+============================================================
+Progress: [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 4/9 (33.3%)
+⏭️  DeepSeek-V3: SKIPPED (no launch command for platform mi35x)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/9 (44.4%) ⏭️ DeepSeek-V3 skipped in 0.0s
+
+🚀 [5/9] Starting DeepSeek-R1-MXFP4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 5/9 (44.4%)
+
+=== Testing DeepSeek-R1-MXFP4 on mi35x ===
+🚀 Starting server for DeepSeek-R1-MXFP4...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/DeepSeek-R1-MXFP4_mi35x_server.log
+DeepSeek-R1-MXFP4: FAIL [X] (Out of memory (current mem_fraction_static=0.95))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/9 (55.6%) ❌ DeepSeek-R1-MXFP4 completed in 301.1s
+
+🚀 [6/9] Starting GROK1-IN4...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 6/9 (55.6%)
+
+=== Testing GROK1-IN4 on mi35x ===
+🚀 Starting server for GROK1-IN4...
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (4 kernels)
+✅ Server ready in 96.29s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.821, Time: 21.02s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.823, Time: 47.05s)
+  📊 Trial 3/3 starting...
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.814, Time: 20.02s)
+🛑 Stopping server...
+📋 Result for GROK1-IN4 on mi35x: PASS [OK]
+   Accuracies: [0.821, 0.823, 0.814]
+   Average Accuracy: 0.819 (Required: 0.800)
+   Total Time: 184.89s
+Progress: [██████████████████████████░░░░░░░░░░░░░░] 6/9 (66.7%) ✅ GROK1-IN4 completed in 184.9s
+
+🚀 [7/9] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████████░░░░░░░░░░░░░░] 7/9 (66.7%)
+
+=== Testing GROK1-FP8 on mi35x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+⚠️  Server errors detected at 55s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 85s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 115s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 145s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 175s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 205s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 235s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 265s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 296s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 326s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 356s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 386s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 416s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 446s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 476s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 506s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 536s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 566s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 596s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK1-FP8_mi35x_server.log
+GROK1-FP8: FAIL [X] (Out of memory (current mem_fraction_static=0.85))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [███████████████████████████████░░░░░░░░░] 7/9 (77.8%) ❌ GROK1-FP8 completed in 601.1s
+
+🚀 [8/9] Starting GROK2.5...
+============================================================
+Progress: [███████████████████████████████░░░░░░░░░] 8/9 (77.8%)
+
+=== Testing GROK2.5 on mi35x ===
+🚀 Starting server for GROK2.5...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/GROK2.5_mi35x_server.log
+GROK2.5: FAIL [X] (Out of memory (current mem_fraction_static=0.85))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [███████████████████████████████████░░░░░] 8/9 (88.9%) ❌ GROK2.5 completed in 301.5s
+
+🚀 [9/9] Starting llama4...
+============================================================
+Progress: [███████████████████████████████████░░░░░] 9/9 (88.9%)
+
+=== Testing llama4 on mi35x ===
+🚀 Starting server for llama4...
+   ⏳ Kernel compilation in progress... (84s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+✅ Server ready in 110.69s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+    ⏳ Trial 1 still running... (105s elapsed)
+    ⏳ Trial 1 still running... (120s elapsed)
+    ⏳ Trial 1 still running... (135s elapsed)
+    ⏳ Trial 1 still running... (150s elapsed)
+    ⏳ Trial 1 still running... (165s elapsed)
+    ⏳ Trial 1 still running... (180s elapsed)
+    ⏳ Trial 1 still running... (195s elapsed)
+    ⏳ Trial 1 still running... (210s elapsed)
+    ⏳ Trial 1 still running... (225s elapsed)
+    ⏳ Trial 1 still running... (240s elapsed)
+    ⏳ Trial 1 still running... (255s elapsed)
+    ⏳ Trial 1 still running... (270s elapsed)
+    ⏳ Trial 1 still running... (285s elapsed)
+    ⏳ Trial 1 still running... (300s elapsed)
+    ⏳ Trial 1 still running... (315s elapsed)
+    ⏳ Trial 1 still running... (330s elapsed)
+    ⏳ Trial 1 still running... (345s elapsed)
+    ⏳ Trial 1 still running... (360s elapsed)
+    ⏳ Trial 1 still running... (375s elapsed)
+    ⏳ Trial 1 still running... (390s elapsed)
+    ⏳ Trial 1 still running... (405s elapsed)
+    ⏳ Trial 1 still running... (420s elapsed)
+    ⏳ Trial 1 still running... (435s elapsed)
+    ⏳ Trial 1 still running... (450s elapsed)
+  ❌ Trial 1: FAIL [X] (No accuracy found in /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/llama4_mi35x_client_try1.log, Time: 452.47s)
+  📊 Trial 2/3 starting...
+  ❌ Server process died before trial 2
+  📊 Trial 3/3 starting...
+  ❌ Server process died before trial 3
+🛑 Stopping server...
+⚠️  Server process cleanup: [Errno 3] No such process
+📋 Result for llama4 on mi35x: FAIL [X]
+   Accuracies: [0.0, 0.0, 0.0]
+   Average Accuracy: 0.000 (Required: 0.800)
+   Total Time: 563.16s
+Progress: [████████████████████████████████████████] 9/9 (100.0%) ❌ llama4 completed in 563.2s
+
+🎯 All tests completed!
+📊 Total execution time: 2835.77s (47.3 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251014/timing_summary_20251014_130034.log
+
+=== Final Summary ===
+✅ GPT-OSS-120B: PASS [OK]
+✅ GPT-OSS-20B: PASS [OK]
+✅ QWEN-30B: PASS [OK]
+⏭️ DeepSeek-V3: SKIPPED (model/tokenizer not available)
+❌ DeepSeek-R1-MXFP4: FAIL [X]
+✅ GROK1-IN4: PASS [OK]
+❌ GROK1-FP8: FAIL [X]
+❌ GROK2.5: FAIL [X]
+❌ llama4: FAIL [X]
+
+📈 Overall: 4/8 models passed (50.0%)
+⏭️  Skipped: 1/9 models (not counted in pass/fail statistics)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Teams notifications disabled - --teams-webhook-url not provided
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251014
+[nightly] Stopping container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251014 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

@@ -1,0 +1,120 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-03 15:24:27 PDT
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-10-03 15:24:27 PDT
+Server startup: 140.54s
+Trial 1: PASS [OK] (Accuracy: 0.842, Time: 106.01s)
+Trial 2: PASS [OK] (Accuracy: 0.849, Time: 102.01s)
+Trial 3: PASS [OK] (Accuracy: 0.850, Time: 103.01s)
+Server shutdown: 0.04s
+Final result: PASS [OK]
+Accuracies: [0.842, 0.849, 0.85]
+Average accuracy: 0.847 (Required: 0.820)
+Total time: 451.61s
+End time: 2025-10-03 15:31:58 PDT
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-10-03 15:31:58 PDT
+Server startup: 59.02s
+Trial 1: PASS [OK] (Accuracy: 0.532, Time: 68.00s)
+Trial 2: FAIL [X] (Accuracy: 0.505, Time: 66.00s)
+Trial 3: PASS [OK] (Accuracy: 0.534, Time: 68.00s)
+Server shutdown: 0.06s
+Final result: PASS [OK]
+Accuracies: [0.532, 0.505, 0.534]
+Average accuracy: 0.524 (Required: 0.520)
+Total time: 261.10s
+End time: 2025-10-03 15:36:19 PDT
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-10-03 15:36:19 PDT
+Server startup: 125.05s
+Trial 1: PASS [OK] (Accuracy: 0.856, Time: 89.01s)
+Trial 2: PASS [OK] (Accuracy: 0.854, Time: 141.01s)
+Trial 3: PASS [OK] (Accuracy: 0.866, Time: 89.01s)
+Server shutdown: 0.06s
+Final result: PASS [OK]
+Accuracies: [0.856, 0.854, 0.866]
+Average accuracy: 0.859 (Required: 0.840)
+Total time: 444.13s
+End time: 2025-10-03 15:43:43 PDT
+==================================================
+
+=== DeepSeek-V3 on mi30x ===
+Start time: 2025-10-03 15:43:43 PDT
+Server startup: 207.73s
+Trial 1: PASS [OK] (Accuracy: 0.939, Time: 58.00s)
+Trial 2: PASS [OK] (Accuracy: 0.936, Time: 39.00s)
+Trial 3: PASS [OK] (Accuracy: 0.937, Time: 40.00s)
+Server shutdown: 0.08s
+Final result: PASS [OK]
+Accuracies: [0.939, 0.936, 0.937]
+Average accuracy: 0.937 (Required: 0.930)
+Total time: 344.82s
+End time: 2025-10-03 15:49:28 PDT
+==================================================
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-10-03 15:49:28 PDT
+Server startup: 288.92s
+Trial 1: PASS [OK] (Accuracy: 0.818, Time: 41.00s)
+Trial 2: PASS [OK] (Accuracy: 0.820, Time: 86.01s)
+Trial 3: PASS [OK] (Accuracy: 0.820, Time: 32.00s)
+Server shutdown: 0.05s
+Final result: PASS [OK]
+Accuracies: [0.818, 0.82, 0.82]
+Average accuracy: 0.819 (Required: 0.800)
+Total time: 447.98s
+End time: 2025-10-03 15:56:56 PDT
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-10-03 15:56:56 PDT
+Server startup: 320.65s
+Trial 1: FAIL [X] (Accuracy: 0.748, Time: 45.00s)
+Trial 2: FAIL [X] (Accuracy: 0.760, Time: 37.00s)
+Trial 3: FAIL [X] (Accuracy: 0.743, Time: 36.00s)
+Server shutdown: 0.07s
+Final result: FAIL [X]
+Accuracies: [0.748, 0.76, 0.743]
+Average accuracy: 0.750 (Required: 0.800)
+Total time: 438.74s
+End time: 2025-10-03 16:04:15 PDT
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-10-03 16:04:15 PDT
+Server startup: 138.05s
+Trial 1: PASS [OK] (Accuracy: 0.910, Time: 35.00s)
+Trial 2: PASS [OK] (Accuracy: 0.914, Time: 34.00s)
+Trial 3: PASS [OK] (Accuracy: 0.910, Time: 34.00s)
+Server shutdown: 0.06s
+Final result: PASS [OK]
+Accuracies: [0.91, 0.914, 0.91]
+Average accuracy: 0.911 (Required: 0.800)
+Total time: 241.12s
+End time: 2025-10-03 16:08:16 PDT
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-03 16:08:16 PDT
+Total execution time: 2629.53s (43.8 minutes)
+Average time per model: 375.65s
+Models passed: 6/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  DeepSeek-V3: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: FAIL
+  llama4: PASS

@@ -1,0 +1,49 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=1
+[nightly] Start time: 2025-10-06 19:26:49 PDT
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 1107568
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Will run 1 trials per model for sanity check
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 1e4b8118c13e
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251006...
+[nightly] Found candidate tag for day -0: v0.5.3-rocm630-mi30x-20251006
+[nightly] Found local image: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+[nightly] Successfully obtained image for date 20251006: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 56109f4f35e8
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+[nightly] Container name: sgl-dev_v0.5.3-rocm630-mi30x-20251006
+[nightly] Reusing container sgl-dev_v0.5.3-rocm630-mi30x-20251006
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3-rocm630-mi30x-20251006
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006' --hardware='mi30x' --trials=1 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'

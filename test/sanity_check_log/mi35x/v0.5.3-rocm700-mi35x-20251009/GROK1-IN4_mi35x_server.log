@@ -1,0 +1,41 @@
+/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
+  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
+INFO 10-09 13:20:13 [__init__.py:245] No platform detected, vLLM is running on UnspecifiedPlatform
+/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
+  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
+INFO 10-09 13:20:13 [importing.py:43] Triton is installed but 0 active driver(s) found (expected 1). Disabling Triton to prevent runtime errors.
+INFO 10-09 13:20:13 [importing.py:63] Triton not installed or not compatible; certain GPU-related functions will not be available.
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 6, in <module>
+    from sglang.srt.entrypoints.http_server import launch_server
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 51, in <module>
+    from sglang.srt.entrypoints.engine import _launch_subprocesses
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 45, in <module>
+    from sglang.srt.managers.data_parallel_controller import (
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py", line 38, in <module>
+    from sglang.srt.managers.scheduler import run_scheduler_process
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 39, in <module>
+    from sglang.srt.configs.model_config import ModelConfig
+  File "/sgl-workspace/sglang/python/sglang/srt/configs/model_config.py", line 26, in <module>
+    from sglang.srt.layers.quantization import QUANTIZATION_METHODS
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/__init__.py", line 44, in <module>
+    from sglang.srt.layers.quantization.awq import AWQConfig, AWQMarlinConfig
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py", line 18, in <module>
+    from sglang.srt.layers.quantization.marlin_utils import (
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/marlin_utils.py", line 22, in <module>
+    from sglang.srt.layers.quantization.utils import (
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/utils.py", line 13, in <module>
+    from sglang.srt.layers.quantization.fp8_kernel import scaled_fp8_quant
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/fp8_kernel.py", line 79, in <module>
+    if is_fp8_fnuz():
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/quantization/fp8_kernel.py", line 75, in is_fp8_fnuz
+    return "gfx94" in torch.cuda.get_device_properties(0).gcnArchName
+  File "/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py", line 614, in get_device_properties
+    _lazy_init()  # will define _get_device_properties
+  File "/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py", line 410, in _lazy_init
+    torch._C._cuda_init()
+RuntimeError: No HIP GPUs are available

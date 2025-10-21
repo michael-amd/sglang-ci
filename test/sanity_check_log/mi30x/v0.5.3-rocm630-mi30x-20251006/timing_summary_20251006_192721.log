@@ -1,0 +1,71 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-06 19:27:21 PDT
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, llama4
+Trials per model: 1
+Docker image: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-10-06 19:27:21 PDT
+Server startup: 107.55s
+Trial 1: PASS [OK] (Accuracy: 0.849, Time: 105.01s)
+Server shutdown: 0.04s
+Final result: PASS [OK]
+Accuracies: [0.849]
+Average accuracy: 0.849 (Required: 0.820)
+Total time: 212.61s
+End time: 2025-10-06 19:30:53 PDT
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-10-06 19:30:53 PDT
+Server startup: 54.02s
+Trial 1: PASS [OK] (Accuracy: 0.532, Time: 70.00s)
+Server shutdown: 0.04s
+Final result: PASS [OK]
+Accuracies: [0.532]
+Average accuracy: 0.532 (Required: 0.520)
+Total time: 124.07s
+End time: 2025-10-06 19:32:58 PDT
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-10-06 19:32:58 PDT
+Server startup: 49.01s
+Trial 1: PASS [OK] (Accuracy: 0.849, Time: 89.01s)
+Server shutdown: 0.06s
+Final result: PASS [OK]
+Accuracies: [0.849]
+Average accuracy: 0.849 (Required: 0.840)
+Total time: 138.08s
+End time: 2025-10-06 19:35:16 PDT
+==================================================
+
+=== DeepSeek-V3 on mi30x ===
+Start time: 2025-10-06 19:35:16 PDT
+Server startup: 168.61s
+Trial 1: PASS [OK] (Accuracy: 0.941, Time: 50.00s)
+Server shutdown: 0.06s
+Final result: PASS [OK]
+Accuracies: [0.941]
+Average accuracy: 0.941 (Required: 0.930)
+Total time: 218.69s
+End time: 2025-10-06 19:38:54 PDT
+==================================================
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-10-06 19:38:54 PDT
+Server startup: 69.08s
+Trial 1: PASS [OK] (Accuracy: 0.807, Time: 43.00s)
+Server shutdown: 0.08s
+Final result: PASS [OK]
+Accuracies: [0.807]
+Average accuracy: 0.807 (Required: 0.800)
+Total time: 112.16s
+End time: 2025-10-06 19:40:46 PDT
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-10-06 19:40:46 PDT

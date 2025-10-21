@@ -1,0 +1,11 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-06 19:19:45 PDT
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, llama4
+Trials per model: 1
+Docker image: rocm/sgl-dev:v0.5.3-rocm630-mi30x-20251006
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-10-06 19:19:45 PDT

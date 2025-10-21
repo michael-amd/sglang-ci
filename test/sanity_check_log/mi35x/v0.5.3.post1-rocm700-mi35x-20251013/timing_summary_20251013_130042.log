@@ -1,0 +1,117 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-13 13:00:42 PDT
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, DeepSeek-R1-MXFP4, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251013
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-10-13 13:00:42 PDT
+Server startup: 83.62s
+Trial 1: PASS [OK] (Accuracy: 0.836, Time: 81.08s)
+Trial 2: PASS [OK] (Accuracy: 0.855, Time: 70.07s)
+Trial 3: PASS [OK] (Accuracy: 0.850, Time: 69.07s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.836, 0.855, 0.85]
+Average accuracy: 0.847 (Required: 0.820)
+Total time: 304.34s
+End time: 2025-10-13 13:05:46 PDT
+==================================================
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-10-13 13:05:46 PDT
+Server startup: 53.57s
+Trial 1: PASS [OK] (Accuracy: 0.539, Time: 63.06s)
+Trial 2: PASS [OK] (Accuracy: 0.530, Time: 52.05s)
+Trial 3: PASS [OK] (Accuracy: 0.547, Time: 51.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.539, 0.53, 0.547]
+Average accuracy: 0.539 (Required: 0.520)
+Total time: 220.25s
+End time: 2025-10-13 13:09:26 PDT
+==================================================
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-10-13 13:09:26 PDT
+Server startup: 83.67s
+Trial 1: PASS [OK] (Accuracy: 0.853, Time: 64.07s)
+Trial 2: PASS [OK] (Accuracy: 0.851, Time: 89.09s)
+Trial 3: PASS [OK] (Accuracy: 0.847, Time: 62.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.853, 0.851, 0.847]
+Average accuracy: 0.850 (Required: 0.840)
+Total time: 299.40s
+End time: 2025-10-13 13:14:26 PDT
+==================================================
+DeepSeek-V3: SKIPPED (no launch command for mi35x)
+==================================================
+
+=== DeepSeek-R1-MXFP4 on mi35x ===
+Start time: 2025-10-13 13:14:26 PDT
+Server startup: FAILED after 300.04s
+Error: Out of memory (current mem_fraction_static=0.95)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-10-13 13:19:27 PDT
+Server startup: 100.79s
+Trial 1: PASS [OK] (Accuracy: 0.817, Time: 64.06s)
+Trial 2: PASS [OK] (Accuracy: 0.815, Time: 81.08s)
+Trial 3: PASS [OK] (Accuracy: 0.810, Time: 43.04s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.817, 0.815, 0.81]
+Average accuracy: 0.814 (Required: 0.800)
+Total time: 289.48s
+End time: 2025-10-13 13:24:16 PDT
+==================================================
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-10-13 13:24:16 PDT
+Server startup: FAILED after 600.45s
+Error: Out of memory (current mem_fraction_static=0.85)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-10-13 13:34:18 PDT
+Server startup: FAILED after 300.47s
+Error: Out of memory (current mem_fraction_static=0.85)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== llama4 on mi35x ===
+Start time: 2025-10-13 13:39:19 PDT
+Server startup: 100.68s
+Trial 1: PASS [OK] (Accuracy: 0.933, Time: 23.02s)
+Trial 2: FAIL [X] (No accuracy found in /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post1-rocm700-mi35x-20251013/llama4_mi35x_client_try2.log, Time: 429.44s)
+Trial 3: FAILED - Server process died
+Server shutdown: 0.00s
+Final result: FAIL [X]
+Accuracies: [0.933, 0.0, 0.0]
+Average accuracy: 0.311 (Required: 0.800)
+Total time: 553.15s
+End time: 2025-10-13 13:48:32 PDT
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-13 13:48:32 PDT
+Total execution time: 2870.59s (47.8 minutes)
+Average time per model: 318.95s
+Models tested: 8/9
+Models passed: 4/8
+Models failed: 4/8
+Models skipped: 1/9
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  DeepSeek-V3: SKIPPED
+  DeepSeek-R1-MXFP4: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: FAIL

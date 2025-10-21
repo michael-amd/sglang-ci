@@ -1,0 +1,210 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2627cd9f12c64fd785fd6b5f476c8929/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NW18x_-_wiyn8dPFp84GfbiAFjlyUb_KqtII9qzx8M
+[nightly] Start time: 2025-10-05 06:00:01 PDT
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 1408647
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 1f2d568d9bb2
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251005...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251004...
+[nightly] Fallback found candidate tag: v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Successfully obtained fallback image for date 20251004: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 42dcd6b4e55c
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.3rc0-rocm630-mi30x-20251004
+[online] Auto-detected model type: grok1 from path: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Script started at: 2025-10-05 06:00:37 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.3rc0-rocm630-mi30x-20251004_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/15 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok1 environment: SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+/mnt/raid/michael/sglang-ci/grok_perf_online_csv.sh: line 420:    48 Killed                  env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server --model '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8' --tokenizer-path '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8' --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85 > '/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.3rc0-rocm630-mi30x-20251004_GROK1_MOE-I4F8_online/server_output_aiter.log' 2>&1
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+    self.model_runner = ModelRunner(
+                        ^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 277, in __init__
+    min_per_gpu_memory = self.init_torch_distributed()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 709, in init_torch_distributed
+    raise ValueError(
+ValueError: The memory capacity is unbalanced. Some GPUs may be occupied by other processes. min_per_gpu_memory=93.49609375, local_gpu_memory=186.796875, local_gpu_memory * 0.9=168.1171875
+
+[2025-10-05 06:01:01 TP1] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2846, in run_scheduler_process
+    scheduler = Scheduler(
+                ^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 396, in __init__
+    self.tp_worker = TpWorkerClass(
+                     ^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker_overlap_thread.py", line 67, in __init__
+    self.worker = TpModelWorker(
+                  ^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 100, in __init__
+    self.model_runner = ModelRunner(
+                        ^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 277, in __init__
+    min_per_gpu_memory = self.init_torch_distributed()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 709, in init_torch_distributed
+    raise ValueError(
+ValueError: The memory capacity is unbalanced. Some GPUs may be occupied by other processes. min_per_gpu_memory=93.49609375, local_gpu_memory=186.80078125, local_gpu_memory * 0.9=168.120703125
+
+[2025-10-05 06:01:01 TP2] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2846, in run_scheduler_process
+    scheduler = Scheduler(
+                ^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 396, in __init__
+    self.tp_worker = TpWorkerClass(
+                     ^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker_overlap_thread.py", line 67, in __init__
+    self.worker = TpModelWorker(
+                  ^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 100, in __init__
+    self.model_runner = ModelRunner(
+                        ^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 277, in __init__
+    min_per_gpu_memory = self.init_torch_distributed()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 709, in init_torch_distributed
+    raise ValueError(
+ValueError: The memory capacity is unbalanced. Some GPUs may be occupied by other processes. min_per_gpu_memory=93.49609375, local_gpu_memory=186.794921875, local_gpu_memory * 0.9=168.1154296875
+
+[2025-10-05 06:01:01] Received sigquit from a child process. It usually means the child failed.
+[nightly] === Online benchmark dispatched for GROK; check logs in sgl-dev_v0.5.3rc0-rocm630-mi30x-20251004 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.3rc0-rocm630-mi30x-20251004_GROK1_MOE-I4F8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251004
+[nightly] Sending Teams notification for grok online plots...
+[nightly] Adding benchmark date to Teams notification: 20251004
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+📡 Plot server base URL: http://10.194.129.138:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 Discovered 1 plot file(s) for grok online
+   - 20251004_GROK1_online.png -> http://10.194.129.138:8000/GROK1/online/20251004_GROK1_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok online on 20251004: timing_summary_20251005_060037.log
+   Found timing_summary log for grok online on 20251004: timing_summary_20251005_060037.log
+   Found timing_summary log for grok online on 20251004: timing_summary_20251005_060037.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for grok online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok online
+[nightly] === Online post-processing completed for GROK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251004
+[nightly] Stopping container sgl-dev_v0.5.3rc0-rocm630-mi30x-20251004 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

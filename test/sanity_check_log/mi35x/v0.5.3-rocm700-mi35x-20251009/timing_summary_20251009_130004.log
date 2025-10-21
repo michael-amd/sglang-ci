@@ -1,0 +1,30 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-09 13:00:04 PDT
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, DeepSeek-R1-MXFP4, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251009
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-10-09 13:00:04 PDT
+Server startup: FAILED after 300.47s
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-10-09 13:05:05 PDT
+Server startup: FAILED after 300.46s
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-10-09 13:10:07 PDT
+Server startup: FAILED after 300.46s
+
+=== DeepSeek-V3 on mi35x ===
+Start time: 2025-10-09 13:15:08 PDT
+Server startup: FAILED after 300.46s
+DeepSeek-R1-MXFP4: SKIPPED - Model path does not exist: /mnt/raid/models/huggingface/amd-DeepSeek-R1-MXFP4-Preview
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-10-09 13:20:10 PDT

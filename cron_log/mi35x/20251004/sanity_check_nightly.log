@@ -1,0 +1,154 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3
+[nightly] Start time: 2025-10-04 13:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m12-17
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 3643686
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 4de1f585b3f4
+f01b5e34ad1a
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251004...
+[nightly] Found candidate tag for day -0: v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Successfully obtained image for date 20251004: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: e84d43aacffc
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004' --hardware='mi35x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/v0.5.3rc0-rocm700-mi35x-20251004
+
+🚀 [1/8] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/8 (0.0%)
+❌ Path validation failed: Model path does not exist: /data/openai/gpt-oss-120b
+GPT-OSS-120B: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/8 (12.5%) ❌ GPT-OSS-120B completed in 0.0s
+
+🚀 [2/8] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/8 (12.5%)
+❌ Path validation failed: Model path does not exist: /data/openai/gpt-oss-20b
+GPT-OSS-20B: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/8 (25.0%) ❌ GPT-OSS-20B completed in 0.0s
+
+🚀 [3/8] Starting QWEN-30B...
+============================================================
+Progress: [██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/8 (25.0%)
+❌ Path validation failed: Model path does not exist: /data/Qwen/Qwen3-30B-A3B-Thinking-2507
+QWEN-30B: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [███████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 3/8 (37.5%) ❌ QWEN-30B completed in 0.0s
+
+🚀 [4/8] Starting DeepSeek-V3...
+============================================================
+Progress: [███████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 4/8 (37.5%)
+❌ Path validation failed: Model path does not exist: /data/deepseek-ai/DeepSeek-V3-0324
+DeepSeek-V3: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [████████████████████░░░░░░░░░░░░░░░░░░░░] 4/8 (50.0%) ❌ DeepSeek-V3 completed in 0.0s
+
+🚀 [5/8] Starting GROK1-IN4...
+============================================================
+Progress: [████████████████████░░░░░░░░░░░░░░░░░░░░] 5/8 (50.0%)
+❌ Path validation failed: Model path does not exist: /data/amd--grok-1-W4A8KV8
+GROK1-IN4: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [█████████████████████████░░░░░░░░░░░░░░░] 5/8 (62.5%) ❌ GROK1-IN4 completed in 0.0s
+
+🚀 [6/8] Starting GROK1-FP8...
+============================================================
+Progress: [█████████████████████████░░░░░░░░░░░░░░░] 6/8 (62.5%)
+❌ Path validation failed: Model path does not exist: /data/lmzheng-grok-1
+GROK1-FP8: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [██████████████████████████████░░░░░░░░░░] 6/8 (75.0%) ❌ GROK1-FP8 completed in 0.0s
+
+🚀 [7/8] Starting GROK2.5...
+============================================================
+Progress: [██████████████████████████████░░░░░░░░░░] 7/8 (75.0%)
+❌ Path validation failed: Model path does not exist: /data/grok-2
+GROK2.5: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [███████████████████████████████████░░░░░] 7/8 (87.5%) ❌ GROK2.5 completed in 0.0s
+
+🚀 [8/8] Starting llama4...
+============================================================
+Progress: [███████████████████████████████████░░░░░] 8/8 (87.5%)
+❌ Path validation failed: Model path does not exist: /data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+llama4: FAIL [X] (no launch_cmd for platform mi35x)
+Progress: [████████████████████████████████████████] 8/8 (100.0%) ❌ llama4 completed in 0.0s
+
+🎯 All tests completed!
+📊 Total execution time: 0.00s (0.0 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/v0.5.3rc0-rocm700-mi35x-20251004/timing_summary_20251004_130043.log
+
+=== Final Summary ===
+❌ GPT-OSS-120B: FAIL [X]
+❌ GPT-OSS-20B: FAIL [X]
+❌ QWEN-30B: FAIL [X]
+❌ DeepSeek-V3: FAIL [X]
+❌ GROK1-IN4: FAIL [X]
+❌ GROK1-FP8: FAIL [X]
+❌ GROK2.5: FAIL [X]
+❌ llama4: FAIL [X]
+
+📈 Overall: 0/8 models passed (0.0%)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Sending Teams notification for sanity check results...
+🔍 Sanity check mode: Processing sanity check results
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/v0.5.3rc0-rocm700-mi35x-20251004/timing_summary_20251004_130043.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/v0.5.3rc0-rocm700-mi35x-20251004/timing_summary_20251004_130043.log
+✅ Successfully sent sanity check fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[nightly] Teams notification sent successfully for sanity check
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Stopping container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

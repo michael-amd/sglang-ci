@@ -1,0 +1,61 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: test_nightly.sh --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[test] Start time: 2025-10-12 10:05:02 CDT
+[test] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/test_nightly.sh
+[test] Process ID: 2121350
+[test] Created process lock: /tmp/test_nightly.lock
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi35x, ROCM Version: rocm700
+[test] GPU is busy. Attempting to stop running Docker containers...
+[test] Stopping running containers: 2c7c5a90b73d
+[test] Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but proceeding as requested.
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251012...
+[test] No image found for today. Checking yesterday as a fallback...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251011...
+[test] Fallback found candidate tag: v0.5.3.post1-rocm700-mi35x-20251011
+[test] Attempting to pull rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011...
+v0.5.3.post1-rocm700-mi35x-20251011: Pulling from rocm/sgl-dev
+Digest: sha256:77d32debbc1d43df66d8151eb0bfed229581e0511d414a4869c50463fb97b29d
+Status: Image is up to date for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+docker.io/rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[test] Successfully pulled fallback image for yesterday: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+
+[test] ==========================================
+[test] Starting unit tests for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011...
+[test] GPU is busy. Attempting to stop running Docker containers...
+[test] Stopping running containers: 1ead7fda70dd
+[test] Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but proceeding as requested.
+[test] Using Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[test] Container name: sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011
+[test] Reusing container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011
+[test] === Starting test_custom_allreduce unit test ===
+[test] Test directory: /sgl-workspace/sglang/test/srt
+[test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.3.post1-rocm700-mi35x-20251011.log
+[test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+[test] Running unit test inside sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011...
+[test] === Unit test PASSED for rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011 ===
+[test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.3.post1-rocm700-mi35x-20251011.log
+[test] Sending Teams notification...
+📋 Parsing log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.3.post1-rocm700-mi35x-20251011.log
+✅ Successfully sent unit test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] Stopping container sgl-dev_v0.5.3.post1-rocm700-mi35x-20251011 to release resources...
+[test] ==========================================
+[test] Unit test completed for image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251011
+[test] ==========================================
+[test] Cleaning up process lock...

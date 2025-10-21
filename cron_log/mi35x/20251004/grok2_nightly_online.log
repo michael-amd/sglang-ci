@@ -1,0 +1,185 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-04 08:15:01 PDT
+[nightly] Machine: smci355-ccs-aus-m12-17
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 3600991
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi35x hardware
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 6d07d2d750cf
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251004...
+[nightly] Found candidate tag for day -0: v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Successfully obtained image for date 20251004: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 926809baf4bc
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Models directory not accessible in existing container. Recreating container...
+[nightly] Creating container sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+7dfee2668479e1d53b100d978d4005f16de0d8399f2817e71104f9cae78cc3c1
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK2 online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
+[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[online] Using Grok 2 configuration
+[online] Using default Grok 2 tokenizer: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-10-04 08:15:44 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.3rc0-rocm700-mi35x-20251004_GROK2_FP8_online/sglang_client_log_GROK2_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/15 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok2 environment: RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0
+[online] Launching backend=aiter for grok2
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 708, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 321, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 531, in cached_files
+    resolved_files = [
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 532, in <listcomp>
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 144, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/mnt/raid/models/huggingface/grok-2'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 21, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3110, in prepare_server_args
+    server_args = ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 2815, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 238, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 472, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 724, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 2825, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2905, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 147, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1250, in from_pretrained
+    config_dict, unused_kwargs = PretrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 649, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 731, in _get_config_dict
+    raise OSError(
+OSError: Can't load the configuration of '/mnt/raid/models/huggingface/grok-2'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure '/mnt/raid/models/huggingface/grok-2' is the correct path to a directory containing a config.json file
+[nightly] === Online benchmark dispatched for GROK2; check logs in sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.3rc0-rocm700-mi35x-20251004_GROK2_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251004
+[nightly] Cleaning up process lock...

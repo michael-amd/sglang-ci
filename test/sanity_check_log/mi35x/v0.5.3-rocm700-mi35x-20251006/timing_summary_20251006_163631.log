@@ -1,0 +1,101 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-06 16:36:31 PDT
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 1
+Docker image: rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251006
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-10-06 16:36:31 PDT
+Server startup: 103.15s
+Trial 1: PASS [OK] (Accuracy: 0.844, Time: 155.16s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.844]
+Average accuracy: 0.844 (Required: 0.820)
+Total time: 258.81s
+End time: 2025-10-06 16:40:50 PDT
+==================================================
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-10-06 16:40:50 PDT
+Server startup: 55.61s
+Trial 1: PASS [OK] (Accuracy: 0.544, Time: 134.14s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.544]
+Average accuracy: 0.544 (Required: 0.520)
+Total time: 190.25s
+End time: 2025-10-06 16:44:00 PDT
+==================================================
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-10-06 16:44:00 PDT
+Server startup: 85.18s
+Trial 1: PASS [OK] (Accuracy: 0.854, Time: 146.15s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.854]
+Average accuracy: 0.854 (Required: 0.840)
+Total time: 231.83s
+End time: 2025-10-06 16:47:52 PDT
+==================================================
+
+=== DeepSeek-V3 on mi35x ===
+Start time: 2025-10-06 16:47:52 PDT
+Server startup: FAILED after 300.08s
+Error: Out of memory (current mem_fraction_static=0.85)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-10-06 16:52:53 PDT
+Server startup: 94.29s
+Trial 1: PASS [OK] (Accuracy: 0.809, Time: 82.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.809]
+Average accuracy: 0.809 (Required: 0.800)
+Total time: 176.87s
+End time: 2025-10-06 16:55:50 PDT
+==================================================
+GROK1-FP8: SKIPPED - Model path does not exist: /mnt/raid/models/huggingface/lmzheng-grok-1
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-10-06 16:55:50 PDT
+Server startup: FAILED after 300.46s
+Error: Out of memory (current mem_fraction_static=0.85)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== llama4 on mi35x ===
+Start time: 2025-10-06 17:00:52 PDT
+Server startup: 102.19s
+Trial 1: PASS [OK] (Accuracy: 0.928, Time: 76.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.928]
+Average accuracy: 0.928 (Required: 0.800)
+Total time: 178.78s
+End time: 2025-10-06 17:03:50 PDT
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-06 17:03:50 PDT
+Total execution time: 1639.12s (27.3 minutes)
+Average time per model: 204.89s
+Models tested: 7/8
+Models passed: 5/7
+Models failed: 2/7
+Models skipped: 1/8
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  DeepSeek-V3: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: SKIPPED
+  GROK2.5: FAIL
+  llama4: PASS

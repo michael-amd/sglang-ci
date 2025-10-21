@@ -1,0 +1,131 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2627cd9f12c64fd785fd6b5f476c8929/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NW18x_-_wiyn8dPFp84GfbiAFjlyUb_KqtII9qzx8M
+[nightly] Start time: 2025-10-04 00:00:01 PDT
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 721423
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 672f27356b9f
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251004...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251003...
+[nightly] Fallback found candidate tag: v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Found local image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Successfully obtained fallback image for date 20251003: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: f4a61bcd5468
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Container name: sgl-dev_v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Reusing container sgl-dev_v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-10-04 00:00:37 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20251003_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+Waiting for SGLang server (PID: 40) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20251003_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log
+...............................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20251003_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log:
+--- Error details ---
+RuntimeError: Not enough memory. Please try to increase --mem-fraction-static. Current value: self.server_args.mem_fraction_static=-0.107
+
+[2025-10-04 00:03:08 DP3 TP3] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2844, in run_scheduler_process
+--
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 424, in initialize
+    self.init_memory_pool(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1487, in init_memory_pool
+    raise RuntimeError(
+RuntimeError: Not enough memory. Please try to increase --mem-fraction-static. Current value: self.server_args.mem_fraction_static=-0.107
+
+[2025-10-04 00:03:08 DP2 TP2] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2844, in run_scheduler_process
+--
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 424, in initialize
+    self.init_memory_pool(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1487, in init_memory_pool
+    raise RuntimeError(
+RuntimeError: Not enough memory. Please try to increase --mem-fraction-static. Current value: self.server_args.mem_fraction_static=-0.107
+
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 40)...
+Server process 40 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3rc0-rocm630-mi30x-20251003 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20251003_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251003
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251003
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] No GitHub credentials configured - using plot server links only
+[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+📡 Plot server base URL: http://10.194.129.138:8000
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251003_DeepSeek-V3_online.png -> http://10.194.129.138:8000/DeepSeek-V3-0324/online/20251003_DeepSeek-V3_online.png
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251003: timing_summary_20251004_000037.log
+   Found timing_summary log for deepseek online on 20251003: timing_summary_20251004_000037.log
+   Found timing_summary log for deepseek online on 20251003: timing_summary_20251004_000037.log
+   Found timing_summary log for deepseek online on 20251003: timing_summary_20251004_000037.log
+🔍 Sending adaptive card with plot links
+📊 Payload size: 0.00MB
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3rc0-rocm630-mi30x-20251003
+[nightly] Stopping container sgl-dev_v0.5.3rc0-rocm630-mi30x-20251003 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
