@@ -30,7 +30,7 @@
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
-#   • GITHUB_REPO     – Repository identifier in 'owner/repo' format (defaults to 'michael-amd/sglang-ci-data')
+#   • GITHUB_REPO     – Repository identifier in 'owner/repo' format (defaults to 'ROCm/sglang-ci')
 #   • GITHUB_TOKEN    – Personal access token with `repo` scope that can push
 #   • HARDWARE_TYPE   – The machine descriptor (mi30x / mi35x …).
 #
@@ -47,7 +47,7 @@ set -euo pipefail
 ###########################################################################
 
 # Resolve required env variables (most are exported in crontab header)
-readonly GITHUB_REPO="${GITHUB_REPO:-michael-amd/sglang-ci-data}"  # Repository in owner/repo format
+readonly GITHUB_REPO="${GITHUB_REPO:-ROCm/sglang-ci}"  # Repository in owner/repo format
 readonly GITHUB_TOKEN="${GITHUB_TOKEN:-}"  # optional – clone over https if empty
 readonly SGL_CI_DIR="${SGL_BENCHMARK_CI_DIR:-$(pwd)}"  # repository root
 
@@ -142,9 +142,9 @@ fi
 
 cd "$WORK_CLONE_DIR"
 
-# Always work against the main branch
-git fetch origin main
-git checkout -q main
+# Always work against the log branch
+git fetch origin log
+git checkout -q log
 
 # Rebase to avoid merge commits when multiple machines push concurrently
 git pull --rebase --quiet || true
@@ -198,9 +198,9 @@ echo "[github_log_upload] Pushing commit to remote (${GITHUB_REPO})…"
 
 if [[ -n "$GITHUB_TOKEN" ]]; then
   # Use token-authenticated remote for push only (clone may have been unauthenticated)
-  git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" main --quiet
+  git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" log --quiet
 else
-  git push origin main --quiet
+  git push origin log --quiet
 fi
 
 echo "[github_log_upload] ✅  Logs uploaded successfully: $DEST_PATH"

@@ -21,7 +21,7 @@ HARDWARE_TYPE="mi35x"
 TEAMS_WEBHOOK_URL=""
 
 # GitHub repository configuration (fill in to enable log/plot uploads)
-GITHUB_REPO="michael-amd/sglang-ci-data"
+GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
 # 5 AM PT (7 AM CT) - PD (Prefill-Decode Disaggregation) Test + Teams notifications

@@ -21,7 +21,7 @@ HARDWARE_TYPE="mi30x"
 TEAMS_WEBHOOK_URL=""
 
 # GitHub repository configuration (fill in to enable log/plot uploads)
-GITHUB_REPO="michael-amd/sglang-ci-data"
+GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
 # 10 PM PT (0 AM CT) - Grok 2 online benchmark + Teams notifications
