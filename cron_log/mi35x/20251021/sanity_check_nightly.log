@@ -1,0 +1,255 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3
+[nightly] Start time: 2025-10-21 13:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 2096534
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] INFO: Ignoring Teams webhook URL from environment (require --teams-webhook-url)
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 81a89c408606
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251021...
+[nightly] Found candidate tag for day -0: v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Found local image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Successfully obtained image for date 20251021: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 39e60b0982ca
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Reusing container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021' --hardware='mi35x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, DeepSeek-V3, DeepSeek-R1-MXFP4, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021
+
+🚀 [1/9] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/9 (0.0%)
+
+=== Testing GPT-OSS-120B on mi35x ===
+🚀 Starting server for GPT-OSS-120B...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-120B_mi35x_server.log
+GPT-OSS-120B: FAIL [X] (server not ready after 300.34s)
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/9 (11.1%) ❌ GPT-OSS-120B completed in 301.3s
+
+🚀 [2/9] Starting GPT-OSS-20B...
+============================================================
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/9 (11.1%)
+
+=== Testing GPT-OSS-20B on mi35x ===
+🚀 Starting server for GPT-OSS-20B...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GPT-OSS-20B_mi35x_server.log
+GPT-OSS-20B: FAIL [X] (server not ready after 300.34s)
+Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/9 (22.2%) ❌ GPT-OSS-20B completed in 301.3s
+
+🚀 [3/9] Starting QWEN-30B...
+============================================================
+Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/9 (22.2%)
+
+=== Testing QWEN-30B on mi35x ===
+🚀 Starting server for QWEN-30B...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/QWEN-30B_mi35x_server.log
+QWEN-30B: FAIL [X] (server not ready after 300.34s)
+Progress: [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/9 (33.3%) ❌ QWEN-30B completed in 301.3s
+
+🚀 [4/9] Starting DeepSeek-V3...
+============================================================
+Progress: [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 4/9 (33.3%)
+⏭️  DeepSeek-V3: SKIPPED (no launch command for platform mi35x)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/9 (44.4%) ⏭️ DeepSeek-V3 skipped in 0.0s
+
+🚀 [5/9] Starting DeepSeek-R1-MXFP4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 5/9 (44.4%)
+
+=== Testing DeepSeek-R1-MXFP4 on mi35x ===
+🚀 Starting server for DeepSeek-R1-MXFP4...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/DeepSeek-R1-MXFP4_mi35x_server.log
+DeepSeek-R1-MXFP4: FAIL [X] (server not ready after 300.33s)
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/9 (55.6%) ❌ DeepSeek-R1-MXFP4 completed in 301.3s
+
+🚀 [6/9] Starting GROK1-IN4...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 6/9 (55.6%)
+
+=== Testing GROK1-IN4 on mi35x ===
+🚀 Starting server for GROK1-IN4...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-IN4_mi35x_server.log
+GROK1-IN4: FAIL [X] (server not ready after 300.33s)
+Progress: [██████████████████████████░░░░░░░░░░░░░░] 6/9 (66.7%) ❌ GROK1-IN4 completed in 301.3s
+
+🚀 [7/9] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████████░░░░░░░░░░░░░░] 7/9 (66.7%)
+
+=== Testing GROK1-FP8 on mi35x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 300s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 330s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 360s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 390s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 420s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 451s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 481s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 511s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 541s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+⚠️  Server errors detected at 571s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK1-FP8_mi35x_server.log
+GROK1-FP8: FAIL [X] (server not ready after 600.17s)
+Progress: [███████████████████████████████░░░░░░░░░] 7/9 (77.8%) ❌ GROK1-FP8 completed in 601.2s
+
+🚀 [8/9] Starting GROK2.5...
+============================================================
+Progress: [███████████████████████████████░░░░░░░░░] 8/9 (77.8%)
+
+=== Testing GROK2.5 on mi35x ===
+🚀 Starting server for GROK2.5...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/GROK2.5_mi35x_server.log
+GROK2.5: FAIL [X] (server not ready after 300.34s)
+Progress: [███████████████████████████████████░░░░░] 8/9 (88.9%) ❌ GROK2.5 completed in 301.3s
+
+🚀 [9/9] Starting llama4...
+============================================================
+Progress: [███████████████████████████████████░░░░░] 9/9 (88.9%)
+
+=== Testing llama4 on mi35x ===
+🚀 Starting server for llama4...
+⚠️  Server errors detected at 30s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 60s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 90s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 120s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 150s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 180s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 210s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 240s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+⚠️  Server errors detected at 270s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/llama4_mi35x_server.log
+llama4: FAIL [X] (server not ready after 300.34s)
+Progress: [████████████████████████████████████████] 9/9 (100.0%) ❌ llama4 completed in 301.3s
+
+🎯 All tests completed!
+📊 Total execution time: 2710.56s (45.2 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/timing_summary_20251021_130035.log
+
+=== Final Summary ===
+❌ GPT-OSS-120B: FAIL [X]
+❌ GPT-OSS-20B: FAIL [X]
+❌ QWEN-30B: FAIL [X]
+⏭️ DeepSeek-V3: SKIPPED (model/tokenizer not available)
+❌ DeepSeek-R1-MXFP4: FAIL [X]
+❌ GROK1-IN4: FAIL [X]
+❌ GROK1-FP8: FAIL [X]
+❌ GROK2.5: FAIL [X]
+❌ llama4: FAIL [X]
+
+📈 Overall: 0/8 models passed (0.0%)
+⏭️  Skipped: 1/9 models (not counted in pass/fail statistics)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Teams notifications disabled - --teams-webhook-url not provided
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[nightly] Stopping container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
