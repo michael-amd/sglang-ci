@@ -356,6 +356,7 @@ class TestNightlyTeamsNotifier:
             webhook_url: Microsoft Teams webhook URL
         """
         self.webhook_url = webhook_url
+        self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
 
     def create_test_status_card(
         self,
@@ -658,7 +659,7 @@ class TestNightlyTeamsNotifier:
         # Add cron log link if we have hardware type
         if hw_type:
             log_date = datetime.now().strftime("%Y%m%d")
-            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hw_type}/{log_date}"
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hw_type}/{log_date}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",
@@ -1038,7 +1039,7 @@ class TestNightlyTeamsNotifier:
         # Add cron log link if we have hardware type
         if hw_type:
             log_date = datetime.now().strftime("%Y%m%d")
-            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hw_type}/{log_date}"
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hw_type}/{log_date}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",

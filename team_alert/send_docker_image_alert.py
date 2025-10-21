@@ -56,6 +56,7 @@ class DockerImageTeamsNotifier:
             "GITHUB_WORKFLOW_URL",
             "https://github.com/sgl-project/sglang/actions/workflows/release-docker-amd-nightly.yml",
         )
+        self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
 
     def create_image_status_card(
         self,
@@ -329,7 +330,7 @@ class DockerImageTeamsNotifier:
 
         # Add cron log link if we have hardware type
         if hardware_type:
-            cron_log_url = f"https://github.com/michael-amd/sglang-ci-data/tree/main/cron_log/{hardware_type}/{log_date}"
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
             actions.append(
                 {
                     "type": "Action.OpenUrl",
