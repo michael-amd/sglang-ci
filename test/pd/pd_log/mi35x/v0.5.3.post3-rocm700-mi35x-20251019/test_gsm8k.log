@@ -1,0 +1,74 @@
+======================================================================
+GSM8K Benchmark - PD Testing
+======================================================================
+Host: http://10.235.26.27:30028
+Model: DeepSeek-R1-MXFP4-Preview
+Num Questions: 200
+Parallelism: 32
+Num Shots: 5
+Max New Tokens: 512
+======================================================================
+Downloading GSM8K dataset from https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl...
+✓ Downloaded 1319 questions
+Loaded 1319 examples
+✓ Server is healthy
+
+Running benchmark with 32 parallel requests...
+Progress: 100/200 questions (0.85 QPS, Acc: 0.9600)
+Progress: 200/200 questions (0.87 QPS, Acc: 0.9600)
+
+======================================================================
+RESULTS
+======================================================================
+Total Questions: 200
+Correct: 192
+Incorrect: 8
+Invalid: 0
+Accuracy: 0.9600
+Invalid Rate: 0.0000
+Total Time: 229.69s
+Questions per Second: 0.87
+======================================================================
+
+Sample Errors (first 5):
+
+1. Q12
+   Expected: 13, Got: 12
+   Generated:  Each year, Carlos sells 7 lemons for $1.5 each, earning 7 * 1.5 = $<<7*1.5=10.5>>10.5.
+Subtracting the annual cost, he makes 10.5 - 3 = $<<10.5-3=7.5>>7.5 per year.
+To cover the initial $90 cost, it 
+
+2. Q37
+   Expected: 2, Got: 11
+   Generated:  He sold all his lego sets for 13*15=$<<13*15=195>>195
+He bought 8 video games costing 8*20=$<<8*20=160>>160
+He had 195-160=$<<195-160=35>>35 left
+But he had $5 left so he must have sold 35-5=<<35-5=3
+
+3. Q87
+   Expected: 9360, Got: 10080
+   Generated:  Sylvie's initial salary is $600 per month, so her annual salary is 600*12= $<<600*12=7200>>7200
+After five years, her salary increases by 10% of her initial salary: 10% of 600= $<<10*.01*600=60>>60 p
+
+4. Q89
+   Expected: 24, Got: 18
+   Generated:  First find the number of guests who will attend: 16 guests * (1 - 1/4) = 16 * 3/4 = <<16*3/4=12>>12 guests
+Then multiply the number of guests by the number of gift bags per guest: 12 guests * .75 bag
+
+5. Q119
+   Expected: 95200, Got: 92
+   Generated:  Four years ago, Adrien's salary was 30% higher than Lylah's. If Adrien earned $40,000, then Lylah earned $40,000 / 1.3 = $30,769.23.
+Four years later, Adrien's salary increased by 40%, so he earned $
+
+✓ Detailed errors saved to: /tmp/gsm8k_errors_detailed.json
+
+Sample Correct Answers (first 3):
+
+1. Q0
+   Expected: 18, Got: 18 ✓
+
+2. Q1
+   Expected: 3, Got: 3 ✓
+
+3. Q2
+   Expected: 70000, Got: 70000 ✓
