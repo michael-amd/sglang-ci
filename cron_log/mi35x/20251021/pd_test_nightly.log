@@ -1,0 +1,145 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: test/test_nightly.sh --test-type=pd --hardware=mi35x
+[test] Start time: 2025-10-21 07:00:02 CDT
+[test] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/test/test_nightly.sh
+[test] Process ID: 819534
+[test] Created process lock: /tmp/test_nightly.lock
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi35x, ROCM Version: rocm700 (PD test - using rocm700)
+[test] Test Type: pd
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 90e81fd3db5e
+cc3d478ea850
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251021...
+[test] No image found for today. Checking yesterday as a fallback...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251020...
+[test] Fallback found candidate tag: v0.5.3.post3-rocm700-mi35x-20251020
+[test] Attempting to pull rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020...
+v0.5.3.post3-rocm700-mi35x-20251020: Pulling from rocm/sgl-dev
+Digest: sha256:229b3eeaf2902414133405526bb156255af363c927aa3eb94f2d3cca87f0733c
+Status: Image is up to date for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[test] Successfully pulled fallback image for yesterday: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[test] Test type: pd
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020...
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 07a6049d6d78
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[test] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251020
+[test] ==========================================
+[test] Running PD Disaggregation Test
+[test] ==========================================
+[test] Hardware type: mi35x
+[test] Model path: /data2/models/amd-DeepSeek-R1-MXFP4-Preview
+[test] Model name: DeepSeek-R1-MXFP4-Preview
+[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
+[test] Model: DeepSeek-R1-MXFP4-Preview (/data2/models/amd-DeepSeek-R1-MXFP4-Preview)
+[test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+===================================================
+PD Test Execution Started: Tue Oct 21 07:00:52 AM CDT 2025
+===================================================
+[pd-test] ==========================================
+[pd-test] SGLang PD Docker-based Test Runner
+[pd-test] ==========================================
+[pd-test] Model: /data2/models/amd-DeepSeek-R1-MXFP4-Preview
+[pd-test] Model Name: DeepSeek-R1-MXFP4-Preview
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[pd-test] Hardware: mi35x
+[pd-test] Docker Tag: v0.5.3.post3-rocm700-mi35x-20251020
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251020
+[pd-test] IP: 10.235.26.27
+[pd-test]
+[pd-test] Checking for existing containers...
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Oct 21 07:00:55 AM CDT 2025 (Exit Code: 0)
+===================================================
+[pd-test] ==========================================
+[pd-test] Step 1: Starting Load Balancer/Router...
+[pd-test] ==========================================
+[pd-test] Router container started
+[pd-test] Waiting 10 seconds for router to initialize...
+[pd-test] ✓ Router started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)...
+[pd-test] ==========================================
+[pd-test] Prefill Server container started
+[pd-test] Waiting 60 seconds for prefill server to initialize...
+[pd-test] ERROR: Prefill Server container stopped
+[pd-test] Prefill container exit code:
+1
+[pd-test] Last 50 lines of prefill log:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 7, in <module>
+    from sglang.srt.server_args import prepare_server_args
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 30, in <module>
+    from sglang.srt.function_call.function_call_parser import FunctionCallParser
+  File "/sgl-workspace/sglang/python/sglang/srt/function_call/function_call_parser.py", line 4, in <module>
+    from sglang.srt.entrypoints.openai.protocol import (
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/protocol.py", line 40, in <module>
+    from xgrammar import StructuralTag
+ImportError: cannot import name 'StructuralTag' from 'xgrammar' (/opt/venv/lib/python3.10/site-packages/xgrammar/__init__.py)
+[pd-test] Checking for common errors:
+Traceback (most recent call last):
+ImportError: cannot import name 'StructuralTag' from 'xgrammar' (/opt/venv/lib/python3.10/site-packages/xgrammar/__init__.py)
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Collecting final router logs...
+[pd-test] Collecting final prefill logs...
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-router
+sglang-pd-prefill
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Oct 21 07:02:19 AM CDT 2025 (Exit Code: 1)
+===================================================
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251020
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251020
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251020/test_summary.txt
+✅ Successfully sent PD test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251020
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
