@@ -13,8 +13,8 @@ COMPLETION_MODEL="${MODEL_NAME:-${MODEL_PATH}}"
 DOCKER_IMAGE="${DOCKER_IMAGE:-rocm/sgl-dev:v0.5.3.post1-rocm700-mi30x-20251014}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-300}"
 TEST_DIR="/mnt/raid/michael/sglang-ci/test/pd"
-# Dynamically detect host IP address (first non-loopback IP: ip route get 8.8.8.8 | awk '{print $7}' | awk 'NR==1 {print $1}')
-HOST_IP="10.235.26.27"
+# Dynamically detect host IP address (first non-loopback IP)
+HOST_IP=$(ip route get 8.8.8.8 | awk '{print $7}' | awk 'NR==1 {print $1}')
 
 # Extract hardware type from docker image tag (mi30x, mi35x, etc.)
 DOCKER_TAG="${DOCKER_IMAGE##*:}"
@@ -72,7 +72,7 @@ cleanup() {
   echo "[pd-test] =========================================="
   echo "[pd-test] Cleaning up Docker containers..."
   echo "[pd-test] =========================================="
-  
+
   # Collect final logs before cleanup
   if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-router; then
     echo "[pd-test] Collecting final router logs..."
@@ -86,7 +86,7 @@ cleanup() {
     echo "[pd-test] Collecting final decode logs..."
     "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1 || true
   fi
-  
+
   "${DOCKER_CMD[@]}" stop sglang-pd-router 2>/dev/null || true
   "${DOCKER_CMD[@]}" stop sglang-pd-prefill 2>/dev/null || true
   "${DOCKER_CMD[@]}" stop sglang-pd-decode 2>/dev/null || true
@@ -216,6 +216,7 @@ STEP3_START=$(date +%s)
     --tp 4 \
     --trust-remote-code \
     --attention-backend triton \
+    --disable-cuda-graph \
   > "${LOG_DIR}/decode.log" 2>&1
 
 echo "[pd-test] Decode Server container started"
@@ -331,7 +332,7 @@ if [ "$HEALTH_CHECK_PASSED" = false ]; then
   "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1
   "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
   "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
-  
+
   echo "[pd-test] =========================================="
   echo "[pd-test] Debug Information"
   echo "[pd-test] =========================================="
