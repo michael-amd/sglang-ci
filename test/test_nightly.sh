@@ -131,12 +131,12 @@ PD_LOG_BASE_DIR="${PD_LOG_BASE_DIR:-${MOUNT_DIR}/test/pd/pd_log}"
 
 # PD model paths by hardware type
 declare -A PD_MODEL_PATHS=(
-  ["mi30x"]="/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16"
+  ["mi30x"]="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
   ["mi35x"]="/data2/models/amd-DeepSeek-R1-MXFP4-Preview"
 )
 
 declare -A PD_MODEL_NAMES=(
-  ["mi30x"]="GPT-OSS-20B"
+  ["mi30x"]="DeepSeek-V3-0324"
   ["mi35x"]="DeepSeek-R1-MXFP4-Preview"
 )
 
@@ -302,7 +302,7 @@ for arg in "$@"; do
       echo "  PD Test:"
       echo "    - Test: Prefill/Decode Disaggregation"
       echo "    - Models:"
-      echo "      • mi30x: GPT-OSS-20B (/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16)"
+      echo "      • mi30x: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)"
       echo "      • mi35x: DeepSeek-R1-MXFP4-Preview (/data2/models/amd-DeepSeek-R1-MXFP4-Preview)"
       echo "    - GPUs Used: 0-3 (Prefill TP=4), 4-7 (Decode TP=4)"
       echo "    - Log Directory: \${MOUNT_DIR}/test/pd/pd_log/{hardware}/{docker_tag}/"

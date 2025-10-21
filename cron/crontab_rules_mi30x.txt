@@ -24,9 +24,6 @@ TEAMS_WEBHOOK_URL=""
 GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
-# 9:30 PM PT (11:30 PM CT) - PD (Prefill-Decode Disaggregation) Test + Teams notifications
-30 23 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --test-type=pd --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/pd_test_nightly.log 2>&1 && bash cron/github_log_upload.sh
-
 # 10 PM PT (0 AM CT) - Grok 2 online benchmark + Teams notifications
 0 0 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
 
