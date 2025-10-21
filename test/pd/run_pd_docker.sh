@@ -106,6 +106,64 @@ trap cleanup EXIT INT TERM
 echo "[pd-test] Checking for existing containers..."
 cleanup
 
+# Track overall start time
+OVERALL_START=$(date +%s)
+
+# Function to write/update test summary
+write_summary() {
+  local current_time=$(date +%s)
+  local total_time=$((current_time - OVERALL_START))
+  local setup_time=$((${STEP1_DURATION:-0} + ${STEP2_DURATION:-0} + ${STEP3_DURATION:-0} + ${STEP4_DURATION:-0}))
+
+  cat > "${LOG_DIR}/test_summary.txt" << EOF
+SGLang PD Disaggregation Test Summary
+======================================
+
+Docker Tag: ${DOCKER_TAG}
+Hardware: ${HARDWARE}
+Model: ${MODEL_NAME}
+Model Path: ${MODEL_PATH}
+Docker Image: ${DOCKER_IMAGE}
+Hostname: $(hostname)
+
+Configuration:
+- IP Address: ${HOST_IP}
+- Prefill Server: Port 30025, GPUs 0-3, TP=4
+- Decode Server: Port 30026, GPUs 4-7, TP=4
+- Load Balancer: Port 30028
+- Network: Loopback (lo)
+- Execution: Docker containers
+
+Setup Steps (with runtime):
+- Step 1 - Router Startup: ${STEP1_DURATION:-0}s
+- Step 2 - Prefill Server Startup: ${STEP2_DURATION:-0}s
+- Step 3 - Decode Server Startup: ${STEP3_DURATION:-0}s
+- Step 4 - Health Check Wait: ${STEP4_DURATION:-0}s
+
+Test Results (with runtime):
+- Test 1 - Health Check: ${TEST1_RESULT:-PENDING} (${TEST1_DURATION:-0}s)
+- Test 2 - Model Info: ${TEST2_RESULT:-PENDING} (${TEST2_DURATION:-0}s)
+- Test 3 - Simple Completion: ${TEST3_RESULT:-PENDING} (${TEST3_DURATION:-0}s)
+- Test 4 - Code Generation: ${TEST4_RESULT:-PENDING} (${TEST4_DURATION:-0}s)
+- Test 6 - GSM8K Accuracy: ${GSM8K_ACCURACY:-PENDING} [${TEST6_RESULT:-PENDING}] (${GSM8K_DURATION:-0}s)
+
+Timing Summary:
+- Total Time (Setup + Tests): ${total_time}s
+- Setup Time (Steps 1-4): ${setup_time}s
+- GSM8K Test Duration: ${GSM8K_DURATION:-0}s
+- GSM8K Questions per Second: $([ -n "${GSM8K_DURATION}" ] && [ "${GSM8K_DURATION}" -gt 0 ] && awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}" || echo "N/A")
+- GSM8K Parallelism: 32 concurrent requests
+
+Log Files:
+- Load Balancer: ${LOG_DIR}/load_balance.log
+- Prefill Server: ${LOG_DIR}/prefill.log
+- Decode Server: ${LOG_DIR}/decode.log
+- GSM8K Results: ${LOG_DIR}/test_gsm8k.log
+
+Test completed in nightly mode (Docker-based).
+EOF
+}
+
 # Step 1: Start Load Balancer/Router in Docker
 echo "[pd-test] =========================================="
 echo "[pd-test] Step 1: Starting Load Balancer/Router..."
@@ -142,6 +200,7 @@ fi
 echo "[pd-test] ✓ Router started successfully"
 STEP1_END=$(date +%s)
 STEP1_DURATION=$((STEP1_END - STEP1_START))
+write_summary
 echo ""
 
 # Step 2: Start Prefill Server in Docker
@@ -190,6 +249,7 @@ fi
 echo "[pd-test] ✓ Prefill Server started successfully"
 STEP2_END=$(date +%s)
 STEP2_DURATION=$((STEP2_END - STEP2_START))
+write_summary
 echo ""
 
 # Step 3: Start Decode Server in Docker
@@ -238,6 +298,7 @@ fi
 echo "[pd-test] ✓ Decode Server started successfully"
 STEP3_END=$(date +%s)
 STEP3_DURATION=$((STEP3_END - STEP3_START))
+write_summary
 echo ""
 
 # Step 4: Wait for all services to be healthy
@@ -324,6 +385,7 @@ for i in $(seq 1 ${HEALTH_CHECK_MAX_ATTEMPTS}); do
 done
 STEP4_END=$(date +%s)
 STEP4_DURATION=$((STEP4_END - STEP4_START))
+write_summary
 echo ""
 
 if [ "$HEALTH_CHECK_PASSED" = false ]; then
@@ -373,6 +435,7 @@ else
 fi
 TEST1_END=$(date +%s)
 TEST1_DURATION=$((TEST1_END - TEST1_START))
+write_summary
 echo ""
 
 # Test 2: Model info
@@ -388,6 +451,7 @@ else
 fi
 TEST2_END=$(date +%s)
 TEST2_DURATION=$((TEST2_END - TEST2_START))
+write_summary
 echo ""
 
 # Test 3: Simple completion
@@ -410,6 +474,7 @@ else
 fi
 TEST3_END=$(date +%s)
 TEST3_DURATION=$((TEST3_END - TEST3_START))
+write_summary
 echo ""
 
 # Test 4: Code generation
@@ -432,6 +497,7 @@ else
 fi
 TEST4_END=$(date +%s)
 TEST4_DURATION=$((TEST4_END - TEST4_START))
+write_summary
 echo ""
 
 # # Test 5: Concurrent requests
@@ -505,6 +571,7 @@ else
   GSM8K_ACCURACY="FAILED"
   TEST6_RESULT="FAIL"
 fi
+write_summary
 echo ""
 
 # Collect logs from Docker containers
@@ -513,63 +580,11 @@ echo "[pd-test] Collecting logs from Docker containers..."
 "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
 "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
 
-# Create summary with timing information
+# Final summary update
 echo "[pd-test] =========================================="
 echo "[pd-test] Creating Test Summary"
 echo "[pd-test] =========================================="
-
-# Calculate total test time
-TEST_END_TIME=$(date +%s)
-TOTAL_TEST_TIME=$((TEST_END_TIME - GSM8K_START))
-
-cat > "${LOG_DIR}/test_summary.txt" << EOF
-SGLang PD Disaggregation Test Summary
-======================================
-
-Docker Tag: ${DOCKER_TAG}
-Hardware: ${HARDWARE}
-Model: ${MODEL_NAME}
-Model Path: ${MODEL_PATH}
-Docker Image: ${DOCKER_IMAGE}
-Hostname: $(hostname)
-
-Configuration:
-- IP Address: ${HOST_IP}
-- Prefill Server: Port 30025, GPUs 0-3, TP=4
-- Decode Server: Port 30026, GPUs 4-7, TP=4
-- Load Balancer: Port 30028
-- Network: Loopback (lo)
-- Execution: Docker containers
-
-Setup Steps (with runtime):
-- Step 1 - Router Startup: ${STEP1_DURATION:-0}s
-- Step 2 - Prefill Server Startup: ${STEP2_DURATION:-0}s
-- Step 3 - Decode Server Startup: ${STEP3_DURATION:-0}s
-- Step 4 - Health Check Wait: ${STEP4_DURATION:-0}s
-
-Test Results (with runtime):
-- Test 1 - Health Check: ${TEST1_RESULT:-FAIL} (${TEST1_DURATION:-0}s)
-- Test 2 - Model Info: ${TEST2_RESULT:-FAIL} (${TEST2_DURATION:-0}s)
-- Test 3 - Simple Completion: ${TEST3_RESULT:-FAIL} (${TEST3_DURATION:-0}s)
-- Test 4 - Code Generation: ${TEST4_RESULT:-FAIL} (${TEST4_DURATION:-0}s)
-- Test 6 - GSM8K Accuracy: ${GSM8K_ACCURACY:-N/A} [${TEST6_RESULT:-FAIL}] (${GSM8K_DURATION}s)
-
-Timing Summary:
-- Total Test Runtime: ${TOTAL_TEST_TIME}s
-- Setup Time (Steps 1-4): $((STEP1_DURATION + STEP2_DURATION + STEP3_DURATION + STEP4_DURATION))s
-- GSM8K Test Duration: ${GSM8K_DURATION}s
-- GSM8K Questions per Second: $(awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}")
-- GSM8K Parallelism: 32 concurrent requests
-
-Log Files:
-- Load Balancer: ${LOG_DIR}/load_balance.log
-- Prefill Server: ${LOG_DIR}/prefill.log
-- Decode Server: ${LOG_DIR}/decode.log
-- GSM8K Results: ${LOG_DIR}/test_gsm8k.log
-
-Test completed in nightly mode (Docker-based).
-EOF
-
+write_summary
 cat "${LOG_DIR}/test_summary.txt"
 echo ""
 
