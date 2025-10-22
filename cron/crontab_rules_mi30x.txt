@@ -39,17 +39,20 @@ GITHUB_TOKEN=""
 # 1:30 AM PT (3 AM CT) - DeepSeek online benchmark + Teams notifications
 30 3 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
 
-# 6 AM PT (8 AM CT) - Grok online benchmark + Teams notifications
-0 8 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok_nightly.log 2>&1 && bash cron/github_log_upload.sh
+# 5 AM PT (7 AM CT) - Grok online benchmark + Teams notifications
+0 7 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok_nightly.log 2>&1 && bash cron/github_log_upload.sh
+
+# 7 AM PT (9 AM CT) - Unit test nightly run with Teams notifications
+0 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly.log 2>&1 && bash cron/github_log_upload.sh
+
+# 7:10 AM PT (9:10 AM CT) - PD disaggregation test nightly run with Teams notifications
+10 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --test-type=pd --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly_pd.log 2>&1 && bash cron/github_log_upload.sh
+
+# 7:40 AM PT (9:40 AM CT) - Sanity check with latest nightly image + Teams alert + Upload sanity logs
+40 9 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1 && bash cron/github_log_upload.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE cron && bash cron/github_log_upload.sh "" $HARDWARE_TYPE sanity $(ls -t test/sanity_check_log/$HARDWARE_TYPE/ | head -1)
+
+# 8:30 AM PT (10:30 AM CT) - Daily CI Summary Report with Teams notification
+30 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" python3 team_alert/send_daily_summary_alert.py --webhook-url="$TEAMS_WEBHOOK_URL" --hardware="$HARDWARE_TYPE" --base-dir="$SGL_BENCHMARK_CI_DIR" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/daily_summary_alert.log 2>&1 && bash cron/github_log_upload.sh
 
 # 9 AM PT (11 AM CT) - Docker image availability check with Teams notifications
 0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1 && bash cron/github_log_upload.sh
-
-# 9:05 AM PT (11:05 AM CT) - Unit test nightly run with Teams notifications
-5 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly.log 2>&1 && bash cron/github_log_upload.sh
-
-# 9:15 AM PT (11:15 AM CT) - PD disaggregation test nightly run with Teams notifications
-15 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --test-type=pd --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly_pd.log 2>&1 && bash cron/github_log_upload.sh
-
-# 9:45 AM PT (11:45 AM CT) - Sanity check with latest nightly image + Teams alert
-45 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1 && bash cron/github_log_upload.sh
