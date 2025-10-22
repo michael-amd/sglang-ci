@@ -1164,7 +1164,9 @@ class TeamsNotifier:
         self.skip_analysis = skip_analysis
         self.analysis_days = analysis_days
         self.github_upload = github_upload
-        self.github_repo = github_repo or os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
+        self.github_repo = github_repo or os.environ.get(
+            "GITHUB_REPO", "ROCm/sglang-ci"
+        )
         self.github_token = github_token
         self.hardware = hardware
         self.check_dp_attention = check_dp_attention
@@ -1662,17 +1664,37 @@ class TeamsNotifier:
                 }
             )
 
+            # Map short model names to full names for display
+            model_display_names = {
+                "llama4": "Llama-4-Maverick-17B-128E-Instruct-FP8",
+                "QWEN-30B": "Qwen3-30B-A3B-Thinking-2507",
+            }
+            # Hardware-specific model mappings
+            hardware_type = None
+            docker_image = parsed_data.get("docker_image", "")
+            if docker_image:
+                hw_match = re.search(r"mi[0-9]+x", docker_image)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+
+            if hardware_type == "mi30x":
+                model_display_names["GPT-OSS-120B"] = "gpt-oss-120b-bf16"
+                model_display_names["GPT-OSS-20B"] = "gpt-oss-20b-bf16"
+
             for model_name, result in model_results.items():
                 model_status = result.get("status", "unknown")
                 model_icon = "✅" if model_status == "pass" else "❌"
                 model_time = result.get("time", "N/A")
                 avg_accuracy = result.get("average_accuracy")
 
+                # Use full model name for display if available
+                display_name = model_display_names.get(model_name, model_name)
+
                 # Model name and status
                 body_elements.append(
                     {
                         "type": "TextBlock",
-                        "text": f"{model_icon} **{model_name}** - {model_time}",
+                        "text": f"{model_icon} **{display_name}** - {model_time}",
                         "wrap": True,
                         "size": "Small",
                         "spacing": "Small",
@@ -2325,10 +2347,7 @@ class TeamsNotifier:
             # Runtime is already shown in the status details section, so don't duplicate it here
 
         # Add Plot section only if not in DP attention mode or torch compile mode
-        if (
-            not self.check_dp_attention
-            and not self.enable_torch_compile
-        ):
+        if not self.check_dp_attention and not self.enable_torch_compile:
             # Add Plot section title
             body_elements.append(
                 {
@@ -2471,10 +2490,7 @@ class TeamsNotifier:
             pass
 
         # Only add plot-related actions if not in DP attention mode or torch compile mode
-        if (
-            not self.check_dp_attention
-            and not self.enable_torch_compile
-        ):
+        if not self.check_dp_attention and not self.enable_torch_compile:
             if standard_plots:
                 # Add action to view all plots (link to the model's directory)
                 model_variants = self.analyzer.get_model_variants(model)
