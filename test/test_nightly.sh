@@ -27,13 +27,15 @@
 # OPTIONS:
 #   --hardware=HW            Hardware type: mi30x, mi35x [default: mi30x]
 #   --test-type=TYPE         Test type: unit, pd [default: unit]
+#   --image-date=YYYYMMDD    Specific date of Docker image to use [default: today, fallback to yesterday]
 #   --teams-webhook-url=URL  Teams webhook URL for test result notifications
 #   --help, -h               Show detailed help message
 #
 # EXAMPLES:
-#   bash test_nightly.sh                          # Run unit test on latest mi30x image
+#   bash test_nightly.sh                          # Run unit test on latest mi30x image (today or yesterday)
 #   bash test_nightly.sh --hardware=mi35x         # Run unit test on latest mi35x image
 #   bash test_nightly.sh --test-type=pd           # Run PD disaggregation test on latest mi30x image
+#   bash test_nightly.sh --image-date=20251020    # Run unit test on mi30x image from 20251020
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -96,6 +98,9 @@ HARDWARE_TYPE="${HARDWARE_TYPE:-mi30x}"
 
 # Test type configuration
 TEST_TYPE="${TEST_TYPE:-unit}"
+
+# Image date configuration (if not set, will use today/yesterday)
+IMAGE_DATE="${IMAGE_DATE:-}"
 
 # Teams notification configuration
 TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
@@ -273,6 +278,9 @@ for arg in "$@"; do
     --test-type=*)
       TEST_TYPE="${arg#*=}"
       ;;
+    --image-date=*)
+      IMAGE_DATE="${arg#*=}"
+      ;;
     --teams-webhook-url=*)
       TEAMS_WEBHOOK_URL="${arg#*=}"
       ;;
@@ -284,13 +292,15 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
       echo "  --test-type=TYPE                 Test type (unit, pd) [default: unit]"
+      echo "  --image-date=YYYYMMDD            Specific date of Docker image to use [default: today, fallback to yesterday]"
       echo "  --teams-webhook-url=URL          Teams webhook URL for test result notifications"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
-      echo "  $0                              # Run unit test on latest mi30x image"
+      echo "  $0                              # Run unit test on latest mi30x image (today or yesterday)"
       echo "  $0 --hardware=mi35x             # Run unit test on latest mi35x image"
       echo "  $0 --test-type=pd               # Run PD test on latest mi30x image"
+      echo "  $0 --image-date=20251020        # Run unit test on mi30x image from 20251020"
       echo ""
       echo "Test Details:"
       echo "  Unit Test:"
@@ -377,7 +387,11 @@ find_image_for_date() {
 }
 
 # Find and pull Docker image
-echo "[test] Searching for latest non-SRT image..."
+if [[ -n "$IMAGE_DATE" ]]; then
+  echo "[test] Searching for non-SRT image for specific date: ${IMAGE_DATE}..."
+else
+  echo "[test] Searching for latest non-SRT image..."
+fi
 
 # Check curl availability once
 if ! command -v curl &> /dev/null; then
@@ -387,42 +401,65 @@ fi
 
 SELECTED_TAG=""
 
-# Try today first
-date_suffix=$(date_pst 0)
-candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || true
+if [[ -n "$IMAGE_DATE" ]]; then
+  # If IMAGE_DATE is specified, use that specific date
+  echo "[test] Looking for image with date: ${IMAGE_DATE}"
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE") || true
 
-if [[ -n "$candidate_tag" ]]; then
-  echo "[test] Found candidate tag for today: ${candidate_tag}"
-  echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-  if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
-    SELECTED_TAG="$candidate_tag"
-    echo "[test] Successfully pulled image for today: ${IMAGE_REPO}:${candidate_tag}"
-  else
-    echo "[test] WARN: Failed to pull today's tag ${candidate_tag}. Trying yesterday..."
-  fi
-fi
-
-# If no image found for today, try yesterday as fallback
-if [[ -z "$SELECTED_TAG" ]]; then
-  echo "[test] No image found for today. Checking yesterday as a fallback..."
-  date_suffix=$(date_pst 1)
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
   if [[ -n "$candidate_tag" ]]; then
-    echo "[test] Fallback found candidate tag: ${candidate_tag}"
+    echo "[test] Found candidate tag for ${IMAGE_DATE}: ${candidate_tag}"
     echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
     if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
       SELECTED_TAG="$candidate_tag"
-      echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+      echo "[test] Successfully pulled image for ${IMAGE_DATE}: ${IMAGE_REPO}:${candidate_tag}"
     else
-      echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+      echo "[test] WARN: Failed to pull tag ${candidate_tag}."
     fi
   else
-    echo "[test] No fallback image found for yesterday either."
+    echo "[test] No image found for date ${IMAGE_DATE}."
+  fi
+else
+  # Try today first
+  date_suffix=$(date_pst 0)
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || true
+
+  if [[ -n "$candidate_tag" ]]; then
+    echo "[test] Found candidate tag for today: ${candidate_tag}"
+    echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+    if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+      SELECTED_TAG="$candidate_tag"
+      echo "[test] Successfully pulled image for today: ${IMAGE_REPO}:${candidate_tag}"
+    else
+      echo "[test] WARN: Failed to pull today's tag ${candidate_tag}. Trying yesterday..."
+    fi
+  fi
+
+  # If no image found for today, try yesterday as fallback
+  if [[ -z "$SELECTED_TAG" ]]; then
+    echo "[test] No image found for today. Checking yesterday as a fallback..."
+    date_suffix=$(date_pst 1)
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[test] Fallback found candidate tag: ${candidate_tag}"
+      echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+      if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+        SELECTED_TAG="$candidate_tag"
+        echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+      else
+        echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+      fi
+    else
+      echo "[test] No fallback image found for yesterday either."
+    fi
   fi
 fi
 
 if [[ -z "$SELECTED_TAG" ]]; then
-  echo "[test] ERROR: Could not find and pull any valid non-SRT images for today or yesterday."
+  if [[ -n "$IMAGE_DATE" ]]; then
+    echo "[test] ERROR: Could not find and pull any valid non-SRT images for date ${IMAGE_DATE}."
+  else
+    echo "[test] ERROR: Could not find and pull any valid non-SRT images for today or yesterday."
+  fi
   exit 1
 fi
 
