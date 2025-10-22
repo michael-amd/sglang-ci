@@ -20,3 +20,4 @@ build_docker_log/*
 */__pycache__/*
 __pycache__/*
 logs/*
+team_alert/alert_log/*
