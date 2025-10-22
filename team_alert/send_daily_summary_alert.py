@@ -3,15 +3,17 @@
 Send Daily Summary Report to Microsoft Teams
 
 This script aggregates results from all nightly tasks defined in cron/crontab_rules.txt
-and sends a comprehensive summary report to Microsoft Teams.
+and sends a comprehensive summary report to Microsoft Teams (optional).
+Alert messages are always saved to team_alert/alert_log directory.
 
 USAGE:
     python send_daily_summary_alert.py --webhook-url "https://teams.webhook.url"
     python send_daily_summary_alert.py --webhook-url "https://teams.webhook.url" --date 20251021
+    python send_daily_summary_alert.py --date 20251021  # Save to log only, no Teams alert
     python send_daily_summary_alert.py --test-mode
 
 ENVIRONMENT VARIABLES:
-    TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
+    TEAMS_WEBHOOK_URL: Teams webhook URL (optional - if not provided, only logs are saved)
     HARDWARE_TYPE: Hardware type (mi30x, mi35x) - default: mi30x
     SGL_BENCHMARK_CI_DIR: Base directory for CI logs - default: /mnt/raid/michael/sglang-ci
 
@@ -77,7 +79,7 @@ class DailySummaryReporter:
 
     def __init__(
         self,
-        webhook_url: str,
+        webhook_url: Optional[str] = None,
         hardware: str = "mi30x",
         base_dir: str = "/mnt/raid/michael/sglang-ci",
     ):
@@ -85,7 +87,7 @@ class DailySummaryReporter:
         Initialize daily summary reporter
 
         Args:
-            webhook_url: Microsoft Teams webhook URL
+            webhook_url: Microsoft Teams webhook URL (optional)
             hardware: Hardware type (mi30x, mi35x)
             base_dir: Base directory for CI logs
         """
@@ -93,6 +95,7 @@ class DailySummaryReporter:
         self.hardware = hardware
         self.base_dir = base_dir
         self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
+        self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
 
     def find_timing_summary_log(
         self, model_dir: str, mode_suffix: str, date_str: str
@@ -773,50 +776,97 @@ class DailySummaryReporter:
 
         return card
 
-    def send_summary_notification(self, date_str: str) -> bool:
+    def save_alert_log(self, card: Dict, date_str: str) -> bool:
         """
-        Send daily summary notification to Teams
+        Save alert message JSON to log directory
 
         Args:
+            card: Adaptive card JSON structure
             date_str: Date string in YYYYMMDD format
 
         Returns:
             True if successful, False otherwise
         """
         try:
+            # Create alert log directory if it doesn't exist
+            os.makedirs(self.alert_log_dir, exist_ok=True)
+
+            # Create log filename with timestamp
+            if PYTZ_AVAILABLE:
+                pacific_tz = pytz.timezone("America/Los_Angeles")
+                pacific_time = datetime.now(pacific_tz)
+                timestamp = pacific_time.strftime("%Y%m%d_%H%M%S")
+            else:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            log_filename = f"daily_summary_{date_str}_{self.hardware}_{timestamp}.json"
+            log_path = os.path.join(self.alert_log_dir, log_filename)
+
+            # Save card JSON to file
+            with open(log_path, "w", encoding="utf-8") as f:
+                json.dump(card, f, indent=2, ensure_ascii=False)
+
+            print(f"💾 Alert message saved to: {log_path}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error saving alert log: {e}")
+            return False
+
+    def send_summary_notification(self, date_str: str) -> bool:
+        """
+        Send daily summary notification to Teams and save to log
+
+        Args:
+            date_str: Date string in YYYYMMDD format
+
+        Returns:
+            True if successful (log saved), False otherwise
+        """
+        try:
             # Collect task results
             print(f"📊 Collecting task results for {date_str}...")
             task_results = self.collect_task_results(date_str)
 
-            # Create and send card
+            # Create card
             card = self.create_summary_card(date_str, task_results)
-            card_json = json.dumps(card)
 
-            headers = {"Content-Type": "application/json"}
+            # Always save to log file
+            log_saved = self.save_alert_log(card, date_str)
 
-            response = requests.post(
-                self.webhook_url, data=card_json, headers=headers, timeout=30
-            )
+            # Send to Teams only if webhook URL is provided
+            if self.webhook_url:
+                card_json = json.dumps(card)
+                headers = {"Content-Type": "application/json"}
 
-            if response.status_code in [200, 202]:
-                print(f"✅ Successfully sent daily summary report to Teams")
-                if response.status_code == 202:
-                    print(
-                        "   (Power Automate flow accepted - message processing asynchronously)"
-                    )
-                return True
-            else:
-                print(
-                    f"❌ Failed to send Teams notification. Status: {response.status_code}"
+                response = requests.post(
+                    self.webhook_url, data=card_json, headers=headers, timeout=30
                 )
-                print(f"Response: {response.text}")
-                return False
+
+                if response.status_code in [200, 202]:
+                    print(f"✅ Successfully sent daily summary report to Teams")
+                    if response.status_code == 202:
+                        print(
+                            "   (Power Automate flow accepted - message processing asynchronously)"
+                        )
+                else:
+                    print(
+                        f"❌ Failed to send Teams notification. Status: {response.status_code}"
+                    )
+                    print(f"Response: {response.text}")
+            else:
+                print("ℹ️  No Teams webhook URL provided, skipping Teams notification")
+
+            return log_saved
 
         except requests.exceptions.RequestException as e:
             print(f"❌ Error sending Teams notification: {e}")
             return False
         except json.JSONDecodeError as e:
             print(f"❌ JSON encoding error: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Error generating summary: {e}")
             return False
 
     def send_test_notification(self) -> bool:
@@ -826,6 +876,11 @@ class DailySummaryReporter:
         Returns:
             True if successful, False otherwise
         """
+        if not self.webhook_url:
+            print("❌ Error: Teams webhook URL not provided for test mode")
+            print("   Set TEAMS_WEBHOOK_URL environment variable or use --webhook-url")
+            return False
+
         try:
             if PYTZ_AVAILABLE:
                 pacific_tz = pytz.timezone("America/Los_Angeles")
@@ -937,12 +992,8 @@ def main():
 
     args = parser.parse_args()
 
-    # Get webhook URL
+    # Get webhook URL (optional)
     webhook_url = args.webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
-    if not webhook_url:
-        print("❌ Error: Teams webhook URL not provided")
-        print("   Set TEAMS_WEBHOOK_URL environment variable or use --webhook-url")
-        return 1
 
     # Create reporter
     reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
