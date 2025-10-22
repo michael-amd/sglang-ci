@@ -95,15 +95,12 @@ DEFAULT_MODELS = {
     "DeepSeek-V3": {
         "model_path": {
             "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
         },
         "tokenizer_path": {
             "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
-            "mi35x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.930},
@@ -124,6 +121,19 @@ DEFAULT_MODELS = {
     #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
     #     "criteria": {"accuracy": 0.930},
     # },
+    "DeepSeek-R1-MXFP4": {
+        "model_path": {
+            "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+        },
+        "tokenizer_path": {
+            "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+        },
+        "launch_cmd_template": {
+            "mi35x": "python3 -m sglang.launch_server --model-path {model_path} --tensor-parallel-size 8 --trust-remote-code --chunked-prefill-size 131072 --host 0.0.0.0 --port 8000 --log-requests --disable-radix-cache --mem-fraction-static 0.95 --dp-size 8",
+        },
+        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+        "criteria": {"accuracy": 0.930},
+    },
     "GROK1-IN4": {
         "model_path": {
             "mi30x": "amd--grok-1-W4A8KV8",
@@ -175,11 +185,11 @@ DEFAULT_MODELS = {
     "llama4": {
         "model_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "tokenizer_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
@@ -547,8 +557,8 @@ def manage_docker_container(
         model_dir = os.path.dirname(model_path)
         if not model_dir.startswith(MOUNT_DIR) and not model_dir.startswith(script_dir):
             # Determine mount root
-            if model_path.startswith("/data/"):
-                mount_root = "/data"
+            if model_path.startswith("/data2/"):
+                mount_root = "/data2"
             elif model_path.startswith("/mnt/"):
                 mount_root = "/mnt"
             elif model_path.startswith("/home/"):
