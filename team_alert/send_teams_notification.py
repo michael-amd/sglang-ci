@@ -2120,6 +2120,9 @@ class TeamsNotifier:
         for plot in plots:
             if plot.get("category") == "mtp":
                 continue  # Skip dedicated MTP plots to keep the card concise
+            # Skip plots without successful upload when GitHub upload mode is enabled
+            if self.github_upload and not plot.get("public_url"):
+                continue  # Don't show plot info if GitHub upload failed
             standard_plots.append(plot)
 
         # Create card body elements starting with run name
