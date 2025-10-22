@@ -1875,7 +1875,7 @@ class TeamsNotifier:
 
             repo_path = f"plot/{self.hardware}/{model_dir}/{mode}/{filename}"
 
-            # GitHub API endpoint for main branch
+            # GitHub API endpoint for log branch
             api_url = (
                 f"https://api.github.com/repos/{self.github_repo}/contents/{repo_path}"
             )
@@ -1885,8 +1885,8 @@ class TeamsNotifier:
                 "Accept": "application/vnd.github.v3+json",
             }
 
-            # Check if file already exists on main branch
-            params = {"ref": "main"}
+            # Check if file already exists on log branch
+            params = {"ref": "log"}
             existing_response = requests.get(api_url, headers=headers, params=params)
             sha = None
             if existing_response.status_code == 200:
@@ -1895,12 +1895,12 @@ class TeamsNotifier:
             else:
                 print(f"   📄 Creating new file: {repo_path}")
 
-            # Upload or update file on main branch
+            # Upload or update file on log branch
             current_date = datetime.now().strftime("%Y-%m-%d")
             payload = {
                 "message": f"Add {model} {mode} plot for {current_date}",
                 "content": base64_content,
-                "branch": "main",
+                "branch": "log",
             }
 
             if sha:
@@ -1909,9 +1909,9 @@ class TeamsNotifier:
             response = requests.put(api_url, json=payload, headers=headers)
 
             if response.status_code in [200, 201]:
-                # Return public URL from main branch
-                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/main/{repo_path}"
-                print(f"   ✅ Uploaded to GitHub (main branch): {filename}")
+                # Return public URL from log branch
+                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/{repo_path}"
+                print(f"   ✅ Uploaded to GitHub (log branch): {filename}")
                 print(f"   🔗 GitHub URL: {public_url}")
                 return public_url
             else:
