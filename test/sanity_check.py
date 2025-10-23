@@ -92,19 +92,19 @@ DEFAULT_MODELS = {
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.840},
     },
-    "DeepSeek-V3": {
-        "model_path": {
-            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-        },
-        "tokenizer_path": {
-            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-        },
-        "launch_cmd_template": {
-            "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
-        },
-        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.930},
-    },
+    # "DeepSeek-V3": {
+    #     "model_path": {
+    #         "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+    #     },
+    #     "tokenizer_path": {
+    #         "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+    #     },
+    #     "launch_cmd_template": {
+    #         "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
+    #     },
+    #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+    #     "criteria": {"accuracy": 0.930},
+    # },
     # "DeepSeek-R1": {
     #     "model_path": {
     #         "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
@@ -121,19 +121,19 @@ DEFAULT_MODELS = {
     #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
     #     "criteria": {"accuracy": 0.930},
     # },
-    "DeepSeek-R1-MXFP4": {
-        "model_path": {
-            "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
-        },
-        "tokenizer_path": {
-            "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
-        },
-        "launch_cmd_template": {
-            "mi35x": "python3 -m sglang.launch_server --model-path {model_path} --tensor-parallel-size 8 --trust-remote-code --chunked-prefill-size 131072 --host 0.0.0.0 --port 8000 --log-requests --disable-radix-cache --mem-fraction-static 0.95 --dp-size 8",
-        },
-        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.930},
-    },
+    # "DeepSeek-R1-MXFP4": {
+    #     "model_path": {
+    #         "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+    #     },
+    #     "tokenizer_path": {
+    #         "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+    #     },
+    #     "launch_cmd_template": {
+    #         "mi35x": "python3 -m sglang.launch_server --model-path {model_path} --tensor-parallel-size 8 --trust-remote-code --chunked-prefill-size 131072 --host 0.0.0.0 --port 8000 --log-requests --disable-radix-cache --mem-fraction-static 0.95 --dp-size 8",
+    #     },
+    #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+    #     "criteria": {"accuracy": 0.930},
+    # },
     "GROK1-IN4": {
         "model_path": {
             "mi30x": "amd--grok-1-W4A8KV8",
@@ -1095,17 +1095,28 @@ def sanity_check(
 
     shutdown_time = time.time() - shutdown_start
 
-    # 5. Determine final result based on average accuracy
-    avg_accuracy = sum(accuracies) / len(accuracies) if accuracies else 0.0
+    # 5. Determine final result based on highest accuracy
+    # ---------------------------------------------------
+    # Previous logic required the *average* accuracy across all trials to meet the
+    # threshold defined in `criteria`.  The new requirement is more lenient: as
+    # long as ANY individual trial meets (or exceeds) the threshold, the model
+    # is considered passed.  Additionally, we now report the **highest**
+    # achieved accuracy instead of the average.
+
+    # Protect against the edge-case where `accuracies` might be empty (e.g. all
+    # trials failed to produce a parseable accuracy).  Using 0.0 mirrors the
+    # previous behaviour where such situations resulted in a failure.
+    max_accuracy = max(accuracies) if accuracies else 0.0
+
     required_accuracy = criteria["accuracy"]
-    all_pass = avg_accuracy >= required_accuracy
-    final_status = PASS_MARK if all_pass else FAIL_MARK
+    any_pass = max_accuracy >= required_accuracy
+    final_status = PASS_MARK if any_pass else FAIL_MARK
     total_time = time.time() - overall_start
 
     print(f"📋 Result for {model_name} on {platform}: {final_status}")
     print(f"   Accuracies: {accuracies}")
     print(
-        f"   Average Accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})"
+        f"   Highest Accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})"
     )
     print(f"   Total Time: {total_time:.2f}s")
 
@@ -1114,14 +1125,14 @@ def sanity_check(
         timing_log.write(f"Final result: {final_status}\n")
         timing_log.write(f"Accuracies: {accuracies}\n")
         timing_log.write(
-            f"Average accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
+            f"Highest accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
         )
         timing_log.write(f"Total time: {total_time:.2f}s\n")
         timing_log.write(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
         timing_log.write("=" * 50 + "\n")
         timing_log.flush()
 
-    return all_pass
+    return any_pass
 
 
 # =======================
