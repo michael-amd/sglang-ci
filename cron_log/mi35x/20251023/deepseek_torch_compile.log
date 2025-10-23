@@ -1,0 +1,242 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --model=deepseek --model-path=/data2/models/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-torch-compile --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-10-23 12:00:01 PDT
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 16260
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /data2/models/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 2c7df520dfa5
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251023...
+[nightly] Found candidate tag for day -0: v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023...
+v0.5.3.post3-rocm700-mi35x-20251023: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+f6ed4d614fcd: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+63e5eff1afbe: Pulling fs layer
+825041c1c7ae: Pulling fs layer
+fa40dbcb1778: Pulling fs layer
+e040c32caaef: Pulling fs layer
+b0db8b1a6f47: Pulling fs layer
+f73c6f9a94fd: Pulling fs layer
+7f6885e856bf: Pulling fs layer
+2b926bf873f8: Pulling fs layer
+04abd33f2a4a: Pulling fs layer
+7b7df045dac9: Pulling fs layer
+d97d64216563: Pulling fs layer
+271d9de1d25b: Pulling fs layer
+0a981741d57b: Pulling fs layer
+d74a98d99f09: Pulling fs layer
+9d01e386f383: Pulling fs layer
+e040c32caaef: Waiting
+b0db8b1a6f47: Waiting
+f73c6f9a94fd: Waiting
+fa40dbcb1778: Waiting
+7f6885e856bf: Waiting
+271d9de1d25b: Waiting
+2b926bf873f8: Waiting
+0a981741d57b: Waiting
+d74a98d99f09: Waiting
+9d01e386f383: Waiting
+d97d64216563: Waiting
+04abd33f2a4a: Waiting
+7b7df045dac9: Waiting
+f6ed4d614fcd: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+f6ed4d614fcd: Pull complete
+4f4fb700ef54: Pull complete
+63e5eff1afbe: Verifying Checksum
+63e5eff1afbe: Download complete
+63e5eff1afbe: Pull complete
+825041c1c7ae: Verifying Checksum
+825041c1c7ae: Download complete
+825041c1c7ae: Pull complete
+fa40dbcb1778: Download complete
+f73c6f9a94fd: Verifying Checksum
+f73c6f9a94fd: Download complete
+fa40dbcb1778: Pull complete
+e040c32caaef: Verifying Checksum
+e040c32caaef: Download complete
+2b926bf873f8: Verifying Checksum
+2b926bf873f8: Download complete
+04abd33f2a4a: Verifying Checksum
+04abd33f2a4a: Download complete
+7f6885e856bf: Verifying Checksum
+7f6885e856bf: Download complete
+7b7df045dac9: Verifying Checksum
+7b7df045dac9: Download complete
+271d9de1d25b: Download complete
+b0db8b1a6f47: Verifying Checksum
+b0db8b1a6f47: Download complete
+d74a98d99f09: Verifying Checksum
+d74a98d99f09: Download complete
+9d01e386f383: Verifying Checksum
+9d01e386f383: Download complete
+e040c32caaef: Pull complete
+d97d64216563: Verifying Checksum
+d97d64216563: Download complete
+0a981741d57b: Verifying Checksum
+0a981741d57b: Download complete
+b0db8b1a6f47: Pull complete
+f73c6f9a94fd: Pull complete
+7f6885e856bf: Pull complete
+2b926bf873f8: Pull complete
+04abd33f2a4a: Pull complete
+7b7df045dac9: Pull complete
+d97d64216563: Pull complete
+271d9de1d25b: Pull complete
+0a981741d57b: Pull complete
+d74a98d99f09: Pull complete
+9d01e386f383: Pull complete
+Digest: sha256:cdd7101bd91b0b57b3ff644d5191ed3362d39885e217c198fe036e2ddbbe68a3
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Successfully obtained image for date 20251023: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 058b353f9ef2
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Creating container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Custom model path /data2/models/amd-DeepSeek-R1-MXFP4-Preview requires mounting /data2/models...
+cf6f875cb6f1dbfd6723b48a8dc8fcc740fb9c6956b54ca92d09f984ed335d2e
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-10-23 12:02:15 PDT
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post3-rocm700-mi35x-20251023_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log)
+torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+[DEBUG] Torch compile enabled with standard settings
+Waiting for SGLang server (PID: 25) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post3-rocm700-mi35x-20251023_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log
+.
+SGLang server process (PID: 25) has terminated unexpectedly!
+Check /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post3-rocm700-mi35x-20251023_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log for error details:
+--- Last 20 lines of server log ---
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 7, in <module>
+    from sglang.srt.server_args import prepare_server_args
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 30, in <module>
+    from sglang.srt.function_call.function_call_parser import FunctionCallParser
+  File "/sgl-workspace/sglang/python/sglang/srt/function_call/function_call_parser.py", line 4, in <module>
+    from sglang.srt.entrypoints.openai.protocol import (
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/protocol.py", line 40, in <module>
+    from xgrammar import StructuralTag
+ImportError: cannot import name 'StructuralTag' from 'xgrammar' (/opt/venv/lib/python3.10/site-packages/xgrammar/__init__.py)
+--- End of server log ---
+Cleaning up...
+Background SGLang server (PID: 25) already stopped.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.3.post3-rocm700-mi35x-20251023 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.3.post3-rocm700-mi35x-20251023_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251023
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251023
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi35x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --enable-torch-compile flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔥 Torch compile mode: Looking for torch compile benchmark results
+🔍 Discovered 0 plot file(s) for deepseek online
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251023: timing_summary_20251023_120215.log
+   Found timing_summary log for deepseek online on 20251023: timing_summary_20251023_120215.log
+   Found timing_summary log for deepseek online on 20251023: timing_summary_20251023_120215.log
+🔍 Sending adaptive card with 0 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251023
+[nightly] Stopping container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251023 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
