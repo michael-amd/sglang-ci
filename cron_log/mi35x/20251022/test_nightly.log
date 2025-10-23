@@ -1,1 +1,23 @@
-bash: test_nightly.sh: No such file or directory
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: test/test_nightly.sh --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[test] Start time: 2025-10-22 22:41:55 CDT
+[test] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/test/test_nightly.sh
+[test] Process ID: 3560413
+[test] ERROR: Another instance is already running (PID: 3480588)
+[test] If this is incorrect, remove /tmp/test_nightly.lock and try again
+[test] === Unit test PASSED for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022 ===
+[test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.3.post3-rocm700-mi35x-20251022.log
+[test] Stopping container sgl-dev_v0.5.3.post3-rocm700-mi35x-20251022 to release resources...
+[test] Sending Teams notification...
+📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.3.post3-rocm700-mi35x-20251022.log
+✅ Successfully sent unit test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+[test] Test type: unit
+[test] ==========================================
+[test] Cleaning up process lock...
