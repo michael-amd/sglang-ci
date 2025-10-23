@@ -7,8 +7,8 @@ and sends a comprehensive summary report to Microsoft Teams (optional).
 Alert messages are always saved to team_alert/alert_log directory.
 
 USAGE:
-    python send_daily_summary_alert.py --webhook-url "https://teams.webhook.url"
-    python send_daily_summary_alert.py --webhook-url "https://teams.webhook.url" --date 20251021
+    python send_daily_summary_alert.py --teams-webhook-url "https://teams.webhook.url"
+    python send_daily_summary_alert.py --teams-webhook-url "https://teams.webhook.url" --date 20251021
     python send_daily_summary_alert.py --date 20251021  # Save to log only, no Teams alert
     python send_daily_summary_alert.py --test-mode
 
@@ -958,7 +958,7 @@ def main():
     )
 
     parser.add_argument(
-        "--webhook-url",
+        "--teams-webhook-url",
         type=str,
         help="Teams webhook URL (overrides TEAMS_WEBHOOK_URL env var)",
     )
@@ -993,7 +993,7 @@ def main():
     args = parser.parse_args()
 
     # Get webhook URL (optional)
-    webhook_url = args.webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
+    webhook_url = args.teams_webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
 
     # Create reporter
     reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
