@@ -2,11 +2,11 @@
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
 [test] Command: test/test_nightly.sh --test-type=pd --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
-[test] Start time: 2025-10-22 07:00:01 CDT
+[test] Start time: 2025-10-22 19:00:01 CDT
 [test] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/test/test_nightly.sh
-[test] Process ID: 2618712
+[test] Process ID: 3416661
 [test] Created process lock: /tmp/test_nightly.lock
 [test] ==========================================
 
@@ -17,9 +17,7 @@
 [test] Hardware: mi35x, ROCM Version: rocm700 (PD test - using rocm700)
 [test] Test Type: pd
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: 42333f858892
-d050ec465e57
-cc3d478ea850
+[test] Stopping running containers: 3089cf19a28a
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -27,31 +25,29 @@ cc3d478ea850
 [test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
 [test] Searching for latest non-SRT image...
 [test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251022...
-[test] No image found for today. Checking yesterday as a fallback...
-[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251021...
-[test] Fallback found candidate tag: v0.5.3.post3-rocm700-mi35x-20251021
-[test] Attempting to pull rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021...
-v0.5.3.post3-rocm700-mi35x-20251021: Pulling from rocm/sgl-dev
-Digest: sha256:9bca678d1afe21cbe78e8e44d13cf3430fdf20a15b6e5e1ab78cf48c5c89300e
-Status: Image is up to date for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
-docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
-[test] Successfully pulled fallback image for yesterday: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
-[test] Selected image to run tests on: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[test] Found candidate tag for today: v0.5.3.post3-rocm700-mi35x-20251022
+[test] Attempting to pull rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022...
+v0.5.3.post3-rocm700-mi35x-20251022: Pulling from rocm/sgl-dev
+Digest: sha256:b165b866fd4736e683f9728efac375a2e0adfc1dd90f24dded63c67b7a8b91e8
+Status: Image is up to date for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
 
 [test] ==========================================
-[test] Starting tests for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[test] Starting tests for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
 [test] Test type: pd
 [test] ==========================================
-[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021...
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022...
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: 0538ab71adf3
+[test] Stopping running containers: 611c7ed841ad
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
 [test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
 [test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
-[test] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
-[test] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251021
+[test] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+[test] Container name: sgl-dev_v0.5.3.post3-rocm700-mi35x-20251022
 [test] ==========================================
 [test] Running PD Disaggregation Test
 [test] ==========================================
@@ -60,20 +56,20 @@ docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
 [test] Model name: DeepSeek-R1-MXFP4-Preview
 [test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
 [test] Model: DeepSeek-R1-MXFP4-Preview (/data2/models/amd-DeepSeek-R1-MXFP4-Preview)
-[test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
-[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021
+[test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
+[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251022
 ===================================================
-PD Test Execution Started: Wed Oct 22 07:00:49 AM CDT 2025
+PD Test Execution Started: Wed Oct 22 07:00:34 PM CDT 2025
 ===================================================
 [pd-test] ==========================================
 [pd-test] SGLang PD Docker-based Test Runner
 [pd-test] ==========================================
 [pd-test] Model: /data2/models/amd-DeepSeek-R1-MXFP4-Preview
 [pd-test] Model Name: DeepSeek-R1-MXFP4-Preview
-[pd-test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
 [pd-test] Hardware: mi35x
-[pd-test] Docker Tag: v0.5.3.post3-rocm700-mi35x-20251021
-[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021
+[pd-test] Docker Tag: v0.5.3.post3-rocm700-mi35x-20251022
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251022
 [pd-test] IP: 10.235.26.27
 [pd-test]
 [pd-test] Checking for existing containers...
@@ -83,7 +79,7 @@ PD Test Execution Started: Wed Oct 22 07:00:49 AM CDT 2025
 [pd-test] ==========================================
 [pd-test] Cleanup complete.
 ===================================================
-PD Test Execution Ended: Wed Oct 22 07:00:53 AM CDT 2025 (Exit Code: 0)
+PD Test Execution Ended: Wed Oct 22 07:00:38 PM CDT 2025 (Exit Code: 0)
 ===================================================
 [pd-test] ==========================================
 [pd-test] Step 1: Starting Load Balancer/Router...
@@ -131,18 +127,18 @@ sglang-pd-router
 sglang-pd-prefill
 [pd-test] Cleanup complete.
 ===================================================
-PD Test Execution Ended: Wed Oct 22 07:02:07 AM CDT 2025 (Exit Code: 1)
+PD Test Execution Ended: Wed Oct 22 07:01:53 PM CDT 2025 (Exit Code: 1)
 ===================================================
-[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021
-[test] === PD test FAILED for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021 (exit code: 1) ===
-[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251022
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251022
 [test] Check the log directory for detailed error information
 [test] Sending Teams notification...
-📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251021/test_summary.txt
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.3.post3-rocm700-mi35x-20251022/test_summary.txt
 ✅ Successfully sent PD test pass alert to Teams
    (Power Automate flow accepted - message processing asynchronously)
 [test] ==========================================
-[test] Test completed for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251021
+[test] Test completed for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi35x-20251022
 [test] Test type: pd
 [test] ==========================================
 [test] Cleaning up process lock...
