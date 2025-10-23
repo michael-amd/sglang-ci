@@ -23,7 +23,7 @@ CHANGES FROM OFFICIAL IMPLEMENTATION AND WHY NECESSARY FOR PD:
 
 4. Increased Timeout and Reduced Parallelism:
    - Official uses: 128 parallel, default timeout
-   - PD version uses: 32 parallel (configurable), 300s timeout
+   - PD version uses: 16 parallel (configurable), 600s timeout
    - Why: PD disaggregation has higher latency due to network communication
      between prefill and decode servers, especially with long prompts
 
@@ -44,7 +44,7 @@ import json
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict
+from typing import Dict, List
 
 # Try importing required modules
 try:
@@ -52,6 +52,7 @@ try:
 except ImportError:
     print("Error: requests module not found. Installing...")
     import subprocess
+
     subprocess.check_call(["pip", "install", "requests"])
     import requests
 
@@ -113,7 +114,7 @@ def download_gsm8k_dataset():
 
         # Parse JSONL
         examples = []
-        for line in response.text.strip().split('\n'):
+        for line in response.text.strip().split("\n"):
             if line:
                 examples.append(json.loads(line))
 
@@ -127,7 +128,7 @@ def download_gsm8k_dataset():
 def read_jsonl(file_path):
     """Read JSONL file."""
     examples = []
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
             examples.append(json.loads(line))
     return examples
@@ -176,13 +177,13 @@ def run_single_question(args, few_shot_examples, question, label, question_idx):
     }
 
     # PD-specific: Add model parameter for router to identify model
-    if hasattr(args, 'model') and args.model:
+    if hasattr(args, "model") and args.model:
         payload["model"] = args.model
 
     try:
         # PD disaggregation can be slower than monolithic serving
-        # Increased timeout from 120s to 300s (5 minutes) for long reasoning chains
-        response = requests.post(url, json=payload, timeout=300)
+        # Increased timeout from 120s to 600s (10 minutes) for long reasoning chains
+        response = requests.post(url, json=payload, timeout=600)
         response.raise_for_status()
 
         result = response.json()
@@ -227,7 +228,7 @@ def main(args):
     print(f"GSM8K Benchmark - PD Testing")
     print(f"=" * 70)
     print(f"Host: {args.host}:{args.port}")
-    if hasattr(args, 'model') and args.model:
+    if hasattr(args, "model") and args.model:
         print(f"Model: {args.model}")
     print(f"Num Questions: {args.num_questions}")
     print(f"Parallelism: {args.parallel}")
@@ -269,7 +270,9 @@ def main(args):
         if response.status_code == 200:
             print(f"✓ Server is healthy")
         else:
-            print(f"Warning: Server health check returned status {response.status_code}")
+            print(
+                f"Warning: Server health check returned status {response.status_code}"
+            )
     except Exception as e:
         print(f"Warning: Could not check server health: {e}")
         print("Continuing anyway...")
@@ -291,7 +294,7 @@ def main(args):
                 few_shot_examples,
                 questions[idx],
                 labels[idx],
-                idx
+                idx,
             )
             futures.append(future)
 
@@ -306,7 +309,9 @@ def main(args):
                 qps = (i + 1) / elapsed
                 correct_so_far = sum(1 for r in results if r.get("correct", False))
                 acc_so_far = correct_so_far / len(results) if results else 0
-                print(f"Progress: {i + 1}/{len(questions)} questions ({qps:.2f} QPS, Acc: {acc_so_far:.4f})")
+                print(
+                    f"Progress: {i + 1}/{len(questions)} questions ({qps:.2f} QPS, Acc: {acc_so_far:.4f})"
+                )
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -339,15 +344,15 @@ def main(args):
         for i, err in enumerate(errors[:5]):
             print(f"\n{i+1}. Q{err['question_idx']}")
             print(f"   Expected: {err['expected']}, Got: {err['predicted']}")
-            if err.get('error'):
+            if err.get("error"):
                 print(f"   Error: {err['error']}")
-            elif err.get('generated_text'):
+            elif err.get("generated_text"):
                 print(f"   Generated: {err['generated_text']}")
 
         # Save detailed errors
         try:
             error_file = "/tmp/gsm8k_errors_detailed.json"
-            with open(error_file, 'w') as f:
+            with open(error_file, "w") as f:
                 json.dump(errors[:50], f, indent=2)
             print(f"\n✓ Detailed errors saved to: {error_file}")
         except Exception as e:
@@ -361,19 +366,40 @@ def main(args):
             print(f"\n{i+1}. Q{corr['question_idx']}")
             print(f"   Expected: {corr['expected']}, Got: {corr['predicted']} ✓")
 
-    return {"accuracy": accuracy, "total_time": total_time, "invalid_rate": invalid_rate}
+    return {
+        "accuracy": accuracy,
+        "total_time": total_time,
+        "invalid_rate": invalid_rate,
+    }
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GSM8K Benchmark for SGLang PD")
-    parser.add_argument("--host", type=str, default="http://127.0.0.1", help="Server host")
+    parser.add_argument(
+        "--host", type=str, default="http://127.0.0.1", help="Server host"
+    )
     parser.add_argument("--port", type=int, default=30000, help="Server port")
-    parser.add_argument("--model", type=str, default=None, help="Model identifier to send with completion requests (optional)")
-    parser.add_argument("--num-questions", type=int, default=200, help="Number of questions to test")
-    parser.add_argument("--parallel", type=int, default=128, help="Number of parallel requests")
-    parser.add_argument("--num-shots", type=int, default=5, help="Number of few-shot examples")
-    parser.add_argument("--max-new-tokens", type=int, default=512, help="Max tokens to generate")
-    parser.add_argument("--data-path", type=str, default=None, help="Path to GSM8K dataset JSONL file")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model identifier to send with completion requests (optional)",
+    )
+    parser.add_argument(
+        "--num-questions", type=int, default=200, help="Number of questions to test"
+    )
+    parser.add_argument(
+        "--parallel", type=int, default=128, help="Number of parallel requests"
+    )
+    parser.add_argument(
+        "--num-shots", type=int, default=5, help="Number of few-shot examples"
+    )
+    parser.add_argument(
+        "--max-new-tokens", type=int, default=512, help="Max tokens to generate"
+    )
+    parser.add_argument(
+        "--data-path", type=str, default=None, help="Path to GSM8K dataset JSONL file"
+    )
 
     args = parser.parse_args()
 
