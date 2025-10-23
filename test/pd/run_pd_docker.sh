@@ -152,7 +152,8 @@ Timing Summary:
 - Setup Time (Steps 1-4): ${setup_time}s
 - GSM8K Test Duration: ${GSM8K_DURATION:-0}s
 - GSM8K Questions per Second: $([ -n "${GSM8K_DURATION}" ] && [ "${GSM8K_DURATION}" -gt 0 ] && awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}" || echo "N/A")
-- GSM8K Parallelism: 32 concurrent requests
+- GSM8K Parallelism: 16 concurrent requests
+- GSM8K Timeout: 600s per request
 
 Log Files:
 - Load Balancer: ${LOG_DIR}/load_balance.log
@@ -228,6 +229,8 @@ STEP2_START=$(date +%s)
     --trust-remote-code \
     --enable-two-batch-overlap \
     --attention-backend triton \
+    --mem-fraction-static 0.88 \
+    --watchdog-timeout 180 \
   > "${LOG_DIR}/prefill.log" 2>&1
 
 echo "[pd-test] Prefill Server container started"
@@ -277,6 +280,8 @@ STEP3_START=$(date +%s)
     --trust-remote-code \
     --attention-backend triton \
     --disable-cuda-graph \
+    --mem-fraction-static 0.88 \
+    --watchdog-timeout 180 \
   > "${LOG_DIR}/decode.log" 2>&1
 
 echo "[pd-test] Decode Server container started"
@@ -532,18 +537,18 @@ echo ""
 
 # Test 6: GSM8K Accuracy Test
 echo "[pd-test] Test 6: GSM8K Accuracy Test"
-echo "[pd-test] Running GSM8K benchmark (200 questions, parallel 32, 5-shot)..."
+echo "[pd-test] Running GSM8K benchmark (200 questions, parallel 16, 5-shot)..."
 echo "[pd-test] Using official implementation (bench_gsm8k_pd.py based on sglang/benchmark/gsm8k/bench_sglang.py)"
-echo "[pd-test] Note: Using parallel=32 instead of 128 to avoid PD timeout issues with long prompts"
+echo "[pd-test] Note: Using parallel=16 instead of 128 to avoid PD timeout issues with long prompts"
 GSM8K_START=$(date +%s)
 
 # Use official implementation based on sglang/benchmark/gsm8k/bench_sglang.py
-# Reduced parallelism from 128 to 32 to prevent PD disaggregation timeouts
+# Reduced parallelism from 128 to 16 to prevent PD disaggregation timeouts
 # PD has more limited concurrent request capacity than monolithic serving
 "${DOCKER_CMD[@]}" exec sglang-pd-router \
   python3 /mnt/raid/michael/sglang-ci/test/pd/bench_gsm8k_pd.py \
     --num-questions 200 \
-    --parallel 32 \
+    --parallel 16 \
     --num-shots 5 \
     --max-new-tokens 512 \
     --model "${COMPLETION_MODEL}" \
@@ -579,6 +584,37 @@ echo "[pd-test] Collecting logs from Docker containers..."
 "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1
 "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
 "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
+
+# Monitor decode server logs for issues
+echo "[pd-test] =========================================="
+echo "[pd-test] Analyzing Decode Server Logs"
+echo "[pd-test] =========================================="
+
+# Check for KV cache issues
+if grep -qi "kv.*cache.*full\|out of memory\|memory.*limit\|cuda.*out of memory\|hip.*out of memory" "${LOG_DIR}/decode.log"; then
+  echo "[pd-test] ⚠ WARNING: Found KV cache or memory pressure issues in decode server:"
+  grep -i "kv.*cache.*full\|out of memory\|memory.*limit\|cuda.*out of memory\|hip.*out of memory" "${LOG_DIR}/decode.log" | head -10 | sed 's/^/[pd-test]   /'
+else
+  echo "[pd-test] ✓ No KV cache or memory issues detected in decode server"
+fi
+
+# Check for timeout issues
+if grep -qi "timeout\|timed out" "${LOG_DIR}/decode.log"; then
+  echo "[pd-test] ⚠ WARNING: Found timeout issues in decode server:"
+  grep -i "timeout\|timed out" "${LOG_DIR}/decode.log" | head -5 | sed 's/^/[pd-test]   /'
+else
+  echo "[pd-test] ✓ No timeout issues detected in decode server"
+fi
+
+# Check for NCCL/communication errors
+if grep -qi "nccl.*error\|communication.*error\|memory access fault" "${LOG_DIR}/decode.log"; then
+  echo "[pd-test] ⚠ WARNING: Found communication errors in decode server:"
+  grep -i "nccl.*error\|communication.*error\|memory access fault" "${LOG_DIR}/decode.log" | head -5 | sed 's/^/[pd-test]   /'
+else
+  echo "[pd-test] ✓ No communication errors detected in decode server"
+fi
+
+echo ""
 
 # Final summary update
 echo "[pd-test] =========================================="
