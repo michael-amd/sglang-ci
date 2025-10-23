@@ -1885,6 +1885,11 @@ class TeamsNotifier:
                 "Accept": "application/vnd.github.v3+json",
             }
 
+            # Ensure log branch exists before uploading
+            if not self._ensure_log_branch_exists(headers):
+                print(f"   ❌ Failed to ensure log branch exists")
+                return None
+
             # Check if file already exists on log branch
             params = {"ref": "log"}
             existing_response = requests.get(api_url, headers=headers, params=params)
@@ -1923,20 +1928,18 @@ class TeamsNotifier:
             print(f"   ❌ GitHub upload error: {e}")
             return None
 
-    def _ensure_plots_branch_exists(self, headers: dict) -> bool:
-        """Ensure the plots branch exists in the GitHub repository"""
+    def _ensure_log_branch_exists(self, headers: dict) -> bool:
+        """Ensure the log branch exists in the GitHub repository"""
         try:
-            # Check if plots branch exists
-            branch_url = (
-                f"https://api.github.com/repos/{self.github_repo}/branches/plots"
-            )
+            # Check if log branch exists
+            branch_url = f"https://api.github.com/repos/{self.github_repo}/branches/log"
             response = requests.get(branch_url, headers=headers)
 
             if response.status_code == 200:
-                print(f"   📋 Plots branch already exists")
+                print(f"   📋 Log branch already exists")
                 return True
             elif response.status_code == 404:
-                print(f"   📋 Creating plots branch...")
+                print(f"   📋 Creating log branch...")
 
                 # Get main branch SHA
                 main_branch_url = f"https://api.github.com/repos/{self.github_repo}/git/refs/heads/main"
@@ -1945,22 +1948,22 @@ class TeamsNotifier:
                 if main_response.status_code == 200:
                     main_sha = main_response.json()["object"]["sha"]
 
-                    # Create plots branch from main
+                    # Create log branch from main
                     create_branch_url = (
                         f"https://api.github.com/repos/{self.github_repo}/git/refs"
                     )
-                    create_payload = {"ref": "refs/heads/plots", "sha": main_sha}
+                    create_payload = {"ref": "refs/heads/log", "sha": main_sha}
 
                     create_response = requests.post(
                         create_branch_url, json=create_payload, headers=headers
                     )
 
                     if create_response.status_code == 201:
-                        print(f"   ✅ Created plots branch successfully")
+                        print(f"   ✅ Created log branch successfully")
                         return True
                     else:
                         print(
-                            f"   ❌ Failed to create plots branch: {create_response.status_code}"
+                            f"   ❌ Failed to create log branch: {create_response.status_code}"
                         )
                         return False
                 else:
