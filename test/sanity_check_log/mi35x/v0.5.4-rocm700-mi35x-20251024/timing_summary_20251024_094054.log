@@ -1,0 +1,52 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-10-24 09:40:54 PDT
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.4-rocm700-mi35x-20251024
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-10-24 09:40:54 PDT
+Server startup: FAILED after 300.46s
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-10-24 09:45:56 PDT
+Server startup: FAILED after 300.46s
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-10-24 09:50:57 PDT
+Server startup: FAILED after 300.46s
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-10-24 09:55:59 PDT
+Server startup: FAILED after 300.46s
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-10-24 10:01:00 PDT
+Server startup: FAILED after 600.41s
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-10-24 10:11:02 PDT
+Server startup: FAILED after 300.46s
+llama4: SKIPPED - Model path does not exist: /data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-10-24 10:16:03 PDT
+Total execution time: 2108.74s (35.1 minutes)
+Average time per model: 301.25s
+Models tested: 6/7
+Models passed: 0/6
+Models failed: 6/6
+Models skipped: 1/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: SKIPPED
