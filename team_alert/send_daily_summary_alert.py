@@ -511,14 +511,50 @@ class DailySummaryReporter:
         except ValueError:
             report_date = date_str
 
-        # Count task statuses
-        total_tasks = len(task_results)
-        passed_tasks = sum(1 for r in task_results.values() if r["status"] == "pass")
-        failed_tasks = sum(1 for r in task_results.values() if r["status"] == "fail")
-        unknown_tasks = sum(
-            1 for r in task_results.values() if r["status"] == "unknown"
+        # Parse sanity results to include individual model tests in counts
+        sanity_results = self.parse_sanity_check_log(date_str)
+        sanity_model_count = 0
+        sanity_passed = 0
+        sanity_failed = 0
+
+        if sanity_results:
+            model_results = sanity_results["model_results"]
+            sanity_model_count = len(model_results)
+            sanity_passed = sum(
+                1 for r in model_results.values() if r["status"] == "pass"
+            )
+            sanity_failed = sum(
+                1 for r in model_results.values() if r["status"] == "fail"
+            )
+
+        # Count task statuses (excluding "Sanity Check" from task_results as it's counted per-model)
+        total_tasks = len(task_results) + sanity_model_count
+        passed_tasks = (
+            sum(
+                1
+                for k, r in task_results.items()
+                if k != "Sanity Check" and r["status"] == "pass"
+            )
+            + sanity_passed
         )
-        not_run = sum(1 for r in task_results.values() if not r["exists"])
+        failed_tasks = (
+            sum(
+                1
+                for k, r in task_results.items()
+                if k != "Sanity Check" and r["status"] == "fail"
+            )
+            + sanity_failed
+        )
+        unknown_tasks = sum(
+            1
+            for k, r in task_results.items()
+            if k != "Sanity Check" and r["status"] == "unknown"
+        )
+        not_run = sum(
+            1
+            for k, r in task_results.items()
+            if k != "Sanity Check" and not r["exists"]
+        )
 
         # Overall status is determined by task counts
         # No longer displaying status icon/color in "Overall Status:" section
@@ -679,7 +715,6 @@ class DailySummaryReporter:
                     )
 
         # Add Sanity Check (Accuracy) section
-        sanity_results = self.parse_sanity_check_log(date_str)
         if sanity_results:
             # Count how many models passed
             model_results = sanity_results["model_results"]
