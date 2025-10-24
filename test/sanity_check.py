@@ -628,8 +628,18 @@ def resolve_model_path(path, models_dir=DEFAULT_MODELS_DIR):
     # If already absolute, return as-is
     if os.path.isabs(path):
         return path
-    # If it's a HuggingFace repo identifier (not a local path), return as-is
-    if path.startswith(("Xenova/", "alvarobartt--", "hf-internal-testing/")):
+    # If it's a HuggingFace repo identifier (not a local path), return as-is.
+    # "alvarobartt--grok-2-tokenizer" **looks** like a repo id but is actually a
+    # *local* directory in our models cache.  Trying to fetch it from the Hub
+    # triggers `HFValidationError` because the naming convention (double dash)
+    # is disallowed.  Treat such paths as local *if* the directory exists
+    # locally; otherwise fall back to remote lookup.
+    if path.startswith("alvarobartt--"):
+        candidate = os.path.join(models_dir, path)
+        if os.path.isdir(candidate):
+            return candidate
+
+    if path.startswith(("Xenova/", "hf-internal-testing/")):
         return path
     # Otherwise, prepend the models directory
     return os.path.join(models_dir, path)
@@ -1096,16 +1106,6 @@ def sanity_check(
     shutdown_time = time.time() - shutdown_start
 
     # 5. Determine final result based on highest accuracy
-    # ---------------------------------------------------
-    # Previous logic required the *average* accuracy across all trials to meet the
-    # threshold defined in `criteria`.  The new requirement is more lenient: as
-    # long as ANY individual trial meets (or exceeds) the threshold, the model
-    # is considered passed.  Additionally, we now report the **highest**
-    # achieved accuracy instead of the average.
-
-    # Protect against the edge-case where `accuracies` might be empty (e.g. all
-    # trials failed to produce a parseable accuracy).  Using 0.0 mirrors the
-    # previous behaviour where such situations resulted in a failure.
     max_accuracy = max(accuracies) if accuracies else 0.0
 
     required_accuracy = criteria["accuracy"]
