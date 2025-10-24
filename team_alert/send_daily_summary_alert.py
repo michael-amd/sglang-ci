@@ -600,7 +600,6 @@ class DailySummaryReporter:
         validation = [
             "Unit Tests",
             "PD Disaggregation Tests",
-            "Sanity Check",
             "Docker Image Check",
         ]
 
@@ -681,17 +680,28 @@ class DailySummaryReporter:
 
         # Add Sanity Check (Accuracy) section
         sanity_results = self.parse_sanity_check_log(date_str)
-        if (
-            sanity_results
-            and task_results.get("Sanity Check", {}).get("status") == "pass"
-        ):
+        if sanity_results:
+            # Count how many models passed
+            model_results = sanity_results["model_results"]
+            models_passed = sum(
+                1 for r in model_results.values() if r["status"] == "pass"
+            )
+
+            # Overall sanity check (accuracy) passes if more than 1 model passes
+            sanity_accuracy_passed = models_passed > 1
+
+            # Add header with overall status
+            sanity_icon = "✅" if sanity_accuracy_passed else "❌"
+            sanity_status = "Pass" if sanity_accuracy_passed else "Failed"
+
             body_elements.append(
                 {
                     "type": "TextBlock",
-                    "text": "**Sanity Check (Accuracy):**",
+                    "text": f"**Sanity Check (Accuracy):** {sanity_icon} **{sanity_status}**",
                     "weight": "Bolder",
                     "size": "Small",
                     "spacing": "Small",
+                    "color": "Good" if sanity_accuracy_passed else "Attention",
                 }
             )
 
@@ -703,7 +713,7 @@ class DailySummaryReporter:
                 "GPT-OSS-20B": "gpt-oss-20b-bf16",
             }
 
-            for model_name, result in sanity_results["model_results"].items():
+            for model_name, result in model_results.items():
                 accuracy = result["accuracy"]
                 accuracy_percent = accuracy * 100
                 status = result["status"]
