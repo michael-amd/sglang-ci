@@ -51,32 +51,6 @@ echo "[test] Machine: $(hostname)"
 echo "[test] Working directory: $(pwd)"
 echo "[test] Script location: $(realpath "$0")"
 echo "[test] Process ID: $$"
-
-# Check for already running instances
-LOCKFILE="/tmp/test_nightly.lock"
-if [ -f "$LOCKFILE" ]; then
-    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
-    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
-        echo "[test] ERROR: Another instance is already running (PID: $EXISTING_PID)"
-        echo "[test] If this is incorrect, remove $LOCKFILE and try again"
-        exit 1
-    else
-        echo "[test] Removing stale lock file from PID $EXISTING_PID"
-        rm -f "$LOCKFILE"
-    fi
-fi
-
-# Create lock file
-echo "$$" > "$LOCKFILE"
-echo "[test] Created process lock: $LOCKFILE"
-
-# Cleanup function
-cleanup() {
-    echo "[test] Cleaning up process lock..."
-    rm -f "$LOCKFILE"
-}
-trap cleanup EXIT
-
 echo "[test] =========================================="
 echo ""
 
@@ -345,6 +319,33 @@ else
   echo "[test] Hardware: $HARDWARE_TYPE, ROCM Version: $ROCM_VERSION"
 fi
 echo "[test] Test Type: $TEST_TYPE"
+
+###############################################################################
+# Lock file management (test-type specific to allow concurrent runs)
+###############################################################################
+LOCKFILE="/tmp/test_nightly_${TEST_TYPE}.lock"
+if [ -f "$LOCKFILE" ]; then
+    EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null)
+    if [ -n "$EXISTING_PID" ] && kill -0 "$EXISTING_PID" 2>/dev/null; then
+        echo "[test] ERROR: Another $TEST_TYPE test instance is already running (PID: $EXISTING_PID)"
+        echo "[test] If this is incorrect, remove $LOCKFILE and try again"
+        exit 1
+    else
+        echo "[test] Removing stale lock file from PID $EXISTING_PID"
+        rm -f "$LOCKFILE"
+    fi
+fi
+
+# Create lock file
+echo "$$" > "$LOCKFILE"
+echo "[test] Created process lock: $LOCKFILE"
+
+# Cleanup function
+cleanup() {
+    echo "[test] Cleaning up process lock..."
+    rm -f "$LOCKFILE"
+}
+trap cleanup EXIT
 
 ###############################################################################
 # Ensure GPU is idle before starting
