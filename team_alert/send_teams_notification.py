@@ -396,6 +396,81 @@ class BenchmarkAnalyzer:
         """Legacy function - kept for backward compatibility"""
         return self._extract_server_errors_from_timing_log(log_file)
 
+    def check_critical_errors(
+        self, model: str, mode: str, date_str: str
+    ) -> Dict[str, any]:
+        """
+        Check for critical errors that prevent benchmark from running
+
+        Args:
+            model: Model name (grok, grok2, deepseek)
+            mode: Benchmark mode (online, offline)
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Dictionary with error status and details
+        """
+        result = {
+            "status": "pass",  # pass, fail
+            "errors": [],
+            "log_file": None,
+            "error_type": None,  # import_error, server_crash, incomplete_run, etc.
+        }
+
+        timing_log_file = self._find_timing_summary_log(model, mode, date_str)
+        if not timing_log_file:
+            return result
+
+        result["log_file"] = timing_log_file
+
+        try:
+            with open(timing_log_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Check for ImportError or ModuleNotFoundError
+            if re.search(r"ImportError:|ModuleNotFoundError:", content):
+                result["status"] = "fail"
+                result["error_type"] = "import_error"
+
+                # Extract the specific import error
+                import_match = re.search(
+                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", content
+                )
+                if import_match:
+                    error_msg = f"{import_match.group(1)}: {import_match.group(2).strip()}"
+                    result["errors"].append(error_msg)
+                else:
+                    result["errors"].append("ImportError detected in benchmark logs")
+
+            # Check for server startup failures
+            elif re.search(r"Server startup:\s*FAILED", content, re.IGNORECASE):
+                result["status"] = "fail"
+                result["error_type"] = "server_startup_failed"
+                result["errors"].append("Server startup failed")
+
+            # Check for incomplete runs (has start time but no end time)
+            elif re.search(r"Script started at:", content) and not re.search(
+                r"Script ended at:", content
+            ):
+                # Only flag as error if it's been more than a few hours
+                # (incomplete logs might be from currently running benchmarks)
+                result["status"] = "fail"
+                result["error_type"] = "incomplete_run"
+                result["errors"].append("Benchmark run incomplete (no end time recorded)")
+
+            # Check for other critical errors
+            elif re.search(r"CRITICAL|FATAL|Traceback \(most recent call last\)", content):
+                result["status"] = "fail"
+                result["error_type"] = "critical_error"
+                result["errors"].append("Critical error detected in benchmark logs")
+
+        except (FileNotFoundError, IOError) as e:
+            print(f"   Warning: Could not read timing log {timing_log_file}: {e}")
+        except Exception as e:
+            print(f"   Warning: Error checking for critical errors in {timing_log_file}: {e}")
+
+        return result
+
     def extract_additional_info(
         self, model: str, mode: str, date_str: str
     ) -> Dict[str, any]:
@@ -1257,6 +1332,33 @@ class TeamsNotifier:
                 )
             else:
                 alert["details"].append(f"GSM8K accuracy: {gsm8k_accuracy:.1%} ✅")
+
+        # Check for critical errors (ImportError, server crashes, incomplete runs, etc.)
+        critical_error_results = self.analyzer.check_critical_errors(
+            model, mode, current_date
+        )
+
+        if critical_error_results["status"] == "fail":
+            alert["status"] = "error"
+            alert["critical_errors"] = critical_error_results["errors"]
+            alert["error_type"] = critical_error_results["error_type"]
+
+            # Update title based on error type
+            error_type = critical_error_results["error_type"]
+            if error_type == "import_error":
+                alert["title"] = "❌ Benchmark Failed: Import Error"
+            elif error_type == "server_startup_failed":
+                alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
+            elif error_type == "incomplete_run":
+                alert["title"] = "❌ Benchmark Failed: Incomplete Run"
+            elif error_type == "critical_error":
+                alert["title"] = "❌ Benchmark Failed: Critical Error"
+            else:
+                alert["title"] = "❌ Benchmark Failed"
+
+            # Add error details
+            for error in critical_error_results["errors"]:
+                alert["details"].append(error)
 
         # Extract additional info for online mode
         if mode == "online":
@@ -2352,8 +2454,21 @@ class TeamsNotifier:
 
             # Runtime is already shown in the status details section, so don't duplicate it here
 
-        # Add Plot section only if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Add Plot section only if:
+        # 1. Not in DP attention mode or torch compile mode
+        # 2. No critical errors detected (benchmark actually ran)
+        has_critical_error = summary_alert.get("error_type") in [
+            "import_error",
+            "server_startup_failed",
+            "incomplete_run",
+            "critical_error",
+        ]
+
+        if (
+            not self.check_dp_attention
+            and not self.enable_torch_compile
+            and not has_critical_error
+        ):
             # Add Plot section title
             body_elements.append(
                 {
@@ -2495,12 +2610,15 @@ class TeamsNotifier:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode or torch compile mode
-        if not self.check_dp_attention and not self.enable_torch_compile:
+        # Only add plot-related actions if:
+        # 1. Not in DP attention mode or torch compile mode
+        # 2. No critical errors detected
+        if (
+            not self.check_dp_attention
+            and not self.enable_torch_compile
+            and not has_critical_error
+        ):
             if standard_plots:
-                # Add action to view all plots (link to the model's directory)
-                model_variants = self.analyzer.get_model_variants(model)
-                primary_model_name = model_variants[0]
                 # Browse All and Dashboard links removed per user request
                 pass
 
