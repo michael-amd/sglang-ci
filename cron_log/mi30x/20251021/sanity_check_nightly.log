@@ -1,0 +1,173 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2627cd9f12c64fd785fd6b5f476c8929/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NW18x_-_wiyn8dPFp84GfbiAFjlyUb_KqtII9qzx8M
+[nightly] Start time: 2025-10-21 09:30:01 PDT
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/perf_nightly.sh
+[nightly] Process ID: 3025423
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: a519fa2013ea
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251021...
+[nightly] Found candidate tag for day -0: v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021...
+v0.5.3.post3-rocm700-mi30x-20251021: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+fb45100afe5f: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+2b9cf6d9d338: Pulling fs layer
+907ba9555190: Pulling fs layer
+8634c08c9c2d: Pulling fs layer
+a59f6a899f17: Pulling fs layer
+8634c08c9c2d: Waiting
+3d02422b0cea: Pulling fs layer
+6f06eb2d1c26: Pulling fs layer
+907ba9555190: Waiting
+317123dc69e0: Pulling fs layer
+db6a2cd4ccd4: Pulling fs layer
+3d02422b0cea: Waiting
+6f06eb2d1c26: Waiting
+65a127917aba: Pulling fs layer
+a59f6a899f17: Waiting
+db6a2cd4ccd4: Waiting
+611f379ca37a: Pulling fs layer
+d93ddb4dea55: Pulling fs layer
+d8519015e2ec: Pulling fs layer
+317123dc69e0: Waiting
+7fcd6232a945: Pulling fs layer
+400cff7798e2: Pulling fs layer
+d8519015e2ec: Waiting
+400cff7798e2: Waiting
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+2b9cf6d9d338: Verifying Checksum
+2b9cf6d9d338: Download complete
+fb45100afe5f: Download complete
+907ba9555190: Download complete
+fb45100afe5f: Pull complete
+4f4fb700ef54: Pull complete
+2b9cf6d9d338: Pull complete
+907ba9555190: Pull complete
+8634c08c9c2d: Verifying Checksum
+8634c08c9c2d: Download complete
+6f06eb2d1c26: Verifying Checksum
+6f06eb2d1c26: Download complete
+8634c08c9c2d: Pull complete
+a59f6a899f17: Verifying Checksum
+a59f6a899f17: Download complete
+db6a2cd4ccd4: Download complete
+65a127917aba: Verifying Checksum
+65a127917aba: Download complete
+317123dc69e0: Verifying Checksum
+317123dc69e0: Download complete
+a59f6a899f17: Pull complete
+611f379ca37a: Verifying Checksum
+611f379ca37a: Download complete
+d8519015e2ec: Download complete
+7fcd6232a945: Verifying Checksum
+7fcd6232a945: Download complete
+400cff7798e2: Verifying Checksum
+400cff7798e2: Download complete
+3d02422b0cea: Verifying Checksum
+3d02422b0cea: Download complete
+3d02422b0cea: Pull complete
+6f06eb2d1c26: Pull complete
+317123dc69e0: Pull complete
+db6a2cd4ccd4: Pull complete
+65a127917aba: Pull complete
+611f379ca37a: Pull complete
+d93ddb4dea55: Verifying Checksum
+d93ddb4dea55: Download complete
+d93ddb4dea55: Pull complete
+d8519015e2ec: Pull complete
+7fcd6232a945: Pull complete
+400cff7798e2: Pull complete
+Digest: sha256:ec799da894db61eeba04084cfd561841fd06fe2b30973b836b7c27f5fa6f32ad
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+docker.io/rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Successfully obtained image for date 20251021: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 3af93e701738
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Container name: sgl-dev_v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Creating container sgl-dev_v0.5.3.post3-rocm700-mi30x-20251021
+6aeeb6035ae7a77706f7d0b4e06025f186d0c338761ecebb896aa7e57daa0c99
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Sending Teams notification for sanity check results...
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] WARN: Teams notification failed for sanity check (exit code: 126)
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.3.post3-rocm700-mi30x-20251021
+[nightly] Stopping container sgl-dev_v0.5.3.post3-rocm700-mi30x-20251021 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
