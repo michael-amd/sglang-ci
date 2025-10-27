@@ -73,6 +73,9 @@ HARDWARE_TYPE="${HARDWARE_TYPE:-mi30x}"
 # Test type configuration
 TEST_TYPE="${TEST_TYPE:-unit}"
 
+# Model path configuration (for PD tests)
+MODEL_PATH_OVERRIDE="${MODEL_PATH_OVERRIDE:-}"
+
 # Image date configuration (if not set, will use today/yesterday)
 IMAGE_DATE="${IMAGE_DATE:-}"
 
@@ -108,10 +111,10 @@ TEST_COMMAND="CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_cust
 PD_TEST_DIR="${PD_TEST_DIR:-${MOUNT_DIR}/test/pd}"
 PD_LOG_BASE_DIR="${PD_LOG_BASE_DIR:-${MOUNT_DIR}/test/pd/pd_log}"
 
-# PD model paths by hardware type
+# PD model paths by hardware type (can be overridden by PD_MODEL_PATH_OVERRIDE env var)
 declare -A PD_MODEL_PATHS=(
   ["mi30x"]="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324"
-  ["mi35x"]="/data2/models/amd-DeepSeek-R1-MXFP4-Preview"
+  ["mi35x"]="/mnt/raid/models/huggingface/amd/DeepSeek-R1-MXFP4-Preview"
 )
 
 declare -A PD_MODEL_NAMES=(
@@ -252,6 +255,9 @@ for arg in "$@"; do
     --test-type=*)
       TEST_TYPE="${arg#*=}"
       ;;
+    --model-path=*)
+      MODEL_PATH_OVERRIDE="${arg#*=}"
+      ;;
     --image-date=*)
       IMAGE_DATE="${arg#*=}"
       ;;
@@ -266,15 +272,17 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --hardware=HW                    Hardware type (mi30x, mi35x) [default: mi30x]"
       echo "  --test-type=TYPE                 Test type (unit, pd) [default: unit]"
+      echo "  --model-path=PATH                Model path for PD tests (overrides hardware default)"
       echo "  --image-date=YYYYMMDD            Specific date of Docker image to use [default: today, fallback to yesterday]"
       echo "  --teams-webhook-url=URL          Teams webhook URL for test result notifications"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
-      echo "  $0                              # Run unit test on latest mi30x image (today or yesterday)"
-      echo "  $0 --hardware=mi35x             # Run unit test on latest mi35x image"
-      echo "  $0 --test-type=pd               # Run PD test on latest mi30x image"
-      echo "  $0 --image-date=20251020        # Run unit test on mi30x image from 20251020"
+      echo "  $0                                                     # Run unit test on latest mi30x image (today or yesterday)"
+      echo "  $0 --hardware=mi35x                                    # Run unit test on latest mi35x image"
+      echo "  $0 --test-type=pd                                      # Run PD test on latest mi30x image"
+      echo "  $0 --test-type=pd --model-path=/path/to/model          # Run PD test with custom model path"
+      echo "  $0 --image-date=20251020                               # Run unit test on mi30x image from 20251020"
       echo ""
       echo "Test Details:"
       echo "  Unit Test:"
@@ -285,9 +293,10 @@ for arg in "$@"; do
       echo ""
       echo "  PD Test:"
       echo "    - Test: Prefill/Decode Disaggregation"
-      echo "    - Models:"
+      echo "    - Default Models:"
       echo "      • mi30x: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)"
-      echo "      • mi35x: DeepSeek-R1-MXFP4-Preview (/data2/models/amd-DeepSeek-R1-MXFP4-Preview)"
+      echo "      • mi35x: DeepSeek-R1-MXFP4-Preview (/mnt/raid/models/huggingface/amd/DeepSeek-R1-MXFP4-Preview)"
+      echo "    - Model Path Override: Use --model-path=PATH to override default model path"
       echo "    - GPUs Used: 0-3 (Prefill TP=4), 4-7 (Decode TP=4)"
       echo "    - Log Directory: \${MOUNT_DIR}/test/pd/pd_log/{hardware}/{docker_tag}/"
       exit 0 ;;
@@ -506,7 +515,12 @@ if [[ "$TEST_TYPE" == "pd" ]]; then
   export DOCKER_IMAGE="${IMAGE_REPO}:${SELECTED_TAG}"
 
   # Set model path and name based on hardware type
-  PD_MODEL_PATH="${PD_MODEL_PATHS[$HARDWARE_TYPE]}"
+  # Allow --model-path to override the default path
+  if [[ -n "$MODEL_PATH_OVERRIDE" ]]; then
+    PD_MODEL_PATH="$MODEL_PATH_OVERRIDE"
+  else
+    PD_MODEL_PATH="${PD_MODEL_PATHS[$HARDWARE_TYPE]}"
+  fi
   PD_MODEL_NAME="${PD_MODEL_NAMES[$HARDWARE_TYPE]}"
 
   echo "[test] Hardware type: ${HARDWARE_TYPE}"
