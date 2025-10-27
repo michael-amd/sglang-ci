@@ -1,0 +1,7 @@
+📅 Generating daily summary report for 20251022
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251022...
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251022_mi30x_20251022_083001.json
+❌ Failed to send Teams notification. Status: 401
+Response: {"error":{"code":"WorkflowNotFound","message":"The workflow '2627cd9f12c64fd785fd6b5f476c8929' could not be found."}}
