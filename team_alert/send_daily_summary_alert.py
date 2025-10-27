@@ -692,18 +692,7 @@ class DailySummaryReporter:
                 if result.get("runtime"):
                     task_line += f" [{result['runtime']}]"
 
-                body_elements.append(
-                    {
-                        "type": "TextBlock",
-                        "text": task_line,
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                        "color": task_color,
-                    }
-                )
-
-                # Add plot link for Performance Benchmarks
+                # Add plot link for Performance Benchmarks on the same line
                 if category == "Performance Benchmarks":
                     # Map benchmark names to model directories
                     benchmark_model_map = {
@@ -715,17 +704,18 @@ class DailySummaryReporter:
                     if task_name in benchmark_model_map:
                         model_dir = benchmark_model_map[task_name]
                         plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_standard.png"
+                        task_line += f" 🔗 [View Plot]({plot_url})"
 
-                        body_elements.append(
-                            {
-                                "type": "TextBlock",
-                                "text": f"  🔗 [View Plot]({plot_url})",
-                                "wrap": True,
-                                "size": "Small",
-                                "spacing": "None",
-                                "isSubtle": True,
-                            }
-                        )
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": task_line,
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                        "color": task_color,
+                    }
+                )
 
                 # Add error details for failed tasks
                 if result["status"] == "fail" and result.get("error"):
@@ -790,9 +780,11 @@ class DailySummaryReporter:
 
                 if threshold is not None:
                     threshold_percent = threshold * 100
-                    task_line = f"{task_icon} {display_name} - GSM8K accuracy: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                    task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
                 else:
-                    task_line = f"{task_icon} {display_name} - GSM8K accuracy: {accuracy_percent:.1f}%"
+                    task_line = (
+                        f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
+                    )
 
                 body_elements.append(
                     {
