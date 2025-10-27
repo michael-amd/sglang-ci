@@ -627,9 +627,9 @@ class DailySummaryReporter:
 
         # Group tasks by category - reordered to show Validation & Checks first
         benchmarks = [
+            "Grok Online Benchmark",
             "Grok 2 Online Benchmark",
             "DeepSeek Online Benchmark",
-            "Grok Online Benchmark",
         ]
         tests = [
             "DeepSeek DP Attention Test",
@@ -703,6 +703,30 @@ class DailySummaryReporter:
                     }
                 )
 
+                # Add plot link for Performance Benchmarks
+                if category == "Performance Benchmarks":
+                    # Map benchmark names to model directories
+                    benchmark_model_map = {
+                        "Grok Online Benchmark": "GROK1",
+                        "Grok 2 Online Benchmark": "GROK2",
+                        "DeepSeek Online Benchmark": "DeepSeek-V3-0324",
+                    }
+
+                    if task_name in benchmark_model_map:
+                        model_dir = benchmark_model_map[task_name]
+                        plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_standard.png"
+
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"  🔗 [View Plot]({plot_url})",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "None",
+                                "isSubtle": True,
+                            }
+                        )
+
                 # Add error details for failed tasks
                 if result["status"] == "fail" and result.get("error"):
                     body_elements.append(
@@ -739,7 +763,6 @@ class DailySummaryReporter:
                     "weight": "Bolder",
                     "size": "Small",
                     "spacing": "Small",
-                    "color": "Good" if sanity_accuracy_passed else "Attention",
                 }
             )
 

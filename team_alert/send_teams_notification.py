@@ -437,7 +437,9 @@ class BenchmarkAnalyzer:
                     r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", content
                 )
                 if import_match:
-                    error_msg = f"{import_match.group(1)}: {import_match.group(2).strip()}"
+                    error_msg = (
+                        f"{import_match.group(1)}: {import_match.group(2).strip()}"
+                    )
                     result["errors"].append(error_msg)
                 else:
                     result["errors"].append("ImportError detected in benchmark logs")
@@ -456,10 +458,14 @@ class BenchmarkAnalyzer:
                 # (incomplete logs might be from currently running benchmarks)
                 result["status"] = "fail"
                 result["error_type"] = "incomplete_run"
-                result["errors"].append("Benchmark run incomplete (no end time recorded)")
+                result["errors"].append(
+                    "Benchmark run incomplete (no end time recorded)"
+                )
 
             # Check for other critical errors
-            elif re.search(r"CRITICAL|FATAL|Traceback \(most recent call last\)", content):
+            elif re.search(
+                r"CRITICAL|FATAL|Traceback \(most recent call last\)", content
+            ):
                 result["status"] = "fail"
                 result["error_type"] = "critical_error"
                 result["errors"].append("Critical error detected in benchmark logs")
@@ -467,7 +473,9 @@ class BenchmarkAnalyzer:
         except (FileNotFoundError, IOError) as e:
             print(f"   Warning: Could not read timing log {timing_log_file}: {e}")
         except Exception as e:
-            print(f"   Warning: Error checking for critical errors in {timing_log_file}: {e}")
+            print(
+                f"   Warning: Error checking for critical errors in {timing_log_file}: {e}"
+            )
 
         return result
 
@@ -2016,8 +2024,10 @@ class TeamsNotifier:
             response = requests.put(api_url, json=payload, headers=headers)
 
             if response.status_code in [200, 201]:
-                # Return public URL from log branch
-                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/{repo_path}"
+                # Return public URL from log branch (using blob URL format)
+                public_url = (
+                    f"https://github.com/{self.github_repo}/blob/log/{repo_path}"
+                )
                 print(f"   ✅ Uploaded to GitHub (log branch): {filename}")
                 print(f"   🔗 GitHub URL: {public_url}")
                 return public_url
@@ -2506,12 +2516,10 @@ class TeamsNotifier:
                     # Handle different hosting methods for each plot
                     if plot.get("public_url") and plot.get("hosting_service"):
                         # GitHub hosting - show as clickable link
-                        service = plot["hosting_service"]
-
                         body_elements.append(
                             {
                                 "type": "TextBlock",
-                                "text": f"🔗 [View Plot]({plot['public_url']}) (hosted on {service})",
+                                "text": f"🔗 [View Plot]({plot['public_url']})",
                                 "wrap": True,
                                 "size": "Medium",
                                 "spacing": "Small",
