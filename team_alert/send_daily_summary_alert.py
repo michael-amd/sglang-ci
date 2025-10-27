@@ -795,16 +795,6 @@ class DailySummaryReporter:
             }
         )
 
-        # Add sanity log link
-        sanity_log_url = f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{self.hardware}"
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "🔍 Sanity Logs",
-                "url": sanity_log_url,
-            }
-        )
-
         # Create the adaptive card
         card = {
             "type": "message",
