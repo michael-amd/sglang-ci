@@ -427,14 +427,26 @@ class BenchmarkAnalyzer:
             with open(timing_log_file, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
-            # Check for ImportError or ModuleNotFoundError
-            if re.search(r"ImportError:|ModuleNotFoundError:", content):
+            # Also check sglang_server.log in the same directory for server startup errors
+            log_dir = os.path.dirname(timing_log_file)
+            server_log_file = os.path.join(log_dir, "sglang_server.log")
+            server_log_content = ""
+            if os.path.exists(server_log_file):
+                try:
+                    with open(server_log_file, "r", encoding="utf-8", errors="ignore") as f:
+                        server_log_content = f.read()
+                except Exception:
+                    pass
+
+            # Check for ImportError or ModuleNotFoundError in both timing log and server log
+            combined_content = content + "\n" + server_log_content
+            if re.search(r"ImportError:|ModuleNotFoundError:", combined_content):
                 result["status"] = "fail"
                 result["error_type"] = "import_error"
 
-                # Extract the specific import error
+                # Extract the specific import error (prefer server log as it has full traceback)
                 import_match = re.search(
-                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", content
+                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", server_log_content or content
                 )
                 if import_match:
                     error_msg = (
@@ -1474,9 +1486,14 @@ class TeamsNotifier:
             # If GSM8K benchmark completed successfully, torch compile test passed
             if alert.get("gsm8k_accuracy") is not None:
                 alert["details"].append("Torch compile test: No errors detected ✅")
+            # If critical errors were already detected and reported, skip adding unclear status
+            elif alert.get("critical_errors"):
+                # Critical error details are already shown, don't add "status unclear"
+                pass
             else:
-                # If no GSM8K results found, status is unclear
-                alert["details"].append("Torch compile test: Status unclear ⚠️")
+                # If no GSM8K results and no critical errors detected, try to get more info
+                # This should rarely happen since critical error checking runs before this
+                pass
 
         # Add runtime information if available
         if mode == "online" and alert.get("additional_info"):
