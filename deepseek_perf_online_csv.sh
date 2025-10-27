@@ -74,7 +74,7 @@ SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
 SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
 
 # Benchmark run configuration
-BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-3}"
+BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"
 BENCHMARK_SLEEP_BETWEEN_RUNS="${BENCHMARK_SLEEP_BETWEEN_RUNS:-2}"
 BENCHMARK_CONCURRENCY_LEVELS="${BENCHMARK_CONCURRENCY_LEVELS:-128 64 16 4 1}"
 
@@ -234,6 +234,12 @@ if [ "$ENABLE_MTP_TEST" = "true" ]; then
 elif [ "$ENABLE_DP_TEST" = "true" ]; then
     BENCHMARK_RUNS_PER_CONCURRENCY=1
     echo "[dp] DP test enabled - setting runs per concurrency to 1"
+fi
+
+# Increase timeout for DP attention + torch compile (first-run compilation takes longer)
+if [ "$CHECK_DP_ATTENTION" = "true" ] && [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    SERVER_TIMEOUT=2700  # 45 minutes for torch compile + DP attention
+    echo "[config] DP attention + torch compile detected - increased server timeout to ${SERVER_TIMEOUT}s (45 minutes)"
 fi
 
 # If not provided by flag, use positional argument or default
@@ -609,6 +615,7 @@ start_sglang_server() {
             --chunked-prefill-size 131072 \
             --dp-size 8 \
             --enable-dp-attention \
+            --mem-fraction-static 0.8 \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
@@ -631,7 +638,8 @@ start_sglang_server() {
     echo $! > "$SERVER_PID_FILE"
     SERVER_PID=$(cat "$SERVER_PID_FILE")
 
-    echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max 15 minutes)"
+    local timeout_minutes=$((SERVER_TIMEOUT / 60))
+    echo "Waiting for SGLang server (PID: $SERVER_PID) to start... (Max ${timeout_minutes} minutes)"
     echo "Server logs are being written to: $SERVER_LOG_FILE"
 
     # Wait for server to be ready - poll health check endpoint and monitor for errors
@@ -787,7 +795,8 @@ check_server_errors_and_log() {
     echo "Server Error Check:" >> "$TIMING_LOG"
 
     # Check for RuntimeError (for DP attention mode)
-    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    local runtime_errors
+    runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG_FILE" 2>/dev/null) || runtime_errors=0
     if [ "$runtime_errors" -gt 0 ]; then
         echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
         # Log the first few RuntimeErrors for context
@@ -799,7 +808,8 @@ check_server_errors_and_log() {
     fi
 
     # Check for other critical errors
-    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG_FILE" 2>/dev/null || echo "0")
+    local critical_errors
+    critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG_FILE" 2>/dev/null) || critical_errors=0
     if [ "$critical_errors" -gt 0 ]; then
         echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
     else
