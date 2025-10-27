@@ -196,7 +196,7 @@ DEFAULT_MODELS = {
             "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.800},
+        "criteria": {"accuracy": 0.900},
     },
 }
 
