@@ -528,7 +528,10 @@ class DailySummaryReporter:
             )
 
         # Count task statuses (excluding "Sanity Check" from task_results as it's counted per-model)
-        total_tasks = len(task_results) + sanity_model_count
+        total_tasks = (
+            len([k for k in task_results.keys() if k != "Sanity Check"])
+            + sanity_model_count
+        )
         passed_tasks = (
             sum(
                 1
