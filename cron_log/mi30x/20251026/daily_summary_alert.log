@@ -1,0 +1,7 @@
+📅 Generating daily summary report for 20251026
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251026...
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251026_mi30x_20251026_180001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
