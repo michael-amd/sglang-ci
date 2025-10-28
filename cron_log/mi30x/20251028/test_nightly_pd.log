@@ -148,3 +148,88 @@ docker.io/rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
 [test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028
+[test] Container name: sgl-dev_v0.5.4.post1-rocm700-mi30x-20251028
+[test] ==========================================
+[test] Running PD Disaggregation Test
+[test] ==========================================
+[test] Hardware type: mi30x
+[test] Model path: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[test] Model name: DeepSeek-V3-0324
+[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
+[test] Model: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)
+[test] Docker Image: rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028
+[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.4.post1-rocm700-mi30x-20251028
+===================================================
+PD Test Execution Started: Tue Oct 28 11:14:24 AM CDT 2025
+===================================================
+[pd-test] ==========================================
+[pd-test] SGLang PD Docker-based Test Runner
+[pd-test] ==========================================
+[pd-test] Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[pd-test] Model Name: DeepSeek-V3-0324
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028
+[pd-test] Hardware: mi30x
+[pd-test] Docker Tag: v0.5.4.post1-rocm700-mi30x-20251028
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.4.post1-rocm700-mi30x-20251028
+[pd-test] IP: 10.194.129.138
+[pd-test]
+[pd-test] Checking for existing containers...
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Oct 28 11:14:27 AM CDT 2025 (Exit Code: 0)
+===================================================
+[pd-test] ==========================================
+[pd-test] Step 1: Starting Load Balancer/Router...
+[pd-test] ==========================================
+[pd-test] Router container started (ID: 5c7d0989a22a)
+[pd-test] Waiting 10 seconds for router to initialize...
+[pd-test] ✓ Router started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)...
+[pd-test] ==========================================
+[pd-test] Prefill Server container started (ID: 46f304ea9580)
+[pd-test] Waiting 60 seconds for prefill server to initialize...
+[pd-test] ✓ Prefill Server started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 3: Starting Decode Server (GPUs 4-7)...
+[pd-test] ==========================================
+[pd-test] Decode Server container started (ID: 1a791ab005ad)
+[pd-test] ERROR: Decode Server container was not created
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Collecting final router logs...
+[pd-test] Collecting final prefill logs...
+[pd-test] Collecting final decode logs...
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-decode
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-decode
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Oct 28 11:16:13 AM CDT 2025 (Exit Code: 1)
+===================================================
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.4.post1-rocm700-mi30x-20251028
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.4.post1-rocm700-mi30x-20251028
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.4.post1-rocm700-mi30x-20251028/test_summary.txt
+✅ Successfully sent PD test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251028
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
