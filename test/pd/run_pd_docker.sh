@@ -151,7 +151,7 @@ Timing Summary:
 - Total Time (Setup + Tests): ${total_time}s
 - Setup Time (Steps 1-4): ${setup_time}s
 - GSM8K Test Duration: ${GSM8K_DURATION:-0}s
-- GSM8K Questions per Second: $([ -n "${GSM8K_DURATION}" ] && [ "${GSM8K_DURATION}" -gt 0 ] && awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}" || echo "N/A")
+- GSM8K Questions per Second: $([ -n "${GSM8K_DURATION:-}" ] && [ "${GSM8K_DURATION:-0}" -gt 0 ] && awk "BEGIN {printf \"%.2f\", 200/${GSM8K_DURATION}}" || echo "N/A")
 - GSM8K Parallelism: 16 concurrent requests
 - GSM8K Timeout: 600s per request
 
@@ -182,9 +182,17 @@ STEP1_START=$(date +%s)
     --decode "http://${HOST_IP}:30026" \
     --host 0.0.0.0 \
     --port 30028 \
-  > "${LOG_DIR}/load_balance.log" 2>&1
+  > /tmp/router_container_id.txt 2>&1
 
-echo "[pd-test] Router container started"
+ROUTER_CONTAINER_ID=$(cat /tmp/router_container_id.txt 2>/dev/null | tail -1)
+
+if [ -z "$ROUTER_CONTAINER_ID" ] || [ ${#ROUTER_CONTAINER_ID} -ne 64 ]; then
+  echo "[pd-test] ERROR: Failed to start Router container"
+  cat /tmp/router_container_id.txt
+  exit 1
+fi
+
+echo "[pd-test] Router container started (ID: ${ROUTER_CONTAINER_ID:0:12})"
 echo "[pd-test] Waiting 10 seconds for router to initialize..."
 sleep 10
 
@@ -231,16 +239,34 @@ STEP2_START=$(date +%s)
     --attention-backend triton \
     --mem-fraction-static 0.88 \
     --watchdog-timeout 180 \
-  > "${LOG_DIR}/prefill.log" 2>&1
+  > /tmp/prefill_container_id.txt 2>&1
 
-echo "[pd-test] Prefill Server container started"
+PREFILL_CONTAINER_ID=$(cat /tmp/prefill_container_id.txt 2>/dev/null | tail -1)
+
+if [ -z "$PREFILL_CONTAINER_ID" ] || [ ${#PREFILL_CONTAINER_ID} -ne 64 ]; then
+  echo "[pd-test] ERROR: Failed to start Prefill Server container"
+  cat /tmp/prefill_container_id.txt
+  exit 1
+fi
+
+echo "[pd-test] Prefill Server container started (ID: ${PREFILL_CONTAINER_ID:0:12})"
+
+# Wait a moment and verify container was created
+sleep 5
+if ! "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+  echo "[pd-test] ERROR: Prefill Server container was not created"
+  exit 1
+fi
+
 echo "[pd-test] Waiting 60 seconds for prefill server to initialize..."
 sleep 60
 
 # Check if prefill container is still running
 if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-prefill; then
   echo "[pd-test] ERROR: Prefill Server container stopped"
-  "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
+  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+    "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
+  fi
   echo "[pd-test] Prefill container exit code:"
   "${DOCKER_CMD[@]}" inspect sglang-pd-prefill --format='{{.State.ExitCode}}' 2>/dev/null || echo "N/A"
   echo "[pd-test] Last 50 lines of prefill log:"
@@ -282,16 +308,34 @@ STEP3_START=$(date +%s)
     --disable-cuda-graph \
     --mem-fraction-static 0.88 \
     --watchdog-timeout 180 \
-  > "${LOG_DIR}/decode.log" 2>&1
+  > /tmp/decode_container_id.txt 2>&1
 
-echo "[pd-test] Decode Server container started"
+DECODE_CONTAINER_ID=$(cat /tmp/decode_container_id.txt 2>/dev/null | tail -1)
+
+if [ -z "$DECODE_CONTAINER_ID" ] || [ ${#DECODE_CONTAINER_ID} -ne 64 ]; then
+  echo "[pd-test] ERROR: Failed to start Decode Server container"
+  cat /tmp/decode_container_id.txt
+  exit 1
+fi
+
+echo "[pd-test] Decode Server container started (ID: ${DECODE_CONTAINER_ID:0:12})"
+
+# Wait a moment and verify container was created
+sleep 5
+if ! "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+  echo "[pd-test] ERROR: Decode Server container was not created"
+  exit 1
+fi
+
 echo "[pd-test] Waiting 60 seconds for decode server to initialize..."
 sleep 60
 
 # Check if decode container is still running
 if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-decode; then
   echo "[pd-test] ERROR: Decode Server container stopped"
-  "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
+  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+    "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
+  fi
   echo "[pd-test] Decode container exit code:"
   "${DOCKER_CMD[@]}" inspect sglang-pd-decode --format='{{.State.ExitCode}}' 2>/dev/null || echo "N/A"
   echo "[pd-test] Last 50 lines of decode log:"
