@@ -25,7 +25,7 @@ This repository provides a comprehensive benchmarking and continuous integration
 **⚡ Flexible Configuration:**
 
 - **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
-- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), DeepSeek, GPT-OSS, QWEN, and Llama models with FP8/INT4 quantization
+- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), DeepSeek, GPT-OSS, QWEN, and Llama models with FP8/INT8/INT4/MXFP4 quantization
 - **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
 
 **🔍 Advanced Comparison Tools:**

@@ -254,12 +254,16 @@ def parse_pd_test_summary(summary_file_path: str) -> Dict:
             if not parsed_data["hostname"]:
                 parsed_data["hostname"] = parsed_data["ip_address"]
 
-        prefill_match = re.search(r"Prefill Server:\s*Port\s*(\d+),\s*GPUs\s*([\d\-]+)", content)
+        prefill_match = re.search(
+            r"Prefill Server:\s*Port\s*(\d+),\s*GPUs\s*([\d\-]+)", content
+        )
         if prefill_match:
             parsed_data["prefill_port"] = prefill_match.group(1)
             parsed_data["prefill_gpus"] = prefill_match.group(2)
 
-        decode_match = re.search(r"Decode Server:\s*Port\s*(\d+),\s*GPUs\s*([\d\-]+)", content)
+        decode_match = re.search(
+            r"Decode Server:\s*Port\s*(\d+),\s*GPUs\s*([\d\-]+)", content
+        )
         if decode_match:
             parsed_data["decode_port"] = decode_match.group(1)
             parsed_data["decode_gpus"] = decode_match.group(2)
@@ -286,17 +290,19 @@ def parse_pd_test_summary(summary_file_path: str) -> Dict:
                     parsed_data["test_results"][test_name] = {
                         "status": result,
                         "duration": duration,
-                        "accuracy": accuracy
+                        "accuracy": accuracy,
                     }
                     parsed_data["gsm8k_accuracy"] = accuracy
                 else:
                     parsed_data["test_results"][test_name] = {
                         "status": match.group(1),
-                        "duration": match.group(2)
+                        "duration": match.group(2),
                     }
 
         # Extract timing information
-        total_runtime_match = re.search(r"Total Time \(Setup \+ Tests\):\s*(\d+)s", content)
+        total_runtime_match = re.search(
+            r"Total Time \(Setup \+ Tests\):\s*(\d+)s", content
+        )
         if total_runtime_match:
             total_seconds = int(total_runtime_match.group(1))
             hours = total_seconds // 3600
@@ -322,14 +328,22 @@ def parse_pd_test_summary(summary_file_path: str) -> Dict:
             parsed_data["gsm8k_duration"] = f"{minutes}m {seconds}s"
 
         # Determine overall status
-        all_passed = all(
-            test.get("status") == "PASS"
-            for test in parsed_data["test_results"].values()
-        )
-        parsed_data["status"] = "pass" if all_passed else "fail"
+        # If no tests have been run (empty or all PENDING), consider it a failure
+        if not parsed_data["test_results"]:
+            # No test results found - test must have failed during setup
+            parsed_data["status"] = "fail"
+        else:
+            # Check if all tests passed
+            all_passed = all(
+                test.get("status") == "PASS"
+                for test in parsed_data["test_results"].values()
+            )
+            parsed_data["status"] = "pass" if all_passed else "fail"
 
         # Extract log directory
-        log_balance_match = re.search(r"Load Balancer:\s*(.+)/load_balance\.log", content)
+        log_balance_match = re.search(
+            r"Load Balancer:\s*(.+)/load_balance\.log", content
+        )
         if log_balance_match:
             parsed_data["log_dir"] = log_balance_match.group(1).strip()
 
@@ -339,6 +353,7 @@ def parse_pd_test_summary(summary_file_path: str) -> Dict:
     except Exception as e:
         print(f"❌ Error parsing PD test summary file: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
@@ -1141,7 +1156,9 @@ class TestNightlyTeamsNotifier:
         """
         try:
             # Detect log file type based on filename
-            is_pd_test = "test_summary.txt" in log_file_path or "pd_log" in log_file_path
+            is_pd_test = (
+                "test_summary.txt" in log_file_path or "pd_log" in log_file_path
+            )
 
             if is_pd_test:
                 # Parse PD test summary file
@@ -1155,6 +1172,7 @@ class TestNightlyTeamsNotifier:
                 if hostname is None:
                     try:
                         import socket
+
                         hostname = socket.gethostname()
                     except Exception:
                         hostname = "unknown"
@@ -1190,6 +1208,7 @@ class TestNightlyTeamsNotifier:
                 if hostname is None:
                     try:
                         import socket
+
                         hostname = socket.gethostname()
                     except Exception:
                         hostname = "unknown"
