@@ -1903,8 +1903,8 @@ class TeamsNotifier:
             except Exception:
                 pass
 
-        # For sanity checks, link to the hardware directory
-        if hardware_type:
+        # For sanity checks, link to the hardware directory only if GitHub repo is configured
+        if hardware_type and self.github_repo:
             sanity_log_url = f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{hardware_type}"
             actions.append(
                 {
@@ -2620,8 +2620,9 @@ class TeamsNotifier:
         else:
             log_date = datetime.now().strftime("%Y%m%d")
 
-        # Add cron log link if we have hardware type
-        if hardware_type:
+        # Add cron log link only if GitHub repo is configured (for log hosting)
+        # This assumes logs are being uploaded to GitHub log branch
+        if hardware_type and self.github_repo:
             cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
             actions.append(
                 {
