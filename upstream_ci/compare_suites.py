@@ -42,16 +42,16 @@ except ImportError:
 
 # Suite pairs mapping from internal names to display names
 SUITE_PAIRS = [
-    ("per-commit", "per-commit-amd", "unit-test-backend-1-gpu"),
+    ("per-commit-1-gpu", "per-commit-amd", "unit-test-backend-1-gpu"),
     ("per-commit-2-gpu", "per-commit-2-gpu-amd", "unit-test-backend-2-gpu"),
     ("per-commit-4-gpu", "per-commit-4-gpu-amd", "unit-test-backend-4-gpu"),
-    ("per-commit-8-gpu", "per-commit-8-gpu-amd", "unit-test-backend-8-gpu"),
+    ("per-commit-8-gpu-h200", "per-commit-8-gpu-amd", "unit-test-backend-8-gpu"),
 ]
 
 # URLs for workflow and test files
 NVIDIA_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml"
 AMD_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml"
-NVIDIA_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py"
+NVIDIA_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py"
 AMD_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval_amd.py"
 
 
@@ -175,7 +175,7 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
             f"- {AMD_WORKFLOW_URL}\n"
             f"- {NVIDIA_NIGHTLY_URL}\n"
             f"- {AMD_NIGHTLY_URL}"
-        )
+        ) from e
 
 
 def fetch_text(path_or_url: str) -> str:
@@ -277,6 +277,82 @@ def calculate_coverage(amd_count: int, nvidia_count: int) -> str:
     return f"{(amd_count / nvidia_count) * 100:.0f}%"
 
 
+# AMD-incompatible test patterns (NVIDIA-only features and specific hardware variants)
+# Excludes tests from specialized hardware suites: H200, H20, B200, DeepEP, DeepSeek v3.2, vLLM deps
+AMD_INCOMPATIBLE_PATTERNS = [
+    # FlashInfer - NVIDIA-only attention backend
+    "flashinfer",
+    # Mamba - NVIDIA-only state-space model architecture
+    "mamba",
+    # FlashAttention 3/4 - NVIDIA H100+/B200+ only
+    "test_fa3.py",
+    "flash_attention_4",
+    # NVIDIA-specific models
+    "nvidia_nemotron",
+    # NVIDIA ModelOpt quantization tooling
+    "modelopt",
+    # TorchAO - primarily NVIDIA-focused quantization
+    "torchao",
+    # NVIDIA-specific FP8/INT8 kernels for MLA
+    "test_mla_fp8.py",
+    "test_mla_int8",
+    # DeepEP (Expert Parallelism) - specific NVIDIA feature
+    "deepep",
+    "ep/test_deepep",
+    "ep/test_mooncake_ep",
+    # H200-specific tests
+    "lora/test_lora_llama4",
+    "test_deepseek_v3_basic",
+    "test_deepseek_v3_mtp",
+    "test_disaggregation_hybrid_attention",
+    # H20-specific tests
+    "test_w4a8_deepseek_v3",
+    "test_disaggregation_different_tp",
+    "test_disaggregation_pp",
+    # B200-specific tests
+    "test_deepseek_v3_fp4_4gpu",
+    "test_gpt_oss_4gpu",  # Also appears in B200 suite (hardware-specific variant)
+    # DeepSeek v3.2 tests (new architecture)
+    "test_deepseek_v32",
+    # vLLM dependency tests (not core SGLang)
+    "test_vllm_dependency",
+    "quant/test_awq.py",
+    "test_bnb.py",
+    "test_gptqmodel_dynamic",
+    "test_gguf.py",
+]
+
+
+def is_amd_incompatible(test_name: str) -> bool:
+    """Check if a test is AMD-incompatible based on known patterns."""
+    test_lower = test_name.lower()
+    return any(pattern.lower() in test_lower for pattern in AMD_INCOMPATIBLE_PATTERNS)
+
+
+def process_suite_tests(
+    nv_suite: str, amd_suite: str, suites_map: Dict[str, List[str]]
+) -> Tuple[List[str], List[str]]:
+    """Process and deduplicate test lists for a suite pair.
+
+    Excludes AMD-incompatible tests from NVIDIA count to get accurate coverage.
+    """
+    nv_tests = suites_map.get(nv_suite, [])
+    amd_tests = suites_map.get(amd_suite, [])
+
+    # Exclude AMD-incompatible tests from NVIDIA denominator
+    # (only count tests that are feasible on AMD hardware)
+    nv_tests = [test for test in nv_tests if not is_amd_incompatible(test)]
+
+    # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
+    if nv_suite == "per-commit-1-gpu":
+        # Add mi35x suite tests and deduplicate
+        mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
+        amd_tests_set = set(amd_tests + mi35x_tests)
+        amd_tests = list(amd_tests_set)
+
+    return nv_tests, amd_tests
+
+
 def compare_suites(
     suites_map: Dict[str, List[str]],
     format_type: str = "markdown",
@@ -292,20 +368,7 @@ def compare_suites(
 
         # Process suite pairs
         for nv_suite, amd_suite, display_name in SUITE_PAIRS:
-            nv_tests = suites_map.get(nv_suite, [])
-            amd_tests = suites_map.get(amd_suite, [])
-
-            # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
-            if nv_suite == "per-commit":
-                # Exclude test_mla_flashinfer.py from per-commit suite
-                nv_tests = [
-                    test for test in nv_tests if "test_mla_flashinfer.py" not in test
-                ]
-
-                # Add mi35x suite tests and deduplicate
-                mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
-                amd_tests_set = set(amd_tests + mi35x_tests)
-                amd_tests = list(amd_tests_set)
+            nv_tests, amd_tests = process_suite_tests(nv_suite, amd_suite, suites_map)
 
             amd_count = len(amd_tests)
             nvidia_count = len(nv_tests)
@@ -329,20 +392,7 @@ def compare_suites(
 
     else:  # markdown format
         for nv_suite, amd_suite, display_name in SUITE_PAIRS:
-            nv_tests = suites_map.get(nv_suite, [])
-            amd_tests = suites_map.get(amd_suite, [])
-
-            # For unit-test-backend-1-gpu, include per-commit-amd-mi35x and deduplicate
-            if nv_suite == "per-commit":
-                # Exclude test_mla_flashinfer.py from per-commit suite
-                nv_tests = [
-                    test for test in nv_tests if "test_mla_flashinfer.py" not in test
-                ]
-
-                # Add mi35x suite tests and deduplicate
-                mi35x_tests = suites_map.get("per-commit-amd-mi35x", [])
-                amd_tests_set = set(amd_tests + mi35x_tests)
-                amd_tests = list(amd_tests_set)
+            nv_tests, amd_tests = process_suite_tests(nv_suite, amd_suite, suites_map)
 
             print(f"## {nv_suite} (NVIDIA) vs {amd_suite} (AMD)")
 
