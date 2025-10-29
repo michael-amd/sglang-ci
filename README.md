@@ -56,6 +56,9 @@ The toolkit is designed for both development teams conducting regular performanc
     - [nightly_image_check.sh](#nightly_image_checksh)
   - [Nightly Unit Test](#nightly-unit-test)
     - [test_nightly.sh](#test_nightlysh)
+  - [Nightly PD (Prefill-Decode Disaggregation) Test](#nightly-pd-prefill-decode-disaggregation-test)
+    - [test_nightly.sh --test-type=pd](#test_nightlysh---test-typepd)
+    - [run_pd_docker.sh](#run_pd_dockersh)
   - [Nightly Sanity Check](#nightly-sanity-check)
     - [sanity_check.py](#sanity_checkpy)
   - [Nightly Benchmarking](#nightly-benchmarking)
@@ -555,7 +558,10 @@ The automated nightly unit test system provides continuous validation of SGL fun
 
 #### test_nightly.sh
 
-- **Purpose:** Automated nightly unit test runner that discovers, pulls, and runs unit tests from the [SGLang repository](https://github.com/sgl-project/sglang/tree/main/test) on the latest Docker images for SGL with support for mi30x and mi35x hardware variants.
+- **Purpose:** Automated nightly test runner that discovers, pulls, and runs unit tests or PD disaggregation tests from the latest Docker images for SGL with support for mi30x and mi35x hardware variants.
+- **Test Types:**
+  - **Unit Tests:** Runs `test_custom_allreduce` unit test from the [SGLang repository](https://github.com/sgl-project/sglang/tree/main/test) on 8 GPUs
+  - **PD Tests:** Runs Prefill-Decode disaggregation tests with 3-container architecture (see [Nightly PD Test](#nightly-pd-prefill-decode-disaggregation-test) section)
 - **Key Features:**
   - **Automatic Image Discovery:** Uses Docker Hub API with pagination to find latest non-SRT images from today, then yesterday as fallback
   - **Hardware Support:** Supports both mi30x and mi35x hardware variants
@@ -567,27 +573,33 @@ The automated nightly unit test system provides continuous validation of SGL fun
 
 **Parameters:**
 
-- `--hardware`: Hardware type (`mi30x` or `mi35x`, default: `mi30x`)
-- `--teams-webhook`: Teams webhook URL for notifications (or set `TEAMS_WEBHOOK_URL` environment variable)
-- `--dry-run`: Show what would be done without executing
-- `--verbose`: Enable detailed logging output
-- `--container-timeout`: Container startup timeout in seconds (default: 300)
-- `--test-timeout`: Individual test timeout in seconds (default: 1800)
+- `--hardware=TYPE`: Hardware type (`mi30x` or `mi35x`, default: `mi30x`)
+- `--test-type=TYPE`: Test type (`unit` or `pd`, default: `unit`)
+- `--model-path=PATH`: Override model path for PD tests (optional)
+- `--image-date=YYYYMMDD`: Use specific date's Docker image (default: today, fallback to yesterday)
+- `--teams-webhook-url=URL`: Teams webhook URL for notifications (or set `TEAMS_WEBHOOK_URL` environment variable)
 
 **Usage:**
 
 ```bash
-# Basic run with mi30x hardware
-bash test_nightly.sh
+# Run unit test on mi30x hardware (default)
+bash test/test_nightly.sh
 
-# Run with mi35x hardware and Teams notifications
-bash test_nightly.sh --hardware=mi35x --teams-webhook="https://your-webhook-url"
+# Run unit test with mi35x hardware and Teams notifications
+bash test/test_nightly.sh --hardware=mi35x --teams-webhook-url="https://your-webhook-url"
 
-# Dry run to see what would be executed
-bash test_nightly.sh --dry-run --verbose
+# Run PD disaggregation test on mi30x (see PD Test section for more details)
+bash test/test_nightly.sh --test-type=pd
 
-# Custom timeouts for slower tests
-bash test_nightly.sh --container-timeout=600 --test-timeout=3600
+# Run PD test on mi35x with Teams notifications
+bash test/test_nightly.sh --test-type=pd --hardware=mi35x \
+  --teams-webhook-url="https://your-webhook-url"
+
+# Run unit test with specific date's Docker image
+bash test/test_nightly.sh --image-date=20251020
+
+# Run PD test with custom model path
+bash test/test_nightly.sh --test-type=pd --model-path=/custom/path/to/model
 ```
 
 **Teams Notifications:**
@@ -600,15 +612,20 @@ bash test_nightly.sh --container-timeout=600 --test-timeout=3600
 
 **Output Structure:**
 
+**Unit Tests:**
 ```
-unit_test_results/
-├── YYYYMMDD_unit_test_{hardware}/
-│   ├── container_logs.txt          # Docker container startup logs
-│   ├── test_execution_summary.txt  # High-level test results summary
-│   ├── test_results/               # Individual test outputs
-│   │   ├── test_file1.py.log      # Individual test logs
-│   │   └── test_file2.py.log
-│   └── teams_notification.json     # Teams notification payload (if sent)
+test/unit-test-backend-8-gpu-CAR-amd/
+└── {docker_tag}.log                 # Unit test execution log
+```
+
+**PD Tests:**
+```
+test/pd/pd_log/{hardware}/{docker_tag}/
+├── test_summary.txt                 # Comprehensive test summary with timing
+├── load_balance.log                 # Router container logs
+├── prefill.log                      # Prefill server container logs
+├── decode.log                       # Decode server container logs
+└── test_gsm8k.log                  # GSM8K benchmark results
 ```
 
 **Troubleshooting:**
@@ -620,6 +637,35 @@ unit_test_results/
 - **Permission issues**: Ensure webhook URL has proper Teams permissions
 - **Missing analysis data**: Check `BENCHMARK_BASE_DIR` environment variable or use `--benchmark-dir` to specify custom benchmark directory
 - **Plot files not found**: Verify `--plot-dir` path to ensure plots exist with expected naming pattern
+
+### Nightly PD (Prefill-Decode Disaggregation) Test
+
+Validates PD disaggregation by splitting inference across GPU groups: GPUs 0-3 for prefill (TP=4), GPUs 4-7 for decode (TP=4).
+
+**Architecture:** Router (port 30028) → Prefill Server (port 30025) → Decode Server (port 30026)
+
+**Default Models:**
+- **mi30x:** DeepSeek-V3-0324
+- **mi35x:** DeepSeek-R1-MXFP4-Preview
+
+**Usage:**
+
+```bash
+# Run PD test (default mi30x, DeepSeek-V3)
+bash test/test_nightly.sh --test-type=pd
+
+# Run on mi35x with DeepSeek-R1
+bash test/test_nightly.sh --test-type=pd --hardware=mi35x
+
+# Custom model
+bash test/test_nightly.sh --test-type=pd --model-path=/path/to/model
+```
+
+**Tests Run:** Health check, model info, completions, code generation, GSM8K (200 questions, parallel=16)
+
+**Logs:** `test/pd/pd_log/{hardware}/{docker_tag}/` contains test_summary.txt, load_balance.log, prefill.log, decode.log, test_gsm8k.log
+
+**Runtime:** ~10-15 minutes total
 
 ### Nightly Sanity Check
 
@@ -1092,12 +1138,15 @@ The benchmarks and CI processes are scheduled to run daily via cron jobs. Hardwa
 
 1. **Docker image availability check** - Verifies nightly Docker images are available
 2. **Nightly Unit test** - Runs automated unit tests on latest Docker images
-3. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
-4. **Grok online benchmark** - Performance benchmarking for Grok model
+3. **Nightly PD disaggregation test** - Validates Prefill-Decode disaggregation with 3-container architecture
+4. **Sanity check** - Validates multiple models (GROK, DeepSeek, GPT-OSS, etc.) with GSM8K accuracy tests
 5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation (GSM8K only)
 6. **DeepSeek online with torch compile optimization** - DeepSeek benchmarking with torch compile performance validation (GSM8K only)
 7. **DeepSeek online with DP attention + torch compile** - Combined validation testing (GSM8K only)
-8. **DeepSeek online** - Standard DeepSeek performance benchmarking (full GSM8K + serving benchmarks)
+8. **Grok online benchmark** - Performance benchmarking for Grok model
+9. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
+10. **DeepSeek online benchmark** - Standard DeepSeek performance benchmarking (full GSM8K + serving benchmarks)
+11. **Daily CI summary report** - Comprehensive summary of all daily test results
 
 **Usage:**
 
