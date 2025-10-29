@@ -723,15 +723,15 @@ if [[ -n "$CLI_SANITY_TRIALS" ]]; then
 fi
 
 # Set script paths after CLI parameter processing (so custom work directory is used)
-GROK_OFFLINE_SCRIPT="${GROK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_offline_csv.sh}"
-GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/grok_perf_online_csv.sh}"
-DEEPSEEK_OFFLINE_SCRIPT="${DEEPSEEK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_offline_csv.sh}"
-DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/deepseek_perf_online_csv.sh}"
+GROK_OFFLINE_SCRIPT="${GROK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/grok_perf_offline_csv.sh}"
+GROK_ONLINE_SCRIPT="${GROK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/grok_perf_online_csv.sh}"
+DEEPSEEK_OFFLINE_SCRIPT="${DEEPSEEK_OFFLINE_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/deepseek_perf_offline_csv.sh}"
+DEEPSEEK_ONLINE_SCRIPT="${DEEPSEEK_ONLINE_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/deepseek_perf_online_csv.sh}"
 SANITY_CHECK_SCRIPT="${SANITY_CHECK_SCRIPT:-${BENCHMARK_CI_DIR}/test/sanity_check.py}"
 
 # Python scripts for processing and plotting (combined)
-PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/process_and_generate_offline_plots.py}"
-PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/process_and_generate_online_plots.py}"
+PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/process_and_generate_offline_plots.py}"
+PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT="${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT:-${BENCHMARK_CI_DIR}/scripts/process_and_generate_online_plots.py}"
 
 # Teams notification script
 TEAMS_NOTIFICATION_SCRIPT="${TEAMS_NOTIFICATION_SCRIPT:-${BENCHMARK_CI_DIR}/team_alert/send_teams_notification.py}"

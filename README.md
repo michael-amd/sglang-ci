@@ -153,28 +153,28 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
   ```bash
   # Basic usage with default parameters
-  bash grok_perf_offline_csv.sh
+  bash scripts/grok_perf_offline_csv.sh
 
   # Using specific Docker images
-  bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-  bash grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x
+  bash scripts/grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
+  bash scripts/grok_perf_offline_csv.sh --docker_image=lmsysorg/sglang:v0.4.9.post2-rocm630-mi30x
 
   # Custom model and tokenizer
-  bash grok_perf_offline_csv.sh \
+  bash scripts/grok_perf_offline_csv.sh \
     --model=$MODEL_PATH \
     --tokenizer=$TOKENIZER_NAME
 
   # Grok 2 model
-  bash grok_perf_offline_csv.sh --model-type=grok2
+  bash scripts/grok_perf_offline_csv.sh --model-type=grok2
 
   # Long context mode
-  bash grok_perf_offline_csv.sh --mode=long_context
+  bash scripts/grok_perf_offline_csv.sh --mode=long_context
 
   # Dummy mode with custom model
-  bash grok_perf_offline_csv.sh --mode=dummy --dummy-model=$DUMMY_MODEL_PATH
+  bash scripts/grok_perf_offline_csv.sh --mode=dummy --dummy-model=$DUMMY_MODEL_PATH
 
   # Custom directories
-  bash grok_perf_offline_csv.sh \
+  bash scripts/grok_perf_offline_csv.sh \
     --work-dir=$WORK_DIR \
     --output-dir=$OUTPUT_DIR
   ```
@@ -208,22 +208,22 @@ Offline mode benchmarks are executed without real-time interaction, measuring mo
 
   ```bash
   # Basic usage
-  bash deepseek_perf_offline_csv.sh
+  bash scripts/deepseek_perf_offline_csv.sh
 
   # Custom model configuration
-  bash deepseek_perf_offline_csv.sh \
+  bash scripts/deepseek_perf_offline_csv.sh \
     --model=$MODEL_PATH \
     --model-name=DeepSeek-V3-Custom \
     --hf-model-id=deepseek-ai/DeepSeek-V3
 
   # Download model if not present
-  bash deepseek_perf_offline_csv.sh \
+  bash scripts/deepseek_perf_offline_csv.sh \
     --model=$MODEL_PATH \
     --hf-model-id=deepseek-ai/DeepSeek-V3 \
     --download-model
 
   # Custom paths and threshold
-  bash deepseek_perf_offline_csv.sh \
+  bash scripts/deepseek_perf_offline_csv.sh \
     --work-dir=$WORK_DIR \
     --output-dir=$OUTPUT_DIR \
     --gsm8k-script=$GSM8K_SCRIPT_PATH \
@@ -274,13 +274,13 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
 
   ```bash
   # Basic usage (GROK1 default)
-  bash grok_perf_online_csv.sh
+  bash scripts/grok_perf_online_csv.sh
 
   # GROK2 model
-  bash grok_perf_online_csv.sh --model-type=grok2
+  bash scripts/grok_perf_online_csv.sh --model-type=grok2
 
   # Custom configuration
-  bash grok_perf_online_csv.sh \
+  bash scripts/grok_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 \
     --model=$MODEL_PATH \
     --model-type=grok2 \
@@ -289,7 +289,7 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
     --threshold=0.85
 
   # Custom paths
-  bash grok_perf_online_csv.sh \
+  bash scripts/grok_perf_online_csv.sh \
     --work-dir=$WORK_DIR \
     --output-dir=$OUTPUT_DIR \
     --gsm8k-script=$GSM8K_SCRIPT_PATH
@@ -351,37 +351,37 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
 
   ```bash
   # Basic usage with default parameters
-  bash deepseek_perf_online_csv.sh
+  bash scripts/deepseek_perf_online_csv.sh
 
   # Using a specific Docker image
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 
   # Custom model and a different accuracy threshold
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --model=$MODEL_PATH \
     --model-name=DeepSeek-Custom \
     --threshold=0.90
 
   # DP attention mode - GSM8K test only with error checking
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
     --check-dp-attention \
     --model-path=/path-to-deepseek
 
   # Torch compile mode - GSM8K test only with performance optimization
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 \
     --enable-torch-compile
 
   # Combined mode - DP attention + torch compile (GSM8K only)
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 \
     --check-dp-attention \
     --enable-torch-compile
 
   # MTP test mode - DeepSeek-R1 MXFP4 throughput export on MI35x
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.5.3-rocm700-mi35x-20251008 \
     --hardware=mi35x \
     --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview \
@@ -389,7 +389,7 @@ Online mode benchmarks measure the real-time serving performance of GROK models 
     --enable-mtp-test
 
   # DP test mode - DP attention with serving benchmarks
-  bash deepseek_perf_online_csv.sh \
+  bash scripts/deepseek_perf_online_csv.sh \
     --docker_image=rocm/sgl-dev:v0.5.3.post1-rocm700-mi35x-20251010 \
     --hardware=mi35x \
     --model-path=/data/models/amd-DeepSeek-R1-MXFP4-Preview \
@@ -471,10 +471,10 @@ These scripts process raw benchmark outputs, create consolidated summary CSV fil
 
     ```bash
     # For GROK
-    python3 process_and_generate_offline_plots.py --model grok
+    python3 scripts/process_and_generate_offline_plots.py --model grok
 
     # For DeepSeek
-    python3 process_and_generate_offline_plots.py --model deepseek
+    python3 scripts/process_and_generate_offline_plots.py --model deepseek
     ```
 
 - **`process_and_generate_online_plots.py`**
@@ -489,10 +489,10 @@ These scripts process raw benchmark outputs, create consolidated summary CSV fil
     ```bash
     cd $WORK_DIR
     # For GROK
-    python3 process_and_generate_online_plots.py --model grok
+    python3 scripts/process_and_generate_online_plots.py --model grok
 
     # For DeepSeek
-    python3 process_and_generate_online_plots.py --model deepseek
+    python3 scripts/process_and_generate_online_plots.py --model deepseek
     ```
 
 #### Plot Server
@@ -532,13 +532,13 @@ Checks nightly Docker images (`rocm/sgl-dev`) for both hardware types using Dock
 
 ```bash
 # Basic check
-./nightly_image_check.sh
+bash scripts/nightly_image_check.sh
 
 # Check with Teams alerts
-./nightly_image_check.sh --teams-webhook="https://your-webhook-url"
+bash scripts/nightly_image_check.sh --teams-webhook="https://your-webhook-url"
 
 # Check specific date with Teams alerts
-./nightly_image_check.sh --date=20250108 --teams-webhook="https://your-webhook-url"
+bash scripts/nightly_image_check.sh --date=20250108 --teams-webhook="https://your-webhook-url"
 ```
 
 **Teams Alert Features:**
@@ -727,13 +727,13 @@ The `perf_nightly.sh` script provides automated orchestration for running nightl
 
   ```bash
   # Run GROK online and offline benchmarks (default)
-  bash perf_nightly.sh
+  bash scripts/perf_nightly.sh
 
   # Run GROK offline only
-  bash perf_nightly.sh --model=grok --mode=offline
+  bash scripts/perf_nightly.sh --model=grok --mode=offline
 
   # Run DeepSeek online only
-  bash perf_nightly.sh --model=deepseek --mode=online
+  bash scripts/perf_nightly.sh --model=deepseek --mode=online
   ```
 
 **Note:** This script is designed for automated execution via cron jobs and handles all aspects of the benchmarking pipeline, making it ideal for unattended nightly performance monitoring.
@@ -758,16 +758,16 @@ All Teams-related components are organized in the `team_alert/` folder.
 
 ```bash
 # Enable Teams notifications with webhook URL
-bash perf_nightly.sh --teams-webhook-url="https://your-webhook-url"
+bash scripts/perf_nightly.sh --teams-webhook-url="https://your-webhook-url"
 
 # Run specific model/mode with Teams notifications
-bash perf_nightly.sh --model=grok --mode=online --teams-webhook-url="https://..."
+bash scripts/perf_nightly.sh --model=grok --mode=online --teams-webhook-url="https://..."
 
 # Run with intelligent analysis (GSM8K accuracy + performance regression detection)
-bash perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=7
+bash scripts/perf_nightly.sh --teams-webhook-url="..." --teams-analysis-days=7
 
 # Run with plots only (skip analysis for faster notifications)
-bash perf_nightly.sh --teams-webhook-url="..." --teams-skip-analysis
+bash scripts/perf_nightly.sh --teams-webhook-url="..." --teams-skip-analysis
 
 # Direct script usage with custom directories
 python3 team_alert/send_teams_notification.py --model grok --mode online \
@@ -862,11 +862,11 @@ When benchmarks complete, Teams receives text-only adaptive cards containing:
 
 ```bash
 # Run without Teams (default behavior - no webhook URL configured)
-bash perf_nightly.sh
+bash scripts/perf_nightly.sh
 
 # Temporarily disable when webhook is configured via environment
 unset TEAMS_WEBHOOK_URL
-bash perf_nightly.sh
+bash scripts/perf_nightly.sh
 
 
 ```

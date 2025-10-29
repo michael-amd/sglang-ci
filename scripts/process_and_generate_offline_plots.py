@@ -684,7 +684,8 @@ def main():
         },
     }
 
-    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    # Script is in scripts/ directory, so base dir is parent directory
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     parser = argparse.ArgumentParser(
         description="Process offline benchmark CSV files and generate plots",
