@@ -51,7 +51,7 @@ GITHUB_WORKFLOW_URL="https://github.com/sgl-project/sglang/actions/workflows/rel
 
 # Teams notification configuration
 TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
-TEAMS_ALERT_SCRIPT="${TEAMS_ALERT_SCRIPT:-$(dirname "$0")/team_alert/send_docker_image_alert.py}"
+TEAMS_ALERT_SCRIPT="${TEAMS_ALERT_SCRIPT:-$(dirname "$0")/../team_alert/send_docker_image_alert.py}"
 
 ###############################################################################
 # CLI Parameter Processing
