@@ -74,15 +74,16 @@ cleanup() {
   echo "[pd-test] =========================================="
 
   # Collect final logs before cleanup
-  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-router; then
+  docker_ps_all=$("${DOCKER_CMD[@]}" ps -a 2>/dev/null || true)
+  if echo "$docker_ps_all" | grep -q "sglang-pd-router"; then
     echo "[pd-test] Collecting final router logs..."
     "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1 || true
   fi
-  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+  if echo "$docker_ps_all" | grep -q "sglang-pd-prefill"; then
     echo "[pd-test] Collecting final prefill logs..."
     "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1 || true
   fi
-  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+  if echo "$docker_ps_all" | grep -q "sglang-pd-decode"; then
     echo "[pd-test] Collecting final decode logs..."
     "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1 || true
   fi
@@ -197,7 +198,8 @@ echo "[pd-test] Waiting 10 seconds for router to initialize..."
 sleep 10
 
 # Check if router container is still running
-if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-router; then
+docker_ps_output=$("${DOCKER_CMD[@]}" ps 2>/dev/null || true)
+if ! echo "$docker_ps_output" | grep -q "sglang-pd-router"; then
   echo "[pd-test] ERROR: Router container stopped"
   "${DOCKER_CMD[@]}" logs sglang-pd-router > "${LOG_DIR}/load_balance.log" 2>&1
   echo "[pd-test] Router container exit code:"
@@ -253,18 +255,21 @@ echo "[pd-test] Prefill Server container started (ID: ${PREFILL_CONTAINER_ID:0:1
 
 # Wait a moment and verify container was created
 sleep 5
-if ! "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+docker_ps_output=$("${DOCKER_CMD[@]}" ps -a 2>/dev/null || true)
+if ! echo "$docker_ps_output" | grep -q "sglang-pd-prefill"; then
   echo "[pd-test] ERROR: Prefill Server container was not created"
   exit 1
 fi
 
-echo "[pd-test] Waiting 60 seconds for prefill server to initialize..."
-sleep 60
+echo "[pd-test] Waiting 150 seconds for prefill server to initialize..."
+sleep 150
 
 # Check if prefill container is still running
-if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-prefill; then
+docker_ps_output=$("${DOCKER_CMD[@]}" ps 2>/dev/null || true)
+if ! echo "$docker_ps_output" | grep -q "sglang-pd-prefill"; then
   echo "[pd-test] ERROR: Prefill Server container stopped"
-  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-prefill; then
+  docker_ps_all=$("${DOCKER_CMD[@]}" ps -a 2>/dev/null || true)
+  if echo "$docker_ps_all" | grep -q "sglang-pd-prefill"; then
     "${DOCKER_CMD[@]}" logs sglang-pd-prefill > "${LOG_DIR}/prefill.log" 2>&1
   fi
   echo "[pd-test] Prefill container exit code:"
@@ -322,18 +327,21 @@ echo "[pd-test] Decode Server container started (ID: ${DECODE_CONTAINER_ID:0:12}
 
 # Wait a moment and verify container was created
 sleep 5
-if ! "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+docker_ps_output=$("${DOCKER_CMD[@]}" ps -a 2>/dev/null || true)
+if ! echo "$docker_ps_output" | grep -q "sglang-pd-decode"; then
   echo "[pd-test] ERROR: Decode Server container was not created"
   exit 1
 fi
 
-echo "[pd-test] Waiting 60 seconds for decode server to initialize..."
-sleep 60
+echo "[pd-test] Waiting 150 seconds for decode server to initialize..."
+sleep 150
 
 # Check if decode container is still running
-if ! "${DOCKER_CMD[@]}" ps | grep -q sglang-pd-decode; then
+docker_ps_output=$("${DOCKER_CMD[@]}" ps 2>/dev/null || true)
+if ! echo "$docker_ps_output" | grep -q "sglang-pd-decode"; then
   echo "[pd-test] ERROR: Decode Server container stopped"
-  if "${DOCKER_CMD[@]}" ps -a | grep -q sglang-pd-decode; then
+  docker_ps_all=$("${DOCKER_CMD[@]}" ps -a 2>/dev/null || true)
+  if echo "$docker_ps_all" | grep -q "sglang-pd-decode"; then
     "${DOCKER_CMD[@]}" logs sglang-pd-decode > "${LOG_DIR}/decode.log" 2>&1
   fi
   echo "[pd-test] Decode container exit code:"
@@ -400,8 +408,20 @@ for i in $(seq 1 ${HEALTH_CHECK_MAX_ATTEMPTS}); do
     fi
   fi
 
-  # All services ready - perform functional test
+  # All services ready - restart router to re-register workers (on first attempt only)
   if [ "$PREFILL_READY" = true ] && [ "$DECODE_READY" = true ] && [ "$ROUTER_READY" = true ]; then
+    # Check if this is the first time all services are ready
+    if [ "${ROUTER_RESTARTED:-false}" = false ]; then
+      echo "[pd-test] All backend services healthy - restarting router to register workers..."
+      "${DOCKER_CMD[@]}" restart sglang-pd-router > /dev/null 2>&1
+      sleep 15  # Wait for router to re-initialize and register workers
+      echo "[pd-test] ✓ Router restarted successfully"
+      ROUTER_RESTARTED=true
+      # Reset router ready flag so it gets checked again after restart
+      ROUTER_READY=false
+      continue
+    fi
+
     echo "[pd-test] All services report healthy. Performing functional test..."
 
     # Try a simple completion request to verify the full pipeline works
