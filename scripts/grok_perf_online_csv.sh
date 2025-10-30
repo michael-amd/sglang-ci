@@ -61,6 +61,9 @@ PROMPTS_PER_RATE_MULTIPLIER="${PROMPTS_PER_RATE_MULTIPLIER:-300}"
 # Request rates for benchmarking
 REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
 
+# Number of runs per request rate
+RUNS_PER_RATE="${RUNS_PER_RATE:-3}"
+
 # Baseline data variables removed
 
 ###############################################################################
@@ -597,7 +600,7 @@ run_single_rate_benchmark() {
     local rate_start_time=$(date +%s)
 
     echo "Processing request rate ${RATE} for mode ${mode}..."
-    for i in {1..3}; do
+    for i in $(seq 1 $RUNS_PER_RATE); do
         # Check if log already exists and is complete using glob pattern
         existing_log=""
         for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log; do
@@ -649,7 +652,7 @@ run_single_rate_benchmark() {
         update_progress "$RATE" "$i"
 
         # Add sleep between runs to avoid memory access faults (except after the last run)
-        if [ "$i" -lt 3 ]; then
+        if [ "$i" -lt "$RUNS_PER_RATE" ]; then
             # Special handling for rate 16 - needs longer recovery time and memory cleanup
             if [ "$RATE" -eq 16 ]; then
                 echo "Rate 16 detected - sleeping 20 seconds and clearing memory before next run..."
@@ -744,7 +747,7 @@ check_all_logs_complete() {
 
     # 2. Check client benchmark logs completion
     echo "Checking client benchmark logs..."
-    local expected_runs_per_rate=3
+    local expected_runs_per_rate=$RUNS_PER_RATE
     local total_expected_logs=$((${#REQ_RATES[@]} * expected_runs_per_rate))
     local actual_completed_logs=0
 
@@ -804,7 +807,7 @@ CURRENT_RUN=0
 calculate_total_runs() {
     local rates_array
     read -ra rates_array <<< "$REQUEST_RATES"
-    TOTAL_RUNS=$((${#rates_array[@]} * 3))  # 3 runs per rate
+    TOTAL_RUNS=$((${#rates_array[@]} * RUNS_PER_RATE))  # RUNS_PER_RATE runs per rate
     echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS}"
 }
 
