@@ -98,56 +98,62 @@ class DailySummaryReporter:
         self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
 
     def find_timing_summary_log(
-        self, model_dir: str, mode_suffix: str, date_str: str
+        self, model_dir, mode_suffix: str, date_str: str
     ) -> Optional[str]:
         """
         Find timing_summary log file for benchmark tasks
 
         Args:
-            model_dir: Model directory (e.g., "GROK2", "DeepSeek-V3-0324")
+            model_dir: Model directory name(s) - can be string or list of strings to try
+                      (e.g., "GROK2", ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"])
             mode_suffix: Mode suffix (e.g., "online", "online_dp_attention")
             date_str: Date string (YYYYMMDD)
 
         Returns:
             Path to timing_summary log file or None
         """
-        online_dir = os.path.join(self.base_dir, "online", model_dir)
+        # Support both single string and list of directories
+        model_dirs = [model_dir] if isinstance(model_dir, str) else model_dir
+        
+        for model_dir_name in model_dirs:
+            online_dir = os.path.join(self.base_dir, "online", model_dir_name)
 
-        if not os.path.exists(online_dir):
-            return None
+            if not os.path.exists(online_dir):
+                continue
 
-        # Look for directories matching the date and mode
-        # Note: timing_summary logs may have different dates in filename (overnight runs)
-        # so we look for any timing_summary*.log in directories matching the date
-        patterns = [
-            f"{online_dir}/*{date_str}*{mode_suffix}*/timing_summary_*.log",
-            f"{online_dir}/*{date_str}*{mode_suffix}/timing_summary_*.log",
-        ]
+            # Look for directories matching the date and mode
+            # Note: timing_summary logs may have different dates in filename (overnight runs)
+            # so we look for any timing_summary*.log in directories matching the date
+            patterns = [
+                f"{online_dir}/*{date_str}*{mode_suffix}*/timing_summary_*.log",
+                f"{online_dir}/*{date_str}*{mode_suffix}/timing_summary_*.log",
+            ]
 
-        matching_files = []
-        for pattern in patterns:
-            files = glob.glob(pattern)
-            for file_path in files:
-                # Extract directory name from file path
-                dir_name = os.path.basename(os.path.dirname(file_path))
-                # Only include files where directory name ends with the exact mode suffix
-                # This prevents "online" from matching "online_dp_attention" etc.
-                if dir_name.endswith(f"_{mode_suffix}") or dir_name.endswith(
-                    mode_suffix
-                ):
-                    # Additional check: ensure it's not a longer mode string
-                    # e.g., "online" shouldn't match if dir ends with "online_torch_compile"
-                    suffix_pos = dir_name.rfind(mode_suffix)
-                    if suffix_pos != -1 and suffix_pos + len(mode_suffix) == len(
-                        dir_name
+            matching_files = []
+            for pattern in patterns:
+                files = glob.glob(pattern)
+                for file_path in files:
+                    # Extract directory name from file path
+                    dir_name = os.path.basename(os.path.dirname(file_path))
+                    # Only include files where directory name ends with the exact mode suffix
+                    # This prevents "online" from matching "online_dp_attention" etc.
+                    if dir_name.endswith(f"_{mode_suffix}") or dir_name.endswith(
+                        mode_suffix
                     ):
-                        matching_files.append(file_path)
+                        # Additional check: ensure it's not a longer mode string
+                        # e.g., "online" shouldn't match if dir ends with "online_torch_compile"
+                        suffix_pos = dir_name.rfind(mode_suffix)
+                        if suffix_pos != -1 and suffix_pos + len(mode_suffix) == len(
+                            dir_name
+                        ):
+                            matching_files.append(file_path)
 
-        if matching_files:
-            # Return most recent
-            matching_files.sort(key=os.path.getmtime, reverse=True)
-            return matching_files[0]
-
+            if matching_files:
+                # Return most recent
+                matching_files.sort(key=os.path.getmtime, reverse=True)
+                return matching_files[0]
+        
+        # Try next model directory name if no match found
         return None
 
     def parse_timing_summary_log(self, log_path: str) -> Dict:
@@ -432,10 +438,11 @@ class DailySummaryReporter:
         results = {}
 
         # Performance Benchmarks - use timing_summary logs
+        # Note: For model_dir, use list to try multiple directory names
         benchmarks = {
-            "Grok 2 Online Benchmark": ("GROK2", "online"),
-            "Grok Online Benchmark": ("GROK1", "online"),
-            "DeepSeek Online Benchmark": ("DeepSeek-V3-0324", "online"),
+            "Grok 2 Online Benchmark": (["GROK2"], "online"),
+            "Grok Online Benchmark": (["GROK1"], "online"),
+            "DeepSeek Online Benchmark": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online"),
         }
 
         for task_name, (model_dir, mode_suffix) in benchmarks.items():
@@ -452,10 +459,10 @@ class DailySummaryReporter:
 
         # Integration Tests - use timing_summary logs with mode suffixes
         integration_tests = {
-            "DeepSeek DP Attention Test": ("DeepSeek-V3-0324", "online_dp_attention"),
-            "DeepSeek Torch Compile Test": ("DeepSeek-V3-0324", "online_torch_compile"),
+            "DeepSeek DP Attention Test": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online_dp_attention"),
+            "DeepSeek Torch Compile Test": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online_torch_compile"),
             "DeepSeek DP+Torch Compile": (
-                "DeepSeek-V3-0324",
+                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_dp_attention_torch_compile",
             ),
         }
