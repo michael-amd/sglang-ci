@@ -3,8 +3,9 @@ online/*
 offline/*
 plots_server/*
 cron/cron_log/*
-test/*.sh
-test/*/*
+test/sanity_check_log/*
+test/pd/pd_log/*
+test/unit-test-backend-8-gpu-CAR-amd/*
 
 *.jsonl
 *.csv
@@ -19,3 +20,4 @@ build_docker_log/*
 */__pycache__/*
 __pycache__/*
 logs/*
+team_alert/alert_log/*

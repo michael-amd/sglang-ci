@@ -216,7 +216,10 @@ class OnlineDataProcessor:
         Returns: "standard", "mtp", "dp", or "dp_mtp"
         """
         # Check for DP + MTP combination first (most specific)
-        if "_dp_attention_mtp_test" in folder_name or "_mtp_test_dp_attention" in folder_name:
+        if (
+            "_dp_attention_mtp_test" in folder_name
+            or "_mtp_test_dp_attention" in folder_name
+        ):
             return "dp_mtp"
         # Check for individual variants
         elif "_mtp_test" in folder_name:
@@ -719,7 +722,9 @@ class OnlineDataProcessor:
                         # Old: YYYYMMDD_MODEL_VARIANT_online.csv
                         # New: v0.4.9.post2-rocm630-mi30x-YYYYMMDD_MODEL_VARIANT_online.csv
                         # And serving variants like _serving.csv, _serving_mtp_test.csv, etc.
-                        if ("_online" in file_name or "_serving" in file_name) and file_name.endswith(".csv"):
+                        if (
+                            "_online" in file_name or "_serving" in file_name
+                        ) and file_name.endswith(".csv"):
                             date_str_from_file = self._extract_date_from_name(file_name)
                             if not date_str_from_file:
                                 print(
@@ -779,7 +784,9 @@ class OnlineDataProcessor:
                     mode_df = variant_df[variant_df["mode"] == mode]
 
                     # Check request rates
-                    request_rates_found = sorted(mode_df[self.load_metric_name].unique())
+                    request_rates_found = sorted(
+                        mode_df[self.load_metric_name].unique()
+                    )
                     if request_rates_found != self.expected_request_rates:
                         is_complete = False
                         missing_rates = set(self.expected_request_rates) - set(
@@ -836,7 +843,9 @@ class OnlineDataProcessor:
         # Filter records to only keep complete date+variant combinations
         if complete_date_variants:
             self.all_records = [
-                r for r in self.all_records if (r["date"], r["variant"]) in complete_date_variants
+                r
+                for r in self.all_records
+                if (r["date"], r["variant"]) in complete_date_variants
             ]
             print(
                 f"\nKept {len(complete_date_variants)} date+variant combinations with complete and valid data: {sorted(complete_date_variants)}"
@@ -902,7 +911,9 @@ class OnlineDataProcessor:
             if self.variants_to_process is None:
                 print("Processed all variants")
             else:
-                print(f"Processed variants: {', '.join(sorted(self.variants_to_process))}")
+                print(
+                    f"Processed variants: {', '.join(sorted(self.variants_to_process))}"
+                )
 
             # Print summary of processed modes
             if self.modes_to_process is None:
@@ -961,7 +972,9 @@ class OnlineDataProcessor:
                     if self.variants_to_process is None:
                         print("Processed all variants")
                     else:
-                        print(f"Processed variants: {', '.join(sorted(self.variants_to_process))}")
+                        print(
+                            f"Processed variants: {', '.join(sorted(self.variants_to_process))}"
+                        )
 
                     # Print summary of processed modes
                     if self.modes_to_process is None:
@@ -974,7 +987,9 @@ class OnlineDataProcessor:
                     # Show unique variants and modes found in the data
                     unique_variants = summary_df["variant"].unique()
                     unique_modes = summary_df["mode"].unique()
-                    print(f"Variants found in output: {', '.join(sorted(unique_variants))}")
+                    print(
+                        f"Variants found in output: {', '.join(sorted(unique_variants))}"
+                    )
                     print(f"Modes found in output: {', '.join(sorted(unique_modes))}")
 
                     return fallback_output_file
@@ -1353,7 +1368,9 @@ class OnlineGraphPlotter:
 
         # Check if we have variants in the data
         has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
-        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+        unique_variants = (
+            sorted(self.df["variant"].unique()) if has_variants else [None]
+        )
 
         # Collect data for each variant, mode, and request rate combination
         for variant in unique_variants:
@@ -1447,7 +1464,9 @@ class OnlineGraphPlotter:
 
         # Check if we have variants in the data
         has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
-        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+        unique_variants = (
+            sorted(self.df["variant"].unique()) if has_variants else [None]
+        )
 
         # Process data for each variant and mode
         for variant in unique_variants:
@@ -1542,7 +1561,9 @@ class OnlineGraphPlotter:
 
         # Check if we have variants in the data
         has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
-        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+        unique_variants = (
+            sorted(self.df["variant"].unique()) if has_variants else [None]
+        )
 
         # Process data for each variant and mode
         combo_idx = 0
@@ -1626,7 +1647,9 @@ class OnlineGraphPlotter:
 
         # Check if we have variants in the data
         has_variants = "variant" in self.df.columns and self.df["variant"].nunique() > 1
-        unique_variants = sorted(self.df["variant"].unique()) if has_variants else [None]
+        unique_variants = (
+            sorted(self.df["variant"].unique()) if has_variants else [None]
+        )
 
         # Process data for each variant and mode
         for variant in unique_variants:
@@ -1652,7 +1675,8 @@ class OnlineGraphPlotter:
                         plot_data_collections.append(
                             {
                                 "dates": data_by_date.index,
-                                "values": data_by_date.values * 100,  # Convert to percentage
+                                "values": data_by_date.values
+                                * 100,  # Convert to percentage
                                 "label": label,
                             }
                         )
@@ -1826,7 +1850,9 @@ class OnlineGraphPlotter:
             variant_suffix = ""
 
         # Generate filename format: YYYYMMDD_MODEL_online_VARIANT.png
-        plot_filename = f"{current_date_str}_{base_model_name}_online{variant_suffix}.png"
+        plot_filename = (
+            f"{current_date_str}_{base_model_name}_online{variant_suffix}.png"
+        )
         output_file_path = os.path.join(self.plot_dir, plot_filename)
 
         try:
@@ -1953,7 +1979,9 @@ class OnlineGraphPlotter:
         )  # Reduced horizontal padding, increased bottom space, reduced right margin
 
         # Save the plot with split request rates filename format
-        plot_filename = f"{current_date_str}_{base_model_name}_online{variant_suffix}_split.png"
+        plot_filename = (
+            f"{current_date_str}_{base_model_name}_online{variant_suffix}_split.png"
+        )
         output_file_path = os.path.join(self.plot_dir, plot_filename)
 
         try:
@@ -2038,7 +2066,8 @@ def main():
         },
     }
 
-    DEFAULT_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    # Script is in scripts/ directory, so base dir is parent directory
+    DEFAULT_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     parser = argparse.ArgumentParser(
         description="Process online benchmark CSV files and generate plots",
@@ -2148,24 +2177,27 @@ def main():
     if args.model == "DeepSeek-V3":
         directory_name = "DeepSeek-V3"
     elif args.model == "deepseek":
-        directory_name = (
-            "DeepSeek-V3-0324"  # Match the actual model directory created by benchmarks
-        )
+        # If model-name is explicitly provided, use it for directory structure
+        # Otherwise, default to DeepSeek-V3-0324 for backward compatibility
+        if args.model_name:
+            directory_name = args.model_name.replace(" ", "_")
+        else:
+            directory_name = "DeepSeek-V3-0324"  # Default for backward compatibility
     else:
         directory_name = (
             variant_name  # This will be "GROK1" for grok, "GROK2" for grok2
         )
-    if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-        directory_for_paths = (args.model_name or directory_name).replace(" ", "_")
-    else:
-        directory_for_paths = directory_name
+
+    # Use the directory_name directly, which now respects --model-name
+    directory_for_paths = directory_name
 
     if args.data_dir is None:
         args.data_dir = os.path.join(args.base_dir, "online", directory_for_paths)
     if args.output_prefix is None:
-        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-            prefix_base = (args.model_name or variant_name).replace(" ", "_")
-            args.output_prefix = f"{prefix_base}_online"
+        # For deepseek model, use the directory_name which already respects --model-name
+        if args.model in {"deepseek", "DeepSeek-V3"}:
+            prefix_base = directory_name.replace(" ", "_")
+            args.output_prefix = f"{prefix_base}_FP8_online"
         else:
             args.output_prefix = config["output_prefix_template"].format(
                 variant_name=variant_name
@@ -2177,19 +2209,17 @@ def main():
     elif not args.plot_dir.endswith(("online", "offline")):
         # If plot_dir is explicitly provided but doesn't include the mode subdirectory,
         # append the model-specific subdirectory structure for consistency
-        if args.enable_mtp_test and args.model in {"deepseek", "DeepSeek-V3"}:
-            plot_directory_name = directory_for_paths
-        elif args.model == "DeepSeek-V3":
-            plot_directory_name = "DeepSeek-V3"
-        elif args.model == "deepseek":
-            plot_directory_name = "DeepSeek-V3-0324"
-        else:
-            plot_directory_name = variant_name
+        # Use directory_for_paths which already respects --model-name
+        plot_directory_name = directory_for_paths
         args.plot_dir = os.path.join(args.plot_dir, plot_directory_name, "online")
     if args.model_name is None:
         args.model_name = config["model_name_template"].format(
             variant_name=variant_name
         )
+    # For deepseek model, ensure model_name matches directory structure if provided
+    elif args.model in {"deepseek", "DeepSeek-V3"}:
+        # Model name is already set from command line, no need to override
+        pass
 
     # Determine expected request rates and load metric name
     if args.request_rates:
@@ -2225,7 +2255,9 @@ def main():
     print(f"Plot directory: {args.plot_dir}")
     print(f"Model name: {args.model_name}")
     print(f"Mode filter: {mode_filter if mode_filter is not None else 'all modes'}")
-    print(f"Variant filter: {variant_filter if variant_filter is not None else 'all variants'}")
+    print(
+        f"Variant filter: {variant_filter if variant_filter is not None else 'all variants'}"
+    )
     print(f"Load metric: {load_metric_name}")
     print(f"Expected {load_metric_name}s: {expected_rates}")
     print(f"Days to process: {args.days}")

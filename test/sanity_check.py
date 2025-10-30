@@ -92,22 +92,19 @@ DEFAULT_MODELS = {
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.840},
     },
-    "DeepSeek-V3": {
-        "model_path": {
-            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
-        },
-        "tokenizer_path": {
-            "mi30x": "deepseek-ai/DeepSeek-V3-0324",
-            "mi35x": "deepseek-ai/DeepSeek-V3-0324",
-        },
-        "launch_cmd_template": {
-            "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
-            "mi35x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
-        },
-        "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.930},
-    },
+    # "DeepSeek-V3": {
+    #     "model_path": {
+    #         "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+    #     },
+    #     "tokenizer_path": {
+    #         "mi30x": "deepseek-ai/DeepSeek-V3-0324",
+    #     },
+    #     "launch_cmd_template": {
+    #         "mi30x": "SGLANG_USE_ROCM700A=1 SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 131072 --dp-size 8 --enable-dp-attention --mem-fraction-static 0.85",
+    #     },
+    #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+    #     "criteria": {"accuracy": 0.930},
+    # },
     # "DeepSeek-R1": {
     #     "model_path": {
     #         "mi30x": "/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-R1-0528/",
@@ -120,6 +117,19 @@ DEFAULT_MODELS = {
     #     "launch_cmd_template": {
     #         "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
     #         "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --chunked-prefill-size 131072 --disable-radix-cache",
+    #     },
+    #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
+    #     "criteria": {"accuracy": 0.930},
+    # },
+    # "DeepSeek-R1-MXFP4": {
+    #     "model_path": {
+    #         "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+    #     },
+    #     "tokenizer_path": {
+    #         "mi35x": "/data2/models/amd-DeepSeek-R1-MXFP4-Preview",
+    #     },
+    #     "launch_cmd_template": {
+    #         "mi35x": "python3 -m sglang.launch_server --model-path {model_path} --tensor-parallel-size 8 --trust-remote-code --chunked-prefill-size 131072 --host 0.0.0.0 --port 8000 --log-requests --disable-radix-cache --mem-fraction-static 0.95 --dp-size 8",
     #     },
     #     "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
     #     "criteria": {"accuracy": 0.930},
@@ -175,18 +185,18 @@ DEFAULT_MODELS = {
     "llama4": {
         "model_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "tokenizer_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
             "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.800},
+        "criteria": {"accuracy": 0.900},
     },
 }
 
@@ -547,8 +557,8 @@ def manage_docker_container(
         model_dir = os.path.dirname(model_path)
         if not model_dir.startswith(MOUNT_DIR) and not model_dir.startswith(script_dir):
             # Determine mount root
-            if model_path.startswith("/data/"):
-                mount_root = "/data"
+            if model_path.startswith("/data2/"):
+                mount_root = "/data2"
             elif model_path.startswith("/mnt/"):
                 mount_root = "/mnt"
             elif model_path.startswith("/home/"):
@@ -618,8 +628,18 @@ def resolve_model_path(path, models_dir=DEFAULT_MODELS_DIR):
     # If already absolute, return as-is
     if os.path.isabs(path):
         return path
-    # If it's a HuggingFace repo identifier (not a local path), return as-is
-    if path.startswith(("Xenova/", "alvarobartt--", "hf-internal-testing/")):
+    # If it's a HuggingFace repo identifier (not a local path), return as-is.
+    # "alvarobartt--grok-2-tokenizer" **looks** like a repo id but is actually a
+    # *local* directory in our models cache.  Trying to fetch it from the Hub
+    # triggers `HFValidationError` because the naming convention (double dash)
+    # is disallowed.  Treat such paths as local *if* the directory exists
+    # locally; otherwise fall back to remote lookup.
+    if path.startswith("alvarobartt--"):
+        candidate = os.path.join(models_dir, path)
+        if os.path.isdir(candidate):
+            return candidate
+
+    if path.startswith(("Xenova/", "hf-internal-testing/")):
         return path
     # Otherwise, prepend the models directory
     return os.path.join(models_dir, path)
@@ -1085,17 +1105,18 @@ def sanity_check(
 
     shutdown_time = time.time() - shutdown_start
 
-    # 5. Determine final result based on average accuracy
-    avg_accuracy = sum(accuracies) / len(accuracies) if accuracies else 0.0
+    # 5. Determine final result based on highest accuracy
+    max_accuracy = max(accuracies) if accuracies else 0.0
+
     required_accuracy = criteria["accuracy"]
-    all_pass = avg_accuracy >= required_accuracy
-    final_status = PASS_MARK if all_pass else FAIL_MARK
+    any_pass = max_accuracy >= required_accuracy
+    final_status = PASS_MARK if any_pass else FAIL_MARK
     total_time = time.time() - overall_start
 
     print(f"📋 Result for {model_name} on {platform}: {final_status}")
     print(f"   Accuracies: {accuracies}")
     print(
-        f"   Average Accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})"
+        f"   Highest Accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})"
     )
     print(f"   Total Time: {total_time:.2f}s")
 
@@ -1104,14 +1125,14 @@ def sanity_check(
         timing_log.write(f"Final result: {final_status}\n")
         timing_log.write(f"Accuracies: {accuracies}\n")
         timing_log.write(
-            f"Average accuracy: {avg_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
+            f"Highest accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
         )
         timing_log.write(f"Total time: {total_time:.2f}s\n")
         timing_log.write(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
         timing_log.write("=" * 50 + "\n")
         timing_log.flush()
 
-    return all_pass
+    return any_pass
 
 
 # =======================

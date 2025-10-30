@@ -446,6 +446,7 @@ launch_server() {
         --tp 8 --quantization fp8 --trust-remote-code \
         --attention-backend ${attn_backend} ${extra_flags} \
         --mem-fraction-static 0.85 \
+        --watchdog-timeout 600 \
         > '${SERVER_LOG}' 2>&1 &"
 
   eval "$cmd"
@@ -503,7 +504,8 @@ check_server_errors_and_log() {
     echo "Server Error Check:" >> "$TIMING_LOG"
 
     # Check for RuntimeError (for DP attention mode)
-    local runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG" 2>/dev/null || echo "0")
+    local runtime_errors
+    runtime_errors=$(grep -c "RuntimeError:" "$SERVER_LOG" 2>/dev/null) || runtime_errors=0
     if [ "$runtime_errors" -gt 0 ]; then
         echo "  RuntimeError count: $runtime_errors" >> "$TIMING_LOG"
         # Log the first few RuntimeErrors for context
@@ -515,7 +517,8 @@ check_server_errors_and_log() {
     fi
 
     # Check for other critical errors
-    local critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG" 2>/dev/null || echo "0")
+    local critical_errors
+    critical_errors=$(grep -c -E "(CUDA error|OutOfMemoryError|Fatal)" "$SERVER_LOG" 2>/dev/null) || critical_errors=0
     if [ "$critical_errors" -gt 0 ]; then
         echo "  Critical error count: $critical_errors" >> "$TIMING_LOG"
     else
