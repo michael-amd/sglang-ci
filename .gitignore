@@ -13,6 +13,7 @@ test/unit-test-backend-8-gpu-CAR-amd/*
 *.png
 *.md
 !upstream_ci/**/README*.md
+!cron/README*.md
 tmp_output_srt.txt
 upstream_ci/compare_pr/comparison_results/*
 comparison_results/*
@@ -22,3 +23,7 @@ build_docker_log/*
 __pycache__/*
 logs/*
 team_alert/alert_log/*
+
+# Local crontab file with secrets (use crontab_rules_mi30x.txt or crontab_rules_mi35x.txt as templates)
+cron/crontab_rules.txt
+cron/crontab_rules.txt.backup
