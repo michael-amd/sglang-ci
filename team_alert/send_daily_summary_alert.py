@@ -202,10 +202,17 @@ class DailySummaryReporter:
                 result["status"] = "pass"
             else:
                 # Check if it's an incomplete run
-                if (
-                    "Script started at:" in content
-                    and "Total execution time:" not in content
-                ):
+                # A run is considered complete if it has ANY of these markers:
+                # - "Total execution time:" (old/ideal marker)
+                # - "End time:" + "Total duration:" (client benchmark completion)
+                # - "Server error status: PASS/FAIL" (indicates full run completed)
+                has_completion_marker = (
+                    "Total execution time:" in content
+                    or ("End time:" in content and "Total duration:" in content)
+                    or re.search(r"Server error status:\s*(PASS|FAIL)", content)
+                )
+                
+                if "Script started at:" in content and not has_completion_marker:
                     result["status"] = "fail"
                     result["error"] = "Test did not complete"
                 else:
