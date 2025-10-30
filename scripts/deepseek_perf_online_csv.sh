@@ -73,6 +73,11 @@ SERVER_MEM_FRACTION="${SERVER_MEM_FRACTION:-0.9}"
 SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
 SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
 
+# DP attention + torch compile specific configuration
+# When both are enabled, use more conservative settings to avoid OOM and compilation issues
+DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.8}"
+DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
+
 # Benchmark run configuration
 BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"
 BENCHMARK_SLEEP_BETWEEN_RUNS="${BENCHMARK_SLEEP_BETWEEN_RUNS:-2}"
@@ -607,6 +612,17 @@ start_sglang_server() {
         fi
 
         # Start server in background using DP attention command format
+        # When combining DP attention with torch compile, use smaller CUDA graph batch size
+        # to avoid cross-device tensor compilation issues during graph capture
+        local cuda_graph_bs_flag=""
+        local mem_fraction="0.8"  # Default for DP attention mode
+
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+            mem_fraction="${DP_TORCH_COMPILE_MEM_FRACTION}"
+            echo "[DEBUG] DP + torch compile mode: using mem-fraction=${mem_fraction}, cuda-graph-max-bs=${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+        fi
+
         "${server_env[@]}" python3 -m sglang.launch_server \
             --model-path "${MODEL}" \
             --tp "${TP}" \
@@ -615,7 +631,8 @@ start_sglang_server() {
             --chunked-prefill-size 131072 \
             --dp-size 8 \
             --enable-dp-attention \
-            --mem-fraction-static 0.8 \
+            --mem-fraction-static "${mem_fraction}" \
+            ${cuda_graph_bs_flag} \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
