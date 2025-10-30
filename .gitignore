@@ -12,8 +12,9 @@ test/unit-test-backend-8-gpu-CAR-amd/*
 *.html
 *.png
 *.md
+!upstream_ci/**/README*.md
 tmp_output_srt.txt
-compare_pr/comparison_results/*
+upstream_ci/compare_pr/comparison_results/*
 comparison_results/*
 build_docker_log/*
 
