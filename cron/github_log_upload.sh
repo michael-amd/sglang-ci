@@ -20,16 +20,20 @@
 #     # Sanity logs (4th arg is docker image tag/folder name)
 #     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm630-mi30x-20251005
 #
+#     # PD logs (4th arg is docker image tag/folder name)
+#     bash cron/github_log_upload.sh "" mi30x pd v0.5.4.post1-rocm700-mi30x-20251029
+#
 #     # Direct path upload (auto-detects type when 4th arg is absolute path)
 #     bash cron/github_log_upload.sh "" "" "" /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.3rc0
 #
 # Arguments:
 #   DATE          – Optional. Date in YYYYMMDD format (defaults to today). Ignored if FOLDER is provided.
 #   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
-#   LOG_TYPE      – Optional. Type of logs: 'cron' or 'sanity' (defaults to 'cron')
+#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', or 'pd' (defaults to 'cron')
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
+#   • GITHUB_REPO     – Repository identifier in 'owner/repo' format (defaults to 'ROCm/sglang-ci')
 #   • GITHUB_TOKEN    – Personal access token with `repo` scope that can push
 #   • HARDWARE_TYPE   – The machine descriptor (mi30x / mi35x …).
 #
@@ -45,12 +49,13 @@ set -euo pipefail
 # 1. Basic environment
 ###########################################################################
 
-# Repository that stores the published logs – do **not** include the token
-readonly REMOTE_REPO_URL_BASE="https://github.com/michael-amd/sglang-ci-data.git"
-
 # Resolve required env variables (most are exported in crontab header)
+readonly GITHUB_REPO="${GITHUB_REPO:-ROCm/sglang-ci}"  # Repository in owner/repo format
 readonly GITHUB_TOKEN="${GITHUB_TOKEN:-}"  # optional – clone over https if empty
 readonly SGL_CI_DIR="${SGL_BENCHMARK_CI_DIR:-$(pwd)}"  # repository root
+
+# Build repository URL from GITHUB_REPO
+readonly REMOTE_REPO_URL_BASE="https://github.com/${GITHUB_REPO}.git"
 
 # Parse arguments
 readonly ARG_DATE="${1:-}"
@@ -76,6 +81,11 @@ if [[ -n "$ARG_FOLDER" ]]; then
       # Extract hardware from path: .../sanity_check_log/<hw>/<docker_name>
       HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'sanity_check_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
       DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/pd/pd_log/"* ]]; then
+      readonly LOG_TYPE="pd"
+      # Extract hardware from path: .../pd/pd_log/<hw>/<docker_name>
+      HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'pd/pd_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
+      DATE_FOLDER=$(basename "$SRC_LOG_DIR")
     else
       readonly LOG_TYPE="$ARG_LOG_TYPE"
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
@@ -89,6 +99,8 @@ if [[ -n "$ARG_FOLDER" ]]; then
 
     if [[ "$LOG_TYPE" == "sanity" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
+    elif [[ "$LOG_TYPE" == "pd" ]]; then
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     else
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     fi
@@ -102,6 +114,10 @@ else
   if [[ "$LOG_TYPE" == "sanity" ]]; then
     # For sanity logs, DATE is actually the docker image tag
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${DATE}"
+    DATE_FOLDER="$DATE"
+  elif [[ "$LOG_TYPE" == "pd" ]]; then
+    # For PD logs, DATE is actually the docker image tag
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${DATE}"
     DATE_FOLDER="$DATE"
   else
     # For cron logs, DATE is YYYYMMDD format
@@ -127,10 +143,10 @@ readonly WORK_CLONE_DIR="/mnt/raid/michael/sglang-ci-data"
 ###########################################################################
 
 if [[ ! -d "$WORK_CLONE_DIR/.git" ]]; then
-  echo "[github_log_upload] Cloning data repository…"
+  echo "[github_log_upload] Cloning data repository (${GITHUB_REPO})…"
   # When a token is available inject it into the clone URL so pushes succeed.
   if [[ -n "$GITHUB_TOKEN" ]]; then
-    git clone "https://${GITHUB_TOKEN}@github.com/michael-amd/sglang-ci-data.git" "$WORK_CLONE_DIR"
+    git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "$WORK_CLONE_DIR"
   else
     git clone "$REMOTE_REPO_URL_BASE" "$WORK_CLONE_DIR"
   fi
@@ -140,9 +156,9 @@ fi
 
 cd "$WORK_CLONE_DIR"
 
-# Always work against the main branch
-git fetch origin main
-git checkout -q main
+# Always work against the log branch
+git fetch origin log
+git checkout -q log
 
 # Rebase to avoid merge commits when multiple machines push concurrently
 git pull --rebase --quiet || true
@@ -154,6 +170,8 @@ git pull --rebase --quiet || true
 # Determine destination path based on log type
 if [[ "$LOG_TYPE" == "sanity" ]]; then
   readonly DEST_PATH="test/sanity_check_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "pd" ]]; then
+  readonly DEST_PATH="test/pd/pd_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 else
   readonly DEST_PATH="cron_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 fi
@@ -186,19 +204,21 @@ fi
 # Generate commit message based on log type
 if [[ "$LOG_TYPE" == "sanity" ]]; then
   COMMIT_MSG="Backup sanity logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "pd" ]]; then
+  COMMIT_MSG="Backup PD test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 else
   COMMIT_MSG="Backup cron logs for ${HARDWARE_TYPE} – ${DATE_FOLDER}"
 fi
 
 git -c user.name="ci-bot" -c user.email="ci-bot@example.com" commit -m "$COMMIT_MSG" --quiet
 
-echo "[github_log_upload] Pushing commit to remote…"
+echo "[github_log_upload] Pushing commit to remote (${GITHUB_REPO})…"
 
 if [[ -n "$GITHUB_TOKEN" ]]; then
   # Use token-authenticated remote for push only (clone may have been unauthenticated)
-  git push "https://${GITHUB_TOKEN}@github.com/michael-amd/sglang-ci-data.git" main --quiet
+  git push "https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" log --quiet
 else
-  git push origin main --quiet
+  git push origin log --quiet
 fi
 
 echo "[github_log_upload] ✅  Logs uploaded successfully: $DEST_PATH"

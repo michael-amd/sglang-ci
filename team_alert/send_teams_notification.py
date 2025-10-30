@@ -19,8 +19,8 @@ USAGE:
     python send_teams_notification.py --model grok2 --mode online --github-upload --github-repo "user/repo"
     python send_teams_notification.py --model grok2 --mode online --benchmark-date 20250922
     python send_teams_notification.py --test-mode --webhook-url "https://teams.webhook.url"
-    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi30x-20251001" --webhook-url "https://teams.webhook.url"
-    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm630-mi35x-20251002" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm700-mi30x-20251011" --webhook-url "https://teams.webhook.url"
+    python send_teams_notification.py --mode sanity --docker-image "v0.5.3rc0-rocm700-mi35x-20251011" --webhook-url "https://teams.webhook.url"
 
 ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
@@ -53,7 +53,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 import requests
-
 
 MODEL_NAME_VARIANTS = {
     "grok": ["GROK1"],
@@ -397,6 +396,101 @@ class BenchmarkAnalyzer:
         """Legacy function - kept for backward compatibility"""
         return self._extract_server_errors_from_timing_log(log_file)
 
+    def check_critical_errors(
+        self, model: str, mode: str, date_str: str
+    ) -> Dict[str, any]:
+        """
+        Check for critical errors that prevent benchmark from running
+
+        Args:
+            model: Model name (grok, grok2, deepseek)
+            mode: Benchmark mode (online, offline)
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Dictionary with error status and details
+        """
+        result = {
+            "status": "pass",  # pass, fail
+            "errors": [],
+            "log_file": None,
+            "error_type": None,  # import_error, server_crash, incomplete_run, etc.
+        }
+
+        timing_log_file = self._find_timing_summary_log(model, mode, date_str)
+        if not timing_log_file:
+            return result
+
+        result["log_file"] = timing_log_file
+
+        try:
+            with open(timing_log_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Also check sglang_server.log in the same directory for server startup errors
+            log_dir = os.path.dirname(timing_log_file)
+            server_log_file = os.path.join(log_dir, "sglang_server.log")
+            server_log_content = ""
+            if os.path.exists(server_log_file):
+                try:
+                    with open(server_log_file, "r", encoding="utf-8", errors="ignore") as f:
+                        server_log_content = f.read()
+                except Exception:
+                    pass
+
+            # Check for ImportError or ModuleNotFoundError in both timing log and server log
+            combined_content = content + "\n" + server_log_content
+            if re.search(r"ImportError:|ModuleNotFoundError:", combined_content):
+                result["status"] = "fail"
+                result["error_type"] = "import_error"
+
+                # Extract the specific import error (prefer server log as it has full traceback)
+                import_match = re.search(
+                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", server_log_content or content
+                )
+                if import_match:
+                    error_msg = (
+                        f"{import_match.group(1)}: {import_match.group(2).strip()}"
+                    )
+                    result["errors"].append(error_msg)
+                else:
+                    result["errors"].append("ImportError detected in benchmark logs")
+
+            # Check for server startup failures
+            elif re.search(r"Server startup:\s*FAILED", content, re.IGNORECASE):
+                result["status"] = "fail"
+                result["error_type"] = "server_startup_failed"
+                result["errors"].append("Server startup failed")
+
+            # Check for incomplete runs (has start time but no end time)
+            elif re.search(r"Script started at:", content) and not re.search(
+                r"Script ended at:", content
+            ):
+                # Only flag as error if it's been more than a few hours
+                # (incomplete logs might be from currently running benchmarks)
+                result["status"] = "fail"
+                result["error_type"] = "incomplete_run"
+                result["errors"].append(
+                    "Benchmark run incomplete (no end time recorded)"
+                )
+
+            # Check for other critical errors
+            elif re.search(
+                r"CRITICAL|FATAL|Traceback \(most recent call last\)", content
+            ):
+                result["status"] = "fail"
+                result["error_type"] = "critical_error"
+                result["errors"].append("Critical error detected in benchmark logs")
+
+        except (FileNotFoundError, IOError) as e:
+            print(f"   Warning: Could not read timing log {timing_log_file}: {e}")
+        except Exception as e:
+            print(
+                f"   Warning: Error checking for critical errors in {timing_log_file}: {e}"
+            )
+
+        return result
+
     def extract_additional_info(
         self, model: str, mode: str, date_str: str
     ) -> Dict[str, any]:
@@ -590,7 +684,9 @@ class BenchmarkAnalyzer:
 
                     lower = stripped.lower()
                     if lower.startswith("output directory:"):
-                        info["mtp_output_dir"] = stripped.split(":", 1)[1].strip() or None
+                        info["mtp_output_dir"] = (
+                            stripped.split(":", 1)[1].strip() or None
+                        )
                     elif lower.startswith("csv:"):
                         value = stripped.split(":", 1)[1].strip()
                         if not value:
@@ -883,9 +979,14 @@ def find_sanity_check_log(
         print(f"❌ Error: Log directory not found: {log_dir}")
         return None
 
-    # Find all timing_summary logs for this date
+    # Find all timing_summary logs (try matching date first, then any log in directory)
     pattern = os.path.join(log_dir, f"timing_summary_{image_date}_*.log")
     log_files = glob.glob(pattern)
+
+    # If no logs found matching the image date, try finding any timing_summary logs
+    if not log_files:
+        pattern = os.path.join(log_dir, "timing_summary_*.log")
+        log_files = glob.glob(pattern)
 
     if not log_files:
         print(f"❌ Error: No timing summary logs found in {log_dir}")
@@ -912,6 +1013,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         "docker_image": None,
         "platform": None,
         "models": [],
+        "total_models": 0,
         "trials": None,
         "total_time": None,
         "start_time": None,
@@ -919,6 +1021,8 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         "model_results": {},  # {model_name: {"status": "pass/fail", "accuracies": [], "time": "...", "average_accuracy": X.XX}}
         "passed_count": 0,
         "total_count": 0,
+        "tested_count": 0,
+        "skipped_count": 0,
     }
 
     try:
@@ -940,6 +1044,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         if models_match:
             models_str = models_match.group(1).strip()
             parsed_data["models"] = [m.strip() for m in models_str.split(",")]
+            parsed_data["total_models"] = len(parsed_data["models"])
 
         # Extract trials per model
         trials_match = re.search(r"Trials per model:\s*(\d+)", content)
@@ -1037,10 +1142,26 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
             parsed_data["model_results"][model_name] = result_data
 
         # Extract overall summary - models passed count
+        tested_match = re.search(r"Models tested:\s*(\d+)/(\d+)", content)
+        if tested_match:
+            parsed_data["tested_count"] = int(tested_match.group(1))
+            parsed_data["total_models"] = max(
+                parsed_data.get("total_models", 0), int(tested_match.group(2))
+            )
+
+        skipped_match = re.search(r"Models skipped:\s*(\d+)/(\d+)", content)
+        if skipped_match:
+            parsed_data["skipped_count"] = int(skipped_match.group(1))
+            parsed_data["total_models"] = max(
+                parsed_data.get("total_models", 0), int(skipped_match.group(2))
+            )
+
         passed_match = re.search(r"Models passed:\s*(\d+)/(\d+)", content)
         if passed_match:
             parsed_data["passed_count"] = int(passed_match.group(1))
             parsed_data["total_count"] = int(passed_match.group(2))
+            if parsed_data["tested_count"] == 0:
+                parsed_data["tested_count"] = parsed_data["total_count"]
             # Determine overall status
             parsed_data["status"] = (
                 "pass"
@@ -1051,6 +1172,7 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
         # If we didn't find the summary, count from model results
         if parsed_data["total_count"] == 0 and parsed_data["model_results"]:
             parsed_data["total_count"] = len(parsed_data["model_results"])
+            parsed_data["tested_count"] = parsed_data["total_count"]
             parsed_data["passed_count"] = sum(
                 1
                 for result in parsed_data["model_results"].values()
@@ -1061,6 +1183,22 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                 if parsed_data["passed_count"] == parsed_data["total_count"]
                 else "fail"
             )
+
+        # Derive skipped count when not explicitly reported
+        if parsed_data["skipped_count"] == 0 and parsed_data["models"]:
+            parsed_data["skipped_count"] = max(
+                len(parsed_data["models"]) - len(parsed_data["model_results"]), 0
+            )
+
+        # Ensure tested count excludes skipped models when total counts are known
+        if parsed_data["tested_count"] == 0 and parsed_data["total_models"]:
+            parsed_data["tested_count"] = max(
+                parsed_data["total_models"] - parsed_data["skipped_count"], 0
+            )
+
+        # Keep total_count aligned with tested_count so pass/fail ratios ignore skips
+        if parsed_data["tested_count"]:
+            parsed_data["total_count"] = parsed_data["tested_count"]
 
     except FileNotFoundError:
         print(f"❌ Error: Log file not found: {log_file_path}")
@@ -1093,6 +1231,7 @@ class TeamsNotifier:
         enable_dp_test: bool = False,
         enable_mtp_test: bool = False,
         benchmark_date: Optional[str] = None,
+        hardware: str = "mi30x",
     ):
         """
         Initialize Teams notifier
@@ -1111,6 +1250,7 @@ class TeamsNotifier:
             enable_dp_test: If True, highlight DeepSeek DP throughput test results
             enable_mtp_test: If True, include DeepSeek MTP throughput artifacts in notifications
             benchmark_date: Date to look for benchmark logs (YYYYMMDD format). If not provided, uses current date.
+            hardware: Hardware type (mi30x or mi35x) for GitHub upload path structure
         """
         self.webhook_url = webhook_url
         self.plot_server_base_url = (
@@ -1119,8 +1259,11 @@ class TeamsNotifier:
         self.skip_analysis = skip_analysis
         self.analysis_days = analysis_days
         self.github_upload = github_upload
-        self.github_repo = github_repo
+        self.github_repo = github_repo or os.environ.get(
+            "GITHUB_REPO", "ROCm/sglang-ci"
+        )
         self.github_token = github_token
+        self.hardware = hardware
         self.check_dp_attention = check_dp_attention
         self.enable_torch_compile = enable_torch_compile
         self.enable_dp_test = enable_dp_test
@@ -1210,6 +1353,33 @@ class TeamsNotifier:
             else:
                 alert["details"].append(f"GSM8K accuracy: {gsm8k_accuracy:.1%} ✅")
 
+        # Check for critical errors (ImportError, server crashes, incomplete runs, etc.)
+        critical_error_results = self.analyzer.check_critical_errors(
+            model, mode, current_date
+        )
+
+        if critical_error_results["status"] == "fail":
+            alert["status"] = "error"
+            alert["critical_errors"] = critical_error_results["errors"]
+            alert["error_type"] = critical_error_results["error_type"]
+
+            # Update title based on error type
+            error_type = critical_error_results["error_type"]
+            if error_type == "import_error":
+                alert["title"] = "❌ Benchmark Failed: Import Error"
+            elif error_type == "server_startup_failed":
+                alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
+            elif error_type == "incomplete_run":
+                alert["title"] = "❌ Benchmark Failed: Incomplete Run"
+            elif error_type == "critical_error":
+                alert["title"] = "❌ Benchmark Failed: Critical Error"
+            else:
+                alert["title"] = "❌ Benchmark Failed"
+
+            # Add error details
+            for error in critical_error_results["errors"]:
+                alert["details"].append(error)
+
         # Extract additional info for online mode
         if mode == "online":
             additional_info = self.analyzer.extract_additional_info(
@@ -1236,9 +1406,7 @@ class TeamsNotifier:
                     additional_info.get("server_startup_seconds")
                 )
                 if server_display:
-                    alert["details"].append(
-                        f"Server startup: {server_display}"
-                    )
+                    alert["details"].append(f"Server startup: {server_display}")
 
                 gsm_display = _format_duration(
                     additional_info.get("gsm8k_duration_seconds")
@@ -1251,9 +1419,7 @@ class TeamsNotifier:
                         additional_info.get("serving_total_seconds")
                     )
                     if serving_display:
-                        alert["details"].append(
-                            f"Serving runtime: {serving_display}"
-                        )
+                        alert["details"].append(f"Serving runtime: {serving_display}")
 
                     # Serving breakdown details are verbose; omit them from the summary.
 
@@ -1320,9 +1486,14 @@ class TeamsNotifier:
             # If GSM8K benchmark completed successfully, torch compile test passed
             if alert.get("gsm8k_accuracy") is not None:
                 alert["details"].append("Torch compile test: No errors detected ✅")
+            # If critical errors were already detected and reported, skip adding unclear status
+            elif alert.get("critical_errors"):
+                # Critical error details are already shown, don't add "status unclear"
+                pass
             else:
-                # If no GSM8K results found, status is unclear
-                alert["details"].append("Torch compile test: Status unclear ⚠️")
+                # If no GSM8K results and no critical errors detected, try to get more info
+                # This should rarely happen since critical error checking runs before this
+                pass
 
         # Add runtime information if available
         if mode == "online" and alert.get("additional_info"):
@@ -1349,9 +1520,7 @@ class TeamsNotifier:
                     alert["details"].append("MTP CSV artifacts not available ⚠️")
 
                 if additional_info.get("mtp_plot"):
-                    alert["details"].append(
-                        "MTP latency/throughput plot generated ✅"
-                    )
+                    alert["details"].append("MTP latency/throughput plot generated ✅")
                 elif not plot_status or "not generated" not in plot_status.lower():
                     if plot_status:
                         alert["details"].append(f"MTP plot: {plot_status}")
@@ -1544,11 +1713,13 @@ class TeamsNotifier:
 
         # Add summary section
         passed_count = parsed_data.get("passed_count", 0)
-        total_count = parsed_data.get("total_count", 0)
+        tested_count = parsed_data.get("tested_count")
+        if tested_count is None or tested_count == 0:
+            tested_count = parsed_data.get("total_count", 0)
         body_elements.append(
             {
                 "type": "TextBlock",
-                "text": f"**Models: {passed_count}/{total_count} passed**",
+                "text": f"**Models: {passed_count}/{tested_count} passed**",
                 "weight": "Bolder",
                 "size": "Medium",
                 "spacing": "Medium",
@@ -1620,17 +1791,37 @@ class TeamsNotifier:
                 }
             )
 
+            # Map short model names to full names for display
+            model_display_names = {
+                "llama4": "Llama-4-Maverick-17B-128E-Instruct-FP8",
+                "QWEN-30B": "Qwen3-30B-A3B-Thinking-2507",
+            }
+            # Hardware-specific model mappings
+            hardware_type = None
+            docker_image = parsed_data.get("docker_image", "")
+            if docker_image:
+                hw_match = re.search(r"mi[0-9]+x", docker_image)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+
+            if hardware_type == "mi30x":
+                model_display_names["GPT-OSS-120B"] = "gpt-oss-120b-bf16"
+                model_display_names["GPT-OSS-20B"] = "gpt-oss-20b-bf16"
+
             for model_name, result in model_results.items():
                 model_status = result.get("status", "unknown")
                 model_icon = "✅" if model_status == "pass" else "❌"
                 model_time = result.get("time", "N/A")
                 avg_accuracy = result.get("average_accuracy")
 
+                # Use full model name for display if available
+                display_name = model_display_names.get(model_name, model_name)
+
                 # Model name and status
                 body_elements.append(
                     {
                         "type": "TextBlock",
-                        "text": f"{model_icon} **{model_name}** - {model_time}",
+                        "text": f"{model_icon} **{display_name}** - {model_time}",
                         "wrap": True,
                         "size": "Small",
                         "spacing": "Small",
@@ -1666,22 +1857,99 @@ class TeamsNotifier:
                         }
                     )
 
-        # We intentionally omit action buttons (GitHub/Docker links) to keep the
-        # card minimal per Ops request.
+        # Add action buttons
+        actions = []
+
+        # Add sanity log link
+        # Priority 1: Extract from hardware info (docker image)
+        hardware_type = None
+        docker_image = parsed_data.get("docker_image", "")
+        if docker_image:
+            hw_match = re.search(r"mi[0-9]+x", docker_image)
+            if hw_match:
+                hardware_type = hw_match.group(0)
+
+        # Priority 2: Extract from hostname
+        if not hardware_type:
+            try:
+                hostname_str = socket.gethostname()
+                # Try full pattern first (mi30x, mi35x)
+                hw_match = re.search(r"mi[0-9]+x", hostname_str)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+                else:
+                    # Try abbreviated patterns and convert to mi30x, mi35x
+                    # Pattern 1: 300x, 350x, 355x (with 'x')
+                    abbrev_match = re.search(r"([0-9]+)x", hostname_str)
+                    if abbrev_match:
+                        abbrev = abbrev_match.group(1)
+                        # Map 300x -> mi30x, 350x/355x -> mi35x
+                        if abbrev in ["300", "30"]:
+                            hardware_type = "mi30x"
+                        elif abbrev in ["350", "355", "35"]:
+                            hardware_type = "mi35x"
+                    # Pattern 2: 300, 355 (without 'x')
+                    elif not hardware_type:
+                        abbrev_match = re.search(
+                            r"\b(300|355|350|30|35)\b", hostname_str
+                        )
+                        if abbrev_match:
+                            abbrev = abbrev_match.group(1)
+                            # Map 300 -> mi30x, 355/350 -> mi35x
+                            if abbrev in ["300", "30"]:
+                                hardware_type = "mi30x"
+                            elif abbrev in ["350", "355", "35"]:
+                                hardware_type = "mi35x"
+            except Exception:
+                pass
+
+        # For sanity checks, link to the hardware directory only if GitHub repo is configured
+        if hardware_type and self.github_repo:
+            sanity_log_url = f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{hardware_type}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Sanity Logs",
+                    "url": sanity_log_url,
+                }
+            )
+
+            # Add cron log link (sanity checks are triggered from cron jobs)
+            # Extract date from docker image tag (last 8 digits: YYYYMMDD)
+            date_match = re.search(r"(\d{8})$", docker_image)
+            if date_match:
+                log_date = date_match.group(1)
+            else:
+                # Fallback to current date if we can't extract from docker image
+                log_date = datetime.now().strftime("%Y%m%d")
+
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Cron Logs",
+                    "url": cron_log_url,
+                }
+            )
 
         # Create the adaptive card
+        card_content = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4",
+            "body": body_elements,
+        }
+
+        # Only add actions if the list is not empty
+        if actions:
+            card_content["actions"] = actions
+
         card = {
             "type": "message",
             "attachments": [
                 {
                     "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "type": "AdaptiveCard",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "version": "1.4",
-                        "body": body_elements,
-                        # No per-card actions
-                    },
+                    "content": card_content,
                 }
             ],
         }
@@ -1713,16 +1981,28 @@ class TeamsNotifier:
 
             base64_content = base64.b64encode(image_data).decode("utf-8")
 
-            # Create file path matching plots_server structure: /model/mode/filename.png
+            # Create file path: plot/hardware/model/mode/filename.png
             filename = os.path.basename(image_path)
 
-            # Map model names to match directory structure
-            model_variants = self.analyzer.get_model_variants(model)
-            model_dir = model_variants[0]
+            # Extract model directory name from the actual image path for accurate naming
+            # e.g., /plots_server/DeepSeek-V3-0324/online/file.png -> DeepSeek-V3-0324
+            path_parts = image_path.split(os.sep)
+            if "plots_server" in path_parts:
+                idx = path_parts.index("plots_server")
+                if len(path_parts) > idx + 2:
+                    model_dir = path_parts[idx + 1]
+                else:
+                    # Fallback to model variants
+                    model_variants = self.analyzer.get_model_variants(model)
+                    model_dir = model_variants[0]
+            else:
+                # Fallback to model variants
+                model_variants = self.analyzer.get_model_variants(model)
+                model_dir = model_variants[0]
 
-            repo_path = f"{model_dir}/{mode}/{filename}"
+            repo_path = f"plot/{self.hardware}/{model_dir}/{mode}/{filename}"
 
-            # GitHub API endpoint for plots branch
+            # GitHub API endpoint for log branch
             api_url = (
                 f"https://api.github.com/repos/{self.github_repo}/contents/{repo_path}"
             )
@@ -1732,11 +2012,13 @@ class TeamsNotifier:
                 "Accept": "application/vnd.github.v3+json",
             }
 
-            # First, ensure the plots branch exists
-            self._ensure_plots_branch_exists(headers)
+            # Ensure log branch exists before uploading
+            if not self._ensure_log_branch_exists(headers):
+                print(f"   ❌ Failed to ensure log branch exists")
+                return None
 
-            # Check if file already exists on plots branch
-            params = {"ref": "plots"}
+            # Check if file already exists on log branch
+            params = {"ref": "log"}
             existing_response = requests.get(api_url, headers=headers, params=params)
             sha = None
             if existing_response.status_code == 200:
@@ -1745,12 +2027,12 @@ class TeamsNotifier:
             else:
                 print(f"   📄 Creating new file: {repo_path}")
 
-            # Upload or update file on plots branch
+            # Upload or update file on log branch
             current_date = datetime.now().strftime("%Y-%m-%d")
             payload = {
                 "message": f"Add {model} {mode} plot for {current_date}",
                 "content": base64_content,
-                "branch": "plots",
+                "branch": "log",
             }
 
             if sha:
@@ -1759,9 +2041,11 @@ class TeamsNotifier:
             response = requests.put(api_url, json=payload, headers=headers)
 
             if response.status_code in [200, 201]:
-                # Return public URL from plots branch
-                public_url = f"https://raw.githubusercontent.com/{self.github_repo}/plots/{repo_path}"
-                print(f"   ✅ Uploaded to GitHub (plots branch): {filename}")
+                # Return public URL from log branch (using blob URL format)
+                public_url = (
+                    f"https://github.com/{self.github_repo}/blob/log/{repo_path}"
+                )
+                print(f"   ✅ Uploaded to GitHub (log branch): {filename}")
                 print(f"   🔗 GitHub URL: {public_url}")
                 return public_url
             else:
@@ -1773,20 +2057,18 @@ class TeamsNotifier:
             print(f"   ❌ GitHub upload error: {e}")
             return None
 
-    def _ensure_plots_branch_exists(self, headers: dict) -> bool:
-        """Ensure the plots branch exists in the GitHub repository"""
+    def _ensure_log_branch_exists(self, headers: dict) -> bool:
+        """Ensure the log branch exists in the GitHub repository"""
         try:
-            # Check if plots branch exists
-            branch_url = (
-                f"https://api.github.com/repos/{self.github_repo}/branches/plots"
-            )
+            # Check if log branch exists
+            branch_url = f"https://api.github.com/repos/{self.github_repo}/branches/log"
             response = requests.get(branch_url, headers=headers)
 
             if response.status_code == 200:
-                print(f"   📋 Plots branch already exists")
+                print(f"   📋 Log branch already exists")
                 return True
             elif response.status_code == 404:
-                print(f"   📋 Creating plots branch...")
+                print(f"   📋 Creating log branch...")
 
                 # Get main branch SHA
                 main_branch_url = f"https://api.github.com/repos/{self.github_repo}/git/refs/heads/main"
@@ -1795,22 +2077,22 @@ class TeamsNotifier:
                 if main_response.status_code == 200:
                     main_sha = main_response.json()["object"]["sha"]
 
-                    # Create plots branch from main
+                    # Create log branch from main
                     create_branch_url = (
                         f"https://api.github.com/repos/{self.github_repo}/git/refs"
                     )
-                    create_payload = {"ref": "refs/heads/plots", "sha": main_sha}
+                    create_payload = {"ref": "refs/heads/log", "sha": main_sha}
 
                     create_response = requests.post(
                         create_branch_url, json=create_payload, headers=headers
                     )
 
                     if create_response.status_code == 201:
-                        print(f"   ✅ Created plots branch successfully")
+                        print(f"   ✅ Created log branch successfully")
                         return True
                     else:
                         print(
-                            f"   ❌ Failed to create plots branch: {create_response.status_code}"
+                            f"   ❌ Failed to create log branch: {create_response.status_code}"
                         )
                         return False
                 else:
@@ -1861,6 +2143,7 @@ class TeamsNotifier:
                 variant_dir = os.path.join(plot_dir, model_name, mode)
                 search_patterns = [
                     f"{variant_dir}/{search_date}_*_{mode}.png",
+                    f"{variant_dir}/{search_date}_*_{mode}_standard.png",
                     f"{variant_dir}/{search_date}_*_{mode}_split.png",
                 ]
 
@@ -1969,6 +2252,9 @@ class TeamsNotifier:
         for plot in plots:
             if plot.get("category") == "mtp":
                 continue  # Skip dedicated MTP plots to keep the card concise
+            # Skip plots without successful upload when GitHub upload mode is enabled
+            if self.github_upload and not plot.get("public_url"):
+                continue  # Don't show plot info if GitHub upload failed
             standard_plots.append(plot)
 
         # Create card body elements starting with run name
@@ -2149,9 +2435,7 @@ class TeamsNotifier:
                                 "spacing": "None",
                             }
                         )
-                        existing_detail_keys.add(
-                            _normalize_detail_text(plain_server)
-                        )
+                        existing_detail_keys.add(_normalize_detail_text(plain_server))
 
                 gsm_display = _format_duration(
                     additional_info.get("gsm8k_duration_seconds")
@@ -2168,9 +2452,7 @@ class TeamsNotifier:
                                 "spacing": "None",
                             }
                         )
-                        existing_detail_keys.add(
-                            _normalize_detail_text(plain_gsm)
-                        )
+                        existing_detail_keys.add(_normalize_detail_text(plain_gsm))
 
                 if self.enable_dp_test or self.enable_mtp_test:
                     serving_display = _format_duration(
@@ -2199,18 +2481,20 @@ class TeamsNotifier:
 
             # Runtime is already shown in the status details section, so don't duplicate it here
 
-        # Check if this is an MI35X machine (plots are not able to access on MI35X on conductor)
-        is_mi35x_machine = False
-        additional_info = summary_alert.get("additional_info", {})
-        docker_image = additional_info.get("docker_image", "")
-        if "mi35x" in docker_image.lower():
-            is_mi35x_machine = True
+        # Add Plot section only if:
+        # 1. Not in DP attention mode or torch compile mode
+        # 2. No critical errors detected (benchmark actually ran)
+        has_critical_error = summary_alert.get("error_type") in [
+            "import_error",
+            "server_startup_failed",
+            "incomplete_run",
+            "critical_error",
+        ]
 
-        # Add Plot section only if not in DP attention mode, torch compile mode, or MI35X machine
         if (
             not self.check_dp_attention
             and not self.enable_torch_compile
-            and not is_mi35x_machine
+            and not has_critical_error
         ):
             # Add Plot section title
             body_elements.append(
@@ -2246,110 +2530,142 @@ class TeamsNotifier:
                         }
                     )
 
-                # Handle different hosting methods
-                latest_plot = standard_plots[-1]
-                if latest_plot.get("public_url") and latest_plot.get("hosting_service"):
-                    # GitHub or external hosting - show actual image with maximum size
-                    service = latest_plot["hosting_service"]
-
-                    body_elements.append(
-                        {
-                            "type": "Image",
-                            "url": latest_plot["public_url"],
-                            "altText": latest_plot["file_name"],
-                            "size": "Stretch",  # Use maximum size for all images
-                            "spacing": "Small",
-                            "width": "100%",  # Force full width display
-                        }
-                    )
-
-                    # Only show direct link for GitHub uploads, not external uploads
-                    if service != "External":
+                    # Handle different hosting methods for each plot
+                    if plot.get("public_url") and plot.get("hosting_service"):
+                        # GitHub hosting - show as clickable link
                         body_elements.append(
                             {
                                 "type": "TextBlock",
-                                "text": f"🔗 [Direct Link]({latest_plot['public_url']}) (hosted on {service})",
+                                "text": f"🔗 [View Plot]({plot['public_url']})",
                                 "wrap": True,
-                                "size": "Small",
-                                "spacing": "None",
-                                "isSubtle": True,
+                                "size": "Medium",
+                                "spacing": "Small",
                             }
                         )
-                elif latest_plot.get("plot_url"):
-                    # HTTP server mode - show link
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"🔗 [View Plot]({latest_plot['plot_url']})",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                        }
-                    )
+                    elif plot.get("plot_url"):
+                        # HTTP server mode - show link
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"🔗 [View Plot]({plot['plot_url']})",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "Small",
+                            }
+                        )
 
-                else:
-                    # Fallback - show file path
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"📁 File: `{latest_plot['file_path']}`",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                            "fontType": "Monospace",
-                        }
-                    )
+                    else:
+                        # Fallback - show file path
+                        body_elements.append(
+                            {
+                                "type": "TextBlock",
+                                "text": f"📁 File: `{plot['file_path']}`",
+                                "wrap": True,
+                                "size": "Small",
+                                "spacing": "Small",
+                                "fontType": "Monospace",
+                            }
+                        )
 
         # Create actions
         actions = []
+
+        # Add cron log link
+        # Priority 1: Extract from hardware info (docker image)
+        hardware_type = None
+        if summary_alert.get("additional_info"):
+            docker_image = summary_alert["additional_info"].get("docker_image", "")
+            if docker_image:
+                hw_match = re.search(r"mi[0-9]+x", docker_image)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+
+        # Priority 2: Extract from hostname
+        if not hardware_type:
+            try:
+                hostname_str = socket.gethostname()
+                # Try full pattern first (mi30x, mi35x)
+                hw_match = re.search(r"mi[0-9]+x", hostname_str)
+                if hw_match:
+                    hardware_type = hw_match.group(0)
+                else:
+                    # Try abbreviated patterns and convert to mi30x, mi35x
+                    # Pattern 1: 300x, 350x, 355x (with 'x')
+                    abbrev_match = re.search(r"([0-9]+)x", hostname_str)
+                    if abbrev_match:
+                        abbrev = abbrev_match.group(1)
+                        # Map 300x -> mi30x, 350x/355x -> mi35x
+                        if abbrev in ["300", "30"]:
+                            hardware_type = "mi30x"
+                        elif abbrev in ["350", "355", "35"]:
+                            hardware_type = "mi35x"
+                    # Pattern 2: 300, 355 (without 'x')
+                    elif not hardware_type:
+                        abbrev_match = re.search(
+                            r"\b(300|355|350|30|35)\b", hostname_str
+                        )
+                        if abbrev_match:
+                            abbrev = abbrev_match.group(1)
+                            # Map 300 -> mi30x, 355/350 -> mi35x
+                            if abbrev in ["300", "30"]:
+                                hardware_type = "mi30x"
+                            elif abbrev in ["350", "355", "35"]:
+                                hardware_type = "mi35x"
+            except Exception:
+                pass
+
+        # Determine date for cron log link
+        if self.analyzer.benchmark_date:
+            log_date = self.analyzer.benchmark_date
+        else:
+            log_date = datetime.now().strftime("%Y%m%d")
+
+        # Add cron log link only if GitHub repo is configured (for log hosting)
+        # This assumes logs are being uploaded to GitHub log branch
+        if hardware_type and self.github_repo:
+            cron_log_url = f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware_type}/{log_date}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📋 Cron Logs",
+                    "url": cron_log_url,
+                }
+            )
+
         if self.plot_server_base_url:
             # Add HTTP server links
             pass
 
-        # Only add plot-related actions if not in DP attention mode, torch compile mode, or MI35X machine
+        # Only add plot-related actions if:
+        # 1. Not in DP attention mode or torch compile mode
+        # 2. No critical errors detected
         if (
             not self.check_dp_attention
             and not self.enable_torch_compile
-            and not is_mi35x_machine
+            and not has_critical_error
         ):
             if standard_plots:
-                # Add action to view all plots (link to the model's directory)
-                model_variants = self.analyzer.get_model_variants(model)
-                primary_model_name = model_variants[0]
-                all_plots_url = (
-                    f"{self.plot_server_base_url}/{primary_model_name}/{mode}/"
-                )
-
-                actions.append(
-                    {
-                        "type": "Action.OpenUrl",
-                        "title": f"📁 Browse All",
-                        "url": all_plots_url,
-                    }
-                )
-
-            # Add dashboard link
-            actions.append(
-                {
-                    "type": "Action.OpenUrl",
-                    "title": "🌐 Dashboard",
-                    "url": self.plot_server_base_url,
-                }
-            )
+                # Browse All and Dashboard links removed per user request
+                pass
 
         # Create the adaptive card
+        card_content = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4",
+            "body": body_elements,
+        }
+
+        # Only add actions if the list is not empty
+        if actions:
+            card_content["actions"] = actions
+
         card = {
             "type": "message",
             "attachments": [
                 {
                     "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "type": "AdaptiveCard",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "version": "1.4",
-                        "body": body_elements,
-                        "actions": actions,
-                    },
+                    "content": card_content,
                 }
             ],
         }
@@ -2382,6 +2698,15 @@ class TeamsNotifier:
                     f"🔍 Sending adaptive card with {image_count} image(s) hosted on GitHub"
                 )
                 print(f"📊 Total payload size: {payload_size_mb:.2f}MB")
+                # Debug: Print image URLs being sent
+                for plot in plots:
+                    if plot.get("public_url"):
+                        print(f"   📷 Image URL: {plot['public_url']}")
+                # Save card JSON for debugging
+                debug_file = "/tmp/teams_card_debug.json"
+                with open(debug_file, "w") as f:
+                    json.dump(card, f, indent=2)
+                print(f"   💾 Debug: Card JSON saved to {debug_file}")
             else:
                 print("🔍 Sending adaptive card with plot links")
                 print(f"📊 Payload size: {payload_size_mb:.2f}MB")
@@ -2616,6 +2941,14 @@ def main():
     )
 
     parser.add_argument(
+        "--hardware",
+        type=str,
+        choices=["mi30x", "mi35x"],
+        default="mi30x",
+        help="Hardware type (mi30x or mi35x) for GitHub upload path structure",
+    )
+
+    parser.add_argument(
         "--docker-image",
         type=str,
         help="Docker image tag for sanity check mode (e.g., 'v0.5.3rc0-rocm630-mi30x-20251001')",
@@ -2647,6 +2980,7 @@ def main():
             False,
             False,
             None,
+            "mi30x",
         )
         success = notifier.send_test_notification()
         if success:
@@ -2679,6 +3013,7 @@ def main():
             False,
             False,
             None,
+            "mi30x",
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1
@@ -2756,6 +3091,7 @@ def main():
         enable_dp_test=args.enable_dp_test,
         enable_mtp_test=args.enable_mtp_test,
         benchmark_date=args.benchmark_date,
+        hardware=args.hardware,
     )
     plots = notifier.discover_plot_files(args.model, args.mode, args.plot_dir)
 
@@ -2764,9 +3100,7 @@ def main():
         prefix = "[MTP] " if plot.get("category") == "mtp" else ""
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
-            print(
-                f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}"
-            )
+            print(f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}")
         elif plot.get("plot_url"):
             print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
