@@ -35,7 +35,7 @@ set -euo pipefail
 # Base paths and directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_CI_DIR="/mnt/raid/michael/sglang-ci"
-DEFAULT_SGLANG_REPO_DIR="/mnt/raid/michael/hubertlu-tw/sglang"
+DEFAULT_SGLANG_REPO_DIR="/mnt/raid/michael/michael-amd/sglang"
 WORK_DIR="/sgl-workspace"
 
 # Docker configuration
@@ -45,7 +45,7 @@ DOCKER_CMD=(sudo /usr/bin/docker)
 # Default test configuration
 DEFAULT_NUM_GPUS=8
 DEFAULT_TIMEOUT=1800
-DEFAULT_HF_TOKEN="HF_TOKEN_REDACTED"
+DEFAULT_HF_TOKEN=""
 # TEST_DIR will be dynamically set based on sglang path: <sglang_path>/test/srt
 
 # Get current date in format YYYYMMDD
