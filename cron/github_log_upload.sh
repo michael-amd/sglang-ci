@@ -20,13 +20,16 @@
 #     # Sanity logs (4th arg is docker image tag/folder name)
 #     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm630-mi30x-20251005
 #
+#     # PD logs (4th arg is docker image tag/folder name)
+#     bash cron/github_log_upload.sh "" mi30x pd v0.5.4.post1-rocm700-mi30x-20251029
+#
 #     # Direct path upload (auto-detects type when 4th arg is absolute path)
 #     bash cron/github_log_upload.sh "" "" "" /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.3rc0
 #
 # Arguments:
 #   DATE          – Optional. Date in YYYYMMDD format (defaults to today). Ignored if FOLDER is provided.
 #   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
-#   LOG_TYPE      – Optional. Type of logs: 'cron' or 'sanity' (defaults to 'cron')
+#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', or 'pd' (defaults to 'cron')
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
@@ -78,6 +81,11 @@ if [[ -n "$ARG_FOLDER" ]]; then
       # Extract hardware from path: .../sanity_check_log/<hw>/<docker_name>
       HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'sanity_check_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
       DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/pd/pd_log/"* ]]; then
+      readonly LOG_TYPE="pd"
+      # Extract hardware from path: .../pd/pd_log/<hw>/<docker_name>
+      HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'pd/pd_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
+      DATE_FOLDER=$(basename "$SRC_LOG_DIR")
     else
       readonly LOG_TYPE="$ARG_LOG_TYPE"
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
@@ -91,6 +99,8 @@ if [[ -n "$ARG_FOLDER" ]]; then
 
     if [[ "$LOG_TYPE" == "sanity" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
+    elif [[ "$LOG_TYPE" == "pd" ]]; then
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     else
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     fi
@@ -104,6 +114,10 @@ else
   if [[ "$LOG_TYPE" == "sanity" ]]; then
     # For sanity logs, DATE is actually the docker image tag
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${DATE}"
+    DATE_FOLDER="$DATE"
+  elif [[ "$LOG_TYPE" == "pd" ]]; then
+    # For PD logs, DATE is actually the docker image tag
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${DATE}"
     DATE_FOLDER="$DATE"
   else
     # For cron logs, DATE is YYYYMMDD format
@@ -156,6 +170,8 @@ git pull --rebase --quiet || true
 # Determine destination path based on log type
 if [[ "$LOG_TYPE" == "sanity" ]]; then
   readonly DEST_PATH="test/sanity_check_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "pd" ]]; then
+  readonly DEST_PATH="test/pd/pd_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 else
   readonly DEST_PATH="cron_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 fi
@@ -188,6 +204,8 @@ fi
 # Generate commit message based on log type
 if [[ "$LOG_TYPE" == "sanity" ]]; then
   COMMIT_MSG="Backup sanity logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "pd" ]]; then
+  COMMIT_MSG="Backup PD test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 else
   COMMIT_MSG="Backup cron logs for ${HARDWARE_TYPE} – ${DATE_FOLDER}"
 fi
