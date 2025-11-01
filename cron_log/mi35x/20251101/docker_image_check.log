@@ -1,0 +1,10 @@
+[check] ==========================================
+[check] SGL Nightly Docker Image Availability Check
+[check] ==========================================
+[check] Run Date/Time: 2025-11-01 09:00:01 PDT
+[check] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[check] Repository: rocm/sgl-dev
+[check] Hardware types: mi30x mi35x
+[check] Checking images for date: 20251101
+
+[check] Searching for mi30x image (discovering ROCM version)... 
