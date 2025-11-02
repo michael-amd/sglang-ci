@@ -1,0 +1,101 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-11-01 10:02:49 PDT
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-11-01 10:02:49 PDT
+Server startup: 139.72s
+Trial 1: PASS [OK] (Accuracy: 0.851, Time: 79.08s)
+Trial 2: PASS [OK] (Accuracy: 0.842, Time: 68.07s)
+Trial 3: PASS [OK] (Accuracy: 0.842, Time: 68.07s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.851, 0.842, 0.842]
+Highest accuracy: 0.851 (Required: 0.820)
+Total time: 355.45s
+End time: 2025-11-01 10:08:44 PDT
+==================================================
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-11-01 10:08:44 PDT
+Server startup: 62.59s
+Trial 1: PASS [OK] (Accuracy: 0.534, Time: 58.06s)
+Trial 2: PASS [OK] (Accuracy: 0.527, Time: 49.05s)
+Trial 3: FAIL [X] (Accuracy: 0.518, Time: 50.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.534, 0.527, 0.518]
+Highest accuracy: 0.534 (Required: 0.520)
+Total time: 220.27s
+End time: 2025-11-01 10:12:25 PDT
+==================================================
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-11-01 10:12:25 PDT
+Server startup: 125.73s
+Trial 1: PASS [OK] (Accuracy: 0.847, Time: 57.06s)
+Trial 2: PASS [OK] (Accuracy: 0.854, Time: 84.09s)
+Trial 3: PASS [OK] (Accuracy: 0.867, Time: 58.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.847, 0.854, 0.867]
+Highest accuracy: 0.867 (Required: 0.840)
+Total time: 325.45s
+End time: 2025-11-01 10:17:50 PDT
+==================================================
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-11-01 10:17:50 PDT
+Server startup: 91.78s
+Trial 1: PASS [OK] (Accuracy: 0.813, Time: 21.02s)
+Trial 2: PASS [OK] (Accuracy: 0.814, Time: 46.05s)
+Trial 3: PASS [OK] (Accuracy: 0.812, Time: 20.02s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.813, 0.814, 0.812]
+Highest accuracy: 0.814 (Required: 0.800)
+Total time: 179.38s
+End time: 2025-11-01 10:20:50 PDT
+==================================================
+GROK1-FP8: SKIPPED - Model path does not exist: /mnt/raid/models/huggingface/lmzheng-grok-1
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-11-01 10:20:50 PDT
+Server startup: 148.75s
+Trial 1: FAIL [X] (Accuracy: 0.910, Time: 26.03s)
+Trial 2: PASS [OK] (Accuracy: 0.917, Time: 24.03s)
+Trial 3: PASS [OK] (Accuracy: 0.917, Time: 22.02s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.91, 0.917, 0.917]
+Highest accuracy: 0.917 (Required: 0.915)
+Total time: 221.33s
+End time: 2025-11-01 10:24:31 PDT
+==================================================
+llama4: SKIPPED - Model path does not exist: /data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-11-01 10:24:31 PDT
+Total execution time: 1301.88s (21.7 minutes)
+Average time per model: 185.98s
+Models tested: 5/7
+Models passed: 5/5
+Models failed: 0/5
+Models skipped: 2/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: SKIPPED
+  GROK2.5: PASS
+  llama4: SKIPPED
