@@ -1,0 +1,132 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+[nightly] Start time: 2025-11-02 13:30:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 768796
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi30x hardware
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: c1973c9c8c74
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251102...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251101...
+[nightly] Fallback found candidate tag: v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Found local image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Successfully obtained fallback image for date 20251101: rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 4fd12e05d098
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online
+[nightly] Found 5 completed benchmark runs
+[nightly] INFO: Found 5/15 completed runs for rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Container name: sgl-dev_v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Reusing container sgl-dev_v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK2 online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[online] Using Grok 2 configuration
+[online] Using default Grok 2 tokenizer: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-11-02 13:30:36 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+✅ GSM8K log file is complete.
+Checking client benchmark logs...
+Scan complete: 5/5 client benchmark runs are complete.
+✅ All benchmark logs (client + GSM8K) are present and complete! No server startup needed.
+Skipping server startup and benchmark execution - generating CSV from existing logs...
+[online] CSV initialized at /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online.csv
+[online] Updating CSV for rate 1: E2E=11844.69ms, TTFT=150.24ms, ITL=19.66ms
+[online] CSV updated with results for rate 1
+[online] Updating CSV for rate 2: E2E=13668.57ms, TTFT=154.77ms, ITL=20.65ms
+[online] CSV updated with results for rate 2
+[online] Updating CSV for rate 4: E2E=24151.46ms, TTFT=208.13ms, ITL=31.02ms
+[online] CSV updated with results for rate 4
+[online] Updating CSV for rate 8: E2E=88933.88ms, TTFT=286.72ms, ITL=113.03ms
+[online] CSV updated with results for rate 8
+[online] Updating CSV for rate 16: E2E=140241.96ms, TTFT=304.26ms, ITL=142.36ms
+[online] CSV updated with results for rate 16
+✅ CSV generated from existing logs successfully.
+CSV summary saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online.csv
+All done! Client logs and CSV summary are saved in /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online.
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-11-02 13:30:36 PST
+Total execution time: 0 seconds (0 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online
+CSV file: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online/timing_summary_20251102_133036.log
+==========================================
+[nightly] === Online benchmark dispatched for GROK2; check logs in sgl-dev_v0.5.4.post2-rocm700-mi30x-20251101 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.4.post2-rocm700-mi30x-20251101_GROK2_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251101
+[nightly] Sending Teams notification for grok2 online plots...
+[nightly] Adding benchmark date to Teams notification: 20251101
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+   🔍 Uploading 20251101_GROK2_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📝 Updating existing file: plot/mi30x/GROK2/online/20251101_GROK2_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251101_GROK2_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251101_GROK2_online_standard.png
+🔍 Discovered 1 plot file(s) for grok2 online
+   - 20251101_GROK2_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok2 online on 20251101: timing_summary_20251102_133036.log
+   Found timing_summary log for grok2 online on 20251101: timing_summary_20251102_133036.log
+   Found timing_summary log for grok2 online on 20251101: timing_summary_20251102_133036.log
+   Found timing_summary log for grok2 online on 20251101: timing_summary_20251102_133036.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251101_GROK2_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for grok2 online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok2 online
+[nightly] === Online post-processing completed for GROK2 ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi30x-20251101
+[nightly] Stopping container sgl-dev_v0.5.4.post2-rocm700-mi30x-20251101 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
