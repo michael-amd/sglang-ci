@@ -23,3 +23,93 @@
 [nightly] Stopping running containers: b9eb03f97f8c
 2e7bc920a0b0
 90860b9eeedf
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251102...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251101...
+[nightly] Fallback found candidate tag: v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Found local image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Successfully obtained fallback image for date 20251101: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: f07172635da4
+90860b9eeedf
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Container name: sgl-dev_v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Reusing container sgl-dev_v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-11-02 17:10:58 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+✅ GSM8K log file is complete with final accuracy summary
+Checking serving benchmark logs...
+Scan complete: 5 total runs needed, 0 missing/incomplete
+✅ All benchmark logs (serving + GSM8K) are present and complete! No server startup needed.
+Skipping server startup and benchmark execution - generating CSV from existing logs...
+[online] Structured CSV initialized at /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Extracting metrics for concurrency 128 from existing logs...
+[online] Updating CSV for concurrency 128: E2E=33140.25ms, TTFT=6533.08ms, ITL=25.99ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 128
+Extracting metrics for concurrency 64 from existing logs...
+[online] Updating CSV for concurrency 64: E2E=18345.03ms, TTFT=790.93ms, ITL=19.85ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 64
+Extracting metrics for concurrency 16 from existing logs...
+[online] Updating CSV for concurrency 16: E2E=11091.14ms, TTFT=235.77ms, ITL=13.48ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 16
+Extracting metrics for concurrency 4 from existing logs...
+[online] Updating CSV for concurrency 4: E2E=9162.45ms, TTFT=212.65ms, ITL=11.20ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 4
+Extracting metrics for concurrency 1 from existing logs...
+[online] Updating CSV for concurrency 1: E2E=8376.69ms, TTFT=114.98ms, ITL=10.34ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 1
+✅ CSV generated from existing logs successfully.
+Serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Note: Both GSM8K and serving benchmarks were already complete
+✅ Serving benchmark completed successfully in 0 seconds (standard mode).
+Structured serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Individual concurrency logs saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/sglang_serving_benchmark_concurrency_*_run*.log
+GSM8K accuracy results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log
+Shutting down SGLang server...
+Server shutdown completed in 0 seconds
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-11-02 17:10:58 PST
+Total execution time: 0 seconds (0 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online
+Serving CSV: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/timing_summary_20251102_171058.log
+===========================================
+Cleaning up...
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.4.post2-rocm700-mi35x-20251101 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251101_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251101
+[nightly] Teams notifications skipped - --teams-webhook-url not provided
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251101
+[nightly] Stopping container sgl-dev_v0.5.4.post2-rocm700-mi35x-20251101 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
