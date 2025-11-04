@@ -1,0 +1,249 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data2/models/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-dp-test --enable-mtp-test --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-11-04 14:00:02 PST
+[nightly] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 4030970
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DeepSeek MTP test enabled via command line
+[nightly] DeepSeek DP test enabled via command line
+[nightly] DP test implies DP attention checks
+[nightly] Custom model path provided: /data2/models/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b7bec039e788
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251104...
+[nightly] Found candidate tag for day -0: v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Found local image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Successfully obtained image for date 20251104: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 2ad574ab8565
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Container name: sgl-dev_v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Reusing container sgl-dev_v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-dp-test flag for DeepSeek online benchmark
+[nightly] Adding --enable-mtp-test flag for DeepSeek online benchmark
+[mtp] MTP test enabled - setting runs per concurrency to 1
+✅ Parameter validation passed
+[online] Script started at: 2025-11-04 14:00:34 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log)
+Checking serving benchmark logs...
+Missing: Concurrency 128, Run 1
+Missing: Concurrency 64, Run 1
+Missing: Concurrency 16, Run 1
+Missing: Concurrency 4, Run 1
+Missing: Concurrency 1, Run 1
+Scan complete: 5 total runs needed, 5 missing/incomplete
+❌ Missing 5 serving benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image
+Waiting for SGLang server (PID: 46) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_server.log
+....................
+SGLang server started successfully after 100 seconds.
+=== Online GSM8K Benchmark: TP=8, Questions=2000, Parallel=2000, Shots=5 ===
+[progress] Total benchmark runs to execute: 10 (GSM8K: 5, Serving: 5) - DP test mode
+[progress] [--------------------------------------------------] 0/10 (0%) 
+Starting GSM8K Online Benchmark...
+Running 5 test iterations...
+Executing GSM8K test Run 1 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:18<6:37:59, 18.12s/it]  1%|          | 8/1319 [00:18<36:31,  1.67s/it]    2%|▏         | 21/1319 [00:18<10:49,  2.00it/s]  3%|▎         | 39/1319 [00:18<04:34,  4.66it/s]  4%|▍         | 57/1319 [00:18<02:31,  8.35it/s]  7%|▋         | 89/1319 [00:18<01:12, 17.02it/s]  8%|▊         | 108/1319 [00:19<00:50, 23.79it/s]  8%|▊         | 109/1319 [00:19<00:36, 33.11it/s] 10%|▉         | 128/1319 [00:19<00:28, 41.68it/s] 11%|█         | 144/1319 [00:19<00:22, 52.17it/s] 12%|█▏        | 160/1319 [00:19<00:18, 61.13it/s] 14%|█▎        | 180/1319 [00:19<00:15, 71.21it/s] 15%|█▌        | 201/1319 [00:19<00:12, 91.29it/s] 16%|█▋        | 217/1319 [00:20<00:14, 78.70it/s] 18%|█▊        | 239/1319 [00:20<00:12, 87.77it/s] 19%|█▉        | 253/1319 [00:20<00:11, 95.98it/s] 20%|██        | 266/1319 [00:20<00:10, 101.82it/s] 21%|██        | 279/1319 [00:20<00:09, 107.27it/s] 22%|██▏       | 295/1319 [00:20<00:08, 118.87it/s] 22%|██▏       | 296/1319 [00:20<00:07, 130.77it/s] 24%|██▍       | 315/1319 [00:20<00:06, 145.49it/s] 25%|██▌       | 331/1319 [00:20<00:06, 148.35it/s] 26%|██▋       | 347/1319 [00:20<00:06, 150.38it/s] 28%|██▊       | 364/1319 [00:21<00:06, 155.71it/s] 29%|██▉       | 387/1319 [00:21<00:05, 176.92it/s] 32%|███▏      | 416/1319 [00:21<00:05, 178.19it/s] 32%|███▏      | 417/1319 [00:21<00:04, 181.04it/s] 34%|███▍      | 451/1319 [00:21<00:04, 189.97it/s] 37%|███▋      | 483/1319 [00:21<00:04, 191.48it/s] 39%|███▉      | 513/1319 [00:21<00:04, 185.33it/s] 41%|████      | 542/1319 [00:21<00:04, 176.59it/s] 44%|████▎     | 577/1319 [00:22<00:04, 183.39it/s] 46%|████▌     | 602/1319 [00:22<00:04, 171.24it/s] 48%|████▊     | 633/1319 [00:22<00:03, 173.43it/s] 50%|████▉     | 653/1319 [00:22<00:04, 159.83it/s] 52%|█████▏    | 691/1319 [00:22<00:03, 181.38it/s] 55%|█████▍    | 722/1319 [00:23<00:03, 183.06it/s] 57%|█████▋    | 749/1319 [00:23<00:03, 176.61it/s] 57%|█████▋    | 750/1319 [00:23<00:03, 173.85it/s] 59%|█████▉    | 778/1319 [00:23<00:03, 172.57it/s] 61%|██████    | 801/1319 [00:23<00:03, 164.14it/s] 62%|██████▏   | 818/1319 [00:23<00:03, 147.37it/s] 63%|██████▎   | 834/1319 [00:23<00:03, 148.00it/s] 65%|██████▍   | 854/1319 [00:23<00:03, 150.72it/s] 66%|██████▌   | 873/1319 [00:24<00:03, 144.27it/s] 68%|██████▊   | 899/1319 [00:24<00:02, 164.95it/s] 70%|███████   | 928/1319 [00:24<00:02, 182.34it/s] 72%|███████▏  | 955/1319 [00:24<00:01, 191.07it/s] 74%|███████▍  | 981/1319 [00:24<00:01, 193.25it/s] 76%|███████▌  | 1004/1319 [00:24<00:01, 188.08it/s] 78%|███████▊  | 1026/1319 [00:24<00:01, 182.42it/s] 79%|███████▉  | 1045/1319 [00:24<00:01, 171.56it/s] 81%|████████  | 1063/1319 [00:25<00:01, 161.41it/s] 82%|████████▏ | 1083/1319 [00:25<00:01, 163.88it/s] 83%|████████▎ | 1100/1319 [00:25<00:01, 158.63it/s] 83%|████████▎ | 1101/1319 [00:25<00:01, 157.19it/s] 85%|████████▌ | 1125/1319 [00:25<00:01, 172.57it/s] 87%|████████▋ | 1143/1319 [00:25<00:01, 167.09it/s] 88%|████████▊ | 1164/1319 [00:25<00:00, 168.77it/s] 90%|████████▉ | 1181/1319 [00:25<00:00, 148.14it/s] 91%|█████████ | 1197/1319 [00:25<00:00, 135.74it/s] 92%|█████████▏| 1211/1319 [00:26<00:00, 126.25it/s] 93%|█████████▎| 1224/1319 [00:26<00:00, 125.20it/s] 94%|█████████▍| 1237/1319 [00:26<00:00, 109.93it/s] 95%|█████████▍| 1249/1319 [00:26<00:00, 94.38it/s]  95%|█████████▌| 1259/1319 [00:26<00:00, 88.07it/s] 96%|█████████▌| 1269/1319 [00:26<00:00, 88.05it/s] 97%|█████████▋| 1279/1319 [00:26<00:00, 89.10it/s] 98%|█████████▊| 1289/1319 [00:27<00:00, 50.52it/s] 98%|█████████▊| 1297/1319 [00:27<00:00, 37.23it/s] 99%|█████████▉| 1303/1319 [00:28<00:00, 26.92it/s] 99%|█████████▉| 1308/1319 [00:31<00:01,  7.05it/s] 99%|█████████▉| 1312/1319 [00:32<00:01,  5.69it/s]100%|██████████| 1319/1319 [00:32<00:00, 40.70it/s]
+Accuracy: 0.939
+Invalid: 0.000
+Latency: 38.743 s
+Output throughput: 3349.518 token/s
+Run 1 completed in 43 seconds
+Run 1: Accuracy: 0.939
+[progress] [=====---------------------------------------------] 1/10 (10%)  | GSM8K: Run 1
+Executing GSM8K test Run 2 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:08<3:05:24,  8.44s/it]  0%|          | 2/1319 [00:08<1:22:26,  3.76s/it]  0%|          | 3/1319 [00:09<51:27,  2.35s/it]    1%|          | 8/1319 [00:09<12:40,  1.72it/s]  2%|▏         | 26/1319 [00:09<02:37,  8.20it/s]  2%|▏         | 28/1319 [00:09<00:44, 29.19it/s]  2%|▏         | 28/1319 [00:09<00:44, 29.19it/s]  3%|▎         | 42/1319 [00:10<00:38, 33.49it/s]  5%|▌         | 70/1319 [00:10<00:21, 57.15it/s]  7%|▋         | 92/1319 [00:10<00:17, 69.47it/s]  8%|▊         | 111/1319 [00:10<00:14, 85.63it/s] 10%|▉         | 128/1319 [00:10<00:12, 92.23it/s] 11%|█         | 148/1319 [00:10<00:11, 103.76it/s] 13%|█▎        | 171/1319 [00:11<00:10, 108.90it/s] 15%|█▍        | 195/1319 [00:11<00:09, 114.23it/s] 16%|█▌        | 209/1319 [00:11<00:10, 101.90it/s] 17%|█▋        | 221/1319 [00:11<00:10, 104.73it/s] 18%|█▊        | 234/1319 [00:11<00:09, 109.33it/s] 19%|█▊        | 247/1319 [00:11<00:09, 113.79it/s] 20%|█▉        | 260/1319 [00:11<00:09, 116.46it/s] 21%|██        | 273/1319 [00:11<00:08, 118.66it/s] 22%|██▏       | 286/1319 [00:12<00:08, 120.85it/s] 23%|██▎       | 299/1319 [00:12<00:08, 123.10it/s] 24%|██▍       | 314/1319 [00:12<00:07, 130.45it/s] 25%|██▍       | 329/1319 [00:12<00:07, 135.96it/s] 25%|██▌       | 333/1319 [00:12<00:06, 158.33it/s] 25%|██▌       | 335/1319 [00:12<00:06, 158.33it/s] 25%|██▌       | 335/1319 [00:12<00:06, 158.33it/s] 27%|██▋       | 351/1319 [00:12<00:06, 157.98it/s] 28%|██▊       | 367/1319 [00:12<00:06, 157.82it/s] 28%|██▊       | 368/1319 [00:12<00:05, 160.59it/s] 29%|██▉       | 388/1319 [00:12<00:06, 147.18it/s] 32%|███▏      | 421/1319 [00:12<00:05, 167.17it/s] 34%|███▍      | 453/1319 [00:13<00:04, 176.11it/s] 37%|███▋      | 486/1319 [00:13<00:04, 180.49it/s] 37%|███▋      | 487/1319 [00:13<00:04, 185.06it/s] 40%|███▉      | 525/1319 [00:13<00:04, 193.31it/s] 42%|████▏     | 555/1319 [00:13<00:04, 184.29it/s] 44%|████▍     | 580/1319 [00:13<00:04, 172.08it/s] 46%|████▌     | 610/1319 [00:13<00:04, 172.40it/s] 49%|████▊     | 643/1319 [00:14<00:03, 182.25it/s] 51%|█████     | 674/1319 [00:14<00:03, 185.93it/s] 53%|█████▎    | 702/1319 [00:14<00:03, 183.22it/s] 55%|█████▌    | 732/1319 [00:14<00:03, 182.19it/s] 57%|█████▋    | 757/1319 [00:14<00:03, 172.67it/s] 60%|█████▉    | 788/1319 [00:14<00:02, 179.10it/s] 61%|██████    | 806/1319 [00:15<00:03, 159.38it/s] 62%|██████▏   | 822/1319 [00:15<00:03, 153.52it/s] 64%|██████▎   | 838/1319 [00:15<00:03, 148.47it/s] 65%|██████▍   | 853/1319 [00:15<00:03, 133.96it/s] 66%|██████▋   | 876/1319 [00:15<00:03, 141.13it/s] 68%|██████▊   | 898/1319 [00:15<00:02, 143.89it/s] 69%|██████▉   | 913/1319 [00:15<00:03, 131.14it/s] 70%|███████   | 927/1319 [00:15<00:03, 128.62it/s] 72%|███████▏  | 956/1319 [00:16<00:02, 156.65it/s] 74%|███████▍  | 980/1319 [00:16<00:02, 164.65it/s] 74%|███████▍  | 981/1319 [00:16<00:01, 172.51it/s] 76%|███████▌  | 1005/1319 [00:16<00:01, 176.40it/s] 78%|███████▊  | 1023/1319 [00:16<00:01, 150.23it/s] 79%|███████▉  | 1044/1319 [00:16<00:01, 153.66it/s] 81%|████████  | 1067/1319 [00:16<00:01, 163.89it/s] 82%|████████▏ | 1085/1319 [00:16<00:01, 161.09it/s] 84%|████████▎ | 1102/1319 [00:17<00:01, 143.51it/s] 85%|████████▍ | 1118/1319 [00:17<00:01, 146.88it/s] 85%|████████▍ | 1120/1319 [00:17<00:01, 158.51it/s] 85%|████████▍ | 1121/1319 [00:17<00:01, 158.51it/s] 86%|████████▋ | 1138/1319 [00:17<00:01, 153.10it/s] 88%|████████▊ | 1157/1319 [00:17<00:01, 153.63it/s] 89%|████████▉ | 1176/1319 [00:17<00:00, 155.47it/s] 90%|█████████ | 1192/1319 [00:17<00:00, 142.86it/s] 92%|█████████▏| 1207/1319 [00:17<00:00, 125.30it/s] 92%|█████████▏| 1220/1319 [00:17<00:00, 124.23it/s] 93%|█████████▎| 1233/1319 [00:18<00:00, 123.67it/s] 94%|█████████▍| 1246/1319 [00:18<00:00, 102.43it/s] 95%|█████████▌| 1257/1319 [00:18<00:00, 77.88it/s]  96%|█████████▌| 1266/1319 [00:18<00:00, 64.82it/s] 97%|█████████▋| 1274/1319 [00:18<00:00, 61.53it/s] 97%|█████████▋| 1281/1319 [00:19<00:00, 54.25it/s] 98%|█████████▊| 1287/1319 [00:19<00:00, 41.36it/s] 98%|█████████▊| 1292/1319 [00:19<00:01, 25.80it/s] 98%|█████████▊| 1296/1319 [00:20<00:01, 18.26it/s] 98%|█████████▊| 1299/1319 [00:22<00:02,  6.82it/s] 99%|█████████▊| 1302/1319 [00:24<00:04,  3.74it/s] 99%|█████████▉| 1304/1319 [00:24<00:03,  4.23it/s] 99%|█████████▉| 1305/1319 [00:24<00:02,  5.31it/s]100%|██████████| 1319/1319 [00:24<00:00, 53.58it/s]
+Accuracy: 0.937
+Invalid: 0.000
+Latency: 24.798 s
+Output throughput: 5444.130 token/s
+Run 2 completed in 29 seconds
+Run 2: Accuracy: 0.937
+[progress] [==========----------------------------------------] 2/10 (20%)  | GSM8K: Run 2
+Executing GSM8K test Run 3 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:08<3:08:21,  8.57s/it]  0%|          | 2/1319 [00:09<1:33:31,  4.26s/it]  1%|          | 8/1319 [00:10<15:59,  1.37it/s]    2%|▏         | 24/1319 [00:10<03:58,  5.43it/s]  3%|▎         | 41/1319 [00:10<01:56, 10.93it/s]  5%|▌         | 66/1319 [00:10<00:56, 22.14it/s]  6%|▌         | 81/1319 [00:10<00:43, 28.63it/s]  8%|▊         | 105/1319 [00:10<00:26, 45.19it/s]  9%|▉         | 121/1319 [00:10<00:22, 52.98it/s] 11%|█         | 141/1319 [00:11<00:17, 69.13it/s] 12%|█▏        | 157/1319 [00:11<00:16, 72.45it/s] 13%|█▎        | 175/1319 [00:11<00:14, 77.92it/s] 14%|█▍        | 189/1319 [00:11<00:14, 76.81it/s] 16%|█▌        | 214/1319 [00:11<00:12, 91.93it/s] 17%|█▋        | 227/1319 [00:11<00:11, 97.82it/s] 18%|█▊        | 242/1319 [00:12<00:10, 107.57it/s] 20%|█▉        | 258/1319 [00:12<00:08, 118.77it/s] 21%|██        | 274/1319 [00:12<00:08, 127.98it/s] 22%|██▏       | 289/1319 [00:12<00:07, 132.42it/s] 23%|██▎       | 304/1319 [00:12<00:07, 136.79it/s] 23%|██▎       | 305/1319 [00:12<00:07, 142.71it/s] 24%|██▍       | 321/1319 [00:12<00:06, 144.20it/s] 26%|██▌       | 342/1319 [00:12<00:06, 162.24it/s] 27%|██▋       | 359/1319 [00:12<00:05, 163.43it/s] 27%|██▋       | 361/1319 [00:12<00:05, 172.55it/s] 27%|██▋       | 361/1319 [00:12<00:05, 172.55it/s] 29%|██▊       | 379/1319 [00:12<00:05, 172.04it/s] 30%|███       | 399/1319 [00:12<00:05, 179.61it/s] 32%|███▏      | 424/1319 [00:13<00:05, 171.80it/s] 32%|███▏      | 428/1319 [00:13<00:05, 170.41it/s] 32%|███▏      | 428/1319 [00:13<00:05, 170.41it/s] 34%|███▍      | 453/1319 [00:13<00:05, 164.65it/s] 36%|███▋      | 481/1319 [00:13<00:05, 166.03it/s] 39%|███▊      | 510/1319 [00:13<00:04, 166.49it/s] 41%|████      | 537/1319 [00:13<00:04, 160.74it/s] 43%|████▎     | 565/1319 [00:13<00:04, 159.35it/s] 45%|████▍     | 591/1319 [00:14<00:04, 156.71it/s] 47%|████▋     | 626/1319 [00:14<00:04, 170.48it/s] 50%|█████     | 661/1319 [00:14<00:03, 184.52it/s] 52%|█████▏    | 686/1319 [00:14<00:03, 175.53it/s] 54%|█████▍    | 715/1319 [00:14<00:03, 175.22it/s] 56%|█████▌    | 741/1319 [00:14<00:03, 169.79it/s] 58%|█████▊    | 766/1319 [00:15<00:03, 165.83it/s] 60%|█████▉    | 789/1319 [00:15<00:03, 159.11it/s] 61%|██████▏   | 810/1319 [00:15<00:03, 169.55it/s] 63%|██████▎   | 837/1319 [00:15<00:02, 182.50it/s] 65%|██████▌   | 862/1319 [00:15<00:02, 190.84it/s] 67%|██████▋   | 890/1319 [00:15<00:02, 199.32it/s] 70%|██████▉   | 917/1319 [00:15<00:01, 202.64it/s] 71%|███████   | 938/1319 [00:16<00:01, 190.87it/s] 73%|███████▎  | 962/1319 [00:16<00:01, 188.75it/s] 74%|███████▍  | 981/1319 [00:16<00:01, 175.87it/s] 76%|███████▌  | 1005/1319 [00:16<00:01, 178.95it/s] 78%|███████▊  | 1031/1319 [00:16<00:01, 185.83it/s] 80%|███████▉  | 1050/1319 [00:16<00:01, 179.76it/s] 81%|████████  | 1071/1319 [00:16<00:01, 180.18it/s] 83%|████████▎ | 1095/1319 [00:16<00:01, 188.22it/s] 85%|████████▍ | 1119/1319 [00:17<00:01, 189.78it/s] 86%|████████▋ | 1140/1319 [00:17<00:00, 183.27it/s] 88%|████████▊ | 1164/1319 [00:17<00:00, 190.73it/s] 90%|████████▉ | 1184/1319 [00:17<00:00, 183.07it/s] 91%|█████████ | 1203/1319 [00:17<00:00, 164.15it/s] 92%|█████████▏| 1220/1319 [00:17<00:00, 152.34it/s] 94%|█████████▎| 1236/1319 [00:17<00:00, 128.05it/s] 95%|█████████▍| 1250/1319 [00:18<00:00, 109.92it/s] 96%|█████████▌| 1262/1319 [00:18<00:00, 98.74it/s]  97%|█████████▋| 1273/1319 [00:18<00:00, 87.44it/s] 97%|█████████▋| 1283/1319 [00:18<00:00, 60.33it/s] 98%|█████████▊| 1291/1319 [00:18<00:00, 50.78it/s] 98%|█████████▊| 1298/1319 [00:19<00:00, 48.20it/s] 99%|█████████▉| 1304/1319 [00:19<00:00, 39.24it/s] 99%|█████████▉| 1309/1319 [00:20<00:00, 19.98it/s]100%|█████████▉| 1313/1319 [00:23<00:01,  5.31it/s]100%|██████████| 1319/1319 [00:23<00:00, 56.29it/s]
+Accuracy: 0.939
+Invalid: 0.000
+Latency: 23.633 s
+Output throughput: 5539.117 token/s
+Run 3 completed in 28 seconds
+Run 3: Accuracy: 0.939
+[progress] [===============-----------------------------------] 3/10 (30%)  | GSM8K: Run 3
+Executing GSM8K test Run 4 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:08<3:02:07,  8.29s/it]  0%|          | 2/1319 [00:09<1:24:47,  3.86s/it]  0%|          | 4/1319 [00:09<34:12,  1.56s/it]    0%|          | 6/1319 [00:09<19:00,  1.15it/s]  2%|▏         | 22/1319 [00:09<03:02,  7.09it/s]  2%|▏         | 24/1319 [00:09<00:48, 26.47it/s]  2%|▏         | 24/1319 [00:09<00:48, 26.47it/s]  3%|▎         | 37/1319 [00:09<00:38, 33.01it/s]  4%|▍         | 59/1319 [00:10<00:26, 48.08it/s]  7%|▋         | 87/1319 [00:10<00:16, 75.94it/s]  7%|▋         | 88/1319 [00:10<00:11, 107.24it/s]  8%|▊         | 109/1319 [00:10<00:11, 108.02it/s]  8%|▊         | 110/1319 [00:10<00:10, 110.07it/s] 10%|▉         | 126/1319 [00:10<00:11, 105.71it/s] 11%|█         | 140/1319 [00:10<00:10, 108.28it/s] 11%|█         | 145/1319 [00:10<00:09, 117.71it/s] 11%|█▏        | 149/1319 [00:10<00:09, 117.71it/s] 13%|█▎        | 165/1319 [00:10<00:10, 105.08it/s] 14%|█▍        | 190/1319 [00:10<00:08, 135.66it/s] 16%|█▌        | 206/1319 [00:11<00:09, 116.43it/s] 16%|█▌        | 208/1319 [00:11<00:10, 106.74it/s] 17%|█▋        | 221/1319 [00:11<00:11, 94.79it/s]  18%|█▊        | 244/1319 [00:11<00:10, 101.89it/s] 20%|█▉        | 260/1319 [00:11<00:09, 112.60it/s] 21%|██        | 273/1319 [00:11<00:09, 115.63it/s] 22%|██▏       | 286/1319 [00:11<00:08, 118.07it/s] 23%|██▎       | 306/1319 [00:11<00:07, 138.26it/s] 24%|██▍       | 321/1319 [00:12<00:07, 141.16it/s] 25%|██▌       | 336/1319 [00:12<00:06, 141.71it/s] 27%|██▋       | 355/1319 [00:12<00:06, 155.04it/s] 29%|██▉       | 382/1319 [00:12<00:05, 160.20it/s] 29%|██▉       | 384/1319 [00:12<00:05, 170.41it/s] 29%|██▉       | 384/1319 [00:12<00:05, 170.41it/s] 32%|███▏      | 424/1319 [00:12<00:04, 194.84it/s] 35%|███▍      | 456/1319 [00:12<00:04, 194.64it/s] 37%|███▋      | 485/1319 [00:12<00:04, 188.26it/s] 37%|███▋      | 486/1319 [00:12<00:04, 185.78it/s] 38%|███▊      | 505/1319 [00:13<00:05, 159.14it/s] 40%|████      | 531/1319 [00:13<00:05, 153.90it/s] 42%|████▏     | 556/1319 [00:13<00:05, 149.75it/s] 44%|████▍     | 582/1319 [00:13<00:04, 149.84it/s] 46%|████▋     | 611/1319 [00:13<00:04, 155.08it/s] 48%|████▊     | 638/1319 [00:13<00:04, 157.07it/s] 51%|█████     | 671/1319 [00:14<00:03, 171.61it/s] 53%|█████▎    | 705/1319 [00:14<00:03, 182.73it/s] 55%|█████▌    | 727/1319 [00:14<00:03, 167.50it/s] 55%|█████▌    | 728/1319 [00:14<00:03, 158.60it/s] 58%|█████▊    | 761/1319 [00:14<00:03, 171.92it/s] 59%|█████▉    | 783/1319 [00:14<00:03, 161.60it/s] 61%|██████    | 803/1319 [00:14<00:03, 147.66it/s] 63%|██████▎   | 828/1319 [00:15<00:03, 154.16it/s] 65%|██████▍   | 854/1319 [00:15<00:02, 160.69it/s] 66%|██████▌   | 873/1319 [00:15<00:02, 151.82it/s] 68%|██████▊   | 898/1319 [00:15<00:02, 167.31it/s] 70%|██████▉   | 923/1319 [00:15<00:02, 175.35it/s] 72%|███████▏  | 948/1319 [00:15<00:02, 180.77it/s] 74%|███████▍  | 979/1319 [00:15<00:01, 197.21it/s] 76%|███████▌  | 999/1319 [00:16<00:01, 183.28it/s] 77%|███████▋  | 1018/1319 [00:16<00:01, 173.01it/s] 79%|███████▉  | 1040/1319 [00:16<00:01, 172.29it/s] 80%|████████  | 1058/1319 [00:16<00:01, 148.00it/s] 82%|████████▏ | 1076/1319 [00:16<00:01, 149.02it/s] 83%|████████▎ | 1093/1319 [00:16<00:01, 148.39it/s] 84%|████████▍ | 1110/1319 [00:16<00:01, 148.39it/s] 86%|████████▌ | 1132/1319 [00:16<00:01, 160.48it/s] 87%|████████▋ | 1149/1319 [00:17<00:01, 156.04it/s] 88%|████████▊ | 1165/1319 [00:17<00:01, 150.01it/s] 90%|████████▉ | 1181/1319 [00:17<00:00, 141.86it/s] 91%|█████████ | 1196/1319 [00:17<00:00, 127.64it/s] 92%|█████████▏| 1214/1319 [00:17<00:00, 133.30it/s] 93%|█████████▎| 1228/1319 [00:17<00:00, 108.47it/s] 94%|█████████▍| 1240/1319 [00:17<00:00, 103.45it/s] 95%|█████████▍| 1251/1319 [00:18<00:00, 97.71it/s]  96%|█████████▌| 1262/1319 [00:18<00:00, 86.50it/s] 96%|█████████▋| 1271/1319 [00:18<00:00, 76.49it/s] 97%|█████████▋| 1279/1319 [00:18<00:00, 56.01it/s] 97%|█████████▋| 1286/1319 [00:18<00:00, 51.30it/s] 98%|█████████▊| 1292/1319 [00:19<00:00, 36.71it/s] 98%|█████████▊| 1297/1319 [00:19<00:00, 34.32it/s] 99%|█████████▊| 1302/1319 [00:19<00:00, 35.14it/s] 99%|█████████▉| 1306/1319 [00:20<00:00, 17.04it/s] 99%|█████████▉| 1309/1319 [00:20<00:00, 12.30it/s] 99%|█████████▉| 1312/1319 [00:23<00:01,  3.80it/s]100%|██████████| 1319/1319 [00:23<00:00, 55.68it/s]
+Accuracy: 0.944
+Invalid: 0.000
+Latency: 23.794 s
+Output throughput: 5516.402 token/s
+Run 4 completed in 28 seconds
+Run 4: Accuracy: 0.944
+[progress] [====================------------------------------] 4/10 (40%)  | GSM8K: Run 4
+Executing GSM8K test Run 5 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:09<3:20:14,  9.12s/it]  0%|          | 3/1319 [00:09<56:29,  2.58s/it]    1%|          | 8/1319 [00:09<16:02,  1.36it/s]  1%|▏         | 19/1319 [00:10<05:06,  4.24it/s]  3%|▎         | 41/1319 [00:10<01:48, 11.80it/s]  3%|▎         | 42/1319 [00:10<00:59, 21.43it/s]  5%|▍         | 62/1319 [00:10<00:38, 32.54it/s]  6%|▌         | 80/1319 [00:10<00:29, 41.67it/s]  7%|▋         | 95/1319 [00:10<00:23, 52.31it/s]  8%|▊         | 108/1319 [00:10<00:20, 60.39it/s] 10%|▉         | 131/1319 [00:10<00:15, 77.50it/s] 12%|█▏        | 152/1319 [00:11<00:11, 98.63it/s] 12%|█▏        | 154/1319 [00:11<00:09, 121.07it/s] 13%|█▎        | 172/1319 [00:11<00:10, 112.22it/s] 14%|█▍        | 187/1319 [00:11<00:11, 101.52it/s] 15%|█▌        | 203/1319 [00:11<00:11, 96.31it/s]  17%|█▋        | 225/1319 [00:11<00:09, 120.12it/s] 18%|█▊        | 240/1319 [00:11<00:10, 103.86it/s] 18%|█▊        | 241/1319 [00:11<00:11, 95.59it/s]  19%|█▉        | 254/1319 [00:12<00:10, 102.19it/s] 21%|██        | 271/1319 [00:12<00:09, 116.34it/s] 22%|██▏       | 285/1319 [00:12<00:08, 120.27it/s] 24%|██▎       | 310/1319 [00:12<00:06, 152.48it/s] 25%|██▍       | 327/1319 [00:12<00:06, 156.50it/s] 26%|██▌       | 344/1319 [00:12<00:06, 158.42it/s] 28%|██▊       | 363/1319 [00:12<00:05, 167.04it/s] 29%|██▉       | 388/1319 [00:12<00:05, 163.39it/s] 32%|███▏      | 421/1319 [00:12<00:05, 177.29it/s] 34%|███▍      | 451/1319 [00:13<00:04, 178.92it/s] 38%|███▊      | 495/1319 [00:13<00:03, 207.57it/s] 40%|████      | 528/1319 [00:13<00:03, 198.51it/s] 42%|████▏     | 550/1319 [00:13<00:04, 175.60it/s] 44%|████▍     | 580/1319 [00:13<00:04, 174.81it/s] 46%|████▋     | 613/1319 [00:13<00:03, 181.90it/s] 49%|████▊     | 641/1319 [00:14<00:03, 180.17it/s] 51%|█████▏    | 676/1319 [00:14<00:03, 191.93it/s] 53%|█████▎    | 705/1319 [00:14<00:03, 187.83it/s] 55%|█████▍    | 724/1319 [00:14<00:03, 164.71it/s] 57%|█████▋    | 746/1319 [00:14<00:03, 154.88it/s] 59%|█████▊    | 774/1319 [00:14<00:03, 159.84it/s] 61%|██████    | 803/1319 [00:15<00:03, 166.18it/s] 62%|██████▏   | 821/1319 [00:15<00:02, 168.68it/s] 64%|██████▎   | 840/1319 [00:15<00:02, 159.88it/s] 65%|██████▌   | 858/1319 [00:15<00:03, 148.60it/s] 67%|██████▋   | 886/1319 [00:15<00:02, 161.55it/s] 68%|██████▊   | 903/1319 [00:15<00:02, 146.66it/s] 70%|██████▉   | 918/1319 [00:15<00:03, 131.03it/s] 71%|███████▏  | 942/1319 [00:16<00:02, 146.25it/s] 73%|███████▎  | 960/1319 [00:16<00:02, 144.71it/s] 74%|███████▍  | 981/1319 [00:16<00:02, 149.34it/s] 76%|███████▌  | 1005/1319 [00:16<00:01, 159.57it/s] 78%|███████▊  | 1027/1319 [00:16<00:01, 162.53it/s] 80%|███████▉  | 1052/1319 [00:16<00:01, 171.63it/s] 81%|████████  | 1070/1319 [00:16<00:01, 161.73it/s] 82%|████████▏ | 1087/1319 [00:16<00:01, 152.59it/s] 82%|████████▏ | 1088/1319 [00:16<00:01, 148.37it/s] 84%|████████▎ | 1103/1319 [00:17<00:01, 138.67it/s] 85%|████████▍ | 1117/1319 [00:17<00:01, 133.84it/s] 86%|████████▌ | 1134/1319 [00:17<00:01, 138.04it/s] 87%|████████▋ | 1148/1319 [00:17<00:01, 133.10it/s] 88%|████████▊ | 1163/1319 [00:17<00:01, 131.16it/s] 89%|████████▉ | 1177/1319 [00:17<00:01, 122.48it/s] 90%|█████████ | 1190/1319 [00:17<00:01, 117.95it/s] 92%|█████████▏| 1210/1319 [00:17<00:00, 131.66it/s] 93%|█████████▎| 1224/1319 [00:18<00:00, 120.46it/s] 94%|█████████▍| 1237/1319 [00:18<00:00, 114.30it/s] 95%|█████████▍| 1249/1319 [00:18<00:00, 86.49it/s]  95%|█████████▌| 1259/1319 [00:18<00:00, 81.42it/s] 96%|█████████▌| 1268/1319 [00:18<00:00, 54.01it/s] 97%|█████████▋| 1275/1319 [00:19<00:00, 54.13it/s] 97%|█████████▋| 1282/1319 [00:19<00:00, 46.13it/s] 98%|█████████▊| 1288/1319 [00:19<00:00, 38.22it/s] 98%|█████████▊| 1293/1319 [00:19<00:00, 33.10it/s] 98%|█████████▊| 1297/1319 [00:20<00:00, 27.03it/s] 99%|█████████▊| 1301/1319 [00:21<00:01, 12.56it/s] 99%|█████████▉| 1304/1319 [00:23<00:03,  4.39it/s] 99%|█████████▉| 1306/1319 [00:24<00:03,  4.28it/s]100%|██████████| 1319/1319 [00:24<00:00, 54.27it/s]
+Accuracy: 0.939
+Invalid: 0.000
+Latency: 24.413 s
+Output throughput: 5493.854 token/s
+Run 5 completed in 29 seconds
+Run 5: Accuracy: 0.939
+[progress] [=========================-------------------------] 5/10 (50%)  | GSM8K: Run 5
+GSM8K test completed in 157 seconds
+Average Accuracy over 5 runs: 0.940
+Average accuracy meets threshold (0.93).
+✅ GSM8K benchmark completed successfully.
+GSM8K log saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log
+Server log saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_server.log
+Starting serving benchmark tests with different concurrency levels...
+[online] Structured CSV initialized at /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_serving_dp_attention_mtp_test.csv
+Processing concurrency 128 with 1 runs...
+Running serving benchmark with concurrency 128 (Run 1) - 500 prompts...
+Concurrency 128, Run 1 completed: 500 requests, (tok/s): tok/s output throughput, 36505.62ms E2E latency (154s)
+[progress] [==============================--------------------] 6/10 (60%)  | Serving: C128 R1
+✅ Best results for concurrency 128: E2E=36505.62ms, TTFT=11213.81ms, ITL=25.78ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 128: E2E=36505.62ms, TTFT=11213.81ms, ITL=25.78ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 128
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 64 with 1 runs...
+Running serving benchmark with concurrency 64 (Run 1) - 500 prompts...
+Concurrency 64, Run 1 completed: 500 requests, (tok/s): tok/s output throughput, 24374.47ms E2E latency (208s)
+[progress] [===================================---------------] 7/10 (70%)  | Serving: C64 R1
+✅ Best results for concurrency 64: E2E=24374.47ms, TTFT=5482.79ms, ITL=21.47ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 64: E2E=24374.47ms, TTFT=5482.79ms, ITL=21.47ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 64
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 16 with 1 runs...
+Running serving benchmark with concurrency 16 (Run 1) - 128 prompts...
+Concurrency 16, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 15441.33ms E2E latency (134s)
+[progress] [========================================----------] 8/10 (80%)  | Serving: C16 R1
+✅ Best results for concurrency 16: E2E=15441.33ms, TTFT=2371.38ms, ITL=16.25ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 16: E2E=15441.33ms, TTFT=2371.38ms, ITL=16.25ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 16
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 4 with 1 runs...
+Running serving benchmark with concurrency 4 (Run 1) - 128 prompts...
+Concurrency 4, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 12712.11ms E2E latency (416s)
+[progress] [=============================================-----] 9/10 (90%)  | Serving: C4 R1
+✅ Best results for concurrency 4: E2E=12712.11ms, TTFT=988.84ms, ITL=14.67ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 4: E2E=12712.11ms, TTFT=988.84ms, ITL=14.67ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 4
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 1 with 1 runs...
+Running serving benchmark with concurrency 1 (Run 1) - 128 prompts...
+Concurrency 1, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 11890.46ms E2E latency (1531s)
+[progress] [==================================================] 10/10 (100%) ✅ Complete!
+ | Serving: C1 R1
+✅ Best results for concurrency 1: E2E=11890.46ms, TTFT=448.38ms, ITL=14.33ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 1: E2E=11890.46ms, TTFT=448.38ms, ITL=14.33ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 1
+[mtp] Generating DeepSeek-R1 MTP artifacts...
+[mtp] Generating CSV at /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/bench_results.csv
+[mtp] CSV populated with 5 entries
+[mtp] Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview
+[mtp] CSV written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/bench_results.csv
+[mtp] No numeric data detected. Skipping plot generation.
+✅ Serving benchmark completed successfully in 2466 seconds (DP test mode).
+Structured serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_serving_dp_attention_mtp_test.csv
+Individual concurrency logs saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_serving_benchmark_concurrency_*_run*.log
+GSM8K accuracy results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log
+Shutting down SGLang server...
+Server shutdown completed in 0 seconds
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-11-04 14:45:57 PST
+Total execution time: 2723 seconds (45 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+Serving CSV: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_serving_dp_attention_mtp_test.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/timing_summary_20251104_140034.log
+===========================================
+Cleaning up...
+Killing background SGLang server (PID: 46)...
+Server process 46 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.4.post2-rocm700-mi35x-20251104 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.4.post2-rocm700-mi35x-20251104_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251104
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251104
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi35x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+[nightly] Adding --enable-dp-test flag for Teams notification
+[nightly] Adding --enable-mtp-test flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🧬 DP test mode: Highlighting DP throughput benchmark and serving logs
+🚀 MTP mode: Including DeepSeek R1 throughput artifacts
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_140034.log
+   Found timing_summary log for deepseek online on 20251103: timing_summary_20251103_171044.log
+   No timing_summary log found for deepseek online on 20251102 - benchmark may not have run yet
+🔍 Discovered 0 plot file(s) for deepseek online
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_140034.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_140034.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_140034.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_140034.log
+🔍 Sending adaptive card with 0 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm700-mi35x-20251104
+[nightly] Stopping container sgl-dev_v0.5.4.post2-rocm700-mi35x-20251104 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
