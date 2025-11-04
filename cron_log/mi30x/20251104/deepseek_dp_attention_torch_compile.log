@@ -1,0 +1,143 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --enable-torch-compile --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+[nightly] Start time: 2025-11-04 11:15:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2274872
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 129b4a5231df
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251104...
+[nightly] Found candidate tag for day -0: v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Found local image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Successfully obtained image for date 20251104: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: dea5f75fb650
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.4.post2-rocm630-mi30x-20251104_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Container name: sgl-dev_v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Reusing container sgl-dev_v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+[config] DP attention + torch compile detected - increased server timeout to 2700s (45 minutes)
+✅ Parameter validation passed
+[online] Script started at: 2025-11-04 11:15:33 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.4.post2-rocm630-mi30x-20251104_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Torch compile enabled with DP attention
+[DEBUG] DP + torch compile mode: using mem-fraction=0.8, cuda-graph-max-bs=16
+Waiting for SGLang server (PID: 42) to start... (Max 45 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.4.post2-rocm630-mi30x-20251104_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_server.log
+............................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.4.post2-rocm630-mi30x-20251104_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/sglang_server.log:
+--- Error details ---
+Thread 0x00007f2e98ab9480 (most recent call first):
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 936 in add_compilation_metrics_to_chromium
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 0 in record_compilation_metrics
+  File Fatal Python error: Segmentation fault
+
+
+Extension modules: numpy.core._multiarray_umath, numpy.core._multiarray_tests, numpy.linalg._umath_linalg, numpy.fft._pocketfft_internal, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._mt19937, numpy.random.mtrand, numpy.random._philox, numpy.random._pcg64, numpy.random._sfc64, numpy.random._generator, pybase64._pybase64, charset_normalizer.md, requests.packages.charset_normalizer.md, requests.packages.chardet.md, multidict._multidict, yarl._quoting_c, propcache._helpers_c, aiohttp._http_writer, aiohttp._http_parser, aiohttp._websocket.mask, aiohttp._websocket.reader_c, frozenlist._frozenlist, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, psutil._psutil_linux, psutil._psutil_posix, zmq.backend.cython._zmq, PIL._imaging, cython.cimports.libc.math, sentencepiece._sentencepiece, regex._regex, yaml._yaml, markupsafe._speedups, PIL._imagingft, hiredis.hiredis, _cffi_backend, scipy._lib._ccallback_c, scipy.linalg._fblas, scipy.linalg._flapack, _cyutility, scipy._cyutility, scipy.linalg.cython_lapack, scipy.linalg._cythonized_array_utils, scipy.linalg._solve_toeplitz, scipy.linalg._decomp_lu_cython, scipy.linalg._matfuncs_schur_sqrtm, scipy.linalg._matfuncs_expm, scipy.linalg._linalg_pythran, scipy.linalg.cython_blas, scipy.linalg._decomp_update, scipy.sparse._sparsetools, _csparsetools, scipy.sparse._csparsetools, scipy.sparse.linalg._dsolve._superlu, scipy.sparse.linalg._eigen.arpack._arpack, scipy.sparse.linalg._propack._spropack, scipy.sparse.linalg._propack._dpropack, scipy.sparse.linalg._propack._cpropack, scipy.sparse.linalg._propack._zpropack, scipy.optimize._group_columns, scipy._lib.messagestream, scipy.optimize._trlib._trlib, scipy.optimize._lbfgsb, _moduleTNC, scipy.optimize._moduleTNC, scipy.optimize._slsqplib, scipy.optimize._minpack, scipy.optimize._lsq.givens_elimination, scipy.optimize._zeros, scipy._lib._uarray._uarray, scipy.special._ufuncs_cxx, scipy.special._ellip_harm_2, scipy.special._special_ufuncs, scipy.special._gufuncs, scipy.special._ufuncs, scipy.special._specfun, scipy.special._comb, scipy.linalg._decomp_interpolative, scipy.optimize._bglu_dense, scipy.optimize._lsap, scipy.spatial._ckdtree, scipy.spatial._qhull, scipy.spatial._voronoi, scipy.spatial._hausdorff, scipy.spatial._distance_wrap, scipy.spatial.transform._rotation, scipy.spatial.transform._rigid_transform, scipy.optimize._direct, setproctitle, Cython.Utils, Cython.Plex.Actions, Cython.Plex.Transitions, Cython.Plex.Machines, Cython.Plex.DFA, Cython.Plex.Scanners, Cython.Compiler.Scanning, Cython.StringIOTree, Cython.Compiler.Code, pyarrow.lib, pandas._libs.tslibs.ccalendar, pandas._libs.tslibs.np_datetime, pandas._libs.tslibs.dtypes, pandas._libs.tslibs.base, pandas._libs.tslibs.nattype, pandas._libs.tslibs.timezones, pandas._libs.tslibs.fields, pandas._libs.tslibs.timedeltas, pandas._libs.tslibs.tzconversion, pandas._libs.tslibs.timestamps, pandas._libs.properties, pandas._libs.tslibs.offsets, pandas._libs.tslibs.strptime, pandas._libs.tslibs.parsing, pandas._libs.tslibs.conversion, pandas._libs.tslibs.period, pandas._libs.tslibs.vectorized, pandas._libs.ops_dispatch, pandas._libs.missing, pandas._libs.hashtable, pandas._libs.algos, pandas._libs.interval, pandas._libs.lib, pyarrow._compute, pandas._libs.ops, pandas._libs.hashing, pandas._libs.arrays, pandas._libs.tslib, pandas._libs.sparse, pandas._libs.internals, pandas._libs.indexing, pandas._libs.index, pandas._libs.writers, pandas._libs.join, pandas._libs.window.aggregations, pandas._libs.window.indexers, pandas._libs.reshape, pandas._libs.groupby, pandas._libs.json, pandas._libs.parsers, pandas._libs.testing, hip_utils, msgspec._core, vllm.utils, vllm.sampling_params, vllm.sequence, roctxMarker, vllm.model_executor.layers.sampler, vllm.core.scheduler, vllm.engine.output_processor.stop_checker, msgpack._cmsgpack, google._upb._message, uvloop.loop, ray._raylet, vllm.transformers_utils.detokenizer, vllm.outputs, vllm.engine.llm_engine, __triton_launcher (total: 169)
+--
+Memory access fault by GPU node-2 (Agent handle: 0x9753920) on address 0x7f4964e70000. Reason: Unknown.
+Failed to create GPU coredump: File exists
+GPU core dump failed
+Fatal Python error: Aborted
+
+Thread 0x00007f4877fff640 (most recent call first):
+  File "/usr/lib/python3.12/threading.py", line 359 in wait
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 42)...
+Server process 42 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.4.post2-rocm630-mi30x-20251104 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.4.post2-rocm630-mi30x-20251104_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251104
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251104
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+[nightly] Adding --enable-torch-compile flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🔥 Torch compile mode: Looking for torch compile benchmark results
+   🔍 Uploading 20251104_DeepSeek-V3-0324_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📝 Updating existing file: plot/mi30x/DeepSeek-V3-0324/online/20251104_DeepSeek-V3-0324_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251104_DeepSeek-V3-0324_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251104_DeepSeek-V3-0324_online_standard.png
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251104_DeepSeek-V3-0324_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_111533.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_111533.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_111533.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_111533.log
+   Found timing_summary log for deepseek online on 20251104: timing_summary_20251104_111533.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251104_DeepSeek-V3-0324_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251104
+[nightly] Stopping container sgl-dev_v0.5.4.post2-rocm630-mi30x-20251104 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
