@@ -1,0 +1,7 @@
+📊 Generating SGLang CI comparison report
+📁 Base directory: /mnt/raid/michael/sglang-ci
+🔄 Running compare_suites.py...
+✅ Successfully parsed 11 test categories
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/compare_suites_20251104_085002.json
+✅ Successfully sent comparison report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
