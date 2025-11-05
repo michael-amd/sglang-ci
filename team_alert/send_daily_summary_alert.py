@@ -708,16 +708,23 @@ class DailySummaryReporter:
 
                 # Add plot link for Performance Benchmarks on the same line
                 if category == "Performance Benchmarks":
-                    # Map benchmark names to model directories
-                    benchmark_model_map = {
-                        "Grok Online Benchmark": "GROK1",
-                        "Grok 2 Online Benchmark": "GROK2",
-                        "DeepSeek Online Benchmark": "DeepSeek-V3-0324",
-                    }
+                    # Map benchmark names to model directories and plot suffixes (hardware-specific for DeepSeek)
+                    if self.hardware == "mi35x":
+                        benchmark_model_map = {
+                            "Grok Online Benchmark": ("GROK1", "standard"),
+                            "Grok 2 Online Benchmark": ("GROK2", "standard"),
+                            "DeepSeek Online Benchmark": ("DeepSeek-R1-MXFP4-Preview", "all"),
+                        }
+                    else:  # mi30x and other hardware
+                        benchmark_model_map = {
+                            "Grok Online Benchmark": ("GROK1", "standard"),
+                            "Grok 2 Online Benchmark": ("GROK2", "standard"),
+                            "DeepSeek Online Benchmark": ("DeepSeek-V3-0324", "standard"),
+                        }
 
                     if task_name in benchmark_model_map:
-                        model_dir = benchmark_model_map[task_name]
-                        plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_standard.png"
+                        model_dir, plot_suffix = benchmark_model_map[task_name]
+                        plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_{plot_suffix}.png"
                         task_line += f" 🔗 [View Plot]({plot_url})"
 
                 body_elements.append(

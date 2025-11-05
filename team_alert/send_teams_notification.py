@@ -2156,6 +2156,7 @@ class TeamsNotifier:
                     f"{variant_dir}/{search_date}_*_{mode}.png",
                     f"{variant_dir}/{search_date}_*_{mode}_standard.png",
                     f"{variant_dir}/{search_date}_*_{mode}_split.png",
+                    f"{variant_dir}/{search_date}_*_{mode}_all.png",
                 ]
 
                 for pattern in search_patterns:
