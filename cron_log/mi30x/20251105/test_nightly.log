@@ -1,0 +1,167 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+[test] Start time: 2025-11-05 10:01:01 CST
+[test] Machine: dell300x-pla-t10-23
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 2493806
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi30x, ROCM Version: rocm630
+[test] Test Type: unit
+[test] Created process lock: /tmp/test_nightly_unit.lock
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 3bd55dd337be
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251105...
+[test] Found candidate tag for today: v0.5.4.post3-rocm630-mi30x-20251105
+[test] Attempting to pull rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105...
+v0.5.4.post3-rocm630-mi30x-20251105: Pulling from rocm/sgl-dev
+6414378b6477: Already exists
+fb9b732d846a: Already exists
+72a47c966458: Already exists
+6b0f51e662d9: Already exists
+d28fe32bd1e1: Already exists
+4f4fb700ef54: Already exists
+2ae8666e7615: Already exists
+f6f97575f532: Already exists
+ce162731a8b4: Already exists
+886496af1b52: Already exists
+9782bae5e560: Already exists
+0456b1c0d4ee: Already exists
+bf2506ff98d5: Already exists
+990ebd29eb4c: Already exists
+27b2c0ff8cb6: Already exists
+8a139095437d: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+9a814f065b00: Already exists
+4f4fb700ef54: Already exists
+9224f7232abd: Already exists
+8d21946ae781: Already exists
+4bee7ff91294: Already exists
+58d33f52fba2: Already exists
+8cc3e06393c6: Already exists
+6621933c8f30: Already exists
+7f5438c2f045: Already exists
+2493d82efb2e: Already exists
+db5985cb22de: Already exists
+9817a8909a81: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+e49afd700b7f: Pulling fs layer
+e747ee4d72b2: Pulling fs layer
+28ba8f679647: Pulling fs layer
+a5469b1a8f1e: Pulling fs layer
+e49afd700b7f: Waiting
+c02886767bb0: Pulling fs layer
+28ba8f679647: Waiting
+e789615d154e: Pulling fs layer
+a5469b1a8f1e: Waiting
+c8be7dbc3027: Pulling fs layer
+e4bd63bf4d4b: Pulling fs layer
+e789615d154e: Waiting
+0318896dc7ff: Pulling fs layer
+ad330ebcaaff: Pulling fs layer
+e4bd63bf4d4b: Waiting
+ff5bdb92f66a: Pulling fs layer
+0318896dc7ff: Waiting
+cdcb2daff56c: Pulling fs layer
+ad330ebcaaff: Waiting
+ff5bdb92f66a: Waiting
+65bcba19272e: Pulling fs layer
+cdcb2daff56c: Waiting
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+9817a8909a81: Verifying Checksum
+9817a8909a81: Download complete
+9817a8909a81: Pull complete
+4f4fb700ef54: Pull complete
+e49afd700b7f: Verifying Checksum
+e49afd700b7f: Download complete
+e49afd700b7f: Pull complete
+e747ee4d72b2: Verifying Checksum
+e747ee4d72b2: Download complete
+c02886767bb0: Verifying Checksum
+c02886767bb0: Download complete
+e747ee4d72b2: Pull complete
+e789615d154e: Verifying Checksum
+e789615d154e: Download complete
+c8be7dbc3027: Verifying Checksum
+c8be7dbc3027: Download complete
+e4bd63bf4d4b: Verifying Checksum
+e4bd63bf4d4b: Download complete
+0318896dc7ff: Verifying Checksum
+0318896dc7ff: Download complete
+a5469b1a8f1e: Verifying Checksum
+a5469b1a8f1e: Download complete
+ff5bdb92f66a: Download complete
+cdcb2daff56c: Verifying Checksum
+cdcb2daff56c: Download complete
+65bcba19272e: Verifying Checksum
+65bcba19272e: Download complete
+ad330ebcaaff: Verifying Checksum
+ad330ebcaaff: Download complete
+28ba8f679647: Verifying Checksum
+28ba8f679647: Download complete
+28ba8f679647: Pull complete
+a5469b1a8f1e: Pull complete
+c02886767bb0: Pull complete
+e789615d154e: Pull complete
+c8be7dbc3027: Pull complete
+e4bd63bf4d4b: Pull complete
+0318896dc7ff: Pull complete
+ad330ebcaaff: Pull complete
+ff5bdb92f66a: Pull complete
+cdcb2daff56c: Pull complete
+65bcba19272e: Pull complete
+Digest: sha256:f481281a010059414ee1d0deb3ec974f326f71211b638b9b6eb67d84083eef69
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+docker.io/rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Test type: unit
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105...
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 694e5206b55f
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Container name: sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105
+[test] Creating container sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105
+950ae8993166c7406f88839c23dd29c6ff36c565e88d923e8e5368da596dfffa
+[test] === Starting test_custom_allreduce unit test ===
+[test] Test directory: /sgl-workspace/sglang/test/srt
+[test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+[test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+[test] Running unit test inside sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105...
+[test] === Unit test FAILED for rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105 (exit code: 1) ===
+[test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+[test] Check the log file for detailed error information
+[test] Stopping container sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105 to release resources...
+[test] Sending Teams notification...
+📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+✅ Successfully sent unit test fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Test type: unit
+[test] ==========================================
+[test] Cleaning up process lock...
