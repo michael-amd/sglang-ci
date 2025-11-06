@@ -54,3 +54,17 @@
 [nightly] === Starting nightly SANITY sanity benchmark ===
 [nightly] Launching sanity check inside sgl-dev_v0.5.4.post3-rocm700-mi30x-20251105
 [nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.4.post3-rocm700-mi30x-20251105' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Sending Teams notification for sanity check results...
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] WARN: Teams notification failed for sanity check (exit code: 126)
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi30x-20251105
+[nightly] Stopping container sgl-dev_v0.5.4.post3-rocm700-mi30x-20251105 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
