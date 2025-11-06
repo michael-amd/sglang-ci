@@ -994,41 +994,6 @@ class TestNightlyTeamsNotifier:
                     }
                 )
 
-        # Add troubleshooting section for failures
-        if status == "fail":
-            body_elements.extend(
-                [
-                    {
-                        "type": "TextBlock",
-                        "text": "**Troubleshooting:**",
-                        "weight": "Bolder",
-                        "size": "Medium",
-                        "spacing": "Medium",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Check the log directory for detailed error information (prefill.log, decode.log, load_balance.log)",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "Small",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Verify Docker containers are running and healthy",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Check GPU resources and network connectivity between prefill/decode servers",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                    },
-                ]
-            )
-
         # Create actions
         actions = []
 
@@ -1045,6 +1010,24 @@ class TestNightlyTeamsNotifier:
             if hw_match:
                 hw_type = hw_match.group(0)
 
+        # Add PD log link for failed tests (after hw_type is determined)
+        if status == "fail" and hw_type and docker_image:
+            # Extract docker tag from docker_image
+            import os
+            docker_tag = docker_image.split(":")[-1] if ":" in docker_image else docker_image
+            pd_log_dir_url = f"https://github.com/{self.github_repo}/tree/log/test/pd/pd_log/{hw_type}/{docker_tag}"
+            
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"[Check full error details in PD log directory]({pd_log_dir_url})",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                    "isSubtle": True,
+                }
+            )
+
         # Add cron log link if we have hardware type
         if hw_type:
             log_date = datetime.now().strftime("%Y%m%d")
@@ -1057,14 +1040,26 @@ class TestNightlyTeamsNotifier:
                 }
             )
 
-        # Add GitHub repository link
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "🐙 View Repository",
-                "url": "https://github.com/sgl-project/sglang",
-            }
-        )
+        # Add PD log directory button if we have hardware type
+        if hw_type and docker_image:
+            docker_tag = docker_image.split(":")[-1] if ":" in docker_image else docker_image
+            pd_log_url = f"https://github.com/{self.github_repo}/tree/log/test/pd/pd_log/{hw_type}/{docker_tag}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📊 PD Logs",
+                    "url": pd_log_url,
+                }
+            )
+        else:
+            # Fallback to general repository link if hardware type not detected
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "🐙 View Repository",
+                    "url": "https://github.com/sgl-project/sglang",
+                }
+            )
 
         # Create the adaptive card
         card = {
