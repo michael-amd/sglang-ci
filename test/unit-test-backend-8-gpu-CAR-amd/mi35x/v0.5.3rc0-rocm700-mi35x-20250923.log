@@ -1,0 +1,25 @@
+==========================================
+SGL Unit Test Log
+==========================================
+Test: test_custom_allreduce.TestCustomAllReduce
+Image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20250923
+Container: test_v0_5_3rc0-rocm700-mi35x-20250923
+Hardware: mi35x
+Start time: 2025-09-24 10:06:42 CDT
+Test directory: /sgl-workspace/sglang/test/srt
+Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+==========================================
+
+/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
+  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.066s
+
+OK
+
+==========================================
+End time: 2025-09-24 10:06:45 CDT
+Exit code: 0
+Result: PASSED
+==========================================
