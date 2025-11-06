@@ -1,0 +1,73 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[test] Start time: 2025-11-06 11:01:02 CST
+[test] Machine: smci355-ccs-aus-m15-21.cs-aus.dcgpu
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 633682
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: michaezh | Groups: michaezh spack everyone... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi35x, ROCM Version: rocm700
+[test] Test Type: unit
+[test] Created process lock: /tmp/test_nightly_unit.lock
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: bd50fc531a98
+a71fff25b0db
+1756a87a138a
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251106...
+[test] No image found for today. Checking yesterday as a fallback...
+[test] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251105...
+[test] Fallback found candidate tag: v0.5.4.post3-rocm700-mi35x-20251105
+[test] Attempting to pull rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105...
+v0.5.4.post3-rocm700-mi35x-20251105: Pulling from rocm/sgl-dev
+Digest: sha256:34244b9627151db690a8c37c5bf8fd9909560adaa0e6f1ee367829579f558138
+Status: Image is up to date for rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+docker.io/rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+[test] Successfully pulled fallback image for yesterday: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+[test] Test type: unit
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105...
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 0fe5b9c9654f
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+[test] Container name: sgl-dev_v0.5.4.post3-rocm700-mi35x-20251105
+[test] Reusing container sgl-dev_v0.5.4.post3-rocm700-mi35x-20251105
+[test] === Starting test_custom_allreduce unit test ===
+[test] Test directory: /sgl-workspace/sglang/test/srt
+[test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm700-mi35x-20251105.log
+[test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+[test] Running unit test inside sgl-dev_v0.5.4.post3-rocm700-mi35x-20251105...
+[test] === Unit test FAILED for rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105 (exit code: 1) ===
+[test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm700-mi35x-20251105.log
+[test] Check the log file for detailed error information
+[test] Stopping container sgl-dev_v0.5.4.post3-rocm700-mi35x-20251105 to release resources...
+[test] Sending Teams notification...
+📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm700-mi35x-20251105.log
+✅ Successfully sent unit test fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+[test] Test type: unit
+[test] ==========================================
+[test] Cleaning up process lock...
