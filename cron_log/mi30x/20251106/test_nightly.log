@@ -626,3 +626,25 @@ docker.io/rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
 [test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Container name: sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105
+[test] Reusing container sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105
+[test] === Starting test_custom_allreduce unit test ===
+[test] Test directory: /sgl-workspace/sglang/test/srt
+[test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+[test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+[test] Running unit test inside sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105...
+[test] === Unit test FAILED for rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105 (exit code: 1) ===
+[test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+[test] Check the log file for detailed error information
+[test] Stopping container sgl-dev_v0.5.4.post3-rocm630-mi30x-20251105 to release resources...
+[test] Sending Teams notification...
+📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/v0.5.4.post3-rocm630-mi30x-20251105.log
+✅ Successfully sent unit test fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.4.post3-rocm630-mi30x-20251105
+[test] Test type: unit
+[test] ==========================================
+[test] Cleaning up process lock...
