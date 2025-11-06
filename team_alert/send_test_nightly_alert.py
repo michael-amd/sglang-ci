@@ -161,21 +161,45 @@ def parse_test_log(log_file_path: str) -> Dict:
 
         # For failed tests, try to extract error details
         if parsed_data["status"] == "fail":
-            # Look for common error patterns
+            # Look for common error patterns (in order of preference)
+            # We search for the LAST occurrence as it's usually the final failure reason
             error_patterns = [
-                r"FAILED \((.+?)\)",
-                r"AssertionError: (.+)",
-                r"Error: (.+)",
-                r"Exception: (.+)",
+                # RuntimeError (prioritize - usually most meaningful)
+                (r"RuntimeError:\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)", 250),
+                # AssertionError with message
+                (r"AssertionError:\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)", 200),
+                # Other specific exceptions
+                (r"(ValueError|TypeError|AttributeError|KeyError|ImportError|OSError|IOError):\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)", 200),
+                # Generic Error/Exception
+                (r"Error:\s*(.+?)(?:\n\n|\n[A-Z]|\Z)", 150),
+                (r"Exception:\s*(.+?)(?:\n\n|\n[A-Z]|\Z)", 150),
+                # FAILED with error count
+                (r"FAILED \((.+?)\)", 100),
             ]
 
-            for pattern in error_patterns:
-                error_match = re.search(pattern, content, re.DOTALL)
-                if error_match:
-                    error_text = error_match.group(1).strip()
+            for pattern, max_length in error_patterns:
+                # Find all matches and take the last one
+                matches = list(re.finditer(pattern, content, re.DOTALL))
+                if matches:
+                    error_match = matches[-1]  # Take the last match
+                    
+                    # For patterns with two groups (exception type + message)
+                    if error_match.lastindex == 2:
+                        error_type = error_match.group(1).strip()
+                        error_msg = error_match.group(2).strip()
+                        error_text = f"{error_type}: {error_msg}"
+                    else:
+                        error_text = error_match.group(1).strip()
+                    
+                    # Clean up the error text
+                    error_text = error_text.replace('\n', ' ').strip()
+                    # Remove ANSI color codes
+                    error_text = re.sub(r'\[\d+m', '', error_text)
+                    
                     # Limit error details to reasonable length
-                    if len(error_text) > 200:
-                        error_text = error_text[:200] + "..."
+                    if len(error_text) > max_length:
+                        error_text = error_text[:max_length] + "..."
+                    
                     parsed_data["error_details"] = error_text
                     break
 
@@ -532,37 +556,13 @@ class TestNightlyTeamsNotifier:
                 }
             )
 
-        # Add log file path if provided
-        if log_file:
-            # Extract relative path from the base directory
-            # Look for pattern like: .../sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/filename.log
-            import re
-
-            relative_path_match = re.search(
-                r".*sglang-ci/(test/unit-test-backend-8-gpu-CAR-amd/.+)",
-                log_file,
-            )
-            display_path = (
-                relative_path_match.group(1) if relative_path_match else log_file
-            )
-
-            body_elements.append(
-                {
-                    "type": "TextBlock",
-                    "text": f"• Log file: **{display_path}**",
-                    "wrap": True,
-                    "size": "Small",
-                    "spacing": "None",
-                }
-            )
-
         # Add error details for failed tests
         if status == "fail" and error_details:
             body_elements.extend(
                 [
                     {
                         "type": "TextBlock",
-                        "text": "**Error Details:**",
+                        "text": "**Error:**",
                         "weight": "Bolder",
                         "size": "Medium",
                         "spacing": "Medium",
@@ -574,41 +574,6 @@ class TestNightlyTeamsNotifier:
                         "size": "Small",
                         "spacing": "Small",
                         "color": "Attention",
-                    },
-                ]
-            )
-
-        # Add troubleshooting section for failures
-        if status == "fail":
-            body_elements.extend(
-                [
-                    {
-                        "type": "TextBlock",
-                        "text": "**Troubleshooting:**",
-                        "weight": "Bolder",
-                        "size": "Medium",
-                        "spacing": "Medium",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Check the log file for detailed error information",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "Small",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Verify Docker image availability and GPU resources",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": "• Check for recent code changes that may affect unit tests",
-                        "wrap": True,
-                        "size": "Small",
-                        "spacing": "None",
                     },
                 ]
             )
@@ -671,6 +636,24 @@ class TestNightlyTeamsNotifier:
             except Exception:
                 pass
 
+        # Add CAR log link for failed tests (after hw_type is determined)
+        if status == "fail" and hw_type and log_file:
+            # Extract log filename from path
+            import os
+            log_filename = os.path.basename(log_file)
+            car_log_file_url = f"https://github.com/{self.github_repo}/blob/log/test/unit-test-backend-8-gpu-CAR-amd/{hw_type}/{log_filename}"
+            
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"[Check full error details in CAR log]({car_log_file_url})",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                    "isSubtle": True,
+                }
+            )
+
         # Add cron log link if we have hardware type
         if hw_type:
             log_date = datetime.now().strftime("%Y%m%d")
@@ -683,14 +666,25 @@ class TestNightlyTeamsNotifier:
                 }
             )
 
-        # Add GitHub repository link
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "🐙 View Repository",
-                "url": "https://github.com/sgl-project/sglang",
-            }
-        )
+        # Add CAR unit test log link if we have hardware type
+        if hw_type:
+            car_log_url = f"https://github.com/{self.github_repo}/tree/log/test/unit-test-backend-8-gpu-CAR-amd/{hw_type}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📊 CAR Logs",
+                    "url": car_log_url,
+                }
+            )
+        else:
+            # Fallback to general repository link if hardware type not detected
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "🐙 View Repository",
+                    "url": "https://github.com/sgl-project/sglang",
+                }
+            )
 
         # Create the adaptive card
         card = {

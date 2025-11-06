@@ -23,13 +23,16 @@
 #     # PD logs (4th arg is docker image tag/folder name)
 #     bash cron/github_log_upload.sh "" mi30x pd v0.5.4.post1-rocm700-mi30x-20251029
 #
+#     # Unit test logs (upload entire directory)
+#     bash cron/github_log_upload.sh "" mi30x unit-test
+#
 #     # Direct path upload (auto-detects type when 4th arg is absolute path)
 #     bash cron/github_log_upload.sh "" "" "" /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.3rc0
 #
 # Arguments:
 #   DATE          – Optional. Date in YYYYMMDD format (defaults to today). Ignored if FOLDER is provided.
 #   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
-#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', or 'pd' (defaults to 'cron')
+#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', 'pd', or 'unit-test' (defaults to 'cron')
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
@@ -86,6 +89,11 @@ if [[ -n "$ARG_FOLDER" ]]; then
       # Extract hardware from path: .../pd/pd_log/<hw>/<docker_name>
       HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'pd/pd_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
       DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/unit-test-backend-"* ]]; then
+      readonly LOG_TYPE="unit-test"
+      # Extract hardware from path or use provided hardware type
+      HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
+      DATE_FOLDER=$(basename "$SRC_LOG_DIR")
     else
       readonly LOG_TYPE="$ARG_LOG_TYPE"
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
@@ -101,6 +109,9 @@ if [[ -n "$ARG_FOLDER" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     elif [[ "$LOG_TYPE" == "pd" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
+    elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+      # For unit-test, use the hardware-specific subdirectory
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
     else
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     fi
@@ -119,6 +130,10 @@ else
     # For PD logs, DATE is actually the docker image tag
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${DATE}"
     DATE_FOLDER="$DATE"
+  elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+    # For unit-test logs, use the hardware-specific subdirectory
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
+    DATE_FOLDER="${HARDWARE_TYPE}"
   else
     # For cron logs, DATE is YYYYMMDD format
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${DATE}"
@@ -139,7 +154,28 @@ fi
 readonly WORK_CLONE_DIR="/mnt/raid/michael/sglang-ci-data"
 
 ###########################################################################
-# 2. Ensure we have a clone of the data repository
+# 2. Acquire lock for Git operations (prevent concurrent access)
+###########################################################################
+
+# Lock file location (shared across all cron jobs)
+readonly LOCK_FILE="/tmp/github_log_upload.lock"
+
+# Use flock to serialize Git operations across concurrent cron jobs
+# File descriptor 200 is used for the lock
+exec 200>"$LOCK_FILE"
+
+if ! flock -x -w 300 200; then
+  echo "[github_log_upload] ERROR: Failed to acquire lock after 300 seconds. Aborting."
+  exit 1
+fi
+
+echo "[github_log_upload] Lock acquired – proceeding with upload"
+
+# Ensure lock is released on exit (normal or error)
+trap 'flock -u 200' EXIT
+
+###########################################################################
+# 3. Ensure we have a clone of the data repository
 ###########################################################################
 
 if [[ ! -d "$WORK_CLONE_DIR/.git" ]]; then
@@ -164,7 +200,7 @@ git checkout -q log
 git pull --rebase --quiet || true
 
 ###########################################################################
-# 3. Copy / stage logs
+# 4. Copy / stage logs
 ###########################################################################
 
 # Determine destination path based on log type
@@ -172,6 +208,8 @@ if [[ "$LOG_TYPE" == "sanity" ]]; then
   readonly DEST_PATH="test/sanity_check_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 elif [[ "$LOG_TYPE" == "pd" ]]; then
   readonly DEST_PATH="test/pd/pd_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+  readonly DEST_PATH="test/unit-test-backend-8-gpu-CAR-amd/${DATE_FOLDER}"
 else
   readonly DEST_PATH="cron_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 fi
@@ -198,7 +236,7 @@ if git diff --cached --quiet; then
 fi
 
 ###########################################################################
-# 4. Commit & push
+# 5. Commit & push
 ###########################################################################
 
 # Generate commit message based on log type
@@ -206,6 +244,8 @@ if [[ "$LOG_TYPE" == "sanity" ]]; then
   COMMIT_MSG="Backup sanity logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 elif [[ "$LOG_TYPE" == "pd" ]]; then
   COMMIT_MSG="Backup PD test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+  COMMIT_MSG="Backup unit test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 else
   COMMIT_MSG="Backup cron logs for ${HARDWARE_TYPE} – ${DATE_FOLDER}"
 fi
