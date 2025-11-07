@@ -206,42 +206,30 @@
         document.getElementById('overall-summary').style.display = 'block';
 
         const stats = data.stats;
-        const passRate = stats.tasks_run > 0
+        const passRate = stats.tasks_run > 0 
             ? ((stats.passed_tasks / stats.tasks_run) * 100).toFixed(1)
             : 0;
-
-        const statusBadge = getStatusBadge(stats.overall_status);
-
+        
         document.getElementById('overall-summary').innerHTML = `
-            <div class="row">
-                <div class="col-md-3 text-center">
-                    <h2 class="text-success">${stats.passed_tasks}</h2>
-                    <p class="text-muted">Passed</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h2 class="text-danger">${stats.failed_tasks}</h2>
-                    <p class="text-muted">Failed</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h2 class="text-warning">${stats.unknown_tasks}</h2>
-                    <p class="text-muted">Unknown</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h2 class="text-secondary">${stats.not_run}</h2>
-                    <p class="text-muted">Not Run</p>
-                </div>
-            </div>
-            <div class="row mt-3">
+            <div class="row mb-4">
                 <div class="col-md-6">
-                    <h6>Overall Status</h6>
-                    ${statusBadge}
-                </div>
-                <div class="col-md-6">
-                    <h6>Pass Rate</h6>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar bg-success" role="progressbar"
+                    <h6 class="mb-2">Pass Rate</h6>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
                              style="width: ${passRate}%">
-                            ${passRate}%
+                            <strong>${passRate}%</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3">
+                        <div class="mb-2">
+                            <strong>• Tasks run:</strong> ${stats.tasks_run}/${stats.total_tasks}
+                        </div>
+                        <div>
+                            <strong>• Passed:</strong> <span class="text-success">${stats.passed_tasks}</span>, 
+                            <strong>Failed:</strong> <span class="text-danger">${stats.failed_tasks}</span>, 
+                            <strong>Not Run:</strong> <span class="text-secondary">${stats.not_run}</span>
                         </div>
                     </div>
                 </div>
