@@ -22,6 +22,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import requests
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
 # Add parent directory to path to import data_collector
@@ -35,6 +36,7 @@ app = Flask(__name__)
 # Configuration
 BASE_DIR = os.environ.get("SGL_BENCHMARK_CI_DIR", "/mnt/raid/michael/sglang-ci")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 USE_GITHUB = os.environ.get("USE_GITHUB", "true").lower() in ["true", "1", "yes"]
 
 
@@ -241,14 +243,43 @@ def serve_log(hardware, date, filename):
         return "Log file not found", 404
 
 
-@app.route("/local-plots/<path:filepath>")
-def serve_local_plot(filepath):
-    """Serve local plot files from plots_server directory"""
-    plots_dir = os.path.join(BASE_DIR, "plots_server")
+@app.route("/github-plots/<hardware>/<model>/<mode>/<filename>")
+def serve_github_plot(hardware, model, mode, filename):
+    """Proxy GitHub plot files (handles authentication for private repos)"""
+    if hardware not in ["mi30x", "mi35x"]:
+        return "Invalid hardware type", 400
+    
     try:
-        return send_from_directory(plots_dir, filepath)
-    except FileNotFoundError:
-        return "Plot file not found", 404
+        # Get GitHub token from environment (loaded at startup)
+        github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
+        
+        # Construct GitHub raw URL
+        plot_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/log/plot/{hardware}/{model}/{mode}/{filename}"
+        
+        # Fetch from GitHub with authentication
+        headers = {}
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+        
+        response = requests.get(plot_url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            # Return image with correct content type
+            from flask import Response
+            return Response(
+                response.content,
+                status=200,
+                mimetype="image/png",
+                headers={"Cache-Control": "public, max-age=3600"}
+            )
+        else:
+            return f"Plot not found in GitHub (status: {response.status_code})", 404
+    
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Error in serve_github_plot: {error_detail}")
+        return f"Error fetching plot: {str(e)}", 500
 
 
 @app.route("/health")
