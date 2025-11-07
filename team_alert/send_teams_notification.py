@@ -433,7 +433,9 @@ class BenchmarkAnalyzer:
             server_log_content = ""
             if os.path.exists(server_log_file):
                 try:
-                    with open(server_log_file, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(
+                        server_log_file, "r", encoding="utf-8", errors="ignore"
+                    ) as f:
                         server_log_content = f.read()
                 except Exception:
                     pass
@@ -446,7 +448,8 @@ class BenchmarkAnalyzer:
 
                 # Extract the specific import error (prefer server log as it has full traceback)
                 import_match = re.search(
-                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)", server_log_content or content
+                    r"(ImportError|ModuleNotFoundError):\s*(.+?)(?:\n|$)",
+                    server_log_content or content,
                 )
                 if import_match:
                     error_msg = (
@@ -472,10 +475,13 @@ class BenchmarkAnalyzer:
                 has_completion_marker = (
                     re.search(r"Script ended at:", content)
                     or re.search(r"Total execution time:", content)
-                    or (re.search(r"End time:", content) and re.search(r"Total duration:", content))
+                    or (
+                        re.search(r"End time:", content)
+                        and re.search(r"Total duration:", content)
+                    )
                     or re.search(r"Server error status:\s*(PASS|FAIL)", content)
                 )
-                
+
                 if not has_completion_marker:
                     # Only flag as error if it's been more than a few hours
                     # (incomplete logs might be from currently running benchmarks)
