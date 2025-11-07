@@ -1,6 +1,6 @@
-# SGLang CI Data Repository
+# SGLang CI Dashboard and Data
 
-This repository stores CI logs, plots, and test results from the SGLang CI pipeline.
+This repository stores CI logs, plots, and test results from the SGLang CI pipeline, and provides an interactive web dashboard for viewing and analyzing the data.
 
 ## 📊 Live Dashboard
 
