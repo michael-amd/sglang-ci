@@ -169,43 +169,27 @@
                 summaryDiv.style.display = 'block';
 
                 const stats = data.stats;
-                const statusBadge = getStatusBadge(stats.overall_status);
-                const passRate = stats.tasks_run > 0
+                const passRate = stats.tasks_run > 0 
                     ? ((stats.passed_tasks / stats.tasks_run) * 100).toFixed(1)
                     : 0;
-
+                
                 summaryDiv.innerHTML = `
                     <div class="mb-3">
-                        <h6>Overall Status</h6>
-                        ${statusBadge}
-                    </div>
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <h4 class="text-success mb-0">${stats.passed_tasks}</h4>
-                                <small class="text-muted">Passed</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <h4 class="text-danger mb-0">${stats.failed_tasks}</h4>
-                                <small class="text-muted">Failed</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <h4 class="text-secondary mb-0">${stats.total_tasks}</h4>
-                                <small class="text-muted">Total</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" role="progressbar"
+                        <h6 class="mb-2">Pass Rate</h6>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
                                  style="width: ${passRate}%">
-                                ${passRate}% Pass Rate
+                                <strong>${passRate}%</strong>
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-2">
+                        <strong>• Tasks run:</strong> ${stats.tasks_run}/${stats.total_tasks}
+                    </div>
+                    <div>
+                        <strong>• Passed:</strong> <span class="text-success">${stats.passed_tasks}</span>, 
+                        <strong>Failed:</strong> <span class="text-danger">${stats.failed_tasks}</span>, 
+                        <strong>Not Run:</strong> <span class="text-secondary">${stats.not_run}</span>
                     </div>
                 `;
             })
