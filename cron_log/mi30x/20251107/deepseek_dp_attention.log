@@ -1,0 +1,86 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-07 09:30:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3318000
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: c26ef27f130a
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251107...
+[nightly] Found candidate tag for day -0: v0.5.5-rocm630-mi30x-20251107
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251107...
+v0.5.5-rocm630-mi30x-20251107: Pulling from rocm/sgl-dev
+6414378b6477: Already exists
+fb9b732d846a: Already exists
+72a47c966458: Already exists
+6b0f51e662d9: Already exists
+d28fe32bd1e1: Already exists
+4f4fb700ef54: Already exists
+2ae8666e7615: Already exists
+f6f97575f532: Already exists
+ce162731a8b4: Already exists
+886496af1b52: Already exists
+9782bae5e560: Already exists
+0456b1c0d4ee: Already exists
+bf2506ff98d5: Already exists
+990ebd29eb4c: Already exists
+27b2c0ff8cb6: Already exists
+8a139095437d: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+9a814f065b00: Already exists
+4f4fb700ef54: Already exists
+9224f7232abd: Already exists
+8d21946ae781: Already exists
+4bee7ff91294: Already exists
+58d33f52fba2: Already exists
+8cc3e06393c6: Already exists
+6621933c8f30: Already exists
+7f5438c2f045: Already exists
+2493d82efb2e: Already exists
+db5985cb22de: Already exists
+8a38439a9480: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+3b6cacc1fcf8: Pulling fs layer
+8a38439a9480: Waiting
+b19e012c478c: Pulling fs layer
+4f4fb700ef54: Waiting
+e8d735b8b985: Pulling fs layer
+d80dcafefb03: Pulling fs layer
+b19e012c478c: Waiting
+e8d735b8b985: Waiting
+f07e2add037b: Pulling fs layer
+ba2751cd3a9a: Pulling fs layer
+f07e2add037b: Waiting
+d80dcafefb03: Waiting
+a88aaf94d842: Pulling fs layer
+fb4284b2c92c: Pulling fs layer
+ba2751cd3a9a: Waiting
+89f221c38ed4: Pulling fs layer
+37cc3da3a2c5: Pulling fs layer
+a88aaf94d842: Waiting
+8cda55373fdc: Pulling fs layer
+fb4284b2c92c: Waiting
+37cc3da3a2c5: Waiting
+8cd7528e6f15: Pulling fs layer
+e283bc6ca98b: Pulling fs layer
+8cd7528e6f15: Waiting
+e283bc6ca98b: Waiting
