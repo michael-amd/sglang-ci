@@ -317,14 +317,25 @@ class DashboardDataCollector:
             plots[benchmark_name] = []
 
             for suffix in suffixes:
-                # Construct GitHub plot URL
-                plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_{suffix}.png"
+                plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
+
+                # Check if plot exists locally in plots_server
+                local_plot_path = os.path.join(
+                    self.base_dir, "plots_server", model_dir, "online", plot_filename
+                )
+
+                # Use GitHub proxy endpoint (handles both local and GitHub plots)
+                plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
+                raw_url = (
+                    f"/github-plots/{self.hardware}/{model_dir}/online/{plot_filename}"
+                )
 
                 plots[benchmark_name].append(
                     {
                         "suffix": suffix,
                         "url": plot_url,
-                        "raw_url": plot_url.replace("/blob/", "/raw/"),
+                        "raw_url": raw_url,
+                        "local_available": os.path.exists(local_plot_path),
                     }
                 )
 
@@ -349,3 +360,46 @@ class DashboardDataCollector:
             return log_path
 
         return None
+
+    def get_dates_with_plots(self, max_days: int = 90) -> List[str]:
+        """
+        Get list of dates that have plots available from local filesystem
+
+        Args:
+            max_days: Maximum number of days to check
+
+        Returns:
+            List of date strings in YYYYMMDD format with available plots
+        """
+        dates_with_plots = set()
+
+        # Check local plots_server directory
+        plots_base = os.path.join(self.base_dir, "plots_server")
+
+        if not os.path.exists(plots_base):
+            return []
+
+        # Check for each model directory
+        models = ["GROK1", "GROK2", "DeepSeek-V3-0324", "DeepSeek-R1-MXFP4-Preview"]
+
+        for model_dir in models:
+            model_path = os.path.join(plots_base, model_dir, "online")
+            if not os.path.exists(model_path):
+                continue
+
+            # List all PNG files
+            try:
+                for filename in os.listdir(model_path):
+                    if filename.endswith(".png"):
+                        # Extract date from filename: YYYYMMDD_MODEL_online_*.png
+                        date_match = re.match(r"(\d{8})_.*\.png", filename)
+                        if date_match:
+                            date_str = date_match.group(1)
+                            dates_with_plots.add(date_str)
+            except Exception:
+                continue
+
+        # Sort dates (newest first) and limit to max_days
+        sorted_dates = sorted(list(dates_with_plots), reverse=True)[:max_days]
+
+        return sorted_dates

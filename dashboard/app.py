@@ -46,6 +46,45 @@ GITHUB_REPO = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 USE_GITHUB = os.environ.get("USE_GITHUB", "true").lower() in ["true", "1", "yes"]
 
+# Determine current hardware from hostname
+CURRENT_HARDWARE = None
+try:
+    import socket
+
+    hostname = socket.gethostname().lower()
+    if "30" in hostname or "300" in hostname:
+        CURRENT_HARDWARE = "mi30x"
+    elif "35" in hostname or "355" in hostname or "350" in hostname:
+        CURRENT_HARDWARE = "mi35x"
+except Exception:
+    pass
+
+
+def get_data_collector(hardware: str):
+    """
+    Get appropriate data collector for hardware
+
+    For mi30x on mi30x server: Use local files first (instant, no GitHub calls)
+    For mi35x or remote access: Use GitHub first (works behind firewall)
+    """
+    use_local_first = hardware == CURRENT_HARDWARE and hardware == "mi30x"
+
+    if use_local_first:
+        # Local-first mode: Fast, no GitHub calls
+        return DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
+    elif USE_GITHUB:
+        # GitHub-first mode: Works behind firewall, has local fallback
+        return GitHubDataCollector(
+            hardware=hardware,
+            base_dir=BASE_DIR,
+            github_repo=GITHUB_REPO,
+            use_local_fallback=True,
+            github_token=GITHUB_TOKEN,
+        )
+    else:
+        # Local only mode
+        return DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
+
 
 @app.route("/")
 def index():
@@ -135,17 +174,7 @@ def api_trends(hardware):
     days = min(days, 90)  # Cap at 90 days
 
     try:
-        # Use GitHub data collector if enabled, otherwise use local
-        if USE_GITHUB:
-            collector = GitHubDataCollector(
-                hardware=hardware,
-                base_dir=BASE_DIR,
-                github_repo=GITHUB_REPO,
-                use_local_fallback=True,
-            )
-        else:
-            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
-
+        collector = get_data_collector(hardware)
         trends_data = collector.get_historical_trends(days=days)
 
         return jsonify({"hardware": hardware, "days": days, "trends": trends_data})
@@ -185,18 +214,7 @@ def api_plots(hardware, date):
         return jsonify({"error": "Invalid hardware type"}), 400
 
     try:
-        # Use GitHub data collector if enabled, otherwise use local
-        if USE_GITHUB:
-            collector = GitHubDataCollector(
-                hardware=hardware,
-                base_dir=BASE_DIR,
-                github_repo=GITHUB_REPO,
-                use_local_fallback=True,
-                github_token=GITHUB_TOKEN,
-            )
-        else:
-            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
-
+        collector = get_data_collector(hardware)
         plots = collector.get_available_plots(date)
 
         return jsonify({"hardware": hardware, "date": date, "plots": plots})
@@ -212,18 +230,7 @@ def api_available_plot_dates(hardware):
         return jsonify({"error": "Invalid hardware type"}), 400
 
     try:
-        # Use GitHub data collector if enabled, otherwise use local
-        if USE_GITHUB:
-            collector = GitHubDataCollector(
-                hardware=hardware,
-                base_dir=BASE_DIR,
-                github_repo=GITHUB_REPO,
-                use_local_fallback=True,
-                github_token=GITHUB_TOKEN,
-            )
-        else:
-            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
-
+        collector = get_data_collector(hardware)
         # Get dates with available plots
         available_dates = collector.get_dates_with_plots()
 
@@ -242,17 +249,7 @@ def api_compare():
     try:
         results = {}
         for hardware in ["mi30x", "mi35x"]:
-            # Use GitHub data collector if enabled, otherwise use local
-            if USE_GITHUB:
-                collector = GitHubDataCollector(
-                    hardware=hardware,
-                    base_dir=BASE_DIR,
-                    github_repo=GITHUB_REPO,
-                    use_local_fallback=True,
-                )
-            else:
-                collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
-
+            collector = get_data_collector(hardware)
             task_results = collector.collect_task_results(date)
             sanity_results = collector.parse_sanity_check_log(date)
             stats = collector.calculate_summary_stats(task_results, sanity_results)
@@ -283,18 +280,26 @@ def serve_log(hardware, date, filename):
 
 @app.route("/github-plots/<hardware>/<model>/<mode>/<filename>")
 def serve_github_plot(hardware, model, mode, filename):
-    """Proxy GitHub plot files (handles authentication for private repos)"""
+    """Proxy plot files (tries local first for mi30x, then GitHub)"""
     if hardware not in ["mi30x", "mi35x"]:
         return "Invalid hardware type", 400
 
     try:
-        # Get GitHub token from environment (loaded at startup)
-        github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
+        # For mi30x on mi30x server: check local first (instant)
+        if hardware == "mi30x" and CURRENT_HARDWARE == "mi30x":
+            local_path = os.path.join(BASE_DIR, "plots_server", model, mode, filename)
+            if os.path.exists(local_path):
+                # Serve from local filesystem (instant)
+                return send_from_directory(
+                    os.path.join(BASE_DIR, "plots_server", model, mode),
+                    filename,
+                    mimetype="image/png",
+                )
 
-        # Construct GitHub raw URL
+        # Fetch from GitHub (for mi35x or if local not available)
+        github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
         plot_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/log/plot/{hardware}/{model}/{mode}/{filename}"
 
-        # Fetch from GitHub with authentication
         headers = {}
         if github_token:
             headers["Authorization"] = f"token {github_token}"
@@ -302,7 +307,6 @@ def serve_github_plot(hardware, model, mode, filename):
         response = requests.get(plot_url, headers=headers, timeout=30)
 
         if response.status_code == 200:
-            # Return image with correct content type
             from flask import Response
 
             return Response(
@@ -312,7 +316,7 @@ def serve_github_plot(hardware, model, mode, filename):
                 headers={"Cache-Control": "public, max-age=3600"},
             )
         else:
-            return f"Plot not found in GitHub (status: {response.status_code})", 404
+            return f"Plot not found (local and GitHub)", 404
 
     except Exception as e:
         import traceback
