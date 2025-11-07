@@ -789,12 +789,33 @@ class GitHubDataCollector:
             plots[benchmark_name] = []
 
             for suffix in suffixes:
-                # Construct GitHub plot URL
-                plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_{suffix}.png"
-                raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_{suffix}.png"
+                plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
+
+                # Check if plot exists locally first
+                local_plot_path = os.path.join(
+                    self.base_dir, "plots_server", model_dir, "online", plot_filename
+                )
+
+                if os.path.exists(local_plot_path):
+                    # Use local plot URL
+                    plot_url = f"/local-plots/{model_dir}/online/{plot_filename}"
+                    raw_url = plot_url  # Same for local
+                else:
+                    # Fall back to GitHub URLs
+                    plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
+                    raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
 
                 plots[benchmark_name].append(
-                    {"suffix": suffix, "url": plot_url, "raw_url": raw_url}
+                    {
+                        "suffix": suffix,
+                        "url": plot_url,
+                        "raw_url": raw_url,
+                        "local": (
+                            os.path.exists(local_plot_path)
+                            if self.use_local_fallback
+                            else False
+                        ),
+                    }
                 )
 
         return plots
