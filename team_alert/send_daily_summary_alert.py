@@ -114,7 +114,7 @@ class DailySummaryReporter:
         """
         # Support both single string and list of directories
         model_dirs = [model_dir] if isinstance(model_dir, str) else model_dir
-        
+
         for model_dir_name in model_dirs:
             online_dir = os.path.join(self.base_dir, "online", model_dir_name)
 
@@ -152,7 +152,7 @@ class DailySummaryReporter:
                 # Return most recent
                 matching_files.sort(key=os.path.getmtime, reverse=True)
                 return matching_files[0]
-        
+
         # Try next model directory name if no match found
         return None
 
@@ -217,7 +217,7 @@ class DailySummaryReporter:
                     or ("End time:" in content and "Total duration:" in content)
                     or re.search(r"Server error status:\s*(PASS|FAIL)", content)
                 )
-                
+
                 if "Script started at:" in content and not has_completion_marker:
                     result["status"] = "fail"
                     result["error"] = "Test did not complete"
@@ -442,7 +442,10 @@ class DailySummaryReporter:
         benchmarks = {
             "Grok 2 Online Benchmark": (["GROK2"], "online"),
             "Grok Online Benchmark": (["GROK1"], "online"),
-            "DeepSeek Online Benchmark": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online"),
+            "DeepSeek Online Benchmark": (
+                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
+                "online",
+            ),
         }
 
         for task_name, (model_dir, mode_suffix) in benchmarks.items():
@@ -459,8 +462,14 @@ class DailySummaryReporter:
 
         # Integration Tests - use timing_summary logs with mode suffixes
         integration_tests = {
-            "DeepSeek DP Attention Test": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online_dp_attention"),
-            "DeepSeek Torch Compile Test": (["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"], "online_torch_compile"),
+            "DeepSeek DP Attention Test": (
+                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
+                "online_dp_attention",
+            ),
+            "DeepSeek Torch Compile Test": (
+                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
+                "online_torch_compile",
+            ),
             "DeepSeek DP+Torch Compile": (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_dp_attention_torch_compile",
@@ -713,13 +722,19 @@ class DailySummaryReporter:
                         benchmark_model_map = {
                             "Grok Online Benchmark": ("GROK1", "standard"),
                             "Grok 2 Online Benchmark": ("GROK2", "standard"),
-                            "DeepSeek Online Benchmark": ("DeepSeek-R1-MXFP4-Preview", "all"),
+                            "DeepSeek Online Benchmark": (
+                                "DeepSeek-R1-MXFP4-Preview",
+                                "all",
+                            ),
                         }
                     else:  # mi30x and other hardware
                         benchmark_model_map = {
                             "Grok Online Benchmark": ("GROK1", "standard"),
                             "Grok 2 Online Benchmark": ("GROK2", "standard"),
-                            "DeepSeek Online Benchmark": ("DeepSeek-V3-0324", "standard"),
+                            "DeepSeek Online Benchmark": (
+                                "DeepSeek-V3-0324",
+                                "standard",
+                            ),
                         }
 
                     if task_name in benchmark_model_map:

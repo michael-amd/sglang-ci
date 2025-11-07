@@ -169,7 +169,10 @@ def parse_test_log(log_file_path: str) -> Dict:
                 # AssertionError with message
                 (r"AssertionError:\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)", 200),
                 # Other specific exceptions
-                (r"(ValueError|TypeError|AttributeError|KeyError|ImportError|OSError|IOError):\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)", 200),
+                (
+                    r"(ValueError|TypeError|AttributeError|KeyError|ImportError|OSError|IOError):\s*(.+?)(?:\n\n|\nTraceback|\n[A-Z]|\Z)",
+                    200,
+                ),
                 # Generic Error/Exception
                 (r"Error:\s*(.+?)(?:\n\n|\n[A-Z]|\Z)", 150),
                 (r"Exception:\s*(.+?)(?:\n\n|\n[A-Z]|\Z)", 150),
@@ -182,7 +185,7 @@ def parse_test_log(log_file_path: str) -> Dict:
                 matches = list(re.finditer(pattern, content, re.DOTALL))
                 if matches:
                     error_match = matches[-1]  # Take the last match
-                    
+
                     # For patterns with two groups (exception type + message)
                     if error_match.lastindex == 2:
                         error_type = error_match.group(1).strip()
@@ -190,16 +193,16 @@ def parse_test_log(log_file_path: str) -> Dict:
                         error_text = f"{error_type}: {error_msg}"
                     else:
                         error_text = error_match.group(1).strip()
-                    
+
                     # Clean up the error text
-                    error_text = error_text.replace('\n', ' ').strip()
+                    error_text = error_text.replace("\n", " ").strip()
                     # Remove ANSI color codes
-                    error_text = re.sub(r'\[\d+m', '', error_text)
-                    
+                    error_text = re.sub(r"\[\d+m", "", error_text)
+
                     # Limit error details to reasonable length
                     if len(error_text) > max_length:
                         error_text = error_text[:max_length] + "..."
-                    
+
                     parsed_data["error_details"] = error_text
                     break
 
@@ -640,9 +643,10 @@ class TestNightlyTeamsNotifier:
         if status == "fail" and hw_type and log_file:
             # Extract log filename from path
             import os
+
             log_filename = os.path.basename(log_file)
             car_log_file_url = f"https://github.com/{self.github_repo}/blob/log/test/unit-test-backend-8-gpu-CAR-amd/{hw_type}/{log_filename}"
-            
+
             body_elements.append(
                 {
                     "type": "TextBlock",
@@ -1014,9 +1018,12 @@ class TestNightlyTeamsNotifier:
         if status == "fail" and hw_type and docker_image:
             # Extract docker tag from docker_image
             import os
-            docker_tag = docker_image.split(":")[-1] if ":" in docker_image else docker_image
+
+            docker_tag = (
+                docker_image.split(":")[-1] if ":" in docker_image else docker_image
+            )
             pd_log_dir_url = f"https://github.com/{self.github_repo}/tree/log/test/pd/pd_log/{hw_type}/{docker_tag}"
-            
+
             body_elements.append(
                 {
                     "type": "TextBlock",
@@ -1042,7 +1049,9 @@ class TestNightlyTeamsNotifier:
 
         # Add PD log directory button if we have hardware type
         if hw_type and docker_image:
-            docker_tag = docker_image.split(":")[-1] if ":" in docker_image else docker_image
+            docker_tag = (
+                docker_image.split(":")[-1] if ":" in docker_image else docker_image
+            )
             pd_log_url = f"https://github.com/{self.github_repo}/tree/log/test/pd/pd_log/{hw_type}/{docker_tag}"
             actions.append(
                 {
