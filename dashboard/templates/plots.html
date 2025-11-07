@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hardware.upper() }} Plots{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">
+            <i class="bi bi-bar-chart-line"></i> {{ hardware.upper() }} Performance Plots
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('hardware_view', hardware=hardware) }}">{{ hardware.upper() }}</a></li>
+                <li class="breadcrumb-item active">Plots</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Date Selector -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label for="dateSelect" class="form-label fw-bold">Select Date:</label>
+                <input type="date" class="form-control" id="dateSelect" value="">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label class="form-label fw-bold">Quick Links:</label>
+                <div class="btn-group d-block" role="group">
+                    <a href="https://github.com/{{ github_repo }}/tree/log/plot/{{ hardware }}"
+                       target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-github"></i> View on GitHub
+                    </a>
+                    <a href="{{ url_for('hardware_view', hardware=hardware) }}"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plot Gallery -->
+<div id="plots-loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading plots...</p>
+</div>
+
+<div id="plots-container" style="display: none;">
+    <!-- Plots will be dynamically loaded here -->
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const hardware = '{{ hardware }}';
+    const githubRepo = '{{ github_repo }}';
+
+    // Initialize date picker with today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateSelect').value = today;
+
+    function formatDateApi(dateStr) {
+        // Convert YYYY-MM-DD to YYYYMMDD
+        return dateStr.replace(/-/g, '');
+    }
+
+    function loadPlots(dateStr) {
+        const dateFormatted = formatDateApi(dateStr);
+
+        document.getElementById('plots-loading').style.display = 'block';
+        document.getElementById('plots-container').style.display = 'none';
+
+        fetch(`/api/plots/${hardware}/${dateFormatted}`)
+            .then(response => response.json())
+            .then(data => {
+                renderPlots(data.plots, dateFormatted);
+            })
+            .catch(error => {
+                document.getElementById('plots-loading').style.display = 'none';
+                document.getElementById('plots-container').style.display = 'block';
+                document.getElementById('plots-container').innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No plots available for this date
+                    </div>
+                `;
+            });
+    }
+
+    function renderPlots(plots, date) {
+        document.getElementById('plots-loading').style.display = 'none';
+        document.getElementById('plots-container').style.display = 'block';
+
+        let html = '';
+
+        for (const [benchmarkName, plotList] of Object.entries(plots)) {
+            html += `
+                <div class="row mb-4">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-graph-up"></i> ${benchmarkName}</h5>
+                            </div>
+                            <div class="card-body">
+            `;
+
+            plotList.forEach(plot => {
+                const plotTitle = `${benchmarkName} - ${plot.suffix}`;
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-muted">${plot.suffix.toUpperCase()} View</h6>
+                        <div class="text-center">
+                            <img src="${plot.raw_url}"
+                                 alt="${plotTitle}"
+                                 class="img-fluid border rounded shadow-sm"
+                                 onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect width=%22400%22 height=%22300%22 fill=%22%23f0f0f0%22/><text x=%2250%%22 y=%2250%%22 text-anchor=%22middle%22 fill=%22%23999%22>Plot not available</text></svg>';"
+                                 style="max-width: 100%; height: auto;">
+                        </div>
+                        <div class="mt-2">
+                            <a href="${plot.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> Open in GitHub
+                            </a>
+                            <a href="${plot.raw_url}" download class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (Object.keys(plots).length === 0) {
+            html = `
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No plots available for this date
+                </div>
+            `;
+        }
+
+        document.getElementById('plots-container').innerHTML = html;
+    }
+
+    // Event listener
+    document.getElementById('dateSelect').addEventListener('change', function() {
+        loadPlots(this.value);
+    });
+
+    // Load initial data
+    loadPlots(today);
+</script>
+{% endblock %}

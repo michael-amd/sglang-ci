@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}CI Trends{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4"><i class="bi bi-graph-up-arrow"></i> CI Trends</h1>
+        <p class="lead">Historical trends and analytics for CI performance</p>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label for="hardwareSelect" class="form-label fw-bold">Hardware:</label>
+                <select class="form-select" id="hardwareSelect">
+                    <option value="mi30x">MI30X</option>
+                    <option value="mi35x">MI35X</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label for="daysSelect" class="form-label fw-bold">Time Range:</label>
+                <select class="form-select" id="daysSelect">
+                    <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="60">Last 60 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overall Trends -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Overall Pass Rate Trend</h5>
+            </div>
+            <div class="card-body">
+                <div id="pass-rate-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="pass-rate-chart" style="display: none;">
+                    <canvas id="passRateCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Status Distribution -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Task Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div id="status-distribution-loading" class="text-center py-5">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="status-distribution-chart" style="display: none;">
+                    <canvas id="statusDistCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Benchmark-Specific Trends -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> GSM8K Accuracy Trends</h5>
+            </div>
+            <div class="card-body">
+                <div id="accuracy-loading" class="text-center py-5">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="accuracy-chart" style="display: none;">
+                    <canvas id="accuracyCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock"></i> Runtime Trends</h5>
+            </div>
+            <div class="card-body">
+                <div id="runtime-loading" class="text-center py-5">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="runtime-chart" style="display: none;">
+                    <canvas id="runtimeCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let passRateChart = null;
+    let statusDistChart = null;
+    let accuracyChart = null;
+    let runtimeChart = null;
+
+    function loadTrends() {
+        const hardware = document.getElementById('hardwareSelect').value;
+        const days = document.getElementById('daysSelect').value;
+
+        fetch(`/api/trends/${hardware}?days=${days}`)
+            .then(response => response.json())
+            .then(data => {
+                renderPassRateTrend(data.trends);
+                renderStatusDistribution(data.trends);
+                renderAccuracyTrends(data.trends);
+                renderRuntimeTrends(data.trends);
+            })
+            .catch(error => {
+                console.error('Error loading trends:', error);
+            });
+    }
+
+    function renderPassRateTrend(trends) {
+        document.getElementById('pass-rate-loading').style.display = 'none';
+        document.getElementById('pass-rate-chart').style.display = 'block';
+
+        const ctx = document.getElementById('passRateCanvas').getContext('2d');
+
+        if (passRateChart) {
+            passRateChart.destroy();
+        }
+
+        passRateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: trends.dates,
+                datasets: [{
+                    label: 'Pass Rate (%)',
+                    data: trends.pass_rate,
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Pass Rate: ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderStatusDistribution(trends) {
+        document.getElementById('status-distribution-loading').style.display = 'none';
+        document.getElementById('status-distribution-chart').style.display = 'block';
+
+        const ctx = document.getElementById('statusDistCanvas').getContext('2d');
+
+        if (statusDistChart) {
+            statusDistChart.destroy();
+        }
+
+        statusDistChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: trends.dates,
+                datasets: [
+                    {
+                        label: 'Passed',
+                        data: trends.passed_tasks,
+                        backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Failed',
+                        data: trends.failed_tasks,
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderAccuracyTrends(trends) {
+        document.getElementById('accuracy-loading').style.display = 'none';
+        document.getElementById('accuracy-chart').style.display = 'block';
+
+        const ctx = document.getElementById('accuracyCanvas').getContext('2d');
+
+        if (accuracyChart) {
+            accuracyChart.destroy();
+        }
+
+        const datasets = [];
+        const colors = [
+            'rgba(13, 110, 253, 1)',
+            'rgba(25, 135, 84, 1)',
+            'rgba(255, 193, 7, 1)'
+        ];
+
+        let colorIndex = 0;
+        for (const [taskName, taskData] of Object.entries(trends.benchmarks)) {
+            if (taskData.gsm8k_accuracy.some(v => v !== null)) {
+                datasets.push({
+                    label: taskName,
+                    data: taskData.gsm8k_accuracy,
+                    borderColor: colors[colorIndex % colors.length],
+                    backgroundColor: colors[colorIndex % colors.length].replace('1)', '0.1)'),
+                    fill: false,
+                    tension: 0.4,
+                    spanGaps: true
+                });
+                colorIndex++;
+            }
+        }
+
+        accuracyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: trends.dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.parsed.y !== null) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                                return null;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderRuntimeTrends(trends) {
+        document.getElementById('runtime-loading').style.display = 'none';
+        document.getElementById('runtime-chart').style.display = 'block';
+
+        const ctx = document.getElementById('runtimeCanvas').getContext('2d');
+
+        if (runtimeChart) {
+            runtimeChart.destroy();
+        }
+
+        const datasets = [];
+        const colors = [
+            'rgba(13, 110, 253, 1)',
+            'rgba(25, 135, 84, 1)',
+            'rgba(255, 193, 7, 1)'
+        ];
+
+        let colorIndex = 0;
+        for (const [taskName, taskData] of Object.entries(trends.benchmarks)) {
+            if (taskData.runtime_minutes.some(v => v !== null)) {
+                datasets.push({
+                    label: taskName,
+                    data: taskData.runtime_minutes,
+                    borderColor: colors[colorIndex % colors.length],
+                    backgroundColor: colors[colorIndex % colors.length].replace('1)', '0.1)'),
+                    fill: false,
+                    tension: 0.4,
+                    spanGaps: true
+                });
+                colorIndex++;
+            }
+        }
+
+        runtimeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: trends.dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + ' min';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.parsed.y !== null) {
+                                    const hours = Math.floor(context.parsed.y / 60);
+                                    const minutes = context.parsed.y % 60;
+                                    if (hours > 0) {
+                                        return context.dataset.label + ': ' + hours + 'h ' + minutes + 'm';
+                                    } else {
+                                        return context.dataset.label + ': ' + minutes + 'm';
+                                    }
+                                }
+                                return null;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Event listeners
+    document.getElementById('hardwareSelect').addEventListener('change', loadTrends);
+    document.getElementById('daysSelect').addEventListener('change', loadTrends);
+
+    // Load initial data
+    loadTrends();
+</script>
+{% endblock %}

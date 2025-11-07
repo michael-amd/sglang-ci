@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}SGLang CI Dashboard - Home{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4"><i class="bi bi-speedometer2"></i> CI Dashboard</h1>
+        <p class="lead">Daily nightly CI results for MI30X and MI35X hardware platforms</p>
+    </div>
+</div>
+
+<!-- Date Selector -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label for="dateSelect" class="form-label fw-bold">Select Date:</label>
+                <input type="date" class="form-control" id="dateSelect" value="">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hardware Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-cpu-fill"></i> MI30X Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="mi30x-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading data...</p>
+                </div>
+                <div id="mi30x-summary" style="display: none;">
+                    <!-- Summary content will be injected here -->
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="/hardware/mi30x" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-right-circle"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-cpu-fill"></i> MI35X Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="mi35x-loading" class="text-center py-5">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading data...</p>
+                </div>
+                <div id="mi35x-summary" style="display: none;">
+                    <!-- Summary content will be injected here -->
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="/hardware/mi35x" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrow-right-circle"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Comparison -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Hardware Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div id="comparison-loading" class="text-center py-3">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="comparison-chart" style="display: none;">
+                    <canvas id="comparisonCanvas" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity" class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Hardware</th>
+                                <th>Status</th>
+                                <th>Pass Rate</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-activity-body">
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize date picker with today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateSelect').value = today;
+
+    // Load data for selected date
+    function loadDashboardData(dateStr) {
+        // Convert YYYY-MM-DD to YYYYMMDD
+        const dateFormatted = dateStr.replace(/-/g, '');
+
+        // Load MI30X summary
+        loadHardwareSummary('mi30x', dateFormatted);
+
+        // Load MI35X summary
+        loadHardwareSummary('mi35x', dateFormatted);
+
+        // Load comparison
+        loadComparison(dateFormatted);
+
+        // Load recent activity
+        loadRecentActivity();
+    }
+
+    function loadHardwareSummary(hardware, date) {
+        const loadingDiv = document.getElementById(`${hardware}-loading`);
+        const summaryDiv = document.getElementById(`${hardware}-summary`);
+
+        loadingDiv.style.display = 'block';
+        summaryDiv.style.display = 'none';
+
+        fetch(`/api/summary/${hardware}/${date}`)
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                summaryDiv.style.display = 'block';
+
+                const stats = data.stats;
+                const statusBadge = getStatusBadge(stats.overall_status);
+                const passRate = stats.tasks_run > 0
+                    ? ((stats.passed_tasks / stats.tasks_run) * 100).toFixed(1)
+                    : 0;
+
+                summaryDiv.innerHTML = `
+                    <div class="mb-3">
+                        <h6>Overall Status</h6>
+                        ${statusBadge}
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <h4 class="text-success mb-0">${stats.passed_tasks}</h4>
+                                <small class="text-muted">Passed</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <h4 class="text-danger mb-0">${stats.failed_tasks}</h4>
+                                <small class="text-muted">Failed</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <h4 class="text-secondary mb-0">${stats.total_tasks}</h4>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: ${passRate}%">
+                                ${passRate}% Pass Rate
+                            </div>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                summaryDiv.style.display = 'block';
+                summaryDiv.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> No data available for this date
+                    </div>
+                `;
+            });
+    }
+
+    function loadComparison(date) {
+        const loadingDiv = document.getElementById('comparison-loading');
+        const chartDiv = document.getElementById('comparison-chart');
+
+        loadingDiv.style.display = 'block';
+        chartDiv.style.display = 'none';
+
+        fetch(`/api/compare?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                chartDiv.style.display = 'block';
+
+                const mi30x = data.results.mi30x.stats;
+                const mi35x = data.results.mi35x.stats;
+
+                createComparisonChart(mi30x, mi35x);
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                chartDiv.style.display = 'block';
+                document.getElementById('comparison-chart').innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Unable to load comparison data
+                    </div>
+                `;
+            });
+    }
+
+    function createComparisonChart(mi30x, mi35x) {
+        const ctx = document.getElementById('comparisonCanvas').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.comparisonChart) {
+            window.comparisonChart.destroy();
+        }
+
+        window.comparisonChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Passed', 'Failed', 'Unknown', 'Not Run'],
+                datasets: [
+                    {
+                        label: 'MI30X',
+                        data: [mi30x.passed_tasks, mi30x.failed_tasks, mi30x.unknown_tasks, mi30x.not_run],
+                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'MI35X',
+                        data: [mi35x.passed_tasks, mi35x.failed_tasks, mi35x.unknown_tasks, mi35x.not_run],
+                        backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function loadRecentActivity() {
+        const tbody = document.getElementById('recent-activity-body');
+
+        // Load last 7 days for both hardware
+        Promise.all([
+            fetch('/api/dates/mi30x').then(r => r.json()),
+            fetch('/api/dates/mi35x').then(r => r.json())
+        ]).then(([mi30xData, mi35xData]) => {
+            const allDates = new Set([...mi30xData.dates, ...mi35xData.dates]);
+            const sortedDates = Array.from(allDates).sort().reverse().slice(0, 7);
+
+            tbody.innerHTML = '';
+
+            sortedDates.forEach(date => {
+                ['mi30x', 'mi35x'].forEach(hw => {
+                    const dateFormatted = date.replace(/-/g, '');
+
+                    fetch(`/api/summary/${hw}/${dateFormatted}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            const stats = data.stats;
+                            const passRate = stats.tasks_run > 0
+                                ? ((stats.passed_tasks / stats.tasks_run) * 100).toFixed(1)
+                                : 0;
+
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${date}</td>
+                                <td><span class="badge ${hw === 'mi30x' ? 'bg-primary' : 'bg-success'}">${hw.toUpperCase()}</span></td>
+                                <td>${getStatusBadge(stats.overall_status)}</td>
+                                <td>
+                                    <div class="progress" style="width: 100px; height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: ${passRate}%">
+                                            ${passRate}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="/hardware/${hw}?date=${dateFormatted}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        })
+                        .catch(() => {});
+                });
+            });
+        });
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'passed': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> All Passed</span>',
+            'failed': '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Failed</span>',
+            'partial': '<span class="badge bg-warning"><i class="bi bi-dash-circle"></i> Partial</span>',
+            'unknown': '<span class="badge bg-secondary"><i class="bi bi-question-circle"></i> Unknown</span>'
+        };
+        return badges[status] || badges['unknown'];
+    }
+
+    // Listen for date changes
+    document.getElementById('dateSelect').addEventListener('change', function() {
+        loadDashboardData(this.value);
+    });
+
+    // Load initial data
+    loadDashboardData(today);
+</script>
+{% endblock %}
