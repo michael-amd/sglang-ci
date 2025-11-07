@@ -241,6 +241,16 @@ def serve_log(hardware, date, filename):
         return "Log file not found", 404
 
 
+@app.route("/local-plots/<path:filepath>")
+def serve_local_plot(filepath):
+    """Serve local plot files from plots_server directory"""
+    plots_dir = os.path.join(BASE_DIR, "plots_server")
+    try:
+        return send_from_directory(plots_dir, filepath)
+    except FileNotFoundError:
+        return "Plot file not found", 404
+
+
 @app.route("/health")
 def health():
     """Health check endpoint"""
