@@ -28,12 +28,13 @@
             <div class="card-body">
                 <label for="daysSelect" class="form-label fw-bold">Time Range:</label>
                 <select class="form-select" id="daysSelect">
-                    <option value="7">Last 7 days</option>
+                    <option value="7" selected>Last 7 days</option>
                     <option value="14">Last 14 days</option>
-                    <option value="30" selected>Last 30 days</option>
+                    <option value="30">Last 30 days</option>
                     <option value="60">Last 60 days</option>
                     <option value="90">Last 90 days</option>
                 </select>
+                <small class="text-muted d-block mt-1">⚠️ Note: Larger time ranges may take 30-60 seconds to load</small>
             </div>
         </div>
     </div>

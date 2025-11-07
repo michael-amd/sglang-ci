@@ -34,7 +34,7 @@ class GitHubDataCollector:
     ):
         """
         Initialize GitHub data collector
-        
+
         Args:
             hardware: Hardware type (mi30x, mi35x)
             base_dir: Base directory for CI logs (used for local fallback)
@@ -47,22 +47,24 @@ class GitHubDataCollector:
         self.github_repo = github_repo
         self.use_local_fallback = use_local_fallback
         self.github_token = github_token or os.environ.get("GITHUB_TOKEN")
-        
+
         # GitHub raw content URL
         self.github_raw_base = f"https://raw.githubusercontent.com/{github_repo}/log"
-        
+
         # GitHub API URL
         self.github_api_base = f"https://api.github.com/repos/{github_repo}/contents"
-        
+
         # Session for connection pooling
         self.session = requests.Session()
-        
+
         # Add authentication header if token is available
         if self.github_token:
-            self.session.headers.update({
-                "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json"
-            })
+            self.session.headers.update(
+                {
+                    "Authorization": f"token {self.github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+            )
 
         # Local fallback collector
         if use_local_fallback:
@@ -800,11 +802,13 @@ class GitHubDataCollector:
 
             for suffix in suffixes:
                 plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
-                
+
                 # Use proxy endpoint for plots (handles authentication server-side)
                 # This keeps the GitHub token secure and not exposed to clients
                 plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
-                raw_url = f"/github-plots/{self.hardware}/{model_dir}/online/{plot_filename}"
+                raw_url = (
+                    f"/github-plots/{self.hardware}/{model_dir}/online/{plot_filename}"
+                )
 
                 plots[benchmark_name].append(
                     {
@@ -816,3 +820,34 @@ class GitHubDataCollector:
                 )
 
         return plots
+
+    def get_dates_with_plots(self, max_days: int = 90) -> List[str]:
+        """
+        Get list of dates that have plots available
+
+        Args:
+            max_days: Maximum number of days to check
+
+        Returns:
+            List of date strings in YYYYMMDD format with available plots
+        """
+        dates_with_plots = []
+
+        # Get all available dates
+        all_dates = self.get_available_dates(max_days)
+
+        # For each date, check if at least one plot exists
+        for date_str in all_dates:
+            plots = self.get_available_plots(date_str)
+
+            # Check if any benchmark has plots
+            has_plots = False
+            for benchmark_plots in plots.values():
+                if benchmark_plots:
+                    has_plots = True
+                    break
+
+            if has_plots:
+                dates_with_plots.append(date_str)
+
+        return dates_with_plots

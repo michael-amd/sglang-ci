@@ -121,8 +121,8 @@ def api_trends(hardware):
     if hardware not in ["mi30x", "mi35x"]:
         return jsonify({"error": "Invalid hardware type"}), 400
 
-    # Get days parameter (default: 30 days)
-    days = request.args.get("days", 30, type=int)
+    # Get days parameter (default: 7 days to improve performance)
+    days = request.args.get("days", 7, type=int)
     days = min(days, 90)  # Cap at 90 days
 
     try:
@@ -183,6 +183,7 @@ def api_plots(hardware, date):
                 base_dir=BASE_DIR,
                 github_repo=GITHUB_REPO,
                 use_local_fallback=True,
+                github_token=GITHUB_TOKEN,
             )
         else:
             collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
@@ -190,6 +191,33 @@ def api_plots(hardware, date):
         plots = collector.get_available_plots(date)
 
         return jsonify({"hardware": hardware, "date": date, "plots": plots})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/available-plot-dates/<hardware>")
+def api_available_plot_dates(hardware):
+    """Get list of dates that have plots available"""
+    if hardware not in ["mi30x", "mi35x"]:
+        return jsonify({"error": "Invalid hardware type"}), 400
+
+    try:
+        # Use GitHub data collector if enabled, otherwise use local
+        if USE_GITHUB:
+            collector = GitHubDataCollector(
+                hardware=hardware,
+                base_dir=BASE_DIR,
+                github_repo=GITHUB_REPO,
+                use_local_fallback=True,
+                github_token=GITHUB_TOKEN,
+            )
+        else:
+            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
+
+        # Get dates with available plots
+        available_dates = collector.get_dates_with_plots()
+
+        return jsonify({"hardware": hardware, "dates": available_dates})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -248,35 +276,37 @@ def serve_github_plot(hardware, model, mode, filename):
     """Proxy GitHub plot files (handles authentication for private repos)"""
     if hardware not in ["mi30x", "mi35x"]:
         return "Invalid hardware type", 400
-    
+
     try:
         # Get GitHub token from environment (loaded at startup)
         github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
-        
+
         # Construct GitHub raw URL
         plot_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/log/plot/{hardware}/{model}/{mode}/{filename}"
-        
+
         # Fetch from GitHub with authentication
         headers = {}
         if github_token:
             headers["Authorization"] = f"token {github_token}"
-        
+
         response = requests.get(plot_url, headers=headers, timeout=30)
-        
+
         if response.status_code == 200:
             # Return image with correct content type
             from flask import Response
+
             return Response(
                 response.content,
                 status=200,
                 mimetype="image/png",
-                headers={"Cache-Control": "public, max-age=3600"}
+                headers={"Cache-Control": "public, max-age=3600"},
             )
         else:
             return f"Plot not found in GitHub (status: {response.status_code})", 404
-    
+
     except Exception as e:
         import traceback
+
         error_detail = traceback.format_exc()
         print(f"Error in serve_github_plot: {error_detail}")
         return f"Error fetching plot: {str(e)}", 500
