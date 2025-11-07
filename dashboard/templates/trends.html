@@ -40,6 +40,31 @@
     </div>
 </div>
 
+<!-- Loading Progress Indicator -->
+<div class="row mb-4" id="loading-progress" style="display: none;">
+    <div class="col">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border text-primary me-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1" id="loading-message">Loading trends data...</h6>
+                        <div class="progress" style="height: 20px;">
+                            <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 role="progressbar" style="width: 0%">
+                                <span id="loading-percentage">0%</span>
+                            </div>
+                        </div>
+                        <small class="text-muted" id="loading-detail">Preparing to fetch data...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Overall Trends -->
 <div class="row mb-4">
     <div class="col">
@@ -129,20 +154,76 @@
     let accuracyChart = null;
     let runtimeChart = null;
 
+    function showLoadingProgress() {
+        document.getElementById('loading-progress').style.display = 'block';
+        document.getElementById('loading-message').textContent = 'Loading trends data...';
+        document.getElementById('loading-detail').textContent = 'Fetching historical CI results...';
+        updateProgressBar(0);
+    }
+
+    function updateProgressBar(percent, message = '') {
+        const progressBar = document.getElementById('loading-progress-bar');
+        const percentage = document.getElementById('loading-percentage');
+        const detail = document.getElementById('loading-detail');
+
+        progressBar.style.width = percent + '%';
+        percentage.textContent = Math.round(percent) + '%';
+
+        if (message) {
+            detail.textContent = message;
+        }
+    }
+
+    function hideLoadingProgress() {
+        document.getElementById('loading-progress').style.display = 'none';
+    }
+
     function loadTrends() {
         const hardware = document.getElementById('hardwareSelect').value;
         const days = document.getElementById('daysSelect').value;
 
+        // Show progress indicator
+        showLoadingProgress();
+
+        // Simulate progress during fetch
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += 5;
+                updateProgressBar(progress, `Fetching data from GitHub (${days} days)...`);
+            }
+        }, 500);
+
+        const startTime = Date.now();
+
         fetch(`/api/trends/${hardware}?days=${days}`)
-            .then(response => response.json())
+            .then(response => {
+                clearInterval(progressInterval);
+                updateProgressBar(95, 'Processing data...');
+                return response.json();
+            })
             .then(data => {
-                renderPassRateTrend(data.trends);
-                renderStatusDistribution(data.trends);
-                renderAccuracyTrends(data.trends);
-                renderRuntimeTrends(data.trends);
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                updateProgressBar(100, `Completed in ${elapsed}s`);
+
+                setTimeout(() => {
+                    hideLoadingProgress();
+                    renderPassRateTrend(data.trends);
+                    renderStatusDistribution(data.trends);
+                    renderAccuracyTrends(data.trends);
+                    renderRuntimeTrends(data.trends);
+                }, 500);
             })
             .catch(error => {
+                clearInterval(progressInterval);
+                hideLoadingProgress();
                 console.error('Error loading trends:', error);
+
+                // Show error message
+                document.getElementById('loading-progress').style.display = 'block';
+                document.getElementById('loading-message').textContent = 'Error loading trends';
+                document.getElementById('loading-detail').textContent = error.message;
+                updateProgressBar(0);
             });
     }
 
