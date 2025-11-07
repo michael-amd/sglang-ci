@@ -540,3 +540,88 @@ c9949f37a3f6: Waiting
 b29f711b0304: Waiting
 6523fcecd1c2: Waiting
 0883eca5f46d: Waiting
+071b6e160015: Verifying Checksum
+071b6e160015: Download complete
+071b6e160015: Pull complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+4f4fb700ef54: Pull complete
+c48868bbd40d: Download complete
+c48868bbd40d: Pull complete
+6fd94782e6d5: Download complete
+6fd94782e6d5: Pull complete
+fafeea05d3a5: Verifying Checksum
+fafeea05d3a5: Download complete
+fafeea05d3a5: Pull complete
+69d50fafb089: Verifying Checksum
+69d50fafb089: Download complete
+b6a1b46a6d30: Verifying Checksum
+b6a1b46a6d30: Download complete
+69d50fafb089: Pull complete
+47afd94d502a: Verifying Checksum
+47afd94d502a: Download complete
+336ecfaa2bd4: Verifying Checksum
+336ecfaa2bd4: Download complete
+b29f711b0304: Verifying Checksum
+b29f711b0304: Download complete
+6523fcecd1c2: Verifying Checksum
+6523fcecd1c2: Download complete
+2e0a85b874a8: Verifying Checksum
+2e0a85b874a8: Download complete
+ed3492da1519: Download complete
+c9949f37a3f6: Verifying Checksum
+c9949f37a3f6: Download complete
+0883eca5f46d: Verifying Checksum
+0883eca5f46d: Download complete
+2e0a85b874a8: Pull complete
+b6a1b46a6d30: Pull complete
+47afd94d502a: Pull complete
+336ecfaa2bd4: Pull complete
+b29f711b0304: Pull complete
+4b00dff39708: Verifying Checksum
+4b00dff39708: Download complete
+6523fcecd1c2: Pull complete
+4b00dff39708: Pull complete
+ed3492da1519: Pull complete
+c9949f37a3f6: Pull complete
+0883eca5f46d: Pull complete
+Digest: sha256:840874f16afb52928012edc307b2379b32e7031291ae189b82c4c3b0d270402e
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+docker.io/rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] Successfully obtained image for date 20251107: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 622a475ab7ed
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] Container name: sgl-dev_v0.5.5-rocm700-mi30x-20251107
+[nightly] Creating container sgl-dev_v0.5.5-rocm700-mi30x-20251107
+f3fcbd75e7cf887fa53bb83f0a39fb1c654597fa6e2a0f3772626a45c27961ce
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.5-rocm700-mi30x-20251107
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Sending Teams notification for sanity check results...
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] WARN: Teams notification failed for sanity check (exit code: 126)
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+[nightly] Stopping container sgl-dev_v0.5.5-rocm700-mi30x-20251107 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
