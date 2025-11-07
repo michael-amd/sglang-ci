@@ -108,14 +108,15 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Hardware</th>
-                                <th>Status</th>
+                                <th>Tasks Run</th>
+                                <th>Passed / Failed / Not Run</th>
                                 <th>Pass Rate</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="recent-activity-body">
                             <tr>
-                                <td colspan="5" class="text-center">
+                                <td colspan="6" class="text-center">
                                     <div class="spinner-border spinner-border-sm text-secondary" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -298,15 +299,20 @@
                         .then(r => r.json())
                         .then(data => {
                             const stats = data.stats;
-                            const passRate = stats.tasks_run > 0
+                            const passRate = stats.tasks_run > 0 
                                 ? ((stats.passed_tasks / stats.tasks_run) * 100).toFixed(1)
                                 : 0;
-
+                            
                             const row = document.createElement('tr');
                             row.innerHTML = `
                                 <td>${date}</td>
                                 <td><span class="badge ${hw === 'mi30x' ? 'bg-primary' : 'bg-success'}">${hw.toUpperCase()}</span></td>
-                                <td>${getStatusBadge(stats.overall_status)}</td>
+                                <td>${stats.tasks_run}/${stats.total_tasks}</td>
+                                <td>
+                                    <span class="text-success">${stats.passed_tasks}</span> / 
+                                    <span class="text-danger">${stats.failed_tasks}</span> / 
+                                    <span class="text-secondary">${stats.not_run}</span>
+                                </td>
                                 <td>
                                     <div class="progress" style="width: 100px; height: 20px;">
                                         <div class="progress-bar bg-success" role="progressbar" style="width: ${passRate}%">
