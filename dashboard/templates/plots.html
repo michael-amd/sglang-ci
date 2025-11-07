@@ -66,8 +66,8 @@
     const hardware = '{{ hardware }}';
     const githubRepo = '{{ github_repo }}';
 
-    // Initialize date picker with today's date
-    const today = new Date().toISOString().split('T')[0];
+    // Initialize date picker with today's date in Pacific Time
+    const today = getCurrentDate();  // Uses Pacific Time from dashboard.js
     document.getElementById('dateSelect').value = today;
 
     function formatDateApi(dateStr) {

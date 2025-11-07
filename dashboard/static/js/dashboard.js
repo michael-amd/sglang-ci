@@ -228,9 +228,26 @@ function copyToClipboard(text) {
 }
 
 /**
- * Get current date in YYYY-MM-DD format
+ * Get current date in Pacific Time (YYYY-MM-DD format)
  */
 function getCurrentDate() {
+    // Get current time in Pacific Time (UTC-8 for PST, UTC-7 for PDT)
+    const now = new Date();
+
+    // Convert to Pacific Time using Intl API
+    const pacificDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+
+    const year = pacificDate.getFullYear();
+    const month = String(pacificDate.getMonth() + 1).padStart(2, '0');
+    const day = String(pacificDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get current date in UTC (YYYY-MM-DD format)
+ */
+function getCurrentDateUTC() {
     return new Date().toISOString().split('T')[0];
 }
 
