@@ -831,23 +831,35 @@ class GitHubDataCollector:
         Returns:
             List of date strings in YYYYMMDD format with available plots
         """
-        dates_with_plots = []
+        dates_with_plots = set()
 
-        # Get all available dates
-        all_dates = self.get_available_dates(max_days)
+        # Check GitHub plot directory for available dates
+        # This is faster than checking each date individually
+        plot_base_path = f"plot/{self.hardware}"
 
-        # For each date, check if at least one plot exists
-        for date_str in all_dates:
-            plots = self.get_available_plots(date_str)
+        # Check for each model directory
+        models_to_check = {
+            "mi30x": ["GROK1", "GROK2", "DeepSeek-V3-0324"],
+            "mi35x": ["GROK1", "GROK2", "DeepSeek-R1-MXFP4-Preview"],
+        }
 
-            # Check if any benchmark has plots
-            has_plots = False
-            for benchmark_plots in plots.values():
-                if benchmark_plots:
-                    has_plots = True
-                    break
+        models = models_to_check.get(self.hardware, ["GROK1", "GROK2"])
 
-            if has_plots:
-                dates_with_plots.append(date_str)
+        for model_dir in models:
+            model_path = f"{plot_base_path}/{model_dir}/online"
+            entries = self._fetch_github_directory(model_path)
 
-        return dates_with_plots
+            if entries:
+                # Extract dates from filenames
+                for entry in entries:
+                    filename = entry.get("name", "")
+                    # Extract date from filename: YYYYMMDD_MODEL_online_*.png
+                    date_match = re.match(r"(\d{8})_.*\.png", filename)
+                    if date_match:
+                        date_str = date_match.group(1)
+                        dates_with_plots.add(date_str)
+
+        # Sort dates (newest first) and limit to max_days
+        sorted_dates = sorted(list(dates_with_plots), reverse=True)[:max_days]
+
+        return sorted_dates
