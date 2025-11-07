@@ -30,29 +30,39 @@ class GitHubDataCollector:
         base_dir: str = "/mnt/raid/michael/sglang-ci",
         github_repo: str = "ROCm/sglang-ci",
         use_local_fallback: bool = True,
+        github_token: Optional[str] = None,
     ):
         """
         Initialize GitHub data collector
-
+        
         Args:
             hardware: Hardware type (mi30x, mi35x)
             base_dir: Base directory for CI logs (used for local fallback)
             github_repo: GitHub repository (owner/repo format)
             use_local_fallback: Whether to fall back to local filesystem if GitHub fails
+            github_token: GitHub personal access token for private repos
         """
         self.hardware = hardware
         self.base_dir = base_dir
         self.github_repo = github_repo
         self.use_local_fallback = use_local_fallback
-
+        self.github_token = github_token or os.environ.get("GITHUB_TOKEN")
+        
         # GitHub raw content URL
         self.github_raw_base = f"https://raw.githubusercontent.com/{github_repo}/log"
-
+        
         # GitHub API URL
         self.github_api_base = f"https://api.github.com/repos/{github_repo}/contents"
-
+        
         # Session for connection pooling
         self.session = requests.Session()
+        
+        # Add authentication header if token is available
+        if self.github_token:
+            self.session.headers.update({
+                "Authorization": f"token {self.github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            })
 
         # Local fallback collector
         if use_local_fallback:
@@ -790,31 +800,18 @@ class GitHubDataCollector:
 
             for suffix in suffixes:
                 plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
-
-                # Check if plot exists locally first
-                local_plot_path = os.path.join(
-                    self.base_dir, "plots_server", model_dir, "online", plot_filename
-                )
-
-                if os.path.exists(local_plot_path):
-                    # Use local plot URL
-                    plot_url = f"/local-plots/{model_dir}/online/{plot_filename}"
-                    raw_url = plot_url  # Same for local
-                else:
-                    # Fall back to GitHub URLs
-                    plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
-                    raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
+                
+                # Use proxy endpoint for plots (handles authentication server-side)
+                # This keeps the GitHub token secure and not exposed to clients
+                plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{plot_filename}"
+                raw_url = f"/github-plots/{self.hardware}/{model_dir}/online/{plot_filename}"
 
                 plots[benchmark_name].append(
                     {
                         "suffix": suffix,
                         "url": plot_url,
                         "raw_url": raw_url,
-                        "local": (
-                            os.path.exists(local_plot_path)
-                            if self.use_local_fallback
-                            else False
-                        ),
+                        "from_github": True,
                     }
                 )
 
