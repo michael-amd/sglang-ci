@@ -134,9 +134,70 @@
 
 {% block extra_scripts %}
 <script>
-    // Initialize date picker with today's date in Pacific Time
-    const today = getCurrentDate();  // Uses Pacific Time from dashboard.js
-    document.getElementById('dateSelect').value = today;
+    let flatpickrInstance = null;
+
+    // Load available dates from both hardware platforms and initialize flatpickr
+    Promise.all([
+        fetch('/api/dates/mi30x').then(r => r.json()),
+        fetch('/api/dates/mi35x').then(r => r.json())
+    ]).then(([mi30xData, mi35xData]) => {
+        // Combine dates from both hardware platforms
+        const allDates = new Set([...mi30xData.dates, ...mi35xData.dates]);
+        const availableDates = Array.from(allDates);
+        console.log(`Loaded ${availableDates.length} unique dates across both hardware platforms`);
+
+        // Convert YYYYMMDD to YYYY-MM-DD for flatpickr
+        const enabledDates = availableDates.map(dateStr => {
+            return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+        });
+
+        // Filter out future dates (important: only enable dates <= today)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // Reset time to start of day
+        const filteredDates = enabledDates.filter(dateStr => {
+            const date = new Date(dateStr);
+            return date <= today;
+        });
+
+        console.log(`Filtered to ${filteredDates.length} dates (removed any future dates)`);
+
+        // Determine default date: use latest available date
+        let defaultDate;
+        if (filteredDates.length > 0) {
+            // Sort and use most recent date
+            filteredDates.sort().reverse();
+            defaultDate = filteredDates[0];
+            console.log(`Defaulting to latest available date: ${defaultDate}`);
+        } else {
+            // Fallback to today if no dates available
+            defaultDate = getCurrentDate();
+            console.log('No available dates found, using today');
+        }
+
+        // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
+        flatpickrInstance = flatpickr('#dateSelect', {
+            defaultDate: defaultDate,
+            maxDate: 'today',  // Block all future dates
+            enable: filteredDates.length > 0 ? filteredDates : undefined,  // Only enable dates with logs (past/today only)
+            dateFormat: 'Y-m-d',
+            onChange: function(selectedDates, dateStr) {
+                loadDashboardData(dateStr);
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+                // Add custom styling class
+                instance.calendarContainer.classList.add('dashboard-calendar');
+            }
+        });
+
+        // Load initial data for the default date
+        loadDashboardData(defaultDate);
+    }).catch(error => {
+        console.error('Error loading available dates:', error);
+        // Fallback to regular date input with today's date
+        const today = getCurrentDate();
+        document.getElementById('dateSelect').value = today;
+        loadDashboardData(today);
+    });
 
     // Load data for selected date
     function loadDashboardData(dateStr) {
@@ -350,12 +411,7 @@
         return badges[status] || badges['unknown'];
     }
 
-    // Listen for date changes
-    document.getElementById('dateSelect').addEventListener('change', function() {
-        loadDashboardData(this.value);
-    });
-
-    // Load initial data
-    loadDashboardData(today);
+    // Note: Date change handled by flatpickr onChange callback
+    // Initial data load triggered after flatpickr initialization
 </script>
 {% endblock %}

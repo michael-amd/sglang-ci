@@ -140,11 +140,76 @@
     const hardware = '{{ hardware }}';
     const githubRepo = '{{ github_repo }}';
 
-    // Initialize date picker with Pacific Time
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlDate = urlParams.get('date');
-    const today = getCurrentDate();  // Uses Pacific Time from dashboard.js
-    document.getElementById('dateSelect').value = urlDate ? formatDateDisplay(urlDate) : today;
+    let availableDates = [];
+    let flatpickrInstance = null;
+
+    // Load available dates and initialize flatpickr
+    fetch(`/api/dates/${hardware}`)
+        .then(response => response.json())
+        .then(data => {
+            availableDates = data.dates || [];
+            console.log(`Loaded ${availableDates.length} available dates for ${hardware}`);
+
+            // Convert YYYYMMDD to YYYY-MM-DD for flatpickr
+            const enabledDates = availableDates.map(dateStr => {
+                return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+            });
+
+            // Filter out future dates (important: only enable dates <= today)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);  // Reset time to start of day
+            const filteredDates = enabledDates.filter(dateStr => {
+                const date = new Date(dateStr);
+                return date <= today;
+            });
+
+            console.log(`Filtered to ${filteredDates.length} dates (removed any future dates)`);
+
+            // Get URL date parameter or use latest available date
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlDate = urlParams.get('date');
+            let defaultDate;
+
+            if (urlDate) {
+                defaultDate = formatDateDisplay(urlDate);
+            } else if (filteredDates.length > 0) {
+                // Use the first (most recent) available date
+                defaultDate = filteredDates[0];
+                console.log(`Defaulting to latest available date: ${defaultDate}`);
+            } else {
+                // Fallback to today if no dates available
+                defaultDate = getCurrentDate();
+                console.log('No available dates found, using today');
+            }
+
+            // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
+            flatpickrInstance = flatpickr('#dateSelect', {
+                defaultDate: defaultDate,
+                maxDate: 'today',  // Block all future dates
+                enable: filteredDates.length > 0 ? filteredDates : undefined,  // Only enable dates with logs (past/today only)
+                dateFormat: 'Y-m-d',
+                onChange: function(selectedDates, dateStr) {
+                    loadData(dateStr);
+                },
+                onReady: function(selectedDates, dateStr, instance) {
+                    // Add custom styling class
+                    instance.calendarContainer.classList.add('dashboard-calendar');
+                }
+            });
+
+            // Load initial data for the default date
+            loadData(defaultDate);
+        })
+        .catch(error => {
+            console.error('Error loading available dates:', error);
+            // Fallback to regular date input with today's date
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlDate = urlParams.get('date');
+            const today = getCurrentDate();
+            const defaultDate = urlDate ? formatDateDisplay(urlDate) : today;
+            document.getElementById('dateSelect').value = defaultDate;
+            loadData(defaultDate);
+        });
 
     function formatDateDisplay(dateStr) {
         // Convert YYYYMMDD to YYYY-MM-DD
@@ -375,12 +440,7 @@
         return badges[status] || badges['unknown'];
     }
 
-    // Event listeners
-    document.getElementById('dateSelect').addEventListener('change', function() {
-        loadData(this.value);
-    });
-
-    // Load initial data
-    loadData(document.getElementById('dateSelect').value);
+    // Note: Date change handled by flatpickr onChange callback
+    // Initial data load triggered after flatpickr initialization
 </script>
 {% endblock %}

@@ -82,11 +82,21 @@
                 return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
             });
 
+            // Filter out future dates (important: only enable dates <= today)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);  // Reset time to start of day
+            const filteredDates = enabledDates.filter(dateStr => {
+                const date = new Date(dateStr);
+                return date <= today;
+            });
+
+            console.log(`Filtered to ${filteredDates.length} plot dates (removed any future dates)`);
+
             // Determine default date: use latest available date with plots, not today
             let defaultDate;
-            if (enabledDates.length > 0) {
+            if (filteredDates.length > 0) {
                 // Use the first date (most recent) from available dates
-                defaultDate = enabledDates[0];
+                defaultDate = filteredDates[0];
                 console.log(`Defaulting to latest available date: ${defaultDate}`);
             } else {
                 // Fallback to today if no dates available
@@ -94,10 +104,11 @@
                 console.log('No available dates found, using today');
             }
 
-            // Initialize flatpickr with only available dates enabled
+            // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
             flatpickrInstance = flatpickr('#dateSelect', {
                 defaultDate: defaultDate,
-                enable: enabledDates,
+                maxDate: 'today',  // Block all future dates
+                enable: filteredDates.length > 0 ? filteredDates : undefined,  // Only enable dates with plots (past/today only)
                 dateFormat: 'Y-m-d',
                 onChange: function(selectedDates, dateStr) {
                     loadPlots(dateStr);
