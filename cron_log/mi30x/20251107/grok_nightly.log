@@ -335,3 +335,11 @@ docker.io/rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251107
 [nightly] Stopping running containers: f3fcbd75e7cf
 6407b7795343
 [nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251107 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251107
+[nightly] Container name: sgl-dev_v0.5.5-rocm630-mi30x-20251107
+[nightly] Creating container sgl-dev_v0.5.5-rocm630-mi30x-20251107
+docker: Error response from daemon: Conflict. The container name "/sgl-dev_v0.5.5-rocm630-mi30x-20251107" is already in use by container "ad657d62595f8e678e5693c9ae0e46b498256a379b7765c4f11194fa15a53188". You have to remove (or rename) that container to be able to reuse that name.
+See 'docker run --help'.
+[nightly] Cleaning up process lock...
