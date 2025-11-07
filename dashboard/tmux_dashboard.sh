@@ -31,21 +31,21 @@ start_dashboard() {
         echo "   Use 'bash $0 stop' first, or 'bash $0 restart'"
         exit 1
     fi
-    
+
     echo "🚀 Starting SGLang CI Dashboard in tmux..."
-    
+
     # Get GitHub token from environment or crontab_rules.txt
-    if [[ -z "$GITHUB_TOKEN" ]]; then
+    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
         # Try to read from crontab_rules.txt
         CRONTAB_RULES="$SCRIPT_DIR/../cron/crontab_rules.txt"
         if [[ -f "$CRONTAB_RULES" ]]; then
             GITHUB_TOKEN=$(grep "^GITHUB_TOKEN=" "$CRONTAB_RULES" | cut -d'=' -f2 | tr -d '"')
         fi
     fi
-    
+
     # Create tmux session and start dashboard with GitHub token
     cd "$SCRIPT_DIR"
-    if [[ -n "$GITHUB_TOKEN" ]]; then
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
         tmux new-session -d -s "$SESSION_NAME" \
             "export GITHUB_TOKEN='$GITHUB_TOKEN' && python3 app.py --host $HOST --port $PORT; read -p 'Press Enter to close...'"
         echo "   🔑 GitHub token configured for private repo access"

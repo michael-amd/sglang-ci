@@ -66,9 +66,47 @@
     const hardware = '{{ hardware }}';
     const githubRepo = '{{ github_repo }}';
 
+    let availablePlotDates = [];
+    let flatpickrInstance = null;
+
     // Initialize date picker with today's date in Pacific Time
     const today = getCurrentDate();  // Uses Pacific Time from dashboard.js
-    document.getElementById('dateSelect').value = today;
+
+    // Load available plot dates and initialize flatpickr
+    fetch(`/api/available-plot-dates/${hardware}`)
+        .then(response => response.json())
+        .then(data => {
+            availablePlotDates = data.dates || [];
+            console.log(`Loaded ${availablePlotDates.length} dates with available plots`);
+
+            // Convert YYYYMMDD to Date objects for flatpickr
+            const enabledDates = availablePlotDates.map(dateStr => {
+                return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+            });
+
+            // Initialize flatpickr with only available dates enabled
+            flatpickrInstance = flatpickr('#dateSelect', {
+                defaultDate: today,
+                enable: enabledDates,
+                dateFormat: 'Y-m-d',
+                onChange: function(selectedDates, dateStr) {
+                    loadPlots(dateStr);
+                },
+                onReady: function(selectedDates, dateStr, instance) {
+                    // Add custom styling for disabled dates
+                    instance.calendarContainer.classList.add('plots-calendar');
+                }
+            });
+
+            // Load initial plots
+            loadPlots(today);
+        })
+        .catch(error => {
+            console.error('Error loading available dates:', error);
+            // Fallback to regular date input
+            document.getElementById('dateSelect').value = today;
+            loadPlots(today);
+        });
 
     function formatDateApi(dateStr) {
         // Convert YYYY-MM-DD to YYYYMMDD
@@ -157,12 +195,7 @@
         document.getElementById('plots-container').innerHTML = html;
     }
 
-    // Event listener
-    document.getElementById('dateSelect').addEventListener('change', function() {
-        loadPlots(this.value);
-    });
-
-    // Load initial data
-    loadPlots(today);
+    // Note: Date change handled by flatpickr onChange callback
+    // Initial data load triggered after flatpickr initialization
 </script>
 {% endblock %}
