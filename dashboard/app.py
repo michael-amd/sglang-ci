@@ -24,6 +24,7 @@ from pathlib import Path
 
 import requests
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask_caching import Cache
 
 # Add parent directory to path to import data_collector
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -32,6 +33,12 @@ from dashboard.data_collector import DashboardDataCollector
 from dashboard.github_data_collector import GitHubDataCollector
 
 app = Flask(__name__)
+
+# Configure caching
+cache = Cache(
+    app,
+    config={"CACHE_TYPE": "simple", "CACHE_DEFAULT_TIMEOUT": 600},  # 10 minutes default
+)
 
 # Configuration
 BASE_DIR = os.environ.get("SGL_BENCHMARK_CI_DIR", "/mnt/raid/michael/sglang-ci")
@@ -79,6 +86,7 @@ def plots_view(hardware):
 
 
 @app.route("/api/summary/<hardware>/<date>")
+@cache.cached(timeout=300)  # Cache for 5 minutes
 def api_summary(hardware, date):
     """Get daily summary for specific hardware and date"""
     if hardware not in ["mi30x", "mi35x"]:
@@ -116,6 +124,7 @@ def api_summary(hardware, date):
 
 
 @app.route("/api/trends/<hardware>")
+@cache.cached(timeout=600, query_string=True)  # Cache for 10 minutes
 def api_trends(hardware):
     """Get historical trends for specific hardware"""
     if hardware not in ["mi30x", "mi35x"]:
@@ -196,6 +205,7 @@ def api_plots(hardware, date):
 
 
 @app.route("/api/available-plot-dates/<hardware>")
+@cache.cached(timeout=3600)  # Cache for 1 hour (plots don't change often)
 def api_available_plot_dates(hardware):
     """Get list of dates that have plots available"""
     if hardware not in ["mi30x", "mi35x"]:
