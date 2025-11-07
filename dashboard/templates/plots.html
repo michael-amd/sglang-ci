@@ -104,12 +104,33 @@
                 console.log('No available dates found, using today');
             }
 
+            // Create a Set for fast lookup of available dates
+            const availableDateSet = new Set(filteredDates);
+
             // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
             flatpickrInstance = flatpickr('#dateSelect', {
                 defaultDate: defaultDate,
-                maxDate: 'today',  // Block all future dates
-                enable: filteredDates.length > 0 ? filteredDates : undefined,  // Only enable dates with plots (past/today only)
                 dateFormat: 'Y-m-d',
+                // Use disable function to block all dates except available ones
+                disable: [
+                    function(date) {
+                        // Get date in YYYY-MM-DD format for comparison
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateStr = `${year}-${month}-${day}`;
+
+                        // Disable if: (1) date is in the future OR (2) date is not in available dates
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        date.setHours(0, 0, 0, 0);
+
+                        const isFuture = date > today;
+                        const notAvailable = !availableDateSet.has(dateStr);
+
+                        return isFuture || notAvailable;
+                    }
+                ],
                 onChange: function(selectedDates, dateStr) {
                     loadPlots(dateStr);
                 },
