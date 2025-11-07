@@ -447,3 +447,31 @@ c9949f37a3f6: Download complete
 4b00dff39708: Retrying in 1 second
 6523fcecd1c2: Verifying Checksum
 6523fcecd1c2: Download complete
+4b00dff39708: Retrying in 25 seconds
+4b00dff39708: Retrying in 24 seconds
+4b00dff39708: Retrying in 23 seconds
+4b00dff39708: Retrying in 22 seconds
+4b00dff39708: Retrying in 21 seconds
+4b00dff39708: Retrying in 20 seconds
+4b00dff39708: Retrying in 19 seconds
+4b00dff39708: Retrying in 18 seconds
+4b00dff39708: Retrying in 17 seconds
+4b00dff39708: Retrying in 16 seconds
+4b00dff39708: Retrying in 15 seconds
+4b00dff39708: Retrying in 14 seconds
+4b00dff39708: Retrying in 13 seconds
+4b00dff39708: Retrying in 12 seconds
+4b00dff39708: Retrying in 11 seconds
+4b00dff39708: Retrying in 10 seconds
+4b00dff39708: Retrying in 9 seconds
+4b00dff39708: Retrying in 8 seconds
+4b00dff39708: Retrying in 7 seconds
+4b00dff39708: Retrying in 6 seconds
+4b00dff39708: Retrying in 5 seconds
+4b00dff39708: Retrying in 4 seconds
+4b00dff39708: Retrying in 3 seconds
+4b00dff39708: Retrying in 2 seconds
+4b00dff39708: Retrying in 1 second
+0883eca5f46d: Download complete
+Get "https://production.cloudflare.docker.com/registry-v2/docker/registry/v2/blobs/sha256/4b/4b00dff397081c5588ed1f736393c3e561ea54abfcf8aa5950f940a7dcc5d0d4/data?expires=1762540966&signature=NK8bOw%2BUTI2xb5XFwT%2FaTEYDKAM%3D&version=2": dial tcp 104.16.99.215:443: i/o timeout
+[nightly] Pull failed, retrying in 30s...
