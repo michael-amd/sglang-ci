@@ -264,11 +264,21 @@ For questions or issues:
 - **Missing Data**: Verify CI jobs ran successfully
 - **Plot Problems**: Check `plot/` directory structure
 
+## 📸 Dashboard Screenshots
+
+### Home Page - Daily Summary
+![Dashboard Home Page](dashboard_screenshots/01_home_page.png)
+*Overview of MI30X and MI35X with pass rates, task counts, and recent activity*
+
+### Hardware Detail Page - MI35X
+![MI35X Dashboard](dashboard_screenshots/02_mi35x_dashboard.png)
+*Detailed MI35X results showing performance benchmarks, integration tests, validation checks, and sanity check results*
+
+**Note**: For performance plots, visit the live dashboard at http://10.194.129.138:5000/plots/mi30x or http://10.194.129.138:5000/plots/mi35x
+
 ## 🔗 Related Resources
 
 - **Main CI Repo**: https://github.com/ROCm/sglang-ci
-- **Dashboard Code**: https://github.com/ROCm/sglang-ci/tree/update/dashboard
-- **CI Scripts**: https://github.com/ROCm/sglang-ci/tree/update/scripts
 
 ---
 
