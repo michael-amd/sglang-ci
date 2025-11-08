@@ -1,0 +1,123 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-11-08 08:40:47 PST
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251107
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-11-08 08:40:47 PST
+Server startup: 136.66s
+Trial 1: PASS [OK] (Accuracy: 0.855, Time: 142.14s)
+Trial 2: PASS [OK] (Accuracy: 0.851, Time: 132.12s)
+Trial 3: PASS [OK] (Accuracy: 0.849, Time: 129.12s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.855, 0.851, 0.849]
+Highest accuracy: 0.855 (Required: 0.820)
+Total time: 540.54s
+End time: 2025-11-08 08:49:48 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-11-08 08:49:48 PST
+Server startup: 86.10s
+Trial 1: PASS [OK] (Accuracy: 0.523, Time: 94.09s)
+Trial 2: PASS [OK] (Accuracy: 0.538, Time: 81.08s)
+Trial 3: PASS [OK] (Accuracy: 0.537, Time: 81.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.523, 0.538, 0.537]
+Highest accuracy: 0.538 (Required: 0.520)
+Total time: 342.85s
+End time: 2025-11-08 08:55:30 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-11-08 08:55:30 PST
+Server startup: 152.73s
+Trial 1: PASS [OK] (Accuracy: 0.855, Time: 90.09s)
+Trial 2: PASS [OK] (Accuracy: 0.865, Time: 133.13s)
+Trial 3: PASS [OK] (Accuracy: 0.855, Time: 95.09s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.855, 0.865, 0.855]
+Highest accuracy: 0.865 (Required: 0.840)
+Total time: 471.54s
+End time: 2025-11-08 09:03:22 PST
+==================================================
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-11-08 09:03:22 PST
+Server startup: 114.70s
+Trial 1: PASS [OK] (Accuracy: 0.807, Time: 34.03s)
+Trial 2: PASS [OK] (Accuracy: 0.804, Time: 31.03s)
+Trial 3: PASS [OK] (Accuracy: 0.810, Time: 31.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.807, 0.804, 0.81]
+Highest accuracy: 0.810 (Required: 0.800)
+Total time: 211.30s
+End time: 2025-11-08 09:06:53 PST
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-11-08 09:06:53 PST
+Server startup: 185.76s
+Trial 1: PASS [OK] (Accuracy: 0.820, Time: 35.03s)
+Trial 2: PASS [OK] (Accuracy: 0.835, Time: 33.03s)
+Trial 3: PASS [OK] (Accuracy: 0.826, Time: 33.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.82, 0.835, 0.826]
+Highest accuracy: 0.835 (Required: 0.800)
+Total time: 287.36s
+End time: 2025-11-08 09:11:41 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-11-08 09:11:41 PST
+Server startup: 172.21s
+Trial 1: PASS [OK] (Accuracy: 0.929, Time: 38.04s)
+Trial 2: PASS [OK] (Accuracy: 0.922, Time: 34.03s)
+Trial 3: PASS [OK] (Accuracy: 0.929, Time: 33.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.929, 0.922, 0.929]
+Highest accuracy: 0.929 (Required: 0.915)
+Total time: 277.82s
+End time: 2025-11-08 09:16:18 PST
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-11-08 09:16:18 PST
+Server startup: 215.30s
+Trial 1: PASS [OK] (Accuracy: 0.938, Time: 30.03s)
+Trial 2: PASS [OK] (Accuracy: 0.938, Time: 30.02s)
+Trial 3: PASS [OK] (Accuracy: 0.938, Time: 30.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.938, 0.938, 0.938]
+Highest accuracy: 0.938 (Required: 0.900)
+Total time: 305.89s
+End time: 2025-11-08 09:21:24 PST
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-11-08 09:21:24 PST
+Total execution time: 2437.31s (40.6 minutes)
+Average time per model: 348.19s
+Models tested: 7/7
+Models passed: 7/7
+Models failed: 0/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: PASS
