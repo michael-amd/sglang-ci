@@ -63,6 +63,11 @@
                             <li><a class="dropdown-item" href="{{ url_for('plots_view', hardware='mi35x') }}">MI35X Plots</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/upstream-ci' %}active{% endif %}" href="{{ url_for('upstream_ci_view') }}">
+                            <i class="bi bi-shield-check"></i> Upstream CI
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">

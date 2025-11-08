@@ -63,12 +63,12 @@ class CompareSuitesReporter:
         self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
         self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
 
-    def run_compare_suites(self) -> Tuple[bool, List[Dict[str, str]]]:
+    def run_compare_suites(self) -> Tuple[bool, List[Dict[str, str]], str]:
         """
         Run compare_suites.py and parse the CSV output
 
         Returns:
-            Tuple of (success, parsed_csv_data)
+            Tuple of (success, parsed_csv_data, csv_output_string)
         """
         try:
             # Path to compare_suites.py
@@ -78,7 +78,7 @@ class CompareSuitesReporter:
 
             if not os.path.exists(compare_script):
                 print(f"❌ Error: compare_suites.py not found at {compare_script}")
-                return False, []
+                return False, [], ""
 
             # Run compare_suites.py with --stdout flag to get CSV output
             print(f"🔄 Running compare_suites.py...")
@@ -92,13 +92,13 @@ class CompareSuitesReporter:
             if result.returncode != 0:
                 print(f"❌ Error running compare_suites.py:")
                 print(result.stderr)
-                return False, []
+                return False, [], ""
 
             # Parse CSV output
             csv_output = result.stdout.strip()
             if not csv_output:
                 print("❌ Error: No output from compare_suites.py")
-                return False, []
+                return False, [], ""
 
             # Parse CSV using csv.DictReader
             csv_reader = csv.DictReader(StringIO(csv_output))
@@ -106,17 +106,17 @@ class CompareSuitesReporter:
 
             if not rows:
                 print("❌ Error: Empty CSV output")
-                return False, []
+                return False, [], ""
 
             print(f"✅ Successfully parsed {len(rows)} test categories")
-            return True, rows
+            return True, rows, csv_output
 
         except subprocess.TimeoutExpired:
             print("❌ Error: compare_suites.py timed out (>60s)")
-            return False, []
+            return False, [], ""
         except Exception as e:
             print(f"❌ Error running compare_suites.py: {e}")
-            return False, []
+            return False, [], ""
 
     def create_comparison_card(self, csv_data: List[Dict[str, str]]) -> Dict:
         """
@@ -350,6 +350,47 @@ class CompareSuitesReporter:
             print(f"❌ Error saving alert log: {e}")
             return False
 
+    def save_ci_report_csv(self, csv_output: str) -> bool:
+        """
+        Save CI report CSV to upstream_ci/ci_report directory
+
+        Args:
+            csv_output: CSV output string from compare_suites.py
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Create ci_report directory if it doesn't exist
+            ci_report_dir = os.path.join(self.base_dir, "upstream_ci", "ci_report")
+            os.makedirs(ci_report_dir, exist_ok=True)
+
+            # Use Pacific time for filename
+            if PYTZ_AVAILABLE:
+                pacific_tz = pytz.timezone("America/Los_Angeles")
+                pacific_time = datetime.now(pacific_tz)
+                date_str = pacific_time.strftime("%Y%m%d")
+            else:
+                date_str = datetime.now().strftime("%Y%m%d")
+
+            # Get hostname to identify which machine generated this
+            hostname = socket.gethostname()
+
+            # Create filename: YYYYMMDD_hostname_ci_report.csv
+            csv_filename = f"{date_str}_{hostname}_ci_report.csv"
+            csv_path = os.path.join(ci_report_dir, csv_filename)
+
+            # Save CSV to file
+            with open(csv_path, "w", encoding="utf-8") as f:
+                f.write(csv_output)
+
+            print(f"💾 CI report CSV saved to: {csv_path}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Error saving CI report CSV: {e}")
+            return False
+
     def send_comparison_notification(self) -> bool:
         """
         Send comparison notification to Teams and save to log
@@ -359,11 +400,16 @@ class CompareSuitesReporter:
         """
         try:
             # Run compare_suites.py
-            success, csv_data = self.run_compare_suites()
+            success, csv_data, csv_output = self.run_compare_suites()
 
             if not success or not csv_data:
                 print("❌ Failed to run compare_suites.py")
                 return False
+
+            # Save CSV report to ci_report directory
+            csv_saved = self.save_ci_report_csv(csv_output)
+            if csv_saved:
+                print("✅ CI report CSV saved successfully")
 
             # Create card
             card = self.create_comparison_card(csv_data)
@@ -394,7 +440,7 @@ class CompareSuitesReporter:
             else:
                 print("ℹ️  No Teams webhook URL provided, skipping Teams notification")
 
-            return log_saved
+            return log_saved and csv_saved
 
         except requests.exceptions.RequestException as e:
             print(f"❌ Error sending Teams notification: {e}")
