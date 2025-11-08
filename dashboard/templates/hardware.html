@@ -140,96 +140,45 @@
     const hardware = '{{ hardware }}';
     const githubRepo = '{{ github_repo }}';
 
-    let availableDates = [];
-    let flatpickrInstance = null;
-
-    // Load available dates and initialize flatpickr
+    // Load available dates and initialize date picker
     fetch(`/api/dates/${hardware}`)
         .then(response => response.json())
         .then(data => {
-            availableDates = data.dates || [];
+            const availableDates = data.dates || [];
             console.log(`Loaded ${availableDates.length} available dates for ${hardware}`);
 
-            // Convert YYYYMMDD to YYYY-MM-DD for flatpickr
-            const enabledDates = availableDates.map(dateStr => {
-                return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
-            });
-
-            // Filter out future dates (important: only enable dates <= today)
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);  // Reset time to start of day
-            const filteredDates = enabledDates.filter(dateStr => {
-                const date = new Date(dateStr);
-                return date <= today;
-            });
-
-            console.log(`Filtered to ${filteredDates.length} dates (removed any future dates)`);
-
-            // Get URL date parameter or use latest available date
             const urlParams = new URLSearchParams(window.location.search);
             const urlDate = urlParams.get('date');
-            let defaultDate;
 
-            if (urlDate) {
-                defaultDate = formatDateDisplay(urlDate);
-            } else if (filteredDates.length > 0) {
-                // Use the first (most recent) available date
-                defaultDate = filteredDates[0];
-                console.log(`Defaulting to latest available date: ${defaultDate}`);
-            } else {
-                // Fallback to today if no dates available
-                defaultDate = getCurrentDate();
-                console.log('No available dates found, using today');
-            }
+            const { sortedDates } = computeAvailableDashboardDates(availableDates);
+            console.log(`Filtered to ${sortedDates.length} dates (removed any future dates)`);
 
-            // Create a Set for fast lookup of available dates
-            const availableDateSet = new Set(filteredDates);
-
-            // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
-            flatpickrInstance = flatpickr('#dateSelect', {
-                defaultDate: defaultDate,
-                dateFormat: 'Y-m-d',
-                // Use disable function to block all dates except available ones
-                disable: [
-                    function(date) {
-                        // Get date in YYYY-MM-DD format for comparison
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const dateStr = `${year}-${month}-${day}`;
-
-                        // Disable if: (1) date is in the future OR (2) date is not in available dates
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        date.setHours(0, 0, 0, 0);
-
-                        const isFuture = date > today;
-                        const notAvailable = !availableDateSet.has(dateStr);
-
-                        return isFuture || notAvailable;
-                    }
-                ],
-                onChange: function(selectedDates, dateStr) {
-                    loadData(dateStr);
-                },
-                onReady: function(selectedDates, dateStr, instance) {
-                    // Add custom styling class
-                    instance.calendarContainer.classList.add('dashboard-calendar');
-                }
+            const datePicker = initializeDashboardDatePicker({
+                selector: '#dateSelect',
+                rawDates: sortedDates,
+                defaultDate: urlDate,
+                onDateChange: loadData,
             });
 
+            console.log(`Using default date: ${datePicker.defaultDate}`);
+
             // Load initial data for the default date
-            loadData(defaultDate);
+            loadData(datePicker.defaultDate);
         })
         .catch(error => {
             console.error('Error loading available dates:', error);
-            // Fallback to regular date input with today's date
             const urlParams = new URLSearchParams(window.location.search);
             const urlDate = urlParams.get('date');
-            const today = getCurrentDate();
-            const defaultDate = urlDate ? formatDateDisplay(urlDate) : today;
-            document.getElementById('dateSelect').value = defaultDate;
-            loadData(defaultDate);
+            const fallbackDate = urlDate ? formatDateDisplay(urlDate) : getCurrentDate();
+
+            initializeDashboardDatePicker({
+                selector: '#dateSelect',
+                rawDates: [fallbackDate.replace(/-/g, '')],
+                defaultDate: fallbackDate,
+                onDateChange: loadData,
+            });
+
+            loadData(fallbackDate);
         });
 
     function formatDateDisplay(dateStr) {

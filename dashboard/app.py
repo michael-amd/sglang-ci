@@ -183,8 +183,9 @@ def api_trends(hardware):
 
 
 @app.route("/api/dates/<hardware>")
+@cache.cached(timeout=600)  # Cache for 10 minutes
 def api_available_dates(hardware):
-    """Get available dates for specific hardware"""
+    """Get available dates for specific hardware (based on cron log directory existence)"""
     if hardware not in ["mi30x", "mi35x"]:
         return jsonify({"error": "Invalid hardware type"}), 400
 
