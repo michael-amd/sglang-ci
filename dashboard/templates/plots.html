@@ -67,88 +67,38 @@
     const hardware = '{{ hardware }}';
     const githubRepo = '{{ github_repo }}';
 
-    let availablePlotDates = [];
-    let flatpickrInstance = null;
-
-    // Load available plot dates and initialize flatpickr
+    // Load available plot dates and initialize date picker
     fetch(`/api/available-plot-dates/${hardware}`)
         .then(response => response.json())
         .then(data => {
-            availablePlotDates = data.dates || [];
+            const availablePlotDates = data.dates || [];
             console.log(`Loaded ${availablePlotDates.length} dates with available plots`);
 
-            // Convert YYYYMMDD to YYYY-MM-DD for flatpickr
-            const enabledDates = availablePlotDates.map(dateStr => {
-                return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+            const { sortedDates } = computeAvailableDashboardDates(availablePlotDates);
+            console.log(`Filtered to ${sortedDates.length} plot dates (removed any future dates)`);
+
+            const datePicker = initializeDashboardDatePicker({
+                selector: '#dateSelect',
+                rawDates: sortedDates,
+                onDateChange: loadPlots,
             });
 
-            // Filter out future dates (important: only enable dates <= today)
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);  // Reset time to start of day
-            const filteredDates = enabledDates.filter(dateStr => {
-                const date = new Date(dateStr);
-                return date <= today;
-            });
-
-            console.log(`Filtered to ${filteredDates.length} plot dates (removed any future dates)`);
-
-            // Determine default date: use latest available date with plots, not today
-            let defaultDate;
-            if (filteredDates.length > 0) {
-                // Use the first date (most recent) from available dates
-                defaultDate = filteredDates[0];
-                console.log(`Defaulting to latest available date: ${defaultDate}`);
-            } else {
-                // Fallback to today if no dates available
-                defaultDate = getCurrentDate();
-                console.log('No available dates found, using today');
-            }
-
-            // Create a Set for fast lookup of available dates
-            const availableDateSet = new Set(filteredDates);
-
-            // Initialize flatpickr with only available dates enabled (blocks future and unavailable dates)
-            flatpickrInstance = flatpickr('#dateSelect', {
-                defaultDate: defaultDate,
-                dateFormat: 'Y-m-d',
-                // Use disable function to block all dates except available ones
-                disable: [
-                    function(date) {
-                        // Get date in YYYY-MM-DD format for comparison
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const dateStr = `${year}-${month}-${day}`;
-
-                        // Disable if: (1) date is in the future OR (2) date is not in available dates
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        date.setHours(0, 0, 0, 0);
-
-                        const isFuture = date > today;
-                        const notAvailable = !availableDateSet.has(dateStr);
-
-                        return isFuture || notAvailable;
-                    }
-                ],
-                onChange: function(selectedDates, dateStr) {
-                    loadPlots(dateStr);
-                },
-                onReady: function(selectedDates, dateStr, instance) {
-                    // Add custom styling for disabled dates
-                    instance.calendarContainer.classList.add('plots-calendar');
-                }
-            });
+            console.log(`Defaulting to latest available date: ${datePicker.defaultDate}`);
 
             // Load initial plots for the default date
-            loadPlots(defaultDate);
+            loadPlots(datePicker.defaultDate);
         })
         .catch(error => {
             console.error('Error loading available dates:', error);
-            // Fallback to regular date input with today's date
-            const today = getCurrentDate();
-            document.getElementById('dateSelect').value = today;
-            loadPlots(today);
+            // Fallback to today's date
+            const fallbackDate = getCurrentDate();
+            initializeDashboardDatePicker({
+                selector: '#dateSelect',
+                rawDates: [fallbackDate.replace(/-/g, '')],
+                defaultDate: fallbackDate,
+                onDateChange: loadPlots,
+            });
+            loadPlots(fallbackDate);
         });
 
     function formatDateApi(dateStr) {

@@ -290,6 +290,152 @@ function calculatePercentage(value, total) {
 }
 
 /**
+ * Normalize date string to YYYY-MM-DD format.
+ */
+function normalizeDashboardDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') {
+        return null;
+    }
+
+    const trimmed = dateStr.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    if (/^\d{8}$/.test(trimmed)) {
+        return `${trimmed.slice(0, 4)}-${trimmed.slice(4, 6)}-${trimmed.slice(6, 8)}`;
+    }
+
+    return null;
+}
+
+/**
+ * Convert Date object to YYYY-MM-DD string without mutating the original date.
+ */
+function dateObjectToYMD(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * Prepare available dates by normalizing, de-duplicating, and removing future dates.
+ */
+function computeAvailableDashboardDates(rawDates = []) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const uniqueDates = new Set();
+
+    rawDates.forEach((raw) => {
+        const normalized = normalizeDashboardDate(raw);
+        if (!normalized) {
+            return;
+        }
+
+        const dateObj = new Date(normalized);
+        dateObj.setHours(0, 0, 0, 0);
+
+        if (dateObj > today) {
+            return;
+        }
+
+        uniqueDates.add(normalized);
+    });
+
+    const sortedDates = Array.from(uniqueDates);
+    sortedDates.sort();
+    sortedDates.reverse(); // newest first
+
+    return {
+        sortedDates,
+        dateSet: new Set(sortedDates),
+    };
+}
+
+/**
+ * Initialize a standard dashboard date picker with consistent behaviour.
+ */
+function initializeDashboardDatePicker({
+    selector,
+    rawDates = [],
+    defaultDate = null,
+    onDateChange = null,
+    calendarClass = 'ci-dashboard-calendar',
+} = {}) {
+    const { sortedDates, dateSet } = computeAvailableDashboardDates(rawDates);
+
+    let resolvedDefaultDate = normalizeDashboardDate(defaultDate);
+    if (!resolvedDefaultDate) {
+        resolvedDefaultDate =
+            sortedDates.length > 0 ? sortedDates[0] : getCurrentDate();
+    }
+
+    if (resolvedDefaultDate && !dateSet.has(resolvedDefaultDate)) {
+        dateSet.add(resolvedDefaultDate);
+        sortedDates.unshift(resolvedDefaultDate);
+    }
+
+    // Fallback if flatpickr is unavailable
+    if (typeof flatpickr === 'undefined') {
+        console.warn('flatpickr is not available; falling back to native date input.');
+        const input = document.querySelector(selector);
+        if (input) {
+            input.value = resolvedDefaultDate;
+            input.addEventListener('change', (event) => {
+                if (typeof onDateChange === 'function') {
+                    onDateChange(event.target.value);
+                }
+            });
+        }
+
+        return {
+            instance: null,
+            defaultDate: resolvedDefaultDate,
+            availableDates: sortedDates,
+        };
+    }
+
+    const instance = flatpickr(selector, {
+        defaultDate: resolvedDefaultDate,
+        dateFormat: 'Y-m-d',
+        disable: [
+            (date) => {
+                const dateCopy = new Date(date.getTime());
+                dateCopy.setHours(0, 0, 0, 0);
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const isFuture = dateCopy > today;
+                const dateStr = dateObjectToYMD(dateCopy);
+                const notAvailable = !dateSet.has(dateStr);
+
+                return isFuture || notAvailable;
+            },
+        ],
+        onChange: (selectedDates, dateStr) => {
+            if (typeof onDateChange === 'function') {
+                onDateChange(dateStr);
+            }
+        },
+        onReady: (selectedDates, dateStr, fpInstance) => {
+            if (calendarClass && fpInstance && fpInstance.calendarContainer) {
+                fpInstance.calendarContainer.classList.add(calendarClass);
+            }
+        },
+    });
+
+    return {
+        instance,
+        defaultDate: resolvedDefaultDate,
+        availableDates: sortedDates,
+    };
+}
+
+/**
  * Add fade-in animation to element
  */
 function fadeIn(elementId) {
@@ -358,6 +504,10 @@ if (typeof module !== 'undefined' && module.exports) {
         parseDate,
         formatNumber,
         calculatePercentage,
-        fadeIn
+        fadeIn,
+        normalizeDashboardDate,
+        initializeDashboardDatePicker,
+        computeAvailableDashboardDates,
+        dateObjectToYMD,
     };
 }
