@@ -24,7 +24,7 @@ GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
 # 850 AM PT (1050 AM CT) - Compare Suites Report (AMD vs NVIDIA coverage) [Runtime: ~5s]
-50 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_compare_suites_alert.py --teams-webhook-url="$TEAMS_WEBHOOK_URL" --base-dir="$SGL_BENCHMARK_CI_DIR" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/compare_suites_alert.log 2>&1; bash cron/github_log_upload.sh
+50 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_compare_suites_alert.py --teams-webhook-url="$TEAMS_WEBHOOK_URL" --base-dir="$SGL_BENCHMARK_CI_DIR" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/compare_suites_alert.log 2>&1; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" upstream-ci
 
 # 9 AM PT (11 AM CT) - Docker image availability check with Teams notifications [Runtime: ~30s]
 0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash scripts/nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1; bash cron/github_log_upload.sh

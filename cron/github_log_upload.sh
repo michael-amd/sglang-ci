@@ -26,13 +26,16 @@
 #     # Unit test logs (upload entire directory)
 #     bash cron/github_log_upload.sh "" mi30x unit-test
 #
+#     # Upstream CI reports (entire ci_report directory)
+#     bash cron/github_log_upload.sh "" mi30x upstream-ci
+#
 #     # Direct path upload (auto-detects type when 4th arg is absolute path)
 #     bash cron/github_log_upload.sh "" "" "" /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.3rc0
 #
 # Arguments:
 #   DATE          – Optional. Date in YYYYMMDD format (defaults to today). Ignored if FOLDER is provided.
 #   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
-#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', 'pd', or 'unit-test' (defaults to 'cron')
+#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', 'pd', 'unit-test', or 'upstream-ci' (defaults to 'cron')
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
 #
 # Requirements:
@@ -94,6 +97,11 @@ if [[ -n "$ARG_FOLDER" ]]; then
       # Extract hardware from path or use provided hardware type
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
       DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/upstream_ci/ci_report"* ]]; then
+      readonly LOG_TYPE="upstream-ci"
+      # Upstream CI reports are shared across hardware
+      HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-mi30x}}"
+      DATE_FOLDER="ci_report"
     else
       readonly LOG_TYPE="$ARG_LOG_TYPE"
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
@@ -112,6 +120,9 @@ if [[ -n "$ARG_FOLDER" ]]; then
     elif [[ "$LOG_TYPE" == "unit-test" ]]; then
       # For unit-test, use the hardware-specific subdirectory
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
+    elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+      # For upstream-ci, use the ci_report directory
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/upstream_ci/ci_report"
     else
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     fi
@@ -134,6 +145,10 @@ else
     # For unit-test logs, use the hardware-specific subdirectory
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
     DATE_FOLDER="${HARDWARE_TYPE}"
+  elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+    # For upstream-ci logs, use the ci_report directory
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/upstream_ci/ci_report"
+    DATE_FOLDER="ci_report"
   else
     # For cron logs, DATE is YYYYMMDD format
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${DATE}"
@@ -210,6 +225,8 @@ elif [[ "$LOG_TYPE" == "pd" ]]; then
   readonly DEST_PATH="test/pd/pd_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 elif [[ "$LOG_TYPE" == "unit-test" ]]; then
   readonly DEST_PATH="test/unit-test-backend-8-gpu-CAR-amd/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+  readonly DEST_PATH="upstream_ci/ci_report"
 else
   readonly DEST_PATH="cron_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 fi
@@ -246,6 +263,8 @@ elif [[ "$LOG_TYPE" == "pd" ]]; then
   COMMIT_MSG="Backup PD test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 elif [[ "$LOG_TYPE" == "unit-test" ]]; then
   COMMIT_MSG="Backup unit test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+  COMMIT_MSG="Backup upstream CI reports ($(date +%Y%m%d_%H%M))"
 else
   COMMIT_MSG="Backup cron logs for ${HARDWARE_TYPE} – ${DATE_FOLDER}"
 fi

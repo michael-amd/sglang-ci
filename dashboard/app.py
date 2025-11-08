@@ -121,6 +121,12 @@ def plots_view(hardware):
     return render_template("plots.html", hardware=hardware, github_repo=GITHUB_REPO)
 
 
+@app.route("/upstream-ci")
+def upstream_ci_view():
+    """Upstream CI test coverage page"""
+    return render_template("upstream_ci.html", github_repo=GITHUB_REPO)
+
+
 # REST API Endpoints
 
 
@@ -262,6 +268,141 @@ def api_compare():
             }
 
         return jsonify({"date": date, "results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/upstream-ci/available-dates")
+@cache.cached(timeout=600)  # Cache for 10 minutes
+def api_upstream_ci_dates():
+    """Get available dates for upstream CI reports"""
+    try:
+        ci_report_dir = os.path.join(BASE_DIR, "upstream_ci", "ci_report")
+
+        if not os.path.exists(ci_report_dir):
+            return jsonify({"dates": []})
+
+        # Find all CSV files
+        import glob
+
+        csv_files = glob.glob(os.path.join(ci_report_dir, "sglang_ci_report_*.csv"))
+
+        # Extract dates from filenames (sglang_ci_report_YYYYMMDD.csv)
+        dates = set()
+        for csv_file in csv_files:
+            filename = os.path.basename(csv_file)
+            # Extract date part: sglang_ci_report_YYYYMMDD.csv -> YYYYMMDD
+            if filename.startswith("sglang_ci_report_") and filename.endswith(".csv"):
+                date_part = filename[17:-4]  # Extract YYYYMMDD
+                if len(date_part) == 8 and date_part.isdigit():
+                    dates.add(date_part)
+
+        # Sort dates in descending order (newest first)
+        sorted_dates = sorted(list(dates), reverse=True)
+
+        return jsonify({"dates": sorted_dates[:90]})  # Return last 90 days
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/upstream-ci/report/<date>")
+@cache.cached(timeout=600)  # Cache for 10 minutes
+def api_upstream_ci_report(date):
+    """Get upstream CI report for a specific date"""
+    try:
+        ci_report_dir = os.path.join(BASE_DIR, "upstream_ci", "ci_report")
+
+        if not os.path.exists(ci_report_dir):
+            return jsonify({"error": "CI report directory not found"}), 404
+
+        # Find CSV file for this date
+        import csv as csv_module
+
+        # Look for file with pattern: sglang_ci_report_YYYYMMDD.csv
+        csv_file = os.path.join(ci_report_dir, f"sglang_ci_report_{date}.csv")
+
+        if not os.path.exists(csv_file):
+            return jsonify({"error": "No report found for this date"}), 404
+
+        # Parse CSV file
+        data = []
+        with open(csv_file, "r", encoding="utf-8") as f:
+            reader = csv_module.DictReader(f)
+            for row in reader:
+                data.append(row)
+
+        # Extract metadata from filename
+        filename = os.path.basename(csv_file)
+
+        return jsonify({"date": date, "data": data, "filename": filename})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/upstream-ci/trends")
+@cache.cached(timeout=600, query_string=True)  # Cache for 10 minutes
+def api_upstream_ci_trends():
+    """Get historical trends for upstream CI coverage"""
+    try:
+        days = request.args.get("days", 30, type=int)
+        days = min(days, 90)  # Cap at 90 days
+
+        ci_report_dir = os.path.join(BASE_DIR, "upstream_ci", "ci_report")
+
+        if not os.path.exists(ci_report_dir):
+            return jsonify({"trends": []})
+
+        import csv as csv_module
+        import glob
+
+        csv_files = glob.glob(os.path.join(ci_report_dir, "sglang_ci_report_*.csv"))
+
+        # Extract dates and sort
+        date_file_map = {}
+        for csv_file in csv_files:
+            filename = os.path.basename(csv_file)
+            # Extract date part: sglang_ci_report_YYYYMMDD.csv -> YYYYMMDD
+            if filename.startswith("sglang_ci_report_") and filename.endswith(".csv"):
+                date_part = filename[17:-4]  # Extract YYYYMMDD
+                if len(date_part) == 8 and date_part.isdigit():
+                    date_file_map[date_part] = csv_file
+
+        sorted_dates = sorted(date_file_map.keys(), reverse=True)[:days]
+
+        # Parse each file and extract total coverage
+        trends_data = []
+        for date in reversed(sorted_dates):  # Reverse to show oldest to newest
+            csv_file = date_file_map[date]
+
+            try:
+                with open(csv_file, "r", encoding="utf-8") as f:
+                    reader = csv_module.DictReader(f)
+                    rows = list(reader)
+
+                    # Find Total row
+                    total_row = None
+                    for row in rows:
+                        if row.get("Test Category") == "Total":
+                            total_row = row
+                            break
+
+                    if total_row:
+                        trends_data.append(
+                            {
+                                "date": date,
+                                "date_formatted": f"{date[0:4]}-{date[4:6]}-{date[6:8]}",
+                                "amd_tests": int(total_row["AMD # of Tests"]),
+                                "nvidia_tests": int(total_row["Nvidia # of Tests"]),
+                                "coverage": float(
+                                    total_row["AMD Coverage (%)"].rstrip("%")
+                                ),
+                            }
+                        )
+            except Exception as e:
+                print(f"Error parsing {csv_file}: {e}")
+                continue
+
+        return jsonify({"trends": trends_data, "days": days})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
