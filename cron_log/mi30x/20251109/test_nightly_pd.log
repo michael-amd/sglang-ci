@@ -246,3 +246,30 @@ PD Test Execution Ended: Sun Nov  9 10:35:25 AM CST 2025 (Exit Code: 0)
 [pd-test] ==========================================
 [pd-test] Prefill Server container started (ID: 33c7b9ada378)
 [pd-test] Waiting 150 seconds for prefill server to initialize...
+[pd-test] ERROR: Prefill Server container stopped
+[pd-test] Prefill container exit code:
+
+N/A
+[pd-test] Last 50 lines of prefill log:
+tail: cannot open '/mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.5-rocm700-mi30x-20251109/prefill.log' for reading: No such file or directory
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Sun Nov  9 10:38:14 AM CST 2025 (Exit Code: 1)
+===================================================
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.5-rocm700-mi30x-20251109
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251109 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.5-rocm700-mi30x-20251109
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.5-rocm700-mi30x-20251109/test_summary.txt
+✅ Successfully sent PD test fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251109
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
