@@ -1,0 +1,33 @@
+📊 Generating SGLang CI comparison report
+📁 Base directory: /mnt/raid/michael/sglang-ci
+🔄 Running compare_suites.py...
+❌ Error running compare_suites.py:
+Traceback (most recent call last):
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 119, in get_dynamic_additional_categories
+    nvidia_nightly = fetch_text(NVIDIA_NIGHTLY_URL)
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 194, in fetch_text
+    resp.raise_for_status()
+  File "/home/amd/.local/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 522, in <module>
+    main()
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 480, in main
+    compare_suites(suites_map, format_type)
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 382, in compare_suites
+    additional_categories = get_dynamic_additional_categories()
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 170, in get_dynamic_additional_categories
+    raise RuntimeError(
+RuntimeError: Failed to fetch dynamic test counts from workflow and nightly files.
+Error: 404 Client Error: Not Found for url: https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py
+Please check your internet connection and ensure the following URLs are accessible:
+- https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml
+- https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval_amd.py
+
+❌ Failed to run compare_suites.py
