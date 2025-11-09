@@ -1,0 +1,161 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-09 09:30:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 16722
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm630
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: e0705a4eb2dd
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251109...
+[nightly] Found candidate tag for day -0: v0.5.5-rocm630-mi30x-20251109
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251109...
+v0.5.5-rocm630-mi30x-20251109: Pulling from rocm/sgl-dev
+6414378b6477: Already exists
+fb9b732d846a: Already exists
+72a47c966458: Already exists
+6b0f51e662d9: Already exists
+d28fe32bd1e1: Already exists
+4f4fb700ef54: Already exists
+2ae8666e7615: Already exists
+f6f97575f532: Already exists
+ce162731a8b4: Already exists
+886496af1b52: Already exists
+9782bae5e560: Already exists
+0456b1c0d4ee: Already exists
+bf2506ff98d5: Already exists
+990ebd29eb4c: Already exists
+27b2c0ff8cb6: Already exists
+8a139095437d: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+9a814f065b00: Already exists
+4f4fb700ef54: Already exists
+9224f7232abd: Already exists
+8d21946ae781: Already exists
+4bee7ff91294: Already exists
+58d33f52fba2: Already exists
+8cc3e06393c6: Already exists
+6621933c8f30: Already exists
+7f5438c2f045: Already exists
+2493d82efb2e: Already exists
+db5985cb22de: Already exists
+43379c5e7ada: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+f9eaf20fb108: Pulling fs layer
+44919ae38a9c: Pulling fs layer
+411d408f1c46: Pulling fs layer
+9b381b30ea10: Pulling fs layer
+411d408f1c46: Waiting
+cd2f95572a38: Pulling fs layer
+9e068aa4bd38: Pulling fs layer
+9f4c8bdfdd14: Pulling fs layer
+cd2f95572a38: Waiting
+0b4a0488c58d: Pulling fs layer
+e0556768ddc3: Pulling fs layer
+e4f53dd355ed: Pulling fs layer
+9f4c8bdfdd14: Waiting
+0b4a0488c58d: Waiting
+e48afcce63d3: Pulling fs layer
+e0556768ddc3: Waiting
+e4f53dd355ed: Waiting
+2946b6930a9a: Pulling fs layer
+dbf5fae2676f: Pulling fs layer
+dbf5fae2676f: Waiting
+4f4fb700ef54: Download complete
+43379c5e7ada: Download complete
+43379c5e7ada: Pull complete
+4f4fb700ef54: Pull complete
+f9eaf20fb108: Verifying Checksum
+f9eaf20fb108: Download complete
+f9eaf20fb108: Pull complete
+9b381b30ea10: Verifying Checksum
+9b381b30ea10: Download complete
+cd2f95572a38: Verifying Checksum
+cd2f95572a38: Download complete
+9e068aa4bd38: Verifying Checksum
+9e068aa4bd38: Download complete
+9f4c8bdfdd14: Verifying Checksum
+9f4c8bdfdd14: Download complete
+0b4a0488c58d: Verifying Checksum
+0b4a0488c58d: Download complete
+e0556768ddc3: Verifying Checksum
+e0556768ddc3: Download complete
+411d408f1c46: Retrying in 5 seconds
+411d408f1c46: Retrying in 4 seconds
+411d408f1c46: Retrying in 3 seconds
+44919ae38a9c: Retrying in 5 seconds
+411d408f1c46: Retrying in 2 seconds
+44919ae38a9c: Retrying in 4 seconds
+411d408f1c46: Retrying in 1 second
+44919ae38a9c: Retrying in 3 seconds
+44919ae38a9c: Retrying in 2 seconds
+44919ae38a9c: Retrying in 1 second
+44919ae38a9c: Verifying Checksum
+44919ae38a9c: Download complete
+e48afcce63d3: Verifying Checksum
+e48afcce63d3: Download complete
+2946b6930a9a: Verifying Checksum
+2946b6930a9a: Download complete
+dbf5fae2676f: Verifying Checksum
+dbf5fae2676f: Download complete
+44919ae38a9c: Pull complete
+e4f53dd355ed: Retrying in 5 seconds
+e4f53dd355ed: Retrying in 4 seconds
+e4f53dd355ed: Retrying in 3 seconds
+e4f53dd355ed: Retrying in 2 seconds
+e4f53dd355ed: Retrying in 1 second
+411d408f1c46: Retrying in 10 seconds
+411d408f1c46: Retrying in 9 seconds
+411d408f1c46: Retrying in 8 seconds
+411d408f1c46: Retrying in 7 seconds
+411d408f1c46: Retrying in 6 seconds
+411d408f1c46: Retrying in 5 seconds
+411d408f1c46: Retrying in 4 seconds
+411d408f1c46: Retrying in 3 seconds
+411d408f1c46: Retrying in 2 seconds
+411d408f1c46: Retrying in 1 second
+e4f53dd355ed: Retrying in 10 seconds
+e4f53dd355ed: Retrying in 9 seconds
+e4f53dd355ed: Retrying in 8 seconds
+e4f53dd355ed: Retrying in 7 seconds
+e4f53dd355ed: Retrying in 6 seconds
+e4f53dd355ed: Retrying in 5 seconds
+e4f53dd355ed: Retrying in 4 seconds
+e4f53dd355ed: Retrying in 3 seconds
+e4f53dd355ed: Retrying in 2 seconds
+e4f53dd355ed: Retrying in 1 second
+e4f53dd355ed: Verifying Checksum
+e4f53dd355ed: Download complete
+411d408f1c46: Retrying in 15 seconds
+411d408f1c46: Retrying in 14 seconds
+411d408f1c46: Retrying in 13 seconds
+411d408f1c46: Retrying in 12 seconds
+411d408f1c46: Retrying in 11 seconds
+411d408f1c46: Retrying in 10 seconds
+411d408f1c46: Retrying in 9 seconds
+411d408f1c46: Retrying in 8 seconds
+411d408f1c46: Retrying in 7 seconds
+411d408f1c46: Retrying in 6 seconds
+411d408f1c46: Retrying in 5 seconds
+411d408f1c46: Retrying in 4 seconds
+411d408f1c46: Retrying in 3 seconds
+411d408f1c46: Retrying in 2 seconds
+411d408f1c46: Retrying in 1 second
