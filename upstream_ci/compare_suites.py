@@ -30,6 +30,7 @@ REQUIREMENTS:
 
 import argparse
 import csv
+import os
 import re
 import sys
 from datetime import datetime
@@ -51,8 +52,13 @@ SUITE_PAIRS = [
 # URLs for workflow and test files
 NVIDIA_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml"
 AMD_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml"
-NVIDIA_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py"
-AMD_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval_amd.py"
+# Try multiple possible NVIDIA nightly file names (file may have been moved/renamed)
+NVIDIA_NIGHTLY_URLS = [
+    "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_text_models_gsm8k_eval.py",
+    "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py",
+    "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py",
+]
+AMD_NIGHTLY_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_gsm8k_eval_amd.py"
 
 
 def count_unittest_executions(workflow_content: str, job_pattern: str) -> int:
@@ -115,8 +121,20 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
         nvidia_workflow = fetch_text(NVIDIA_WORKFLOW_URL)
         amd_workflow = fetch_text(AMD_WORKFLOW_URL)
 
-        # Fetch nightly test files
-        nvidia_nightly = fetch_text(NVIDIA_NIGHTLY_URL)
+        # Fetch nightly test files - try multiple URLs for NVIDIA
+        nvidia_nightly = None
+        for url in NVIDIA_NIGHTLY_URLS:
+            try:
+                nvidia_nightly = fetch_text(url)
+                break  # Success, use this URL
+            except Exception:
+                continue  # Try next URL
+
+        if nvidia_nightly is None:
+            raise RuntimeError(
+                f"Could not fetch NVIDIA nightly test file from any of: {NVIDIA_NIGHTLY_URLS}"
+            )
+
         amd_nightly = fetch_text(AMD_NIGHTLY_URL)
 
         # Count performance tests - ONLY from specific sections
@@ -167,13 +185,14 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
         ]
 
     except Exception as e:
+        nvidia_urls_str = "\n".join([f"- {url}" for url in NVIDIA_NIGHTLY_URLS])
         raise RuntimeError(
             f"Failed to fetch dynamic test counts from workflow and nightly files.\n"
             f"Error: {e}\n"
             f"Please check your internet connection and ensure the following URLs are accessible:\n"
             f"- {NVIDIA_WORKFLOW_URL}\n"
             f"- {AMD_WORKFLOW_URL}\n"
-            f"- {NVIDIA_NIGHTLY_URL}\n"
+            f"NVIDIA nightly (trying in order):\n{nvidia_urls_str}\n"
             f"- {AMD_NIGHTLY_URL}"
         ) from e
 
@@ -488,11 +507,20 @@ def main():
             output_file = args.output
         else:
             # Default date-stamped filename based on details flag
+            # Save to ci_report directory relative to script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            ci_report_dir = os.path.join(script_dir, "ci_report")
+            os.makedirs(ci_report_dir, exist_ok=True)
+
             date_stamp = datetime.now().strftime("%Y%m%d")
             if args.details:
-                output_file = f"sglang_ci_report_{date_stamp}.md"
+                output_file = os.path.join(
+                    ci_report_dir, f"sglang_ci_report_{date_stamp}.md"
+                )
             else:
-                output_file = f"sglang_ci_report_{date_stamp}.csv"
+                output_file = os.path.join(
+                    ci_report_dir, f"sglang_ci_report_{date_stamp}.csv"
+                )
 
         # Capture output to string first
         output_buffer = io.StringIO()
