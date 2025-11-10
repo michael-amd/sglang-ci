@@ -19,6 +19,7 @@ http://10.194.129.138:5000
 - **📊 Performance Plots**: Interactive visualization of benchmark results
 - **🔍 Task Details**: Detailed status for each CI task
 - **⚖️ Hardware Comparison**: Side-by-side comparison of platforms
+- **🧪 Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking
 - **📱 Responsive Design**: Works on desktop, tablet, and mobile
 
 ### Quick Links
@@ -30,6 +31,7 @@ http://10.194.129.138:5000
 | **MI35X** | http://10.194.129.138:5000/hardware/mi35x | Detailed MI35X results |
 | **Trends** | http://10.194.129.138:5000/trends | Historical analytics |
 | **Plots** | http://10.194.129.138:5000/plots/mi30x | Performance plots |
+| **Upstream CI** | http://10.194.129.138:5000/upstream-ci | AMD vs NVIDIA coverage |
 | **API** | http://10.194.129.138:5000/health | REST API health check |
 
 ### Dashboard Pages Preview
@@ -82,6 +84,22 @@ http://10.194.129.138:5000
 **View MI30X Plots**: http://10.194.129.138:5000/plots/mi30x
 **View MI35X Plots**: http://10.194.129.138:5000/plots/mi35x
 
+#### 5. Upstream CI Coverage
+- AMD vs NVIDIA test coverage comparison
+- Overall coverage summary (total tests and percentages)
+- Test category breakdown by GPU count
+- Interactive charts:
+  - Doughnut chart: Visual coverage distribution
+  - Bar chart: Category-by-category comparison
+  - Line chart: 30-day coverage trends
+- Detailed test category table
+- Date selector to view historical reports
+
+**View Upstream CI**: http://10.194.129.138:5000/upstream-ci
+
+![Upstream CI Coverage](dashboard_screenshots/03_upstream_ci_coverage.png)
+*AMD vs NVIDIA test coverage tracking with interactive charts showing overall coverage, category breakdown, and historical trends*
+
 ---
 
 ## Repository Structure
@@ -98,6 +116,7 @@ sglang-ci-data/
 │   │       ├── deepseek_torch_compile.log
 │   │       ├── test_nightly.log
 │   │       ├── sanity_check_nightly.log
+│   │       ├── compare_suites_alert.log
 │   │       └── ...
 │   └── mi35x/
 │       └── YYYYMMDD/
@@ -117,6 +136,10 @@ sglang-ci-data/
 │   ├── pd/
 │   └── unit-test-backend-8-gpu-CAR-amd/
 │
+├── upstream_ci/           # Upstream CI coverage reports
+│   └── ci_report/
+│       └── sglang_ci_report_YYYYMMDD.csv
+│
 └── alert_log/             # Teams alert message history
 ```
 
@@ -135,6 +158,7 @@ Browse files directly on GitHub:
 - **Logs**: https://github.com/ROCm/sglang-ci/tree/log/cron_log
 - **Plots**: https://github.com/ROCm/sglang-ci/tree/log/plot
 - **Tests**: https://github.com/ROCm/sglang-ci/tree/log/test
+- **Upstream CI**: https://github.com/ROCm/sglang-ci/tree/log/upstream_ci/ci_report
 
 ### 3. Via REST API
 
@@ -155,6 +179,15 @@ curl http://10.194.129.138:5000/api/plots/mi30x/20251105
 
 # Compare hardware
 curl http://10.194.129.138:5000/api/compare?date=20251105
+
+# Get upstream CI coverage report
+curl http://10.194.129.138:5000/api/upstream-ci/report/20251107
+
+# Get upstream CI coverage trends
+curl http://10.194.129.138:5000/api/upstream-ci/trends?days=30
+
+# Get available upstream CI report dates
+curl http://10.194.129.138:5000/api/upstream-ci/available-dates
 ```
 
 ### 4. Via Git Clone
@@ -180,6 +213,7 @@ Daily execution logs from automated CI jobs:
 - Integration tests (DP attention, torch compile)
 - Validation checks (unit tests, sanity checks)
 - Docker image checks
+- Upstream CI coverage reports
 
 ### Performance Plots
 Generated PNG charts showing:
@@ -192,6 +226,13 @@ Generated PNG charts showing:
 - **Sanity Check**: Model accuracy validation
 - **PD Tests**: Prefix-disaggregation validation
 - **Unit Tests**: Backend test suite results
+
+### Upstream CI Reports
+Daily CSV reports comparing AMD vs NVIDIA test coverage:
+- Test count by category (backend, frontend, performance, accuracy)
+- Coverage percentages per test category
+- Multi-GPU configuration breakdown (1-gpu, 2-gpu, 4-gpu, 8-gpu)
+- Overall coverage metrics
 
 ### Alert Logs
 Archived Teams notification messages in JSON format.
@@ -255,6 +296,9 @@ bash cron/github_log_upload.sh 20251105 mi30x cron
 
 # Upload sanity logs
 bash cron/github_log_upload.sh "" mi30x sanity <docker-image-tag>
+
+# Upload upstream CI reports
+bash cron/github_log_upload.sh "" mi30x upstream-ci
 ```
 
 ## 📞 Support
@@ -282,6 +326,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: November 6, 2025  
-**Dashboard Version**: 1.0.0  
+**Last Updated**: November 10, 2025  
+**Dashboard Version**: 1.1.0  
 **Access**: Internal Network Only
