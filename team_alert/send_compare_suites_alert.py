@@ -373,11 +373,8 @@ class CompareSuitesReporter:
             else:
                 date_str = datetime.now().strftime("%Y%m%d")
 
-            # Get hostname to identify which machine generated this
-            hostname = socket.gethostname()
-
-            # Create filename: YYYYMMDD_hostname_ci_report.csv
-            csv_filename = f"{date_str}_{hostname}_ci_report.csv"
+            # Create filename: sglang_ci_report_YYYYMMDD.csv
+            csv_filename = f"sglang_ci_report_{date_str}.csv"
             csv_path = os.path.join(ci_report_dir, csv_filename)
 
             # Save CSV to file
