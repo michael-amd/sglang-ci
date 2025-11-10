@@ -115,7 +115,7 @@ Performance plot gallery with:
 - Download options for all plots
 - Date selector to view historical plots
 
-![Plots Viewer](dashboard/screenshots/mi30x_plots.jpg)
+![Plots Viewer](dashboard/screenshots/mi30x_plots.png)
 
 #### 5. Upstream CI Coverage
 **URL:** http://10.194.129.138:5000/upstream-ci
