@@ -1,6 +1,0 @@
-# Ignore all CSV files in this directory
-*.csv
-
-# But keep this .gitignore
-!.gitignore
-
