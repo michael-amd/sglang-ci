@@ -38,8 +38,66 @@ The toolkit is designed for both development teams conducting regular performanc
 
 ---
 
+## 📊 Interactive Dashboard
+
+**🚀 Live CI Dashboard Available!**
+
+A comprehensive web dashboard is now available for viewing and analyzing all CI results, performance plots, and test coverage data.
+
+**Access:** http://10.194.129.138:5000 (Internal Network Only)
+
+### Dashboard Features
+
+- **📈 Daily Summaries**: Real-time status for MI30X and MI35X platforms with pass/fail statistics
+- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics over configurable time periods
+- **📊 Performance Plots**: Interactive visualization of benchmark results with direct GitHub links
+- **🔍 Task Details**: Detailed status for each CI task (benchmarks, integration tests, validation)
+- **⚖️ Hardware Comparison**: Side-by-side comparison charts for MI30X vs MI35X platforms
+- **🧪 Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking with interactive charts
+- **📅 Date Selector**: Browse historical results with smart calendar (greys out unavailable dates)
+- **📱 Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+
+### Dashboard Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| **Home** | http://10.194.129.138:5000/ | Overview with summary cards for both platforms |
+| **MI30X Dashboard** | http://10.194.129.138:5000/hardware/mi30x | Detailed MI30X results and task breakdown |
+| **MI35X Dashboard** | http://10.194.129.138:5000/hardware/mi35x | Detailed MI35X results and task breakdown |
+| **Trends** | http://10.194.129.138:5000/trends | Historical analytics with interactive charts |
+| **Plots** | http://10.194.129.138:5000/plots/mi30x | Performance plots gallery |
+| **Upstream CI** | http://10.194.129.138:5000/upstream-ci | AMD vs NVIDIA coverage comparison |
+
+### Dashboard Screenshots
+
+![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
+*Upstream CI Coverage page showing AMD vs NVIDIA test coverage with interactive charts for overall coverage, category breakdown, and 30-day historical trends*
+
+### REST API Access
+
+The dashboard provides REST API endpoints for programmatic access:
+
+```bash
+# Get summary for specific date and hardware
+curl http://10.194.129.138:5000/api/summary/mi30x/20251110
+
+# Get historical trends (last 30 days)
+curl http://10.194.129.138:5000/api/trends/mi30x?days=30
+
+# Get upstream CI coverage report
+curl http://10.194.129.138:5000/api/upstream-ci/report/20251110
+
+# Get upstream CI coverage trends
+curl http://10.194.129.138:5000/api/upstream-ci/trends?days=30
+```
+
+**Full Documentation:** https://github.com/ROCm/sglang-ci/blob/log/README.md
+
+---
+
 ## Table of Contents
 
+- [Interactive Dashboard](#-interactive-dashboard)
 - [Supported Docker Images](#supported-docker-images)
 - [Benchmark CI](#benchmark-ci)
   - [Offline Mode](#offline-mode)
