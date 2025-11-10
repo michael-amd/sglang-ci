@@ -1,0 +1,304 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-10 08:40:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 124696
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 2e73e48871ad
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image in 'rocm/sgl-dev' for date 20251110...
+[nightly] Found candidate tag for day -0: v0.5.5-rocm700-mi30x-20251110
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110...
+v0.5.5-rocm700-mi30x-20251110: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+5b77fcd249c3: Already exists
+4f4fb700ef54: Already exists
+2758ab6bc7e7: Already exists
+4f4fb700ef54: Already exists
+8d3d02d02482: Already exists
+cb92386abfc2: Already exists
+abd0cb2f9edf: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+3f377e8cdd9a: Already exists
+4c65a92530b4: Already exists
+4f4fb700ef54: Already exists
+63d0d8951c19: Already exists
+c956588e149b: Already exists
+f2bf360dda70: Already exists
+5419814a2823: Already exists
+905fe5eb2e93: Pulling fs layer
+e06bd81f7d19: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+4a7ca732447c: Pulling fs layer
+dae27263bd1c: Pulling fs layer
+dae27263bd1c: Download complete
+e06bd81f7d19: Download complete
+4a7ca732447c: Download complete
+905fe5eb2e93: Verifying Checksum
+905fe5eb2e93: Download complete
+905fe5eb2e93: Pull complete
+e06bd81f7d19: Pull complete
+4a7ca732447c: Pull complete
+dae27263bd1c: Pull complete
+Digest: sha256:290746123bf351077f92212128c1b7d096995381b54909c44a838533b669f000
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+docker.io/rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] Successfully obtained image for date 20251110: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b7add36dcac3
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] Container name: sgl-dev_v0.5.5-rocm700-mi30x-20251110
+[nightly] Creating container sgl-dev_v0.5.5-rocm700-mi30x-20251110
+7191590c11ed16860b4dd901c792cf48e567c396d2e569cabc95ce8d49dbd69e
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.5-rocm700-mi30x-20251110
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+🔧 Testing on platform: mi30x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+
+=== Testing GPT-OSS-120B on mi30x ===
+🚀 Starting server for GPT-OSS-120B...
+❌ Memory error detected! Current mem_fraction_static=0.85
+   Suggestion: Increase --mem-fraction-static value
+GPT-OSS-120B: FAIL [X] (Out of memory (current mem_fraction_static=0.85))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ❌ GPT-OSS-120B completed in 108.1s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+
+=== Testing GPT-OSS-20B on mi30x ===
+🚀 Starting server for GPT-OSS-20B...
+⚠️  Server errors detected at 41s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 71s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 101s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 131s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 161s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 191s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 221s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 251s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+⚠️  Server errors detected at 281s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GPT-OSS-20B_mi30x_server.log
+GPT-OSS-20B: FAIL [X] (Out of memory (current mem_fraction_static=0.85))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ❌ GPT-OSS-20B completed in 301.3s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+
+=== Testing QWEN-30B on mi30x ===
+🚀 Starting server for QWEN-30B...
+⚠️  Server errors detected at 37s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 67s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 97s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 127s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 157s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 187s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 217s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 247s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+⚠️  Server errors detected at 277s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/QWEN-30B_mi30x_server.log
+QWEN-30B: FAIL [X] (Out of memory (current mem_fraction_static=0.7224999999999999))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ❌ QWEN-30B completed in 301.3s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+
+=== Testing GROK1-IN4 on mi30x ===
+🚀 Starting server for GROK1-IN4...
+⚠️  Server errors detected at 36s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 66s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 96s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 126s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 156s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 186s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 216s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 246s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+⚠️  Server errors detected at 276s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-IN4_mi30x_server.log
+GROK1-IN4: FAIL [X] (Out of memory (current mem_fraction_static=0.85))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ❌ GROK1-IN4 completed in 301.3s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+
+=== Testing GROK1-FP8 on mi30x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+⚠️  Server errors detected at 36s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 66s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 96s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 126s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 156s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 186s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 216s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 246s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 276s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 306s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 336s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 366s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 396s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 426s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 456s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 487s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 517s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 547s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+⚠️  Server errors detected at 577s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK1-FP8_mi30x_server.log
+GROK1-FP8: FAIL [X] (Out of memory (current mem_fraction_static=0.7224999999999999))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [████████████████████████████░░░░░░░░░░░░] 5/7 (71.4%) ❌ GROK1-FP8 completed in 601.1s
+
+🚀 [6/7] Starting GROK2.5...
+============================================================
+Progress: [████████████████████████████░░░░░░░░░░░░] 6/7 (71.4%)
+
+=== Testing GROK2.5 on mi30x ===
+🚀 Starting server for GROK2.5...
+⚠️  Server errors detected at 36s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 66s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 96s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 126s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 156s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 186s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 216s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 246s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+⚠️  Server errors detected at 276s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/GROK2.5_mi30x_server.log
+GROK2.5: FAIL [X] (Out of memory (current mem_fraction_static=0.7224999999999999))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [██████████████████████████████████░░░░░░] 6/7 (85.7%) ❌ GROK2.5 completed in 301.3s
+
+🚀 [7/7] Starting llama4...
+============================================================
+Progress: [██████████████████████████████████░░░░░░] 7/7 (85.7%)
+
+=== Testing llama4 on mi30x ===
+🚀 Starting server for llama4...
+⚠️  Server errors detected at 38s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 68s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 98s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 128s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 158s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 188s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 218s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 248s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+⚠️  Server errors detected at 278s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/llama4_mi30x_server.log
+llama4: FAIL [X] (Out of memory (current mem_fraction_static=0.7327))
+   💡 Suggestion: Increase --mem-fraction-static in launch command
+Progress: [████████████████████████████████████████] 7/7 (100.0%) ❌ llama4 completed in 301.3s
+
+🎯 All tests completed!
+📊 Total execution time: 2215.91s (36.9 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/timing_summary_20251110_084144.log
+
+=== Final Summary ===
+❌ GPT-OSS-120B: FAIL [X]
+❌ GPT-OSS-20B: FAIL [X]
+❌ QWEN-30B: FAIL [X]
+❌ GROK1-IN4: FAIL [X]
+❌ GROK1-FP8: FAIL [X]
+❌ GROK2.5: FAIL [X]
+❌ llama4: FAIL [X]
+
+📈 Overall: 0/7 models passed (0.0%)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Sending Teams notification for sanity check results...
+🔍 Sanity check mode: Processing sanity check results
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/timing_summary_20251110_084144.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5-rocm700-mi30x-20251110/timing_summary_20251110_084144.log
+✅ Successfully sent sanity check fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[nightly] Teams notification sent successfully for sanity check
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+[nightly] Stopping container sgl-dev_v0.5.5-rocm700-mi30x-20251110 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
