@@ -70,28 +70,19 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 
 ### Dashboard Screenshots
 
+#### Home Page
+![Dashboard Home Page](dashboard/screenshots/home_page.png)
+*Overview dashboard showing MI30X and MI35X summary cards with pass rates, hardware comparison chart, and recent activity table*
+
+#### Hardware Detail Page
+![MI35X Dashboard](dashboard/screenshots/mi35x_dashboard.png)
+*Detailed MI35X results showing performance benchmarks, integration tests, validation checks, and sanity check results with per-model accuracy*
+
+#### Upstream CI Coverage
 ![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
-*Upstream CI Coverage page showing AMD vs NVIDIA test coverage with interactive charts for overall coverage, category breakdown, and 30-day historical trends*
+*AMD vs NVIDIA test coverage tracking with interactive charts showing overall coverage (57%), category breakdown, and 30-day historical trends*
 
-### REST API Access
-
-The dashboard provides REST API endpoints for programmatic access:
-
-```bash
-# Get summary for specific date and hardware
-curl http://10.194.129.138:5000/api/summary/mi30x/20251110
-
-# Get historical trends (last 30 days)
-curl http://10.194.129.138:5000/api/trends/mi30x?days=30
-
-# Get upstream CI coverage report
-curl http://10.194.129.138:5000/api/upstream-ci/report/20251110
-
-# Get upstream CI coverage trends
-curl http://10.194.129.138:5000/api/upstream-ci/trends?days=30
-```
-
-**Full Documentation:** https://github.com/ROCm/sglang-ci/blob/log/README.md
+**Full Documentation:** See https://github.com/ROCm/sglang-ci/blob/log/README.md for detailed dashboard documentation
 
 ---
 
