@@ -68,19 +68,66 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 | **Plots** | http://10.194.129.138:5000/plots/mi30x | Performance plots gallery |
 | **Upstream CI** | http://10.194.129.138:5000/upstream-ci | AMD vs NVIDIA coverage comparison |
 
-### Dashboard Screenshots
+### Dashboard Pages Preview
 
-#### Home Page
+#### 1. Home Page
+**URL:** http://10.194.129.138:5000/
+
+Overview dashboard showing:
+- Summary cards for MI30X and MI35X platforms
+- Pass/fail statistics and pass rate percentages
+- Hardware comparison chart (bar chart)
+- Recent activity table (last 7 days across both platforms)
+- Date selector with smart calendar
+
 ![Dashboard Home Page](dashboard/screenshots/home_page.png)
-*Overview dashboard showing MI30X and MI35X summary cards with pass rates, hardware comparison chart, and recent activity table*
 
-#### Hardware Detail Page
+#### 2. Hardware Dashboard (MI30X/MI35X)
+**URL:** http://10.194.129.138:5000/hardware/mi35x
+
+Detailed results showing:
+- Overall summary with pass rate progress bar
+- **Performance Benchmarks:** Grok, Grok 2, and DeepSeek online benchmarks with GSM8K accuracy
+- **Integration Tests:** DP attention, torch compile, and combined tests
+- **Validation & Checks:** Unit tests, PD disaggregation tests, Docker image checks
+- **Sanity Check:** Per-model GSM8K accuracy with pass/fail status
+
 ![MI35X Dashboard](dashboard/screenshots/mi35x_dashboard.png)
-*Detailed MI35X results showing performance benchmarks, integration tests, validation checks, and sanity check results with per-model accuracy*
 
-#### Upstream CI Coverage
+#### 3. Trends Page
+**URL:** http://10.194.129.138:5000/trends
+
+Historical analytics showing:
+- Overall pass rate trend (line chart)
+- Task status distribution (stacked bar chart)
+- GSM8K accuracy trends per benchmark
+- Runtime trends comparison
+- Configurable time ranges (7, 14, 30, 60, 90 days)
+
+![Trends Page](dashboard/screenshots/mi30x_trends.png)
+
+#### 4. Plots Viewer
+**URL:** http://10.194.129.138:5000/plots/mi30x
+
+Performance plot gallery with:
+- Benchmark plots for each model (Grok, Grok 2, DeepSeek)
+- Direct links to GitHub for full resolution
+- Download options for all plots
+- Date selector to view historical plots
+
+![Plots Viewer](dashboard/screenshots/mi30x_plots.jpg)
+
+#### 5. Upstream CI Coverage
+**URL:** http://10.194.129.138:5000/upstream-ci
+
+AMD vs NVIDIA test coverage tracking with:
+- Overall coverage summary (total tests and percentages)
+- Test category breakdown by GPU count
+- Interactive charts: doughnut (coverage distribution), bar (category comparison), line (30-day trends)
+- Detailed test category table
+- Date selector to view historical reports
+
 ![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
-*AMD vs NVIDIA test coverage tracking with interactive charts showing overall coverage (57%), category breakdown, and 30-day historical trends*
 
 **Full Documentation:** See https://github.com/ROCm/sglang-ci/blob/log/README.md for detailed dashboard documentation
 

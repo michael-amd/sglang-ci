@@ -12,6 +12,7 @@ test/unit-test-backend-8-gpu-CAR-amd/*
 *.html
 *.png
 !dashboard/screenshots/*.png
+!dashboard/screenshots/*.jpg
 *.md
 !upstream_ci/**/README*.md
 !cron/README*.md
