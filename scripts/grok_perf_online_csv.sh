@@ -4,8 +4,8 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm630-mi30x-20250909
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm700-mi35x-20250909
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
 #   bash grok_perf_online_csv.sh --model-path=/mnt/raid/models/huggingface/grok-2/ --model-type=grok2
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
@@ -21,7 +21,7 @@ export TZ='America/Los_Angeles'
 ###############################################################################
 
 # Default image and model configuration
-DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
+DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
 
 # Model type configuration (grok1 or grok2)
 DEFAULT_MODEL_TYPE="${DEFAULT_MODEL_TYPE:-grok1}"
@@ -62,7 +62,7 @@ PROMPTS_PER_RATE_MULTIPLIER="${PROMPTS_PER_RATE_MULTIPLIER:-300}"
 REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
 
 # Number of runs per request rate
-RUNS_PER_RATE="${RUNS_PER_RATE:-3}"
+RUNS_PER_RATE="${RUNS_PER_RATE:-1}"
 
 # Baseline data variables removed
 

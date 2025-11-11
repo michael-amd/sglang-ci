@@ -6,17 +6,17 @@
 #
 # USAGE:
 #   # Standard benchmarking with GSM8K + serving benchmarks:
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250718
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #
 #   # Data Parallel attention mode (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
 #
 #   # Torch compile optimization (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 --enable-torch-compile
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --enable-torch-compile
 #
 #   # Torch compile with DP attention (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --enable-torch-compile
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --check-dp-attention --enable-torch-compile
 #
 #   # MTP throughput export (MI35x + DeepSeek-R1 MXFP4 Preview):
 #   bash deepseek_perf_online_csv.sh \
@@ -40,7 +40,7 @@ export TZ='America/Los_Angeles'
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 
 # Default paths - can be overridden
@@ -75,8 +75,9 @@ SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
 
 # DP attention + torch compile specific configuration
 # When both are enabled, use more conservative settings to avoid OOM and compilation issues
-DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.8}"
-DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
+# Reduced from 0.8/16 to 0.6/8 after Nov 2024 GPU memory fault crashes (see GPUCORE_INVESTIGATION.md)
+DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.6}"
+DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-8}"
 
 # Benchmark run configuration
 BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"

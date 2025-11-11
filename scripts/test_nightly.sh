@@ -11,8 +11,8 @@
 #   • Searches for non-SRT images from today, then yesterday
 #   • Supports mi30x and mi35x hardware variants
 #   • Examples:
-#     - rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250903
-#     - rocm/sgl-dev:v0.5.2rc1-rocm700-mi35x-20250903
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   • Automatically excludes SRT variants (ends with -srt)
 #
 # UNIT TESTS:
@@ -84,7 +84,7 @@ TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
 
 # ROCM version mapping based on hardware (for unit tests)
 declare -A ROCM_VERSIONS=(
-  ["mi30x"]="rocm630"
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
 )
 
