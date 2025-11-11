@@ -114,6 +114,12 @@ declare -A ROCM_VERSIONS=(
   ["mi35x"]="rocm700"
 )
 
+# Fallback ROCM versions if primary version not available
+declare -A ROCM_FALLBACK_VERSIONS=(
+  ["mi30x"]="rocm630"
+  ["mi35x"]=""  # No fallback for mi35x
+)
+
 # Model configuration - will be set based on --model parameter
 GROK_MODEL_NAME="${GROK_MODEL_NAME:-GROK1}"
 GROK_MODEL_VARIANT="${GROK_MODEL_VARIANT:-MOE-I4F8}"
@@ -896,12 +902,12 @@ date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 # Find non-SRT Docker image for a specific date using Docker Hub API
 find_image_for_date() {
-  local repo="$1" target_date="$2"
+  local repo="$1" target_date="$2" rocm_version="${3:-$ROCM_VERSION}"
   local next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
   local use_jq=$(command -v jq &> /dev/null && echo "true" || echo "false")
-  local search_pattern="-${ROCM_VERSION}-${HARDWARE_TYPE}-${target_date}"
+  local search_pattern="-${rocm_version}-${HARDWARE_TYPE}-${target_date}"
 
-  echo "[nightly] Searching for non-SRT ${HARDWARE_TYPE} image in '${repo}' for date ${target_date}..." >&2
+  echo "[nightly] Searching for non-SRT ${HARDWARE_TYPE} image (${rocm_version}) in '${repo}' for date ${target_date}..." >&2
 
   while [[ -n "$next_url" && "$next_url" != "null" ]]; do
     local response=$(curl -s --max-time 15 "$next_url")
@@ -997,7 +1003,22 @@ pull_image_with_retry() {
 # Try each day from today going back CONTINUE_RUN_DAYS
 for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
+
+  # Try primary ROCM version first
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION")
+
+  # If not found and fallback version exists for this hardware, try fallback
+  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
+    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
+    echo "[nightly] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version")
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[nightly] Using fallback ROCM version: $fallback_version"
+    fi
+  fi
+
+  # Skip if still no candidate found
+  [[ -z "$candidate_tag" ]] && continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
 
@@ -1012,7 +1033,20 @@ done
 if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
   echo "[nightly] No image found for today. Checking yesterday as a fallback..."
   date_suffix=$(date_pst 1)
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
+
+  # Try primary ROCM version first
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+  # If not found and fallback version exists for this hardware, try fallback
+  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
+    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
+    echo "[nightly] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[nightly] Using fallback ROCM version: $fallback_version"
+    fi
+  fi
+
   if [[ -n "$candidate_tag" ]]; then
     echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
     if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
