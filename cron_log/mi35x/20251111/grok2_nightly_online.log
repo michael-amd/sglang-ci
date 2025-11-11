@@ -1,0 +1,26 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-11-11 15:00:02 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 321688
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo spack... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi35x hardware
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 59e66f95ef76
+cd926913fac9
+[nightly] Waiting 15s for GPU to become idle...
