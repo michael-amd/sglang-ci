@@ -46,12 +46,14 @@ start_dashboard() {
     # Create tmux session and start dashboard with GitHub token
     cd "$SCRIPT_DIR"
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-        tmux new-session -d -s "$SESSION_NAME" \
-            "export GITHUB_TOKEN='$GITHUB_TOKEN' && python3 app.py --host $HOST --port $PORT; read -p 'Press Enter to close...'"
+        # Export token in parent shell before creating tmux session
+        export GITHUB_TOKEN
+        tmux new-session -d -s "$SESSION_NAME" -e GITHUB_TOKEN="$GITHUB_TOKEN" \
+            "cd '$SCRIPT_DIR' && python3 app.py --host $HOST --port $PORT; read -p 'Press Enter to close...'"
         echo "   🔑 GitHub token configured for private repo access"
     else
         tmux new-session -d -s "$SESSION_NAME" \
-            "python3 app.py --host $HOST --port $PORT; read -p 'Press Enter to close...'"
+            "cd '$SCRIPT_DIR' && python3 app.py --host $HOST --port $PORT; read -p 'Press Enter to close...'"
         echo "   ⚠️  No GitHub token found - public repos only"
     fi
 
