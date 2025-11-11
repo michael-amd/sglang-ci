@@ -140,11 +140,14 @@ def api_summary(hardware, date):
     try:
         # Use GitHub data collector if enabled, otherwise use local
         if USE_GITHUB:
+            # Get token from environment (may have been set after module import)
+            github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
             collector = GitHubDataCollector(
                 hardware=hardware,
                 base_dir=BASE_DIR,
                 github_repo=GITHUB_REPO,
                 use_local_fallback=True,
+                github_token=github_token,
             )
         else:
             collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
@@ -198,11 +201,14 @@ def api_available_dates(hardware):
     try:
         # Use GitHub data collector if enabled, otherwise use local
         if USE_GITHUB:
+            # Get token from environment (may have been set after module import)
+            github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
             collector = GitHubDataCollector(
                 hardware=hardware,
                 base_dir=BASE_DIR,
                 github_repo=GITHUB_REPO,
                 use_local_fallback=True,
+                github_token=github_token,
             )
         else:
             collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
@@ -476,6 +482,9 @@ def health():
             "status": "healthy",
             "timestamp": datetime.now().isoformat(),
             "base_dir": BASE_DIR,
+            "github_token_set": bool(os.environ.get("GITHUB_TOKEN")),
+            "use_github": USE_GITHUB,
+            "current_hardware": CURRENT_HARDWARE,
         }
     )
 
