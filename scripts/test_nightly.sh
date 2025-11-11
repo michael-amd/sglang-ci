@@ -428,13 +428,13 @@ if [[ -n "$IMAGE_DATE" ]]; then
   echo "[test] Looking for image with date: ${IMAGE_DATE}"
 
   # Try primary ROCM version first
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$ROCM_VERSION") || true
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$ROCM_VERSION" || true)
 
   # If not found and fallback version exists for this hardware, try fallback
   if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
     fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
     echo "[test] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$fallback_version") || true
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$fallback_version" || true)
     if [[ -n "$candidate_tag" ]]; then
       echo "[test] Using fallback ROCM version: $fallback_version"
     fi
@@ -457,13 +457,13 @@ else
   date_suffix=$(date_pst 0)
 
   # Try primary ROCM version first
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION") || true
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
 
   # If not found and fallback version exists for this hardware, try fallback
   if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
     fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
     echo "[test] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version") || true
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
     if [[ -n "$candidate_tag" ]]; then
       echo "[test] Using fallback ROCM version: $fallback_version"
     fi
@@ -485,18 +485,9 @@ else
     echo "[test] No image found for today. Checking yesterday as a fallback..."
     date_suffix=$(date_pst 1)
 
-    # Try primary ROCM version first
+    # For yesterday fallback, only try primary ROCM version (rocm700)
+    # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
     candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
-
-    # If not found and fallback version exists for this hardware, try fallback
-    if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
-      fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
-      echo "[test] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
-      candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
-      if [[ -n "$candidate_tag" ]]; then
-        echo "[test] Using fallback ROCM version: $fallback_version"
-      fi
-    fi
 
     if [[ -n "$candidate_tag" ]]; then
       echo "[test] Fallback found candidate tag: ${candidate_tag}"

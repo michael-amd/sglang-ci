@@ -1005,13 +1005,13 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
 
   # Try primary ROCM version first
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION")
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
 
   # If not found and fallback version exists for this hardware, try fallback
   if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
     fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
     echo "[nightly] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version")
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
     if [[ -n "$candidate_tag" ]]; then
       echo "[nightly] Using fallback ROCM version: $fallback_version"
     fi
@@ -1034,18 +1034,9 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
   echo "[nightly] No image found for today. Checking yesterday as a fallback..."
   date_suffix=$(date_pst 1)
 
-  # Try primary ROCM version first
+  # For yesterday fallback, only try primary ROCM version (rocm700)
+  # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
   candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
-
-  # If not found and fallback version exists for this hardware, try fallback
-  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
-    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
-    echo "[nightly] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
-    if [[ -n "$candidate_tag" ]]; then
-      echo "[nightly] Using fallback ROCM version: $fallback_version"
-    fi
-  fi
 
   if [[ -n "$candidate_tag" ]]; then
     echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
