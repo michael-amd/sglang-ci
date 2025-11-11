@@ -18,7 +18,7 @@
 #     bash cron/github_log_upload.sh 20251005 mi30x cron      # Same as above (explicit)
 #
 #     # Sanity logs (4th arg is docker image tag/folder name)
-#     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm630-mi30x-20251005
+#     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm700-mi30x-20251005
 #
 #     # PD logs (4th arg is docker image tag/folder name)
 #     bash cron/github_log_upload.sh "" mi30x pd v0.5.4.post1-rocm700-mi30x-20251029

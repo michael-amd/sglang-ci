@@ -10,10 +10,10 @@
 # IMAGE DISCOVERY:
 #   • Uses Docker Hub API with pagination to find images
 #   • Searches for non-SRT images from today, then yesterday
-#   • Supports mi30x (rocm630) and mi35x (rocm700) hardware variants
+#   • Supports mi30x (rocm700) and mi35x (rocm700) hardware variants
 #   • Examples:
-#     - rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#     - rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250716
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   • Automatically excludes SRT variants (ends with -srt)
 #
 # MODEL DOWNLOAD:
@@ -110,7 +110,7 @@ HARDWARE_TYPE="${HARDWARE_TYPE:-mi35x}"  # Default to mi35x, can be mi30x or mi3
 
 # ROCM version mapping based on hardware
 declare -A ROCM_VERSIONS=(
-  ["mi30x"]="rocm630"
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
 )
 
