@@ -715,8 +715,8 @@ class DailySummaryReporter:
                 if result.get("runtime"):
                     task_line += f" [{result['runtime']}]"
 
-                # Add plot link for Performance Benchmarks on the same line
-                if category == "Performance Benchmarks":
+                # Add plot link for Performance Benchmarks on the same line (only if benchmark ran)
+                if category == "Performance Benchmarks" and result["exists"]:
                     # Map benchmark names to model directories and plot suffixes (hardware-specific for DeepSeek)
                     if self.hardware == "mi35x":
                         benchmark_model_map = {
@@ -912,6 +912,205 @@ class DailySummaryReporter:
             print(f"❌ Error saving alert log: {e}")
             return False
 
+    def _print_summary_to_log(self, date_str: str, task_results: Dict) -> None:
+        """
+        Print detailed summary to console/log file
+
+        Args:
+            date_str: Date string in YYYYMMDD format
+            task_results: Dictionary of task results
+        """
+        # Format the report date
+        try:
+            report_date_obj = datetime.strptime(date_str, "%Y%m%d")
+            report_date = report_date_obj.strftime("%Y-%m-%d")
+        except ValueError:
+            report_date = date_str
+
+        # Get current time
+        if PYTZ_AVAILABLE:
+            pacific_tz = pytz.timezone("America/Los_Angeles")
+            pacific_time = datetime.now(pacific_tz)
+            current_date = pacific_time.strftime("%Y-%m-%d")
+            tz_name = "PDT" if pacific_time.dst() else "PST"
+            current_time = pacific_time.strftime(f"%H:%M:%S {tz_name}")
+        else:
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.now().strftime("%H:%M:%S UTC")
+
+        # Parse sanity results for counts
+        sanity_results = self.parse_sanity_check_log(date_str)
+        sanity_model_count = 0
+        sanity_passed = 0
+        sanity_failed = 0
+
+        if sanity_results:
+            model_results = sanity_results["model_results"]
+            sanity_model_count = len(model_results)
+            sanity_passed = sum(
+                1 for r in model_results.values() if r["status"] == "pass"
+            )
+            sanity_failed = sum(
+                1 for r in model_results.values() if r["status"] == "fail"
+            )
+
+        # Count task statuses
+        total_tasks = (
+            len([k for k in task_results.keys() if k != "Sanity Check"])
+            + sanity_model_count
+        )
+        passed_tasks = (
+            sum(
+                1
+                for k, r in task_results.items()
+                if k != "Sanity Check" and r["status"] == "pass"
+            )
+            + sanity_passed
+        )
+        failed_tasks = (
+            sum(
+                1
+                for k, r in task_results.items()
+                if k != "Sanity Check" and r["status"] == "fail"
+            )
+            + sanity_failed
+        )
+        unknown_tasks = sum(
+            1
+            for k, r in task_results.items()
+            if k != "Sanity Check" and r["status"] == "unknown"
+        )
+        not_run = sum(
+            1
+            for k, r in task_results.items()
+            if k != "Sanity Check" and not r["exists"]
+        )
+
+        # Print header
+        print("\n" + "=" * 80)
+        print(f"Alert sent: {report_date} Daily CI Summary Report")
+        print("=" * 80)
+        print(f"\nGenerated on {current_date} at {current_time}")
+        print(f"Hostname: {socket.gethostname()}")
+        print(f"Hardware: {self.hardware}")
+
+        # Print overall status
+        print("\nOverall Status:")
+        print(f"• Tasks run: {total_tasks - not_run}/{total_tasks}")
+        print(
+            f"• Passed: {passed_tasks}, Failed: {failed_tasks}, Unknown: {unknown_tasks}"
+        )
+
+        # Print task results by category
+        print("\nTask Results:")
+
+        # Define task groups
+        validation = [
+            "Unit Tests",
+            "PD Disaggregation Tests",
+            "Docker Image Check",
+        ]
+        benchmarks = [
+            "Grok Online Benchmark",
+            "Grok 2 Online Benchmark",
+            "DeepSeek Online Benchmark",
+        ]
+        tests = [
+            "DeepSeek DP Attention Test",
+            "DeepSeek Torch Compile Test",
+            "DeepSeek DP+Torch Compile",
+        ]
+
+        # Print Validation & Checks first
+        for category, task_list in [
+            ("Validation & Checks", validation),
+            ("Performance Benchmarks", benchmarks),
+            ("Integration Tests", tests),
+        ]:
+            print(f"\n{category}:")
+
+            for task_name in task_list:
+                if task_name not in task_results:
+                    continue
+
+                result = task_results[task_name]
+
+                if not result["exists"]:
+                    task_icon = "⏭️"
+                    task_status_text = "Not run"
+                elif result["status"] == "pass":
+                    task_icon = "✅"
+                    task_status_text = "Pass"
+                elif result["status"] == "fail":
+                    task_icon = "❌"
+                    task_status_text = "Failed"
+                else:
+                    task_icon = "❓"
+                    task_status_text = "Unknown"
+
+                # Build task line
+                task_line = f"{task_icon} {task_name}: {task_status_text}"
+
+                # Add GSM8K accuracy for benchmarks
+                if result.get("gsm8k_accuracy") is not None:
+                    accuracy_pct = result["gsm8k_accuracy"] * 100
+                    task_line += f" (GSM8K: {accuracy_pct:.1f}%)"
+
+                if result.get("runtime"):
+                    task_line += f" [{result['runtime']}]"
+
+                print(f"  {task_line}")
+
+                # Print error details for failed tasks
+                if result["status"] == "fail" and result.get("error"):
+                    print(f"    Error: {result['error']}")
+
+        # Print Sanity Check results
+        if sanity_results:
+            model_results = sanity_results["model_results"]
+            models_passed = sum(
+                1 for r in model_results.values() if r["status"] == "pass"
+            )
+            sanity_accuracy_passed = models_passed > 1
+
+            sanity_icon = "✅" if sanity_accuracy_passed else "❌"
+            sanity_status = "Pass" if sanity_accuracy_passed else "Failed"
+
+            print(f"\nSanity Check (Accuracy): {sanity_icon} {sanity_status}")
+
+            # Map short model names to full display names
+            model_display_names = {
+                "llama4": "Llama-4-Maverick-17B-128E-Instruct-FP8",
+                "QWEN-30B": "Qwen3-30B-A3B-Thinking-2507",
+                "GPT-OSS-120B": "gpt-oss-120b-bf16",
+                "GPT-OSS-20B": "gpt-oss-20b-bf16",
+            }
+
+            for model_name, result in model_results.items():
+                accuracy = result["accuracy"]
+                accuracy_percent = accuracy * 100
+                status = result["status"]
+
+                # Get threshold from model criteria
+                threshold = _MODEL_CRITERIA.get(model_name)
+
+                # Use full model name for display if available
+                display_name = model_display_names.get(model_name, model_name)
+
+                task_icon = "✅" if status == "pass" else "❌"
+
+                if threshold is not None:
+                    threshold_percent = threshold * 100
+                    task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                else:
+                    task_line = (
+                        f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
+                    )
+
+                print(f"  {task_line}")
+
+        print("\n" + "=" * 80 + "\n")
+
     def send_summary_notification(self, date_str: str) -> bool:
         """
         Send daily summary notification to Teams and save to log
@@ -929,6 +1128,9 @@ class DailySummaryReporter:
 
             # Create card
             card = self.create_summary_card(date_str, task_results)
+
+            # Print detailed summary to log
+            self._print_summary_to_log(date_str, task_results)
 
             # Always save to log file
             log_saved = self.save_alert_log(card, date_str)
