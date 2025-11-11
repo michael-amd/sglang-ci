@@ -1,0 +1,424 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3 --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-11-11 10:00:01 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 46913
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo spack... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: e7289f931fde
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image in 'rocm/sgl-dev' for date 20251111...
+[nightly] Found candidate tag for day -0: v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111...
+v0.5.5.post1-rocm700-mi35x-20251111: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+d60bac358819: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+b32e6c7d679e: Pulling fs layer
+83d2d9a86617: Pulling fs layer
+e12103ace4fd: Pulling fs layer
+d78667e5c07c: Pulling fs layer
+da08bb280863: Pulling fs layer
+79a00487ab58: Pulling fs layer
+51eb0672e708: Pulling fs layer
+e12103ace4fd: Waiting
+6f0459e9e221: Pulling fs layer
+83d2d9a86617: Waiting
+d78667e5c07c: Waiting
+306977aa6796: Pulling fs layer
+dedc6e805d23: Pulling fs layer
+98e674aebcaf: Pulling fs layer
+da08bb280863: Waiting
+825a453d3291: Pulling fs layer
+58e98f2f0267: Pulling fs layer
+acc44f6aa1f2: Pulling fs layer
+e77de0d8dec6: Pulling fs layer
+6f0459e9e221: Waiting
+306977aa6796: Waiting
+79a00487ab58: Waiting
+acc44f6aa1f2: Waiting
+e77de0d8dec6: Waiting
+dedc6e805d23: Waiting
+98e674aebcaf: Waiting
+51eb0672e708: Waiting
+58e98f2f0267: Waiting
+825a453d3291: Waiting
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+b32e6c7d679e: Verifying Checksum
+b32e6c7d679e: Download complete
+d60bac358819: Verifying Checksum
+d60bac358819: Download complete
+d60bac358819: Pull complete
+4f4fb700ef54: Pull complete
+b32e6c7d679e: Pull complete
+83d2d9a86617: Downloading
+83d2d9a86617: Retrying in 5 seconds
+83d2d9a86617: Retrying in 4 seconds
+83d2d9a86617: Retrying in 3 seconds
+83d2d9a86617: Retrying in 2 seconds
+83d2d9a86617: Retrying in 1 second
+e12103ace4fd: Download complete
+d78667e5c07c: Verifying Checksum
+d78667e5c07c: Download complete
+83d2d9a86617: Verifying Checksum
+83d2d9a86617: Download complete
+83d2d9a86617: Pull complete
+e12103ace4fd: Pull complete
+d78667e5c07c: Pull complete
+da08bb280863: Verifying Checksum
+da08bb280863: Download complete
+6f0459e9e221: Verifying Checksum
+6f0459e9e221: Download complete
+306977aa6796: Download complete
+da08bb280863: Pull complete
+dedc6e805d23: Verifying Checksum
+dedc6e805d23: Download complete
+79a00487ab58: Retrying in 5 seconds
+79a00487ab58: Retrying in 4 seconds
+79a00487ab58: Retrying in 3 seconds
+79a00487ab58: Retrying in 2 seconds
+79a00487ab58: Retrying in 1 second
+51eb0672e708: Retrying in 5 seconds
+51eb0672e708: Retrying in 4 seconds
+51eb0672e708: Retrying in 3 seconds
+51eb0672e708: Retrying in 2 seconds
+51eb0672e708: Retrying in 1 second
+51eb0672e708: Retrying in 10 seconds
+51eb0672e708: Retrying in 9 seconds
+51eb0672e708: Retrying in 8 seconds
+51eb0672e708: Retrying in 7 seconds
+51eb0672e708: Retrying in 6 seconds
+51eb0672e708: Retrying in 5 seconds
+51eb0672e708: Retrying in 4 seconds
+51eb0672e708: Retrying in 3 seconds
+51eb0672e708: Retrying in 2 seconds
+51eb0672e708: Retrying in 1 second
+79a00487ab58: Verifying Checksum
+79a00487ab58: Download complete
+79a00487ab58: Pull complete
+825a453d3291: Verifying Checksum
+825a453d3291: Download complete
+58e98f2f0267: Verifying Checksum
+58e98f2f0267: Download complete
+98e674aebcaf: Retrying in 5 seconds
+98e674aebcaf: Retrying in 4 seconds
+98e674aebcaf: Retrying in 3 seconds
+98e674aebcaf: Retrying in 2 seconds
+acc44f6aa1f2: Verifying Checksum
+acc44f6aa1f2: Download complete
+98e674aebcaf: Retrying in 1 second
+e77de0d8dec6: Verifying Checksum
+e77de0d8dec6: Download complete
+51eb0672e708: Retrying in 15 seconds
+51eb0672e708: Retrying in 14 seconds
+51eb0672e708: Retrying in 13 seconds
+51eb0672e708: Retrying in 12 seconds
+51eb0672e708: Retrying in 11 seconds
+51eb0672e708: Retrying in 10 seconds
+51eb0672e708: Retrying in 9 seconds
+51eb0672e708: Retrying in 8 seconds
+51eb0672e708: Retrying in 7 seconds
+51eb0672e708: Retrying in 6 seconds
+51eb0672e708: Retrying in 5 seconds
+51eb0672e708: Retrying in 4 seconds
+51eb0672e708: Retrying in 3 seconds
+51eb0672e708: Retrying in 2 seconds
+51eb0672e708: Retrying in 1 second
+51eb0672e708: Verifying Checksum
+51eb0672e708: Download complete
+51eb0672e708: Pull complete
+6f0459e9e221: Pull complete
+306977aa6796: Pull complete
+dedc6e805d23: Pull complete
+98e674aebcaf: Retrying in 10 seconds
+98e674aebcaf: Retrying in 9 seconds
+98e674aebcaf: Retrying in 8 seconds
+98e674aebcaf: Retrying in 7 seconds
+98e674aebcaf: Retrying in 6 seconds
+98e674aebcaf: Retrying in 5 seconds
+98e674aebcaf: Retrying in 4 seconds
+98e674aebcaf: Retrying in 3 seconds
+98e674aebcaf: Retrying in 2 seconds
+98e674aebcaf: Retrying in 1 second
+98e674aebcaf: Retrying in 15 seconds
+98e674aebcaf: Retrying in 14 seconds
+98e674aebcaf: Retrying in 13 seconds
+98e674aebcaf: Retrying in 12 seconds
+98e674aebcaf: Retrying in 11 seconds
+98e674aebcaf: Retrying in 10 seconds
+98e674aebcaf: Retrying in 9 seconds
+98e674aebcaf: Retrying in 8 seconds
+98e674aebcaf: Retrying in 7 seconds
+98e674aebcaf: Retrying in 6 seconds
+98e674aebcaf: Retrying in 5 seconds
+98e674aebcaf: Retrying in 4 seconds
+98e674aebcaf: Retrying in 3 seconds
+98e674aebcaf: Retrying in 2 seconds
+98e674aebcaf: Retrying in 1 second
+98e674aebcaf: Verifying Checksum
+98e674aebcaf: Download complete
+98e674aebcaf: Pull complete
+825a453d3291: Pull complete
+58e98f2f0267: Pull complete
+acc44f6aa1f2: Pull complete
+e77de0d8dec6: Pull complete
+Digest: sha256:fb0928a8def00ca6971529d1ed22b0433deec782063cdb26f48f5e0e7afbea8d
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+docker.io/rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Successfully obtained image for date 20251111: rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: a9cf13aa9ae2
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Container name: sgl-dev_v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Creating container sgl-dev_v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Mounting /data directory for model access...
+[nightly] Mounting /data2 directory for additional model access...
+cd926913fac918262d761c503ddec1ac353ee87b1b865e65ce950b8c20a73a68
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111' --hardware='mi35x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post1-rocm700-mi35x-20251111
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+
+=== Testing GPT-OSS-120B on mi35x ===
+🚀 Starting server for GPT-OSS-120B...
+✅ Server ready in 184.81s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+    ⏳ Trial 1 still running... (105s elapsed)
+    ⏳ Trial 1 still running... (120s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.839, Time: 129.13s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+    ⏳ Trial 2 still running... (90s elapsed)
+    ⏳ Trial 2 still running... (105s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.845, Time: 119.13s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+    ⏳ Trial 3 still running... (90s elapsed)
+    ⏳ Trial 3 still running... (105s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.852, Time: 118.13s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-120B on mi35x: PASS [OK]
+   Accuracies: [0.839, 0.845, 0.852]
+   Highest Accuracy: 0.852 (Required: 0.820)
+   Total Time: 551.71s
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ✅ GPT-OSS-120B completed in 551.7s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+
+=== Testing GPT-OSS-20B on mi35x ===
+🚀 Starting server for GPT-OSS-20B...
+✅ Server ready in 64.60s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.532, Time: 100.11s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.532, Time: 89.09s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.536, Time: 89.10s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-20B on mi35x: PASS [OK]
+   Accuracies: [0.532, 0.532, 0.536]
+   Highest Accuracy: 0.536 (Required: 0.520)
+   Total Time: 343.39s
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ✅ GPT-OSS-20B completed in 343.4s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+
+=== Testing QWEN-30B on mi35x ===
+🚀 Starting server for QWEN-30B...
+   ⏳ Kernel compilation in progress... (62s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+✅ Server ready in 86.13s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+    ⏳ Trial 1 still running... (105s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.851, Time: 115.12s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+    ⏳ Trial 2 still running... (90s elapsed)
+    ⏳ Trial 2 still running... (105s elapsed)
+    ⏳ Trial 2 still running... (120s elapsed)
+    ⏳ Trial 2 still running... (135s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.841, Time: 141.15s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+    ⏳ Trial 3 still running... (90s elapsed)
+    ⏳ Trial 3 still running... (105s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.844, Time: 116.12s)
+🛑 Stopping server...
+📋 Result for QWEN-30B on mi35x: PASS [OK]
+   Accuracies: [0.851, 0.841, 0.844]
+   Highest Accuracy: 0.851 (Required: 0.840)
+   Total Time: 459.02s
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ✅ QWEN-30B completed in 459.0s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+
+=== Testing GROK1-IN4 on mi35x ===
+🚀 Starting server for GROK1-IN4...
+   ⏳ Kernel compilation in progress... (82s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+✅ Server ready in 109.75s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.805, Time: 61.06s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.805, Time: 78.08s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.804, Time: 53.06s)
+🛑 Stopping server...
+📋 Result for GROK1-IN4 on mi35x: PASS [OK]
+   Accuracies: [0.805, 0.805, 0.804]
+   Highest Accuracy: 0.805 (Required: 0.800)
+   Total Time: 302.45s
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ✅ GROK1-IN4 completed in 302.5s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+
+=== Testing GROK1-FP8 on mi35x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Sending Teams notification for sanity check results...
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] WARN: Teams notification failed for sanity check (exit code: 128)
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post1-rocm700-mi35x-20251111
+[nightly] Stopping container sgl-dev_v0.5.5.post1-rocm700-mi35x-20251111 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
