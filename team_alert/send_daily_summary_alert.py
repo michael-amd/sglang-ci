@@ -846,6 +846,16 @@ class DailySummaryReporter:
             }
         )
 
+        # Add CI Dashboard link
+        dashboard_url = f"http://10.194.129.138:5000/hardware/{self.hardware}"
+        actions.append(
+            {
+                "type": "Action.OpenUrl",
+                "title": "📊 CI Dashboard",
+                "url": dashboard_url,
+            }
+        )
+
         # Create the adaptive card
         card = {
             "type": "message",
