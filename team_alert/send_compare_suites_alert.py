@@ -290,9 +290,14 @@ class CompareSuitesReporter:
         actions = [
             {
                 "type": "Action.OpenUrl",
-                "title": "View Cron Logs",
+                "title": "📋 View Cron Logs",
                 "url": f"https://github.com/{self.github_repo}/tree/log/cron_log/mi30x/{date_str}",
-            }
+            },
+            {
+                "type": "Action.OpenUrl",
+                "title": "📊 CI Dashboard",
+                "url": "http://10.194.129.138:5000/upstream-ci",
+            },
         ]
 
         # Create the adaptive card
