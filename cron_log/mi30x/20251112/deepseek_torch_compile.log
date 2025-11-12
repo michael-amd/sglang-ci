@@ -1,0 +1,128 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --enable-torch-compile --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-12 09:50:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 748235
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: ac2100a22ee8
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251112...
+[nightly] Found candidate tag for day -0: v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Successfully obtained image for date 20251112: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: f1c04d225655
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251112_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Container name: sgl-dev_v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Reusing container sgl-dev_v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-11-12 09:50:33 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251112_DeepSeek-V3-0324_FP8_online_torch_compile/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+[DEBUG] Torch compile enabled with standard settings
+Waiting for SGLang server (PID: 43) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251112_DeepSeek-V3-0324_FP8_online_torch_compile/sglang_server.log
+............................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251112_DeepSeek-V3-0324_FP8_online_torch_compile/sglang_server.log:
+--- Error details ---
+Memory access fault by GPU node-6 (Agent handle: 0x55ff8a25f4a0) on address 0x7ea5dd6df000. Reason: Unknown.
+Failed to enable debug interface, debugger might be already attached.
+GPU core dump failed
+Fatal Python error: Aborted
+
+Thread 0x00007ea4b3fff640 (most recent call first):
+  File "/usr/lib/python3.10/threading.py", line 324 in wait
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 43)...
+Server process 43 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post2-rocm700-mi30x-20251112 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251112_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251112
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251112
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --enable-torch-compile flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔥 Torch compile mode: Looking for torch compile benchmark results
+   🔍 Uploading 20251112_DeepSeek-V3-0324_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📝 Updating existing file: plot/mi30x/DeepSeek-V3-0324/online/20251112_DeepSeek-V3-0324_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251112_DeepSeek-V3-0324_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251112_DeepSeek-V3-0324_online_standard.png
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251112_DeepSeek-V3-0324_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251112: timing_summary_20251112_095033.log
+   Found timing_summary log for deepseek online on 20251112: timing_summary_20251112_095033.log
+   Found timing_summary log for deepseek online on 20251112: timing_summary_20251112_095033.log
+   Found timing_summary log for deepseek online on 20251112: timing_summary_20251112_095033.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251112_DeepSeek-V3-0324_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251112
+[nightly] Stopping container sgl-dev_v0.5.5.post2-rocm700-mi30x-20251112 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
