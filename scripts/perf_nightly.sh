@@ -332,6 +332,66 @@ download_hf_model() {
 }
 
 ###############################################################################
+# Teams error notification function
+###############################################################################
+send_error_notification() {
+  local error_type="$1"
+  local error_message="$2"
+  local model="${3:-unknown}"
+  local mode="${4:-unknown}"
+
+  if [[ "$TEAMS_WEBHOOK_FROM_CLI" != "true" || -z "$TEAMS_WEBHOOK_URL" ]]; then
+    echo "[nightly] Error notification skipped - no webhook URL configured"
+    return 0
+  fi
+
+  echo "[nightly] Sending error notification to Teams..."
+
+  # Create a simple error payload
+  local timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+  local hostname=$(hostname)
+
+  # Build JSON payload
+  local payload=$(cat <<EOF
+{
+  "@type": "MessageCard",
+  "@context": "http://schema.org/extensions",
+  "themeColor": "FF0000",
+  "summary": "❌ Nightly Benchmark Error: ${error_type}",
+  "sections": [{
+    "activityTitle": "❌ Nightly Benchmark Error",
+    "activitySubtitle": "${error_type}",
+    "facts": [
+      {"name": "Error Type", "value": "${error_type}"},
+      {"name": "Model", "value": "${model}"},
+      {"name": "Mode", "value": "${mode}"},
+      {"name": "Machine", "value": "${hostname}"},
+      {"name": "Hardware", "value": "${HARDWARE_TYPE}"},
+      {"name": "Timestamp", "value": "${timestamp}"},
+      {"name": "Details", "value": "${error_message}"}
+    ],
+    "markdown": true
+  }]
+}
+EOF
+)
+
+  # Send notification using curl (more reliable than docker exec when container is having issues)
+  curl -H "Content-Type: application/json" \
+       -d "${payload}" \
+       "${TEAMS_WEBHOOK_URL}" \
+       -s -o /dev/null -w "%{http_code}" > /tmp/teams_error_response.txt 2>&1
+
+  local http_code=$(cat /tmp/teams_error_response.txt 2>/dev/null || echo "000")
+  if [[ "$http_code" == "200" ]]; then
+    echo "[nightly] Error notification sent successfully (HTTP ${http_code})"
+  else
+    echo "[nightly] WARN: Error notification failed (HTTP ${http_code})"
+  fi
+  rm -f /tmp/teams_error_response.txt
+}
+
+###############################################################################
 # Teams notification function
 ###############################################################################
 send_teams_notification() {
@@ -872,6 +932,14 @@ if [ -f "$LOCKFILE" ]; then
         echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
         echo "[nightly] Lock file: $LOCKFILE"
         echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
+
+        # Send error notification about lock conflict
+        send_error_notification \
+          "Lock File Conflict" \
+          "Another benchmark instance is already running (PID: $EXISTING_PID). Lock file: $LOCKFILE" \
+          "$MODEL" \
+          "$MODE"
+
         exit 1
     else
         echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
@@ -1180,6 +1248,14 @@ if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME
 
   # Always mount the models directory explicitly to ensure accessibility for sanity checks
   mount_args="${mount_args} -v /mnt/raid/models:/mnt/raid/models"
+
+  # Always mount /data and /data2 for sanity checks (models are typically stored there)
+  if [[ -d "/data" ]]; then
+      mount_args="${mount_args} -v /data:/data"
+  fi
+  if [[ -d "/data2" ]]; then
+      mount_args="${mount_args} -v /data2:/data2"
+  fi
 
   # If benchmark CI directory is not under MOUNT_DIR, mount it separately
   if [[ "${BENCHMARK_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
@@ -1507,13 +1583,34 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
 
     # Ensure log directory exists before redirecting output
-    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"; then
+      echo "[nightly] ERROR: Failed to create log directory in container"
+      send_error_notification \
+        "Docker Exec Failure" \
+        "Failed to create log directory in container ${CONTAINER_NAME}. Container may be unhealthy." \
+        "${MODEL}" \
+        "offline"
+      continue
+    fi
 
+    # Run post-processing with error handling
+    POST_PROCESS_EXIT_CODE=0
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
-               python3 '${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1"
+               python3 '${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1" || POST_PROCESS_EXIT_CODE=$?
+
+    if [ $POST_PROCESS_EXIT_CODE -ne 0 ]; then
+      echo "[nightly] ERROR: Offline post-processing failed (exit code: $POST_PROCESS_EXIT_CODE)"
+      send_error_notification \
+        "Post-Processing Failure" \
+        "Offline plot generation failed with exit code ${POST_PROCESS_EXIT_CODE}. Check ${COMBINED_LOG_FILE} for details." \
+        "${MODEL}" \
+        "offline"
+      # Continue to next iteration instead of sending normal notification
+      continue
+    fi
 
     # Send Teams notification for offline plots
     send_teams_notification "${MODEL}" "offline"
@@ -1563,13 +1660,34 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     fi
 
     # Ensure log directory exists before redirecting output
-    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"; then
+      echo "[nightly] ERROR: Failed to create log directory in container"
+      send_error_notification \
+        "Docker Exec Failure" \
+        "Failed to create log directory in container ${CONTAINER_NAME}. Container may be unhealthy." \
+        "${MODEL}" \
+        "online"
+      continue
+    fi
 
+    # Run post-processing with error handling
+    POST_PROCESS_EXIT_CODE=0
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
-               python3 '${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1"
+               python3 '${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1" || POST_PROCESS_EXIT_CODE=$?
+
+    if [ $POST_PROCESS_EXIT_CODE -ne 0 ]; then
+      echo "[nightly] ERROR: Online post-processing failed (exit code: $POST_PROCESS_EXIT_CODE)"
+      send_error_notification \
+        "Post-Processing Failure" \
+        "Online plot generation failed with exit code ${POST_PROCESS_EXIT_CODE}. Check ${COMBINED_LOG_FILE} for details." \
+        "${MODEL}" \
+        "online"
+      # Continue to next iteration instead of sending normal notification
+      continue
+    fi
 
     # Send Teams notification for online plots
     send_teams_notification "${MODEL}" "online"
