@@ -2,15 +2,15 @@
 [nightly] SGL Nightly Benchmark Started
 [nightly] ==========================================
 [nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3 --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
-[nightly] Start time: 2025-11-12 10:00:01 PST
+[nightly] Start time: 2025-11-12 11:36:56 PST
 [nightly] Machine: smci355-ccs-aus-m12-33
 [nightly] Working directory: /mnt/raid/michael/sglang-ci
 [nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
-[nightly] Process ID: 836302
+[nightly] Process ID: 869602
 [nightly] ==========================================
 
 [nightly] Runtime Environment:
-[nightly] User: michaezh | Groups: michaezh sudo spack... | Docker: /usr/bin/docker
+[nightly] User: michaezh | Groups: michaezh sudo video... | Docker: /usr/bin/docker
 [nightly] Testing Docker daemon access...
 [nightly] Docker daemon accessible - proceeding...
 [nightly] Teams webhook URL provided via command line - notifications enabled
@@ -20,7 +20,7 @@
 [nightly] Model: sanity, Mode(s): sanity
 [nightly] Created process lock: /tmp/perf_nightly_sanity.lock
 [nightly] GPU is busy. Attempting to stop running Docker containers...
-[nightly] Stopping running containers: d483f95193d1
+[nightly] Stopping running containers: 628059007ee1
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
 [nightly] Searching for non-SRT images for sanity for the last 1 days...
@@ -36,16 +36,13 @@
 [nightly] ==========================================
 [nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251112...
 [nightly] GPU is busy. Attempting to stop running Docker containers...
-[nightly] Stopping running containers: f6c7e469a5f5
+[nightly] Stopping running containers: 88e9ef352d8b
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
 [nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
 [nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251112
 [nightly] Container name: sgl-dev_v0.5.5.post2-rocm700-mi35x-20251112
 [nightly] Reusing container sgl-dev_v0.5.5.post2-rocm700-mi35x-20251112
-[nightly] Models directory not accessible in existing container. Recreating container...
-[nightly] Creating container sgl-dev_v0.5.5.post2-rocm700-mi35x-20251112
-c38ea27f3e5df54d9e314540b689211a7b79a8b7fd569e22e34ecfc9701d4b40
 [nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
 [nightly] === Starting benchmark execution ===
 [nightly] === Starting nightly SANITY sanity benchmark ===
@@ -107,7 +104,7 @@ Progress: [███████████████████████
 
 🎯 All tests completed!
 📊 Total execution time: 0.00s (0.0 minutes)
-📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_100044.log
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_113728.log
 
 === Final Summary ===
 ⏭️ GPT-OSS-120B: SKIPPED (model/tokenizer not available)
@@ -126,8 +123,8 @@ Progress: [███████████████████████
 [nightly] === Sanity check completed successfully ===
 [nightly] Sending Teams notification for sanity check results...
 🔍 Sanity check mode: Processing sanity check results
-📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_100044.log
-📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_100044.log
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_113728.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.5.post2-rocm700-mi35x-20251112/timing_summary_20251112_113728.log
 ✅ Successfully sent sanity check unknown alert to Teams
    (Power Automate flow accepted - message processing asynchronously)
 [nightly] Teams notification sent successfully for sanity check
