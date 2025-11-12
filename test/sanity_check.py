@@ -208,7 +208,7 @@ FAIL_MARK = "FAIL [X]"
 DEFAULT_LOG_DIR = os.path.join("test", "sanity_check_log", "mi30x")
 DEFAULT_WORK_DIR = "/mnt/raid/michael/sglang-ci"
 DEFAULT_DOCKER_IMAGE = "lmsysorg/sglang:v0.4.7-rocm630"
-DEFAULT_MODELS_DIR = "/mnt/raid/models/huggingface"
+DEFAULT_MODELS_DIR = "/data"
 
 # Container configuration
 CONTAINER_SHM_SIZE = "32g"
@@ -265,8 +265,13 @@ VRAM_USAGE_THRESHOLD = int(
 def check_gpu_idle():
     """Check if GPU is idle based on usage thresholds."""
     try:
+        # Suppress stderr to avoid "Driver not initialized (amdgpu not found in modules)" errors on host
         result = subprocess.run(
-            ["rocm-smi"], capture_output=True, text=True, timeout=10
+            ["rocm-smi"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=10,
         )
         if result.returncode != 0:
             print(
@@ -557,7 +562,9 @@ def manage_docker_container(
         model_dir = os.path.dirname(model_path)
         if not model_dir.startswith(MOUNT_DIR) and not model_dir.startswith(script_dir):
             # Determine mount root
-            if model_path.startswith("/data2/"):
+            if model_path.startswith("/data/"):
+                mount_root = "/data"
+            elif model_path.startswith("/data2/"):
                 mount_root = "/data2"
             elif model_path.startswith("/mnt/"):
                 mount_root = "/mnt"
