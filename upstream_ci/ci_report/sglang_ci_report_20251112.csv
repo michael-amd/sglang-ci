@@ -1,0 +1,12 @@
+Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)
+unit-test-backend-1-gpu,62,109,57%
+unit-test-backend-2-gpu,3,15,20%
+unit-test-backend-4-gpu,1,4,25%
+unit-test-backend-8-gpu,2,1,200%
+nightly-models-test,14,16,88%
+unit-test-frontend,1,1,100%
+performance-test-1-gpu,8,13,62%
+performance-test-2-gpu,0,6,0%
+accuracy-test-1-gpu,1,1,100%
+accuracy-test-2-gpu,1,1,100%
+Total,93,167,56%
