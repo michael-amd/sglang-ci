@@ -1,0 +1,30 @@
+=== CONFIGURATION ===
+Model: deepseek (variant: DeepSeek-V3)
+Data directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324
+Output prefix: DeepSeek-V3-0324_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-V3-0324/online
+Model name: DeepSeek-V3-0324
+Mode filter: aiter
+Variant filter: all variants
+Load metric: concurrency
+Expected concurrencys: [1, 4, 16, 64, 128]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.941
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 4
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 4
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 4
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.941
+Date 20251003, Variant standard, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+
+No date+variant combinations found with complete and valid data for all concurrencys [1, 4, 16, 64, 128]
+No data processed. Skipping CSV generation.
+ERROR: Failed to generate summary CSV. Exiting.
