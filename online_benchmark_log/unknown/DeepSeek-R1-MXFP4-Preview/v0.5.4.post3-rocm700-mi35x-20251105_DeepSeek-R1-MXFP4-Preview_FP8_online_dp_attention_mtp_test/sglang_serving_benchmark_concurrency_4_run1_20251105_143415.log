@@ -1,43 +1,0 @@
-Run started at: 2025-11-05 14:34:15 PST
-Using 128 prompts for concurrency 4
-benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model=None, served_model_name=None, tokenizer=None, num_prompts=128, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, profile_activities=['CPU', 'GPU'], lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None)
-Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model='/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview', served_model_name=None, tokenizer=None, num_prompts=128, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, profile_activities=['CPU', 'GPU'], lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None)
-
-#Input tokens: 409600
-#Output tokens: 102400
-Starting warmup with 1 sequences...
-Warmup completed with 1 sequences. Starting main benchmark run...
-  0%|          | 0/128 [00:00<?, ?it/s]  1%|          | 1/128 [00:44<1:34:25, 44.61s/it]  4%|▍         | 5/128 [01:22<29:58, 14.62s/it]    7%|▋         | 9/128 [02:07<25:25, 12.82s/it] 10%|█         | 13/128 [02:44<21:40, 11.31s/it] 13%|█▎        | 17/128 [03:30<20:55, 11.31s/it] 16%|█▋        | 21/128 [04:07<18:56, 10.63s/it] 20%|█▉        | 25/128 [04:52<18:36, 10.84s/it] 23%|██▎       | 29/128 [05:30<17:08, 10.39s/it] 26%|██▌       | 33/128 [06:15<16:52, 10.66s/it] 29%|██▉       | 37/128 [06:53<15:36, 10.29s/it] 32%|███▏      | 41/128 [07:38<15:21, 10.59s/it] 35%|███▌      | 45/128 [08:16<14:11, 10.26s/it] 38%|███▊      | 49/128 [09:01<13:55, 10.57s/it] 41%|████▏     | 53/128 [09:39<12:46, 10.22s/it] 45%|████▍     | 57/128 [10:24<12:26, 10.51s/it] 48%|████▊     | 61/128 [11:01<11:21, 10.17s/it] 51%|█████     | 65/128 [11:47<11:03, 10.53s/it] 54%|█████▍    | 69/128 [12:24<10:02, 10.21s/it] 57%|█████▋    | 73/128 [13:10<09:40, 10.55s/it] 60%|██████    | 77/128 [13:48<08:40, 10.21s/it] 63%|██████▎   | 81/128 [14:33<08:15, 10.54s/it] 66%|██████▋   | 85/128 [15:11<07:19, 10.22s/it] 70%|██████▉   | 89/128 [15:56<06:51, 10.54s/it] 73%|███████▎  | 93/128 [16:34<05:58, 10.23s/it] 76%|███████▌  | 97/128 [17:20<05:28, 10.59s/it] 79%|███████▉  | 101/128 [17:58<04:37, 10.28s/it] 82%|████████▏ | 105/128 [18:44<04:04, 10.63s/it] 85%|████████▌ | 109/128 [19:22<03:15, 10.31s/it] 88%|████████▊ | 113/128 [20:08<02:39, 10.65s/it] 91%|█████████▏| 117/128 [20:46<01:53, 10.34s/it] 95%|█████████▍| 121/128 [21:31<01:14, 10.62s/it] 98%|█████████▊| 125/128 [22:09<00:30, 10.27s/it]100%|██████████| 128/128 [22:09<00:00, 10.39s/it]
-
-============ Serving Benchmark Result ============
-Backend:                                 sglang    
-Traffic request rate:                    inf       
-Max request concurrency:                 4         
-Successful requests:                     128       
-Benchmark duration (s):                  1329.58   
-Total input tokens:                      409600    
-Total input text tokens:                 409600    
-Total input vision tokens:               0         
-Total generated tokens:                  102400    
-Total generated tokens (retokenized):    101981    
-Request throughput (req/s):              0.10      
-Input token throughput (tok/s):          308.07    
-Output token throughput (tok/s):         77.02     
-Total token throughput (tok/s):          385.08    
-Concurrency:                             4.00      
-----------------End-to-End Latency----------------
-Mean E2E Latency (ms):                   41546.20  
-Median E2E Latency (ms):                 41509.61  
----------------Time to First Token----------------
-Mean TTFT (ms):                          1840.63   
-Median TTFT (ms):                        1616.74   
-P99 TTFT (ms):                           2939.65   
----------------Inter-Token Latency----------------
-Mean ITL (ms):                           49.70     
-Median ITL (ms):                         48.43     
-P95 ITL (ms):                            67.82     
-P99 ITL (ms):                            166.17    
-Max ITL (ms):                            1938.44   
-==================================================
-Run completed at: 2025-11-05 14:56:35 PST
-Run duration: 1340 seconds
