@@ -1,38 +1,18 @@
-# SGLang CI and toolkit
+# SGLang CI, Dashboard and Toolkit
 
-This repository provides a comprehensive benchmarking and continuous integration toolkit for SGLang, designed for rigorous performance evaluation and accuracy testing of large language models, specifically GROK and DeepSeek models. The toolkit offers a complete end-to-end solution for model performance analysis, from automated benchmark execution to data visualization and comparison.
+SGLang ([github.com/sgl-project/sglang](https://github.com/sgl-project/sglang)) is an open-source serving engine for large language models.
+This repository provides a comprehensive benchmarking and continuous integration toolkit for SGLang, designed for rigorous performance evaluation and accuracy testing of large language models. The toolkit combines automated benchmark execution with a live observability dashboard for end-to-end performance analysis, comparison, and reporting.
 
 ## Key Features
 
-**🚀 Comprehensive Benchmarking Modes:**
-
-- **Offline Mode:** Batch processing benchmarks measuring throughput and latency across various configurations, batch sizes, and context lengths
-- **Online Mode:** Real-time serving performance evaluation with concurrent request handling and interactive latency metrics
-
-**🔧 Automated Infrastructure:**
-
-- **Docker Integration:** Full support for ROCm SGLang development images and LMSYS SGLang images with automatic container management
-- **Nightly Automation:** Scheduled benchmarking with `perf_nightly.sh` for continuous performance monitoring
-- **Resource Management:** Intelligent GPU utilization checks and container lifecycle management
-
-**📊 Advanced Analytics & Visualization:**
-
-- **Performance Metrics:** Captures prefill/decode latency, end-to-end throughput, TTFT (Time-To-First-Token), and ITL (Inter-Token Latency)
-- **GSM8K Accuracy Testing:** Integrated mathematical reasoning benchmarks with configurable accuracy thresholds
-- **Data Processing Pipeline:** Automated consolidation of results across multiple benchmark runs with trend analysis
-- **Interactive Plot Server:** Web-based visualization server for exploring performance trends and comparisons
-
-**⚡ Flexible Configuration:**
-
-- **Command-Line Interface:** All parameters configurable via CLI arguments, eliminating manual script editing
-- **Multi-Model Support:** Specialized configurations for GROK1, GROK2 (Grok 2.5), DeepSeek, GPT-OSS, QWEN, and Llama models with FP8/INT8/INT4/MXFP4 quantization
-- **Backend Selection:** Automatic detection and configuration of optimal backends (aiter/triton) based on image versions
-
-**🔍 Advanced Comparison Tools:**
-
-- **Performance Regression Detection:** Automated comparison between benchmark runs with configurable thresholds
-- **Statistical Analysis:** GSM8K accuracy significance testing and performance change quantification
-- **Report Generation:** Markdown reports with color-coded performance indicators and detailed metrics breakdown
+- **Wide Test Coverage:** Covers a variety of nightly validations (unit, PD disaggregation, accuracy (GSM8K), MTP, DP, torch compile, etc.) across MI30X and MI35X hardware targets.
+- **Automated Benchmarking Pipelines:** Run offline throughput tests and online serving benchmarks that capture latency, concurrency, and throughput across batch sizes and context lengths.
+- **Interactive Observability Dashboard:** Monitor nightly CI results, performance plots, task health, and hardware comparisons through a centralized web dashboard.
+- **Extensive Model Support:** Supports a wide range of generative models (Llama, Qwen, Grok, DeepSeek, GPT, etc.) with ready-to-run presets and quantization options (FP8/INT8/INT4/MXFP4).
+- **Production-Ready Automation:** Leverage Docker-based workflows, scheduled nightly jobs, and intelligent GPU resource checks to keep benchmarks running reliably.
+- **Deep Analytics & Reporting:** Capture prefill/decode latency, TTFT, ITL, and GSM8K accuracy; consolidate runs with automated trend analysis, interactive plots, and markdown report generation.
+- **Flexible Execution Controls:** Configure every run via CLI flags, automatically select optimal backends (aiter/triton), and customize pipelines without manual script edits.
+- **Upstream SGLang CI Toolkit:** Analyze upstream SGLang CI coverage and run targeted AMD tests using dedicated tools for suite comparison, benchmark CSV analysis, and on-demand upstream test execution.
 
 The toolkit is designed for both development teams conducting regular performance validation and researchers requiring detailed model performance analysis across different configurations and deployment scenarios.
 
@@ -161,6 +141,7 @@ AMD vs NVIDIA test coverage tracking with:
     - [perf_nightly.sh](#perf_nightlysh)
 - [Upstream SGLang Tool](#upstream-sglang-tool)
   - [Compare CI Suites](#compare-ci-suites)
+  - [Run AMD upstream tests](#run-amd-upstream-tests)
   - [Benchmark Comparison](#benchmark-comparison)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
@@ -1063,6 +1044,19 @@ python3 compare_suites.py --output "my_report.csv"
 - **CSV Format:** Test categories with AMD/NVIDIA test counts and coverage percentages
 - **Markdown Format:** Detailed breakdowns showing common tests, NVIDIA-only tests, and AMD-only tests
 
+### Run AMD upstream tests
+
+**Purpose:** Run individual upstream SGLang test files on AMD hardware using a chosen Docker image, with robust logging and GPU-safety checks.
+
+**Script:** `upstream_ci/run_amd_tests.sh`
+
+**Highlights:**
+
+- Launches or reuses a Docker container that mounts your local SGLang repo and the CI workspace with proper ROCm device access.
+- Supports running one or many `--test=<file.py>` targets with configurable GPU count and per-test timeout.
+- Ensures GPUs are mostly idle (via `rocm-smi`) before starting, optionally stopping active containers if needed.
+- Writes structured logs per test under `upstream_ci/upstream_test_log/<docker_image_tag>/`, and prints a final summary of passed/failed/timeout tests.
+
 ### Benchmark Comparison
 
 The benchmark CI includes a powerful comparison tool that allows you to compare CSV results between different benchmark runs, automatically extracting GSM8K accuracy information and generating detailed performance comparison reports.
@@ -1230,19 +1224,38 @@ The benchmarks and CI processes are scheduled to run daily via cron jobs. Hardwa
 - **mi30x hardware:** `cron/crontab_rules_mi30x.txt`
 - **mi35x hardware:** `cron/crontab_rules_mi35x.txt`
 
-**Currently Scheduled Tests:**
+**Covered Test Schedule (High Level):**
 
-1. **Docker image availability check** - Verifies nightly Docker images are available
-2. **Nightly Unit test** - Runs automated unit tests on latest Docker images
-3. **Nightly PD disaggregation test** - Validates Prefill-Decode disaggregation with 3-container architecture
-4. **Sanity check** - Validates multiple models (GROK, DeepSeek, GPT-OSS, etc.) with GSM8K accuracy tests
-5. **DeepSeek online with DP attention checking** - DeepSeek benchmarking with data parallel attention validation (GSM8K only)
-6. **DeepSeek online with torch compile optimization** - DeepSeek benchmarking with torch compile performance validation (GSM8K only)
-7. **DeepSeek online with DP attention + torch compile** - Combined validation testing (GSM8K only)
-8. **Grok online benchmark** - Performance benchmarking for Grok model
-9. **Grok 2 online benchmark** - Performance benchmarking for Grok 2 model
-10. **DeepSeek online benchmark** - Standard DeepSeek performance benchmarking (full GSM8K + serving benchmarks)
-11. **Daily CI summary report** - Comprehensive summary of all daily test results
+**MI30X**
+
+1. **Compare suites report** – AMD vs NVIDIA coverage summary with Teams alert.
+2. **Docker image availability check** – Validates latest nightly containers and uploads logs.
+3. **Nightly unit tests** – Regression/unit suite on fresh images.
+4. **PD disaggregation test** – Prefill-Decode split validation using multi-container setup.
+5. **Sanity check** – Multi-model GSM8K sanity sweep across Llama, Qwen, Grok, DeepSeek, GPT.
+6. **DeepSeek DP attention check** – Online DeepSeek benchmark with data-parallel attention validation.
+7. **DeepSeek torch compile** – Torch compile performance validation for DeepSeek online runs.
+8. **DeepSeek DP + torch compile** – Combined DP attention and torch compile validation.
+9. **Grok online benchmark** – Throughput/latency benchmark for Grok model.
+10. **Grok 2 online benchmark** – Throughput/latency benchmark for Grok 2 with tokenizer sync.
+11. **DeepSeek nightly online** – Full DeepSeek benchmark (GSM8K + serving metrics).
+12. **Daily CI summary report** – Aggregated daily results with Teams summary.
+
+**MI35X**
+
+1. **Docker image availability check** – Confirms container freshness for MI35X.
+2. **Nightly unit tests** – Regression/unit suite against MI35X images.
+3. **PD disaggregation test** – DeepSeek Prefill-Decode validation with MI35X hardware.
+4. **Sanity check** – Multi-model GSM8K sanity sweep on MI35X.
+5. **DeepSeek torch compile** – Torch compile performance validation.
+6. **DeepSeek DP + torch compile** – Combined DP attention and torch compile coverage.
+7. **DeepSeek MTP test** – Multi-turn prompt (MTP) validation artifacts.
+8. **DeepSeek DP test** – GSM8K + throughput DP regression detection.
+9. **DeepSeek DP + MTP** – Combined DP regression and MTP artifacts run.
+10. **Grok 2 online benchmark** – Grok 2 throughput/latency benchmark on MI35X.
+11. **Grok online benchmark** – Grok baseline benchmark with gating logic.
+12. **DeepSeek nightly online** – Full DeepSeek benchmark (GSM8K + serving metrics).
+13. **Daily CI summary report** – Aggregated daily results with Teams summary.
 
 **Usage:**
 
