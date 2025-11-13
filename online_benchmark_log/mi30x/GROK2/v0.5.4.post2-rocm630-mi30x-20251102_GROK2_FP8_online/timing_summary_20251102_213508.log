@@ -1,0 +1,32 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-02 21:35:08 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x
+Hardware: mi30x
+ROCM Version: rocm630
+Docker image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251102
+Model: /mnt/raid/models/huggingface/grok-2
+Hostname: dell300x-pla-t10-23
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
+Server startup time: 279 seconds
+
+GSM8K Test Results:
+  Total duration: 450 seconds
+  Average accuracy: 0.000
+  Number of runs: 5
+  GSM8K accuracy: 0.000
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
