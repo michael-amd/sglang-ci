@@ -1,0 +1,13 @@
+Online mode - GROK2 (v0.5.4.post1-rocm700-mi30x-20251029)
+
+Median E2E Latency (ms, lower better)
+request rate	1	2	4	8	16
+MI300x-aiter, dell300x-pla-t10-23	11844.06	13550.07	24577.17	95893.42	136356.09
+
+Median TTFT (ms, lower better)
+request rate	1	2	4	8	16
+MI300x-aiter, dell300x-pla-t10-23	150.12	158.09	217.49	295.12	307.37
+
+Median ITL (ms, lower better)
+request rate	1	2	4	8	16
+MI300x-aiter, dell300x-pla-t10-23	19.67	20.64	31.23	119.76	145.96
