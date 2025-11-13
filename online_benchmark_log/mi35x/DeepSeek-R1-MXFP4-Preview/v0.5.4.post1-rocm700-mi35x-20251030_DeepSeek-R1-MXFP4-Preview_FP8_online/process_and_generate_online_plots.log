@@ -1,0 +1,50 @@
+=== CONFIGURATION ===
+Model: deepseek (variant: DeepSeek-V3)
+Data directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview
+Output prefix: DeepSeek-R1-MXFP4-Preview_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-R1-MXFP4-Preview/online
+Model name: DeepSeek-R1-MXFP4-Preview
+Mode filter: aiter
+Variant filter: all variants
+Load metric: concurrency
+Expected concurrencys: [1, 4, 16, 64, 128]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.945
+Mapped default GSM8K accuracy to mode aiter: 0.945
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.94
+Mapped default GSM8K accuracy to mode aiter: 0.94
+Date 20251030, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251030, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251030, Variant dp_mtp: Complete and valid data for all modes and concurrencys
+Date 20251030, Variant dp: Complete and valid data for all modes and concurrencys
+
+Kept 4 date+variant combinations with complete and valid data: [('20251030', 'dp'), ('20251030', 'dp_mtp'), ('20251030', 'mtp'), ('20251030', 'standard')]
+Total records after filtering: 20
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/DeepSeek-R1-MXFP4-Preview_FP8_online_all_variants_aiter_summary_smci355-ccs-aus-m12-33.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: dp, dp_mtp, mtp, standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20251030: Complete and valid data for all modes and concurrencys
+
+Kept 1 dates with complete and valid data for plotting
+Total records after filtering: 20
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-R1-MXFP4-Preview/online/20251030_DeepSeek-R1-MXFP4-Preview_online_all.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
