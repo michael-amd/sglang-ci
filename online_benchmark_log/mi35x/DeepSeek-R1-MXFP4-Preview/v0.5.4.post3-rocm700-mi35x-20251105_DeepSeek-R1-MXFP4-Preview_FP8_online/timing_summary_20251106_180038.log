@@ -1,0 +1,65 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-06 18:00:38 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+Model: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+All logs already complete - skipping server startup
+  End time: 2025-11-06 18:00:38 PST
+  Total duration: 0 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: 99389.30 ms
+  TTFT: 20828.02 ms
+  ITL: 67.37 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 64:
+  E2E Latency: 51050.19 ms
+  TTFT: 1008.82 ms
+  ITL: 52.93 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 16:
+  E2E Latency: 38454.17 ms
+  TTFT: 338.35 ms
+  ITL: 40.38 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 4:
+  E2E Latency: 35213.84 ms
+  TTFT: 233.71 ms
+  ITL: 36.84 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 1:
+  E2E Latency: 34147.00 ms
+  TTFT: 138.13 ms
+  ITL: 35.41 ms
+  Output throughput: (tok/s): tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-06 18:00:38 PST
+Total execution time: 0 seconds (0 minutes)
+========================================
