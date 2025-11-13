@@ -1,0 +1,78 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-10-31 02:06:04 PDT
+Timezone: PDT (-0700)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/amd--grok-1-W4A8KV8 --mode=online --hardware=mi35x
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.4.post1-rocm700-mi35x-20251030
+Model: /data/amd--grok-1-W4A8KV8
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 119 seconds
+
+GSM8K Test Results:
+  Total duration: 303 seconds
+  Average accuracy: 0.811
+  Number of runs: 5
+  GSM8K accuracy: 0.811
+
+Client Benchmark Results:
+  Start time: 2025-10-31 02:13:06 PDT
+  Rate 1, Run 1: 333 seconds
+  Rate 1, Run 2: 334 seconds
+  Rate 1, Run 3: 333 seconds
+Completed rate 1 - Total time: 1020 seconds
+  Rate 2, Run 1: 355 seconds
+  Rate 2, Run 2: 357 seconds
+  Rate 2, Run 3: 356 seconds
+Completed rate 2 - Total time: 1088 seconds
+  Rate 4, Run 1: 353 seconds
+  Rate 4, Run 2: 343 seconds
+  Rate 4, Run 3: 347 seconds
+Completed rate 4 - Total time: 1063 seconds
+  Rate 8, Run 1: 471 seconds
+  Rate 8, Run 2: 417 seconds
+  Rate 8, Run 3: 426 seconds
+Completed rate 8 - Total time: 1334 seconds
+Rate 16 skipped on MI355 hardware
+  End time: 2025-10-31 03:28:23 PDT
+  Total duration: 4517 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 25988.48 ms
+  TTFT: 108.31 ms
+  ITL: 42.15 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 26264.81 ms
+  TTFT: 115.32 ms
+  ITL: 43.63 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 39548.85 ms
+  TTFT: 145.39 ms
+  ITL: 64.86 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 93104.59 ms
+  TTFT: 238.45 ms
+  ITL: 168.91 ms
+  Throughput: N/A requests/s
+
+Request Rate 16:
