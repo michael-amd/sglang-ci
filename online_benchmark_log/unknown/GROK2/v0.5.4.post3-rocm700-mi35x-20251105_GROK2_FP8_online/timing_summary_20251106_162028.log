@@ -1,0 +1,72 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-06 16:20:28 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+Model: /mnt/raid/models/huggingface/grok-2
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
+Server startup time: 133 seconds
+
+GSM8K Test Results:
+  Total duration: 298 seconds
+  Average accuracy: 0.916
+  Number of runs: 5
+  GSM8K accuracy: 0.916
+
+Client Benchmark Results:
+  Start time: 2025-11-06 16:27:40 PST
+Completed rate 1 - Total time: 0 seconds
+Completed rate 2 - Total time: 0 seconds
+  Rate 4, Run 1: 365 seconds
+  Rate 4, Run 2: 346 seconds
+  Rate 4, Run 3: 345 seconds
+Completed rate 4 - Total time: 1076 seconds
+  Rate 8, Run 1: 504 seconds
+  Rate 8, Run 2: 455 seconds
+  Rate 8, Run 3: 456 seconds
+Completed rate 8 - Total time: 1435 seconds
+Rate 16 skipped on MI355 hardware
+  End time: 2025-11-06 17:09:43 PST
+  Total duration: 2523 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 23419.46 ms
+  TTFT: 129.20 ms
+  ITL: 40.85 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 24596.78 ms
+  TTFT: 128.94 ms
+  ITL: 43.54 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 46244.00 ms
+  TTFT: 181.55 ms
+  ITL: 84.64 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 130138.75 ms
+  TTFT: 269.42 ms
+  ITL: 252.01 ms
+  Throughput: N/A requests/s
+
+Request Rate 16:
