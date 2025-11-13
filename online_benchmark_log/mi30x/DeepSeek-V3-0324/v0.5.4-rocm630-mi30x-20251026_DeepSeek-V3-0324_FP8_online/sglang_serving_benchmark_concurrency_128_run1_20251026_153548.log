@@ -1,0 +1,43 @@
+Run started at: 2025-10-26 15:35:48 PDT
+Using 500 prompts for concurrency 128
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model=None, tokenizer=None, num_prompts=500, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, lora_name=None, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation')
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model='/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324', tokenizer=None, num_prompts=500, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, lora_name=None, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation')
+
+#Input tokens: 1600000
+#Output tokens: 400000
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+  0%|          | 0/500 [00:00<?, ?it/s]  0%|          | 1/500 [01:02<8:38:43, 62.37s/it] 26%|██▌       | 129/500 [02:04<05:05,  1.21it/s] 51%|█████▏    | 257/500 [03:07<02:32,  1.60it/s] 77%|███████▋  | 385/500 [04:06<01:03,  1.81it/s]100%|██████████| 500/500 [04:06<00:00,  2.03it/s]
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 128       
+Successful requests:                     500       
+Benchmark duration (s):                  246.45    
+Total input tokens:                      1600000   
+Total input text tokens:                 1600000   
+Total input vision tokens:               0         
+Total generated tokens:                  400000    
+Total generated tokens (retokenized):    398025    
+Request throughput (req/s):              2.03      
+Input token throughput (tok/s):          6492.13   
+Output token throughput (tok/s):         1623.03   
+Total token throughput (tok/s):          8115.16   
+Concurrency:                             125.05    
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   61637.92  
+Median E2E Latency (ms):                 62320.57  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          10998.36  
+Median TTFT (ms):                        10936.25  
+P99 TTFT (ms):                           20766.68  
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           63.38     
+Median ITL (ms):                         51.87     
+P95 ITL (ms):                            53.22     
+P99 ITL (ms):                            54.61     
+Max ITL (ms):                            19897.72  
+==================================================
+Run completed at: 2025-10-26 15:40:15 PDT
+Run duration: 267 seconds
