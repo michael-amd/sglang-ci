@@ -10,6 +10,24 @@
     </div>
 </div>
 
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+            <i class="bi bi-speedometer2"></i> Overview
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab" aria-controls="status" aria-selected="false">
+            <i class="bi bi-heart-pulse"></i> Status
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="dashboardTabContent">
+<!-- Overview Tab -->
+<div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+
 <!-- Date Selector -->
 <div class="row mb-4">
     <div class="col-md-6">
@@ -129,6 +147,65 @@
         </div>
     </div>
 </div>
+
+</div>
+<!-- End Overview Tab -->
+
+<!-- Status Tab -->
+<div class="tab-pane fade" id="status" role="tabpanel" aria-labelledby="status-tab">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> System Health Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="status-health-loading" class="text-center py-4">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading system status...</p>
+                    </div>
+                    <div id="status-health-content" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hardware Status Cards -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cpu"></i> MI30X Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="status-mi30x-loading" class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <div id="status-mi30x-content" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-cpu"></i> MI35X Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="status-mi35x-loading" class="text-center py-3">
+                        <div class="spinner-border text-success" role="status"></div>
+                    </div>
+                    <div id="status-mi35x-content" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Status Tab -->
+
+</div>
+<!-- End Tab Content -->
 
 {% endblock %}
 
@@ -386,5 +463,123 @@
 
     // Note: Date change handled by flatpickr onChange callback
     // Initial data load triggered after flatpickr initialization
+</script>
+
+<script>
+// Status tab functionality
+document.getElementById('status-tab').addEventListener('shown.bs.tab', function() {
+    loadStatusInfo();
+    loadHardwareStatus();
+});
+
+function loadStatusInfo() {
+    // Load health status when Status tab is shown
+    fetch('/health')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('status-health-content').style.display = 'block';
+            document.getElementById('status-health-loading').style.display = 'none';
+
+            const statusHtml = `
+                <div class="alert ${data.status === 'healthy' ? 'alert-success' : 'alert-danger'}">
+                    <h5><i class="bi bi-check-circle-fill"></i> System Status: ${data.status.toUpperCase()}</h5>
+                    <p class="mb-0">Last checked: ${new Date(data.timestamp).toLocaleString()}</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Base Directory:</strong><br>
+                        <code class="small">${data.base_dir}</code>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Data Source:</strong><br>
+                        ${data.use_github ? '<span class="badge bg-primary">GitHub + Local</span>' : '<span class="badge bg-secondary">Local Only</span>'}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>GitHub Token:</strong><br>
+                        ${data.github_token_set ? '<span class="badge bg-success">Configured</span>' : '<span class="badge bg-warning">Not Set</span>'}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Current Hardware:</strong><br>
+                        <code>${data.current_hardware || 'Auto-detect'}</code>
+                    </div>
+                </div>
+            `;
+            document.getElementById('status-health-content').innerHTML = statusHtml;
+        })
+        .catch(error => {
+            document.getElementById('status-health-loading').style.display = 'none';
+            document.getElementById('status-health-content').style.display = 'block';
+            document.getElementById('status-health-content').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Unable to load status: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function loadHardwareStatus() {
+    // Load MI30X status
+    fetch('/api/dates/mi30x')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('status-mi30x-loading').style.display = 'none';
+            document.getElementById('status-mi30x-content').style.display = 'block';
+
+            const dates = data.dates || [];
+            const latestDate = dates.length > 0 ? dates[0] : 'N/A';
+
+            document.getElementById('status-mi30x-content').innerHTML = `
+                <p><strong><i class="bi bi-calendar3"></i> Available Dates:</strong> ${dates.length}</p>
+                <p><strong><i class="bi bi-clock"></i> Latest Data:</strong> ${latestDate}</p>
+                <p><strong><i class="bi bi-check-circle"></i> Status:</strong> <span class="badge bg-success">Active</span></p>
+                <hr>
+                <a href="/hardware/mi30x" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right-circle"></i> View MI30X Details
+                </a>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('status-mi30x-loading').style.display = 'none';
+            document.getElementById('status-mi30x-content').style.display = 'block';
+            document.getElementById('status-mi30x-content').innerHTML = `
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Unable to load MI30X data
+                </div>
+            `;
+        });
+
+    // Load MI35X status
+    fetch('/api/dates/mi35x')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('status-mi35x-loading').style.display = 'none';
+            document.getElementById('status-mi35x-content').style.display = 'block';
+
+            const dates = data.dates || [];
+            const latestDate = dates.length > 0 ? dates[0] : 'N/A';
+
+            document.getElementById('status-mi35x-content').innerHTML = `
+                <p><strong><i class="bi bi-calendar3"></i> Available Dates:</strong> ${dates.length}</p>
+                <p><strong><i class="bi bi-clock"></i> Latest Data:</strong> ${latestDate}</p>
+                <p><strong><i class="bi bi-check-circle"></i> Status:</strong> <span class="badge bg-success">Active</span></p>
+                <hr>
+                <a href="/hardware/mi35x" class="btn btn-sm btn-success">
+                    <i class="bi bi-arrow-right-circle"></i> View MI35X Details
+                </a>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('status-mi35x-loading').style.display = 'none';
+            document.getElementById('status-mi35x-content').style.display = 'block';
+            document.getElementById('status-mi35x-content').innerHTML = `
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Unable to load MI35X data
+                </div>
+            `;
+        });
+}
 </script>
 {% endblock %}
