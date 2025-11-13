@@ -1,0 +1,72 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-01 10:50:33 PDT
+Timezone: PDT (-0700)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --enable-torch-compile --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+Hardware: mi30x
+ROCM Version: rocm630
+Docker image: rocm/sgl-dev:v0.5.4.post2-rocm630-mi30x-20251101
+Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t10-23
+Mode: online
+DP Attention: false
+Torch Compile: true
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 742 seconds
+
+GSM8K Test Results:
+  Total duration: 252 seconds
+  Average accuracy: 0.939
+  Number of runs: 5
+  GSM8K accuracy: 0.939
+GSM8K benchmark completed. Serving benchmarks skipped in torch compile mode.
+  End time: 2025-11-01 11:07:07 PDT
+  Total duration: 0 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 64:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 16:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 4:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 1:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-01 11:07:07 PDT
+Total execution time: 994 seconds (16 minutes)
+========================================
