@@ -1,0 +1,34 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-10-15 22:00:33 PDT
+Timezone: PDT (-0700)
+Command: perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2627cd9f12c64fd785fd6b5f476c8929/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NW18x_-_wiyn8dPFp84GfbiAFjlyUb_KqtII9qzx8M
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.3.post1-rocm700-mi30x-20251015
+Model: /mnt/raid/models/huggingface/grok-2
+Hostname: dell300x-pla-t10-23
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
+Server startup time: 236 seconds
+
+GSM8K Test Results:
+  Total duration: 211 seconds
+  Average accuracy: 0.926
+  Number of runs: 5
+  GSM8K accuracy: 0.926
+
+Client Benchmark Results:
+  Start time: 2025-10-15 22:08:01 PDT
+  Rate 1, Run 1: 350 seconds
+  Rate 1, Run 2: 315 seconds
+  Rate 1, Run 3: 315 seconds
+Completed rate 1 - Total time: 1000 seconds
+  Rate 2, Run 1: 331 seconds
+  Rate 2, Run 2: 332 seconds
+  Rate 2, Run 3: 332 seconds
+Completed rate 2 - Total time: 1015 seconds
+  Rate 4, Run 1: 319 seconds
