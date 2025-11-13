@@ -1,0 +1,28 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-06 17:17:13 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/amd--grok-1-W4A8KV8 --mode=online --hardware=mi35x
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.4.post3-rocm700-mi35x-20251105
+Model: /data/amd--grok-1-W4A8KV8
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 65 seconds
+
+GSM8K Test Results:
+  Total duration: 327 seconds
+  Average accuracy: 0.809
+  Number of runs: 5
+  GSM8K accuracy: 0.809
+
+Client Benchmark Results:
+  Start time: 2025-11-06 17:23:45 PST
+Completed rate 1 - Total time: 0 seconds
+Completed rate 2 - Total time: 0 seconds
+Completed rate 4 - Total time: 0 seconds
