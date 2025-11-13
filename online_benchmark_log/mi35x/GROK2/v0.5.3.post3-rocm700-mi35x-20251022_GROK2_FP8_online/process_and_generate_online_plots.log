@@ -1,0 +1,79 @@
+=== CONFIGURATION ===
+Model: grok2 (variant: GROK2)
+Data directory: /mnt/raid/michael/sglang-ci/online/GROK2
+Output prefix: GROK2_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online
+Model name: GROK2 FP8 Online
+Mode filter: aiter
+Variant filter: all variants
+Load metric: request_rate
+Expected request_rates: [1, 2, 4, 8, 16]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Found GSM8K accuracy (single run) for mode aiter: 0.92
+Found GSM8K accuracy for mode aiter: 0.92
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.92
+Found GSM8K accuracy for mode aiter: 0.92
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.928
+Found GSM8K accuracy for mode aiter: 0.927
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.923
+Found GSM8K accuracy for mode aiter: 0.922
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.923
+Found GSM8K accuracy for mode aiter: 0.921
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.929
+Found GSM8K accuracy for mode aiter: 0.928
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.923
+Found GSM8K accuracy for mode aiter: 0.925
+Found GSM8K accuracy (single run) for mode aiter: 0.921
+Found GSM8K accuracy for mode aiter: 0.92
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Date 20251004, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251002, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251003, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251001, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251006, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251008, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20250929, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251009, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+
+Kept 1 date+variant combinations with complete and valid data: [('20250929', 'standard')]
+Total records after filtering: 5
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/GROK2/GROK2_FP8_online_all_variants_aiter_summary_smci355-ccs-aus-m12-33.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20250929: Complete and valid data for all modes and request_rates
+
+Kept 1 dates with complete and valid data for plotting
+Total records after filtering: 5
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online/20251022_GROK2_online_standard.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
