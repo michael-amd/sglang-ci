@@ -1,0 +1,84 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-10-31 15:15:33 PDT
+Timezone: PDT (-0700)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+Hardware: mi30x
+ROCM Version: rocm630
+Docker image: rocm/sgl-dev:v0.5.4.post1-rocm630-mi30x-20251031
+Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t10-23
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 130 seconds
+
+GSM8K Test Results:
+  Total duration: 271 seconds
+  Average accuracy: 0.939
+  Number of runs: 5
+  GSM8K accuracy: 0.939
+
+Serving Benchmark Results:
+  Start time: 2025-10-31 15:22:14 PDT
+  Concurrency 128, Run 1: 267 seconds
+Completed concurrency 128 - Total time: 269 seconds
+  Concurrency 64, Run 1: 374 seconds
+Completed concurrency 64 - Total time: 376 seconds
+  Concurrency 16, Run 1: 209 seconds
+Completed concurrency 16 - Total time: 211 seconds
+  Concurrency 4, Run 1: 553 seconds
+Completed concurrency 4 - Total time: 555 seconds
+  Concurrency 1, Run 1: 2131 seconds
+Completed concurrency 1 - Total time: 2133 seconds
+  End time: 2025-10-31 16:21:30 PDT
+  Total duration: 3556 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: 62198.10 ms
+  TTFT: 10960.19 ms
+  ITL: 51.78 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 64:
+  E2E Latency: 44520.88 ms
+  TTFT: 6015.93 ms
+  ITL: 42.82 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 16:
+  E2E Latency: 23569.85 ms
+  TTFT: 1950.48 ms
+  ITL: 26.19 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 4:
+  E2E Latency: 16700.69 ms
+  TTFT: 189.04 ms
+  ITL: 20.66 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 1:
+  E2E Latency: 16488.88 ms
+  TTFT: 104.21 ms
+  ITL: 20.50 ms
+  Output throughput: (tok/s): tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-10-31 16:21:30 PDT
+Total execution time: 3957 seconds (65 minutes)
+========================================
