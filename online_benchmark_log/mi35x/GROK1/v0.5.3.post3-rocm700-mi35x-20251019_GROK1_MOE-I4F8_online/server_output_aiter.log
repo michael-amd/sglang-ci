@@ -1,0 +1,62 @@
+INFO 10-19 10:00:47 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:60: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 708, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 321, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 531, in cached_files
+    resolved_files = [
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 532, in <listcomp>
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 144, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 11, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3505, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3154, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 258, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 535, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 839, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3164, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2973, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 183, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1250, in from_pretrained
+    config_dict, unused_kwargs = PretrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 649, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 731, in _get_config_dict
+    raise OSError(
+OSError: Can't load the configuration of '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8' is the correct path to a directory containing a config.json file
