@@ -1,0 +1,182 @@
+=== CONFIGURATION ===
+Model: deepseek (variant: DeepSeek-V3)
+Data directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324
+Output prefix: DeepSeek-V3-0324_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-V3-0324/online
+Model name: DeepSeek-V3-0324
+Mode filter: aiter
+Variant filter: all variants
+Load metric: concurrency
+Expected concurrencys: [1, 4, 16, 64, 128]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_dp_attention/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_dp_attention.csv.
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.946
+Mapped default GSM8K accuracy to mode aiter: 0.946
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.933
+Mapped default GSM8K accuracy to mode aiter: 0.933
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.935
+Mapped default GSM8K accuracy to mode aiter: 0.935
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile.csv.
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_torch_compile/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_torch_compile.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_dp_attention/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online_dp_attention.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.935
+Mapped default GSM8K accuracy to mode aiter: 0.935
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online/v0.5.3rc0-rocm630-mi30x-20250919_DeepSeek-V3-0324_FP8_online.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.942
+Mapped default GSM8K accuracy to mode aiter: 0.942
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_dp_attention/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_dp_attention.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_torch_compile/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_torch_compile.csv.
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_dp_attention/v0.5.3rc0-rocm630-mi30x-20250922_DeepSeek-V3-0324_FP8_online_dp_attention.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.941
+Mapped default GSM8K accuracy to mode aiter: 0.941
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.938
+Mapped default GSM8K accuracy to mode aiter: 0.938
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_torch_compile/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_torch_compile.csv.
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile/v0.5.3rc0-rocm630-mi30x-20250921_DeepSeek-V3-0324_FP8_online_dp_attention_torch_compile.csv.
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online_torch_compile/v0.5.3rc0-rocm630-mi30x-20250920_DeepSeek-V3-0324_FP8_online_torch_compile.csv.
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Could not find or parse request rates line in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_torch_compile/v0.5.3rc0-rocm630-mi30x-20250923_DeepSeek-V3-0324_FP8_online_torch_compile.csv.
+Date 20251014, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251006, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251008, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250928, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251015, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250929, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251017, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250921, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251001, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250924, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250923, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251011, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250920, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251009, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250930, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251010, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250922, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250927, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250919, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251003, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251007, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251005, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251016, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250925, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20250926, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251013, Variant standard: Complete and valid data for all modes and concurrencys
+
+Kept 26 date+variant combinations with complete and valid data: [('20250919', 'standard'), ('20250920', 'standard'), ('20250921', 'standard'), ('20250922', 'standard'), ('20250923', 'standard'), ('20250924', 'standard'), ('20250925', 'standard'), ('20250926', 'standard'), ('20250927', 'standard'), ('20250928', 'standard'), ('20250929', 'standard'), ('20250930', 'standard'), ('20251001', 'standard'), ('20251003', 'standard'), ('20251005', 'standard'), ('20251006', 'standard'), ('20251007', 'standard'), ('20251008', 'standard'), ('20251009', 'standard'), ('20251010', 'standard'), ('20251011', 'standard'), ('20251013', 'standard'), ('20251014', 'standard'), ('20251015', 'standard'), ('20251016', 'standard'), ('20251017', 'standard')]
+Total records after filtering: 130
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/DeepSeek-V3-0324_FP8_online_all_variants_aiter_summary_dell300x-pla-t10-23.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20250919: Complete and valid data for all modes and concurrencys
+Date 20250920: Complete and valid data for all modes and concurrencys
+Date 20250921: Complete and valid data for all modes and concurrencys
+Date 20250922: Complete and valid data for all modes and concurrencys
+Date 20250923: Complete and valid data for all modes and concurrencys
+Date 20250924: Complete and valid data for all modes and concurrencys
+Date 20250925: Complete and valid data for all modes and concurrencys
+Date 20250926: Complete and valid data for all modes and concurrencys
+Date 20250927: Complete and valid data for all modes and concurrencys
+Date 20250928: Complete and valid data for all modes and concurrencys
+Date 20250929: Complete and valid data for all modes and concurrencys
+Date 20250930: Complete and valid data for all modes and concurrencys
+Date 20251001: Complete and valid data for all modes and concurrencys
+Date 20251003: Complete and valid data for all modes and concurrencys
+Date 20251005: Complete and valid data for all modes and concurrencys
+Date 20251006: Complete and valid data for all modes and concurrencys
+Date 20251007: Complete and valid data for all modes and concurrencys
+Date 20251008: Complete and valid data for all modes and concurrencys
+Date 20251009: Complete and valid data for all modes and concurrencys
+Date 20251010: Complete and valid data for all modes and concurrencys
+Date 20251011: Complete and valid data for all modes and concurrencys
+Date 20251013: Complete and valid data for all modes and concurrencys
+Date 20251014: Complete and valid data for all modes and concurrencys
+Date 20251015: Complete and valid data for all modes and concurrencys
+Date 20251016: Complete and valid data for all modes and concurrencys
+Date 20251017: Complete and valid data for all modes and concurrencys
+
+Kept 26 dates with complete and valid data for plotting
+Total records after filtering: 130
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-V3-0324/online/20251017_DeepSeek-V3-0324_online_standard.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
