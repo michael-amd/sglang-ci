@@ -1,0 +1,116 @@
+=== CONFIGURATION ===
+Model: grok (variant: GROK1)
+Data directory: /mnt/raid/michael/sglang-ci/online/GROK1
+Output prefix: GROK1_MOE-I4F8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/GROK1/online
+Model name: GROK1
+Mode filter: aiter
+Variant filter: all variants
+Load metric: request_rate
+Expected request_rates: [1, 2, 4, 8, 16]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Found GSM8K accuracy (single run) for mode aiter: 0.814
+Found GSM8K accuracy for mode aiter: 0.815
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.821
+Found GSM8K accuracy for mode aiter: 0.82
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 2
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 4
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 2
+Warning: Missing data for aiter, TTFT_ms, request_rate 4
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 2
+Warning: Missing data for aiter, ITL_ms, request_rate 4
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.815
+Found GSM8K accuracy for mode aiter: 0.816
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.819
+Found GSM8K accuracy for mode aiter: 0.818
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.81
+Found GSM8K accuracy for mode aiter: 0.809
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.81
+Found GSM8K accuracy for mode aiter: 0.808
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.826
+Found GSM8K accuracy for mode aiter: 0.824
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.811
+Found GSM8K accuracy for mode aiter: 0.811
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.825
+Found GSM8K accuracy for mode aiter: 0.825
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.826
+Found GSM8K accuracy for mode aiter: 0.824
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.823
+Found GSM8K accuracy for mode aiter: 0.824
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Date 20251105, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251110, Variant standard, Mode aiter, Request_rate 2: Missing valid data for one or more performance metrics
+Date 20251103, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251101, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251107, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251108, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251104, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251030, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251111, Variant standard, Mode aiter, Request_rate 16: Missing valid data for one or more performance metrics
+Date 20251109, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+Date 20251031, Variant standard, Mode aiter, Request_rate 8: Missing valid data for one or more performance metrics
+
+No date+variant combinations found with complete and valid data for all request_rates [1, 2, 4, 8, 16]
+No data processed. Skipping CSV generation.
+ERROR: Failed to generate summary CSV. Exiting.
