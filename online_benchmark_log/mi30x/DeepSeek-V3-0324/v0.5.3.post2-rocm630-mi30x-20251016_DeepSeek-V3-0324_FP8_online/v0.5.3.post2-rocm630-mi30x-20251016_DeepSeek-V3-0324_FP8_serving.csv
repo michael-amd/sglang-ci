@@ -1,0 +1,13 @@
+Online Serving Benchmark - DeepSeek-V3-0324 (v0.5.3.post2-rocm630-mi30x-20251016)
+
+Median E2E Latency (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-V3-0324-FP8	61088.63	43683.29	20925.93	16717.90	16493.38
+
+Median TTFT (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-V3-0324-FP8	10765.75	5928.41	311.37	185.93	103.30
+
+Median ITL (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-V3-0324-FP8	51.10	42.02	25.80	20.69	20.51
