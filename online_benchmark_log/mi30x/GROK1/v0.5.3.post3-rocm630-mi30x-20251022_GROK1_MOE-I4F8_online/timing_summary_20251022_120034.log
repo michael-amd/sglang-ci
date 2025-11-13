@@ -1,0 +1,15 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-10-22 12:00:34 PDT
+Timezone: PDT (-0700)
+Command: perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2115793fe51a4371bcedd8ff67ff0418/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hzr6aH40CKrySSK64uAnsmVIR8ynAkIRTH65z-wqxNA
+Hardware: mi30x
+ROCM Version: rocm630
+Docker image: rocm/sgl-dev:v0.5.3.post3-rocm630-mi30x-20251022
+Model: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+Hostname: dell300x-pla-t10-23
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
