@@ -1,0 +1,83 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-08 10:45:33 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+Hardware: mi30x
+ROCM Version: rocm630
+Docker image: rocm/sgl-dev:v0.5.5-rocm630-mi30x-20251108
+Model: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+Hostname: dell300x-pla-t10-23
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 296 seconds
+
+GSM8K Test Results:
+  Total duration: 228 seconds
+  Average accuracy: 0.818
+  Number of runs: 5
+  GSM8K accuracy: 0.818
+
+Client Benchmark Results:
+  Start time: 2025-11-08 10:54:18 PST
+  Rate 1, Run 1: 363 seconds
+Completed rate 1 - Total time: 363 seconds
+  Rate 2, Run 1: 337 seconds
+Completed rate 2 - Total time: 337 seconds
+  Rate 4, Run 1: 319 seconds
+Completed rate 4 - Total time: 319 seconds
+  Rate 8, Run 1: 347 seconds
+Completed rate 8 - Total time: 347 seconds
+  Rate 16, Run 1: 240 seconds
+Completed rate 16 - Total time: 240 seconds
+  End time: 2025-11-08 11:21:16 PST
+  Total duration: 1618 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 10388.86 ms
+  TTFT: 98.10 ms
+  ITL: 17.78 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 12599.63 ms
+  TTFT: 104.79 ms
+  ITL: 22.23 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 12637.64 ms
+  TTFT: 106.49 ms
+  ITL: 18.64 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 25307.22 ms
+  TTFT: 152.02 ms
+  ITL: 28.89 ms
+  Throughput: N/A requests/s
+
+Request Rate 16:
+  E2E Latency: 77601.16 ms
+  TTFT: 187.20 ms
+  ITL: 82.99 ms
+  Throughput: N/A requests/s
+
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-08 11:21:18 PST
+Total execution time: 2145 seconds (35 minutes)
+========================================
