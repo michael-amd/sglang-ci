@@ -865,6 +865,35 @@ check_server_errors_and_log() {
 }
 
 ###############################################################################
+# Server Health Check Function
+#
+# Verifies that the SGLang server is alive and responding.
+# Returns 0 if server is healthy, 1 if server is down or unresponsive.
+###############################################################################
+check_server_alive() {
+    local port="${1:-$GSM8K_PORT}"
+    local host="${2:-$GSM8K_HOST}"
+    local timeout="${3:-5}"
+
+    # Check if server process is still running
+    if [ -n "$SERVER_PID" ]; then
+        if ! ps -p "$SERVER_PID" > /dev/null 2>&1; then
+            return 1
+        fi
+    else
+        # If SERVER_PID is not set, we can't verify process status
+        echo "⚠️  Warning: SERVER_PID not set, skipping process check"
+    fi
+
+    # Check if server endpoint is responsive
+    if ! curl -s -f --max-time "$timeout" "${host}:${port}${HEALTH_CHECK_ENDPOINT}" > /dev/null 2>&1; then
+        return 1
+    fi
+
+    return 0
+}
+
+###############################################################################
 # GSM8K Online Benchmark Function
 #
 # This function runs the GSM8K test multiple times, computes the average accuracy,
@@ -872,11 +901,12 @@ check_server_errors_and_log() {
 #
 # The function:
 # 1. Runs the GSM8K test for the configured number of iterations
-# 2. Extracts accuracy from each run's output
-# 3. Computes the average accuracy across all runs
-# 4. Extracts throughput and latency metrics from the combined output
-# 5. Writes structured results to CSV
-# 6. Validates that accuracy meets the configured threshold
+# 2. Checks server health between runs and restarts if needed (NEW)
+# 3. Extracts accuracy from each run's output
+# 4. Computes the average accuracy across all runs
+# 5. Extracts throughput and latency metrics from the combined output
+# 6. Writes structured results to CSV
+# 7. Validates that accuracy meets the configured threshold
 #
 # Returns:
 #   0 if accuracy meets threshold, 1 otherwise
@@ -886,9 +916,12 @@ run_gsm8k_benchmark() {
     local total_accuracy=0
     local runs=$GSM8K_RUNS
     local run_count=0
+    local valid_run_count=0
     local run_accuracy=0
     local output
     local all_outputs=""
+    # Define threshold for valid accuracy (runs below this are considered failed)
+    local MIN_VALID_ACCURACY=0.1
 
     echo "Starting GSM8K Online Benchmark..."
     echo "Running $runs test iterations..."
@@ -896,6 +929,48 @@ run_gsm8k_benchmark() {
 
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
+         # Check server health before each run (except the first)
+         if [ $i -gt 1 ]; then
+             echo "" | tee -a "$GSM8K_LOG_FILE"
+             echo "Checking server health before Run $i..." | tee -a "$GSM8K_LOG_FILE"
+             if ! check_server_alive "$GSM8K_PORT" "$GSM8K_HOST"; then
+                 echo "❌ Server is not responding! Attempting restart..." | tee -a "$GSM8K_LOG_FILE"
+
+                 # Log the server failure to timing summary
+                 echo "" >> "$TIMING_LOG"
+                 echo "Server Health Check (before Run $i):" >> "$TIMING_LOG"
+                 echo "  Status: FAILED - server crashed or became unresponsive" >> "$TIMING_LOG"
+
+                 # Kill old server if still running (zombie process)
+                 if [ -n "$SERVER_PID" ]; then
+                     echo "Terminating crashed server process (PID: $SERVER_PID)..." | tee -a "$GSM8K_LOG_FILE"
+                     kill -9 "$SERVER_PID" 2>/dev/null || true
+                     wait "$SERVER_PID" 2>/dev/null || true
+                 fi
+
+                 # Check for OOM in server logs
+                 if [ -f "$SERVER_LOG_FILE" ] && tail -100 "$SERVER_LOG_FILE" | grep -q -E "(OutOfMemoryError|Killed|OOM)"; then
+                     echo "⚠️  OOM detected in server logs - consider reducing memory settings" | tee -a "$GSM8K_LOG_FILE"
+                     echo "  OOM detected: YES" >> "$TIMING_LOG"
+                 fi
+
+                 # Attempt to restart server
+                 echo "Restarting SGLang server..." | tee -a "$GSM8K_LOG_FILE"
+                 start_sglang_server
+
+                 # Verify restart was successful
+                 if ! check_server_alive "$GSM8K_PORT" "$GSM8K_HOST"; then
+                     echo "❌ Failed to restart server! Aborting remaining runs." | tee -a "$GSM8K_LOG_FILE"
+                     echo "  Restart attempt: FAILED" >> "$TIMING_LOG"
+                     break
+                 fi
+                 echo "✅ Server restarted successfully" | tee -a "$GSM8K_LOG_FILE"
+                 echo "  Restart attempt: SUCCESS" >> "$TIMING_LOG"
+             else
+                 echo "✅ Server is healthy" | tee -a "$GSM8K_LOG_FILE"
+             fi
+         fi
+
          local run_start_time=$(date +%s)
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
          output=$(python3 "${GSM8K_SCRIPT}" --num-questions "$GSM8K_NUM_QUESTIONS" --parallel "$GSM8K_PARALLEL" --num-shots "$GSM8K_NUM_SHOTS" --port "$GSM8K_PORT" --host "$GSM8K_HOST" 2>&1)
@@ -905,33 +980,56 @@ run_gsm8k_benchmark() {
          echo "Run $i completed in ${run_duration} seconds" | tee -a "$GSM8K_LOG_FILE"
          all_outputs="$all_outputs$output"$'\n'
 
-         # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
-         run_accuracy=$(echo "$output" | tr '\r' '\n' | awk '/^Accuracy: / {print $2; exit}')
-         if [ -z "$run_accuracy" ]; then
-            echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
-            run_accuracy=0
+         # Check if the run failed due to connection issues
+         if echo "$output" | grep -q -E "(Connection refused|ConnectionRefusedError|Remote end closed connection)"; then
+             echo "⚠️  Connection error detected during Run $i" | tee -a "$GSM8K_LOG_FILE"
+             echo "  Connection error: YES (Run $i)" >> "$TIMING_LOG"
          fi
-         echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
-         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
-         run_count=$((run_count+1))
 
-         # Update progress after each GSM8K run completes
-         update_progress "GSM8K" "Run $i"
-    done
+        # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
+        run_accuracy=$(echo "$output" | tr '\r' '\n' | awk '/^Accuracy: / {print $2; exit}')
+        if [ -z "$run_accuracy" ]; then
+           echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
+           run_accuracy=0
+        fi
+        echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
 
-    local avg_accuracy
-    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
-    local end_time=$(date +%s)
-    local duration=$((end_time - start_time))
-    echo "GSM8K test completed in ${duration} seconds" | tee -a "$GSM8K_LOG_FILE"
-    echo "Average Accuracy over $runs runs: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
+        run_count=$((run_count+1))
+
+        # Only count runs with accuracy above minimum threshold
+        if awk "BEGIN {exit !($run_accuracy >= $MIN_VALID_ACCURACY)}"; then
+            total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+            valid_run_count=$((valid_run_count+1))
+            echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$GSM8K_LOG_FILE"
+        else
+            echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$GSM8K_LOG_FILE"
+        fi
+
+        # Update progress after each GSM8K run completes
+        update_progress "GSM8K" "Run $i"
+   done
+
+   local avg_accuracy
+   if [ $valid_run_count -gt 0 ]; then
+       avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_run_count" 'BEGIN { printf "%.3f", total/count }')
+   else
+       avg_accuracy=0
+       echo "⚠️  Warning: No valid runs found (all runs had accuracy < $MIN_VALID_ACCURACY)" | tee -a "$GSM8K_LOG_FILE"
+   fi
+   local end_time=$(date +%s)
+   local duration=$((end_time - start_time))
+   echo "GSM8K test completed in ${duration} seconds" | tee -a "$GSM8K_LOG_FILE"
+   echo "Total runs: $run_count, Valid runs: $valid_run_count, Excluded runs: $((run_count - valid_run_count))" | tee -a "$GSM8K_LOG_FILE"
+   echo "Average Accuracy over $valid_run_count valid runs: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
 
     # Log to timing summary
     echo "" >> "$TIMING_LOG"
     echo "GSM8K Test Results:" >> "$TIMING_LOG"
     echo "  Total duration: ${duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
-    echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  Total runs: $run_count" >> "$TIMING_LOG"
+    echo "  Valid runs: $valid_run_count" >> "$TIMING_LOG"
+    echo "  Excluded runs: $((run_count - valid_run_count))" >> "$TIMING_LOG"
     echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     # Extract performance metrics from the combined output
