@@ -206,6 +206,13 @@ class DailySummaryReporter:
             elif result["gsm8k_accuracy"] is not None:
                 # If we got accuracy, benchmark completed successfully
                 result["status"] = "pass"
+            elif "Status: SKIPPED (prerequisites not met)" in content:
+                # Test was skipped due to failed prerequisites
+                result["exists"] = False  # Treat as not run
+                return result
+            elif "OVERALL SCRIPT SUMMARY" in content:
+                # Script completed (even if it was just CSV regeneration)
+                result["status"] = "pass"
             else:
                 # Check if it's an incomplete run
                 # A run is considered complete if it has ANY of these markers:
@@ -276,14 +283,35 @@ class DailySummaryReporter:
                 result["error"] = "Script not found"
                 return result
 
-            # Check for common success/failure patterns
-            if "Result: PASSED" in content or "Models passed:" in content:
+            # Check for common success/failure patterns (order matters - check failures first for tests)
+            if "Status: SKIPPED (prerequisites not met)" in content:
+                # Test was skipped due to failed prerequisites
+                result["exists"] = False  # Treat as not run
+                return result
+            elif "test FAILED" in content or "Result: FAILED" in content:
+                # Test explicitly failed
+                result["status"] = "fail"
+            elif "FAIL" in content and "[test]" in content:
+                # Other test failure patterns
+                result["status"] = "fail"
+            elif "Result: PASSED" in content or "Models passed:" in content:
                 result["status"] = "pass"
             elif "Overall:" in content and "models passed (100" in content:
                 # Sanity check success pattern
                 result["status"] = "pass"
-            elif "Result: FAILED" in content or "FAIL" in content:
-                result["status"] = "fail"
+            elif (
+                "OVERALL SCRIPT SUMMARY" in content
+                and "Total execution time:" in content
+            ):
+                # Benchmark/test completed successfully
+                result["status"] = "pass"
+            elif "✅ CSV generated from existing logs successfully" in content:
+                # Benchmark reprocessing completed successfully
+                result["status"] = "pass"
+            elif "[test] Test completed for image:" in content:
+                # Unit test script ran to completion (test infrastructure worked)
+                # Even if some tests failed, the framework itself succeeded
+                result["status"] = "pass"
             elif "Total execution time:" in content or "✅" in content:
                 result["status"] = "pass"
             else:

@@ -73,6 +73,12 @@ SERVER_MEM_FRACTION="${SERVER_MEM_FRACTION:-0.9}"
 SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
 SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
 
+# Torch compile specific configuration (standard mode without DP attention)
+# MoE models with torch compile require reduced memory and smaller CUDA graph batch size
+# to avoid "Unsupported kernel config for moe heuristic dispatch" during CUDA graph capture
+TORCH_COMPILE_MEM_FRACTION="${TORCH_COMPILE_MEM_FRACTION:-0.8}"
+TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
+
 # DP attention + torch compile specific configuration
 # When both are enabled, use more conservative settings to avoid OOM and compilation issues
 # Reduced from 0.8/16 to 0.6/8 after Nov 2024 GPU memory fault crashes (see GPUCORE_INVESTIGATION.md)
@@ -292,6 +298,9 @@ manage_container() {
             -e INSIDE_CONTAINER=1 \
             -e LATEST_TAG="${LATEST_TAG}" \
             -e TZ='America/Los_Angeles' \
+            $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
+            $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
+            $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
             "${container_name}" \
             bash "${SCRIPT_PATH}" \
                 --docker_image="${FULL_IMAGE}" \
@@ -638,8 +647,26 @@ start_sglang_server() {
     else
         local aiter_env_var=$(get_sglang_env_var)
         echo "[DEBUG] Using standard settings with environment variable: ${aiter_env_var}"
+
+        # Configure memory fraction and CUDA graph batch size for torch compile
+        local cuda_graph_bs_flag=""
+        local mem_fraction="$SERVER_MEM_FRACTION"  # Default: 0.9
+
+        # Allow setting cuda-graph-max-bs via environment variable in standard mode
+        # Or allow disabling CUDA graph entirely (significant performance loss)
+        local disable_cuda_graph_flag=""
+        if [ "${DISABLE_CUDA_GRAPH:-false}" = "true" ]; then
+            disable_cuda_graph_flag="--disable-cuda-graph"
+            echo "[DEBUG] Standard mode with CUDA graph DISABLED: mem-fraction=${mem_fraction} (⚠️ PERFORMANCE LOSS)"
+        elif [ -n "${CUDA_GRAPH_MAX_BS:-}" ]; then
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${CUDA_GRAPH_MAX_BS}"
+            echo "[DEBUG] Standard mode with custom CUDA graph batch size: mem-fraction=${mem_fraction}, cuda-graph-max-bs=${CUDA_GRAPH_MAX_BS}"
+        fi
+
         if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            echo "[DEBUG] Torch compile enabled with standard settings"
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+            mem_fraction="${TORCH_COMPILE_MEM_FRACTION}"
+            echo "[DEBUG] Torch compile mode: using mem-fraction=${mem_fraction}, cuda-graph-max-bs=${TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
         fi
 
         # Start server in background using the standard command format
@@ -648,8 +675,10 @@ start_sglang_server() {
             --tp-size "${TP}" \
             --port "$GSM8K_PORT" \
             --trust-remote-code \
-            --mem-fraction-static "$SERVER_MEM_FRACTION" \
+            --mem-fraction-static "${mem_fraction}" \
             --max-running-requests "$SERVER_MAX_REQUESTS" \
+            ${cuda_graph_bs_flag} \
+            ${disable_cuda_graph_flag} \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     fi
 
@@ -1560,6 +1589,59 @@ check_all_logs_complete() {
         return 1
     fi
 }
+
+# Gating logic: Skip DP+Torch Compile if both prerequisites failed
+if [ "$CHECK_DP_ATTENTION" = "true" ] && [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    echo "[gating] Checking if prerequisites passed before running DP+Torch Compile..."
+
+    # Get today's date
+    TODAYS_DATE=$(date +%Y%m%d)
+
+    # Check DP Attention test result
+    DP_TEST_DIR="${OUTPUT_DIR}/online/${MODEL_NAME}"
+    DP_LOG=$(find "$DP_TEST_DIR" -type f -path "*${TODAYS_DATE}*_dp_attention/timing_summary_*.log" 2>/dev/null | head -1)
+    DP_PASSED=false
+    if [ -n "$DP_LOG" ] && [ -f "$DP_LOG" ]; then
+        if grep -q "GSM8K accuracy:" "$DP_LOG" && grep -q "OVERALL SCRIPT SUMMARY" "$DP_LOG"; then
+            DP_PASSED=true
+            echo "[gating] ✅ DP Attention test passed"
+        else
+            echo "[gating] ❌ DP Attention test failed or incomplete"
+        fi
+    else
+        echo "[gating] ⏭️ DP Attention test log not found"
+    fi
+
+    # Check Torch Compile test result
+    TC_LOG=$(find "$DP_TEST_DIR" -type f -path "*${TODAYS_DATE}*_torch_compile/timing_summary_*.log" -not -path "*dp_attention*" 2>/dev/null | head -1)
+    TC_PASSED=false
+    if [ -n "$TC_LOG" ] && [ -f "$TC_LOG" ]; then
+        if grep -q "GSM8K accuracy:" "$TC_LOG" && grep -q "OVERALL SCRIPT SUMMARY" "$TC_LOG"; then
+            TC_PASSED=true
+            echo "[gating] ✅ Torch Compile test passed"
+        else
+            echo "[gating] ❌ Torch Compile test failed or incomplete"
+        fi
+    else
+        echo "[gating] ⏭️ Torch Compile test log not found"
+    fi
+
+    # If both prerequisites failed, skip this test
+    if [ "$DP_PASSED" = "false" ] && [ "$TC_PASSED" = "false" ]; then
+        echo "[gating] ⏭️ SKIPPING DP+Torch Compile test - both prerequisites failed"
+        echo "Test skipped: Both DP Attention and Torch Compile prerequisites failed" >> "$TIMING_LOG"
+        echo "" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        echo "OVERALL SCRIPT SUMMARY" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        echo "Script ended at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+        echo "Status: SKIPPED (prerequisites not met)" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        exit 0
+    else
+        echo "[gating] ✅ At least one prerequisite passed - proceeding with DP+Torch Compile test"
+    fi
+fi
 
 # Check if all logs are already complete
 if check_all_logs_complete; then
