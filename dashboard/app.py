@@ -413,6 +413,28 @@ def api_upstream_ci_trends():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/test-history/<hardware>")
+@cache.cached(timeout=600, query_string=True)  # Cache for 10 minutes
+def api_test_history(hardware):
+    """Get individual test pass/fail history for specific hardware"""
+    if hardware not in ["mi30x", "mi35x"]:
+        return jsonify({"error": "Invalid hardware type"}), 400
+
+    # Get days parameter (default: 30 days)
+    days = request.args.get("days", 30, type=int)
+    days = min(days, 90)  # Cap at 90 days
+
+    try:
+        collector = get_data_collector(hardware)
+        test_history = collector.get_test_history(days=days)
+
+        return jsonify(
+            {"hardware": hardware, "days": days, "test_history": test_history}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # Static file serving for logs and plots
 
 
