@@ -1645,7 +1645,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     fi
 
     # For MI355 hardware, exclude rate 16 for grok/grok2 (known scheduler timeout limitation)
-    if [[ "${HARDWARE}" == *"mi35"* && ("${MODEL}" == "grok" || "${MODEL}" == "grok2") ]]; then
+    if [[ "${HARDWARE_TYPE}" == *"mi35"* && ("${MODEL}" == "grok" || "${MODEL}" == "grok2") ]]; then
       PYTHON_ARGS="${PYTHON_ARGS} --request-rates '1,2,4,8'"
       echo "[nightly] MI355 hardware detected for ${MODEL} - using request rates [1, 2, 4, 8] (excluding 16)"
     fi
