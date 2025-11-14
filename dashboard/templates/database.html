@@ -157,7 +157,7 @@
                     </select>
                 </div>
                 <div class="col-6 col-md-3">
-                    <label for="testSelect" class="db-filter-label">Benchmark</label>
+                    <label for="testSelect" class="db-filter-label">Test Type</label>
                     <select class="form-select" id="testSelect">
                         <option value="all">All Tests</option>
                     </select>
@@ -229,12 +229,28 @@
                     </div>
 
                     <div class="mb-3">
-                        <h6>Benchmark Results</h6>
+                        <h6>Validation & Checks</h6>
+                        <div class="table-responsive small-table">
+                            <table class="table table-sm" id="selectedValidationTable">
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Status</th>
+                                        <th>Runtime</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Benchmarks & Integration Tests</h6>
                         <div class="table-responsive small-table">
                             <table class="table table-sm" id="selectedBenchmarksTable">
                                 <thead>
                                     <tr>
-                                        <th>Benchmark</th>
+                                        <th>Test Name</th>
                                         <th>Status</th>
                                         <th>GSM8K</th>
                                         <th>Runtime</th>
@@ -265,10 +281,10 @@
         </div>
     </div>
 
-    <!-- Benchmark Trends Table -->
+    <!-- Test Results Table -->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Benchmark Results (Filtered)</h5>
+            <h5 class="mb-0">Test Results (Filtered)</h5>
             <span class="badge bg-light text-dark" id="benchmarkFilterLabel">All Tests</span>
         </div>
         <div class="card-body p-0">
@@ -277,7 +293,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Date</th>
-                            <th>Benchmark</th>
+                            <th>Test Name</th>
                             <th>Status</th>
                             <th>GSM8K</th>
                             <th>Runtime</th>
@@ -527,7 +543,7 @@ function renderSummaryCards(data) {
         <div class="col-md-3">
             <div class="card summary-card">
                 <div class="card-body">
-                    <div class="card-title">Benchmark Results</div>
+                    <div class="card-title">Test Results</div>
                     <div class="card-value text-primary">${benchmarkSummary.pass_rate || 0}%</div>
                     <p class="text-muted mb-0">${benchmarkSummary.passed || 0} / ${benchmarkSummary.total || 0} passed</p>
                 </div>
@@ -581,6 +597,7 @@ function renderDailyRuns(runs) {
 function renderSelectedRun(selectedRun) {
     const label = document.getElementById('selectedRunLabel');
     const summaryContainer = document.getElementById('selectedRunSummary');
+    const validationTableBody = document.querySelector('#selectedValidationTable tbody');
     const benchmarkTableBody = document.querySelector('#selectedBenchmarksTable tbody');
     const sanityTableBody = document.querySelector('#selectedSanityTable tbody');
     const logsContainer = document.getElementById('selectedRunLogs');
@@ -588,6 +605,7 @@ function renderSelectedRun(selectedRun) {
     if (!selectedRun) {
         if (label) label.textContent = 'No run selected';
         if (summaryContainer) summaryContainer.innerHTML = '<p class="text-muted">No run data available.</p>';
+        if (validationTableBody) validationTableBody.innerHTML = '';
         if (benchmarkTableBody) benchmarkTableBody.innerHTML = '';
         if (sanityTableBody) sanityTableBody.innerHTML = '';
         if (logsContainer) logsContainer.innerHTML = '';
@@ -638,19 +656,46 @@ function renderSelectedRun(selectedRun) {
         }
     }
 
-    if (benchmarkTableBody) {
-        const benchmarks = selectedRun.benchmark_results || [];
-        if (!benchmarks.length) {
-            benchmarkTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">No benchmark data</td></tr>';
-        } else {
-            benchmarkTableBody.innerHTML = benchmarks.map((bench) => `
-                <tr>
-                    <td>${bench.benchmark_name}</td>
-                    <td>${statusBadge(bench.status)}</td>
-                    <td>${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
-                    <td>${bench.runtime_minutes ? bench.runtime_minutes + 'm' : '—'}</td>
-                </tr>
-            `).join('');
+    // Split test results into validation and benchmarks
+    if (benchmarkTableBody || validationTableBody) {
+        const allTests = selectedRun.benchmark_results || [];
+
+        // Define validation test names
+        const validationTests = ['Unit Tests', 'PD Disaggregation Tests', 'Docker Image Check'];
+
+        // Split tests into two categories
+        const validation = allTests.filter(test => validationTests.includes(test.benchmark_name));
+        const benchmarks = allTests.filter(test => !validationTests.includes(test.benchmark_name));
+
+        // Render validation tests (no GSM8K column)
+        if (validationTableBody) {
+            if (!validation.length) {
+                validationTableBody.innerHTML = '<tr><td colspan="3" class="text-muted">No validation data</td></tr>';
+            } else {
+                validationTableBody.innerHTML = validation.map((test) => `
+                    <tr>
+                        <td>${test.benchmark_name}</td>
+                        <td>${statusBadge(test.status)}</td>
+                        <td>${test.runtime_minutes ? test.runtime_minutes + 'm' : '—'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Render benchmarks (with GSM8K column)
+        if (benchmarkTableBody) {
+            if (!benchmarks.length) {
+                benchmarkTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">No benchmark data</td></tr>';
+            } else {
+                benchmarkTableBody.innerHTML = benchmarks.map((bench) => `
+                    <tr>
+                        <td>${bench.benchmark_name}</td>
+                        <td>${statusBadge(bench.status)}</td>
+                        <td>${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
+                        <td>${bench.runtime_minutes ? bench.runtime_minutes + 'm' : '—'}</td>
+                    </tr>
+                `).join('');
+            }
         }
     }
 
@@ -679,7 +724,7 @@ function renderBenchmarkRange(data) {
     tableBody.innerHTML = '';
 
     if (!benchmarks.length) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No benchmark data for selected range.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No test data for selected range.</td></tr>';
     } else {
         tableBody.innerHTML = benchmarks.map((bench) => `
             <tr>
