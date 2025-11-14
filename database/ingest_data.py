@@ -108,6 +108,109 @@ class DataIngester:
 
         return None
 
+    def get_detail_log_url(
+        self, benchmark_name: str, date_str: str, hardware: str
+    ) -> str:
+        """
+        Generate specific detail log URL based on test type - points to actual log file
+
+        Args:
+            benchmark_name: Name of the benchmark/test
+            date_str: Date in YYYYMMDD format
+            hardware: Hardware type
+
+        Returns:
+            GitHub URL to specific log file for this test
+        """
+        # Benchmark tests - find specific result directory with timing_summary log
+        if (
+            "Online Benchmark" in benchmark_name
+            or "DP Attention" in benchmark_name
+            or "Torch Compile" in benchmark_name
+        ):
+            if hardware == "mi35x":
+                model = "DeepSeek-R1-MXFP4-Preview"
+            else:
+                model = "DeepSeek-V3-0324"
+
+            if "Grok 2" in benchmark_name:
+                model = "GROK2"
+            elif "Grok" in benchmark_name and "Grok 2" not in benchmark_name:
+                model = "GROK1"
+
+            # Try to find the specific result directory for this date
+            # Check local online/ directory to find the actual result dir name
+            online_path = os.path.join(self.base_dir, "online", model)
+            result_dir = None
+
+            if os.path.exists(online_path):
+                # Find directories matching this date and test type
+                for entry in os.listdir(online_path):
+                    if date_str in entry and "_online" in entry:
+                        # Check if this is the right type (e.g., dp_attention, torch_compile, or plain online)
+                        if (
+                            "DP Attention" in benchmark_name
+                            and "dp_attention" in entry.lower()
+                        ):
+                            result_dir = entry
+                            break
+                        elif (
+                            "Torch Compile" in benchmark_name
+                            and "torch_compile" in entry.lower()
+                            and "dp_attention" not in entry.lower()
+                        ):
+                            result_dir = entry
+                            break
+                        elif (
+                            "DP+Torch Compile" in benchmark_name
+                            and "dp_attention" in entry.lower()
+                            and "torch_compile" in entry.lower()
+                        ):
+                            result_dir = entry
+                            break
+                        elif (
+                            "Online Benchmark" in benchmark_name
+                            and "dp_attention" not in entry.lower()
+                            and "torch_compile" not in entry.lower()
+                            and entry.endswith("_online")
+                        ):
+                            result_dir = entry
+                            break
+
+            # If found specific directory, point to it; otherwise point to model directory
+            if result_dir:
+                return f"https://github.com/{self.github_repo}/tree/log/online_benchmark_log/{hardware}/{model}/{result_dir}"
+            else:
+                return f"https://github.com/{self.github_repo}/tree/log/online_benchmark_log/{hardware}/{model}"
+
+        # Sanity check - find specific date directory
+        elif "Sanity" in benchmark_name:
+            sanity_path = os.path.join(
+                self.base_dir, "test", "sanity_check_log", hardware
+            )
+            if os.path.exists(sanity_path):
+                # Find directory matching this date
+                for entry in os.listdir(sanity_path):
+                    if date_str in entry:
+                        return f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{hardware}/{entry}"
+            return f"https://github.com/{self.github_repo}/tree/log/test/sanity_check_log/{hardware}"
+
+        # PD tests - specific log file
+        elif "PD" in benchmark_name or "Disaggregation" in benchmark_name:
+            return f"https://github.com/{self.github_repo}/blob/log/cron_log/{hardware}/{date_str}/test_nightly_pd.log"
+
+        # Unit tests - specific log file
+        elif "Unit Test" in benchmark_name:
+            return f"https://github.com/{self.github_repo}/blob/log/cron_log/{hardware}/{date_str}/test_nightly.log"
+
+        # Docker check - no detail log (only has cron log)
+        elif "Docker" in benchmark_name:
+            return None  # No detail log for docker check
+
+        # Others - use cron log directory
+        else:
+            return f"https://github.com/{self.github_repo}/tree/log/cron_log/{hardware}/{date_str}"
+
     def parse_runtime(self, runtime_str: Optional[str]) -> Optional[int]:
         """
         Parse runtime string to minutes
@@ -226,6 +329,141 @@ class DataIngester:
             # Get docker image
             docker_image = self.get_docker_image(date_str, hardware)
 
+            # Extract actual start time from logs
+            run_datetime_pt = None
+
+            # Try to parse from latest cron log or detail log
+            # Priority: Detail log (more accurate) > Cron log
+            import re
+            from datetime import datetime
+
+            # Try detail logs first (timing_summary from online benchmarks)
+            online_dirs = []
+            if hardware == "mi35x":
+                model_names = ["DeepSeek-R1-MXFP4-Preview", "GROK2", "GROK1"]
+            else:
+                model_names = ["DeepSeek-V3-0324", "GROK2", "GROK1"]
+
+            for model_name in model_names:
+                online_path = os.path.join(self.base_dir, "online", model_name)
+                if os.path.exists(online_path):
+                    # Find directories matching this date
+                    for entry in os.listdir(online_path):
+                        if date_str in entry and "_online" in entry:
+                            online_dirs.append(os.path.join(online_path, entry))
+
+            # Sort by modification time (latest first)
+            online_dirs.sort(
+                key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0,
+                reverse=True,
+            )
+
+            for online_dir in online_dirs:
+                timing_logs = [
+                    f
+                    for f in os.listdir(online_dir)
+                    if f.startswith("timing_summary") and f.endswith(".log")
+                ]
+                if timing_logs:
+                    timing_log = os.path.join(online_dir, timing_logs[0])
+                    try:
+                        with open(
+                            timing_log, "r", encoding="utf-8", errors="ignore"
+                        ) as f:
+                            content = f.read(2000)  # Read first 2KB
+                            match = re.search(
+                                r"Script started at:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*(PST|PT)",
+                                content,
+                            )
+                            if match:
+                                timestamp_str = match.group(1)
+                                tz = match.group(2)
+                                dt = datetime.strptime(
+                                    timestamp_str, "%Y-%m-%d %H:%M:%S"
+                                )
+                                run_datetime_pt = dt.strftime("%Y-%m-%d %I:%M %p PT")
+                                break
+                    except:
+                        pass
+
+            # Fallback to cron log if detail log didn't have timestamp
+            if not run_datetime_pt:
+                cron_logs = [
+                    "deepseek_nightly_online.log",
+                    "grok2_nightly_online.log",
+                    "grok_nightly.log",
+                ]
+                for log_name in cron_logs:
+                    cron_log = os.path.join(
+                        self.base_dir, "cron", "cron_log", hardware, date_str, log_name
+                    )
+                    if os.path.exists(cron_log):
+                        try:
+                            with open(
+                                cron_log, "r", encoding="utf-8", errors="ignore"
+                            ) as f:
+                                content = f.read(2000)
+                                match = re.search(
+                                    r"Start time:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*(PST|PT)",
+                                    content,
+                                )
+                                if match:
+                                    timestamp_str = match.group(1)
+                                    dt = datetime.strptime(
+                                        timestamp_str, "%Y-%m-%d %H:%M:%S"
+                                    )
+                                    run_datetime_pt = dt.strftime(
+                                        "%Y-%m-%d %I:%M %p PT"
+                                    )
+                                    break
+                        except:
+                            pass
+
+            # Final fallback - use date only
+            if not run_datetime_pt:
+                run_datetime_pt = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]} (PT)"
+
+            # Generate GitHub log URLs
+            # Main summary log (daily_summary_alert.log)
+            github_log_url = f"https://github.com/{self.github_repo}/blob/log/cron_log/{hardware}/{date_str}/daily_summary_alert.log"
+
+            # Cron log varies by main test type
+            # Use the primary benchmark log as the cron log (most comprehensive)
+            if hardware == "mi35x":
+                cron_log_file = "deepseek_nightly_online.log"  # Main DeepSeek run
+            else:
+                cron_log_file = "deepseek_nightly_online.log"  # Main DeepSeek run
+
+            github_cron_log_url = f"https://github.com/{self.github_repo}/blob/log/cron_log/{hardware}/{date_str}/{cron_log_file}"
+
+            # Detail logs organized by test type:
+            # - Benchmarks: online/{model}/
+            # - Sanity: test/sanity_check_log/{hardware}/
+            # - PD: test/pd/pd_log/{hardware}/
+            # - Unit tests: test/unit-test-backend-8-gpu-CAR-amd/{hardware}/
+            # For now, point to main online logs directory
+            if hardware == "mi35x":
+                model_name = "DeepSeek-R1-MXFP4-Preview"
+            else:
+                model_name = "DeepSeek-V3-0324"
+
+            # Main detail log is the online benchmark directory
+            github_detail_log_url = (
+                f"https://github.com/{self.github_repo}/tree/log/online/{model_name}"
+            )
+
+            # Generate plot GitHub URL (first available plot)
+            plot_github_url = None
+            if hardware == "mi35x":
+                model_dir = "DeepSeek-R1-MXFP4-Preview"
+                suffix = "all"
+            else:
+                model_dir = "DeepSeek-V3-0324"
+                suffix = "standard"
+
+            plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
+            plot_github_url = f"https://github.com/{self.github_repo}/blob/log/plot/{hardware}/{model_dir}/online/{plot_filename}"
+
             # Create or update test run
             test_run_id = self.db.upsert_test_run(
                 run_date=date_str,
@@ -237,6 +475,11 @@ class DataIngester:
                 failed_tasks=stats["failed_tasks"],
                 unknown_tasks=stats["unknown_tasks"],
                 not_run=stats["not_run"],
+                run_datetime_pt=run_datetime_pt,
+                github_log_url=github_log_url,
+                github_cron_log_url=github_cron_log_url,
+                github_detail_log_url=github_detail_log_url,
+                plot_github_url=plot_github_url,
             )
 
             # Ingest benchmark results and validation tests
@@ -261,6 +504,11 @@ class DataIngester:
                     result = task_results[task_name]
 
                     if result.get("exists", False):
+                        # Generate detail log URL for this specific test
+                        detail_log_url = self.get_detail_log_url(
+                            task_name, date_str, hardware
+                        )
+
                         self.db.upsert_benchmark_result(
                             test_run_id=test_run_id,
                             benchmark_name=task_name,
@@ -269,6 +517,7 @@ class DataIngester:
                             runtime_minutes=self.parse_runtime(result.get("runtime")),
                             error_message=result.get("error"),
                             timing_log_path=None,  # Could extract from logs
+                            github_detail_log_url=detail_log_url,
                         )
 
             # Ingest sanity check results
@@ -310,7 +559,7 @@ class DataIngester:
                     "Grok 2 Online Benchmark": ("GROK2", ["standard"]),
                     "DeepSeek Online Benchmark": (
                         "DeepSeek-R1-MXFP4-Preview",
-                        ["all", "standard"],
+                        ["all"],  # Only "all" view for mi35x
                     ),
                 }
             else:  # mi30x
@@ -325,6 +574,15 @@ class DataIngester:
                     local_path, github_url = self.get_plot_urls(
                         date_str, hardware, model_dir, suffix
                     )
+
+                    # For mi35x, prioritize GitHub URLs even if local path doesn't exist
+                    if hardware == "mi35x":
+                        # Always generate GitHub URL for mi35x plots
+                        if not github_url:
+                            plot_filename = (
+                                f"{date_str}_{model_dir}_online_{suffix}.png"
+                            )
+                            github_url = f"https://raw.githubusercontent.com/{self.github_repo}/log/plot/{hardware}/{model_dir}/online/{plot_filename}"
 
                     if local_path or github_url:
                         self.db.upsert_plot_file(

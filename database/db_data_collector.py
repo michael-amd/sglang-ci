@@ -217,16 +217,42 @@ class DatabaseDataCollector:
                     if benchmark_name not in plots:
                         plots[benchmark_name] = []
 
+                    # Extract model dir from local path or github_url
+                    local_path = pf["local_path"]
+                    github_url = pf["github_url"]
+
+                    if local_path and "plots_server/" in local_path:
+                        # Extract: plots_server/MODEL/online/file.png -> MODEL/online/file.png
+                        model_path = local_path.split("plots_server/")[1]
+                    elif github_url and "/plot/" in github_url:
+                        # Extract from GitHub URL: .../plot/HARDWARE/MODEL/online/file.png
+                        parts = github_url.split("/plot/" + self.hardware + "/")
+                        if len(parts) > 1:
+                            model_path = parts[1]
+                        else:
+                            model_path = f"UNKNOWN/online/{date_str}_unknown_online_{pf['plot_suffix']}.png"
+                    else:
+                        # Construct from suffix and date
+                        model_path = f"UNKNOWN/online/{date_str}_unknown_online_{pf['plot_suffix']}.png"
+
                     # Generate URLs
-                    plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{pf['local_path']}"
-                    raw_url = f"/github-plots/{self.hardware}/{pf['local_path']}"
+                    plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_path}"
+                    raw_url = f"/github-plots/{self.hardware}/{model_path}"
+
+                    # For mi35x, prefer GitHub URL; for mi30x, prefer local
+                    use_github = (self.hardware == "mi35x") or not local_path
 
                     plots[benchmark_name].append(
                         {
                             "suffix": pf["plot_suffix"],
-                            "url": pf["github_url"] or plot_url,
+                            "url": github_url or plot_url,
                             "raw_url": raw_url,
-                            "local_available": pf["local_path"] is not None,
+                            "local_available": (
+                                local_path is not None and os.path.exists(local_path)
+                                if local_path
+                                else False
+                            ),
+                            "from_github": use_github,
                         }
                     )
 
