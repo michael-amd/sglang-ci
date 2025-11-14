@@ -119,3 +119,9 @@ Run 4: Accuracy: 0.939
 Checking server health before Run 5...
 ✅ Server is healthy
 Executing GSM8K test Run 5 ...
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post2-rocm700-mi30x-20251114 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251114_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251114
+scripts/perf_nightly.sh: line 1648: HARDWARE: unbound variable
+[nightly] Cleaning up process lock...
