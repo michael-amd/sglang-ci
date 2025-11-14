@@ -20,7 +20,7 @@ set -euo pipefail
 export TZ='America/Los_Angeles'
 
 # Configuration
-BASE_DIR="/mnt/raid/models/huggingface"
+BASE_DIR="/data"
 HUGGINGFACE_HUB_CACHE="${BASE_DIR}/.cache"
 
 # Model definitions

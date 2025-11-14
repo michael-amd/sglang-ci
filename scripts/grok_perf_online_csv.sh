@@ -796,6 +796,18 @@ declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 # Request rates array
 read -ra REQ_RATES <<< "$REQUEST_RATES"
 
+# Filter out rate 16 on MI355 hardware (for CSV headers and progress tracking)
+if [[ "${HARDWARE}" == *"mi35"* ]]; then
+    FILTERED_RATES=()
+    for rate in "${REQ_RATES[@]}"; do
+        if [ "$rate" -ne 16 ]; then
+            FILTERED_RATES+=("$rate")
+        fi
+    done
+    REQ_RATES=("${FILTERED_RATES[@]}")
+    echo "[online] MI355 hardware detected - CSV will use request rates: ${REQ_RATES[*]} (excluding 16)"
+fi
+
 # ---------------------------
 # 6c. Progress Tracking
 # ---------------------------
@@ -1085,9 +1097,9 @@ echo "Performance Summary:" >> "$TIMING_LOG"
 echo "===================" >> "$TIMING_LOG"
 for rate in "${REQ_RATES[@]}"; do
     echo "Request Rate ${rate}:" >> "$TIMING_LOG"
-    echo "  E2E Latency: ${best_e2e_aiter[$rate]} ms" >> "$TIMING_LOG"
-    echo "  TTFT: ${best_ttft_aiter[$rate]} ms" >> "$TIMING_LOG"
-    echo "  ITL: ${best_itl_aiter[$rate]} ms" >> "$TIMING_LOG"
+    echo "  E2E Latency: ${best_e2e_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
+    echo "  TTFT: ${best_ttft_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
+    echo "  ITL: ${best_itl_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
     throughput=$(extract_throughput "${ATTENTION_BACKEND}" "$rate")
     echo "  Throughput: ${throughput} requests/s" >> "$TIMING_LOG"
     echo "" >> "$TIMING_LOG"

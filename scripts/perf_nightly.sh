@@ -1509,6 +1509,9 @@ fi
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       -e TZ='America/Los_Angeles' \
+      $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
+      $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
+      $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
       "${CONTAINER_NAME}" \
       bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   else
@@ -1639,6 +1642,12 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       echo "[nightly] Using plot date from image tag: ${PLOT_DATE}"
     else
       echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
+    fi
+
+    # For MI355 hardware, exclude rate 16 for grok/grok2 (known scheduler timeout limitation)
+    if [[ "${HARDWARE}" == *"mi35"* && ("${MODEL}" == "grok" || "${MODEL}" == "grok2") ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --request-rates '1,2,4,8'"
+      echo "[nightly] MI355 hardware detected for ${MODEL} - using request rates [1, 2, 4, 8] (excluding 16)"
     fi
 
     # Determine the correct directory name for DeepSeek-V3
