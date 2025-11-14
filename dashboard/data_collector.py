@@ -403,3 +403,119 @@ class DashboardDataCollector:
         sorted_dates = sorted(list(dates_with_plots), reverse=True)[:max_days]
 
         return sorted_dates
+
+    def get_test_history(self, days: int = 30) -> Dict:
+        """
+        Get individual test pass/fail history for all tests
+
+        Args:
+            days: Number of days to include
+
+        Returns:
+            Dictionary with per-test history
+        """
+        dates = self.get_available_dates(max_days=days)
+
+        # Dictionary to store test history
+        # Format: {test_name: {"dates": [...], "status": [...], "details": [...]}}
+        test_history = {}
+
+        # All possible tests
+        all_tests = [
+            "Grok Online Benchmark",
+            "Grok 2 Online Benchmark",
+            "DeepSeek Online Benchmark",
+            "DeepSeek DP Attention Test",
+            "DeepSeek Torch Compile Test",
+            "DeepSeek DP+Torch Compile",
+            "Unit Tests",
+            "PD Disaggregation Tests",
+            "Docker Image Check",
+        ]
+
+        # Also include sanity check models as individual tests
+        sanity_models = []
+
+        for date_str in reversed(dates):  # Process oldest to newest
+            try:
+                task_results = self.collect_task_results(date_str)
+                sanity_results = self.parse_sanity_check_log(date_str)
+
+                # Format date for display
+                date_obj = datetime.strptime(date_str, "%Y%m%d")
+                display_date = date_obj.strftime("%Y-%m-%d")
+
+                # Process regular tasks
+                for test_name in all_tests:
+                    if test_name not in test_history:
+                        test_history[test_name] = {
+                            "dates": [],
+                            "status": [],
+                            "details": [],
+                        }
+
+                    if test_name in task_results:
+                        result = task_results[test_name]
+                        test_history[test_name]["dates"].append(display_date)
+                        test_history[test_name]["status"].append(result["status"])
+
+                        # Add details (runtime, error, accuracy)
+                        details = {}
+                        if result.get("runtime"):
+                            details["runtime"] = result["runtime"]
+                        if result.get("gsm8k_accuracy") is not None:
+                            details["gsm8k_accuracy"] = round(
+                                result["gsm8k_accuracy"] * 100, 1
+                            )
+                        if result.get("error"):
+                            details["error"] = result["error"]
+                        test_history[test_name]["details"].append(details)
+                    else:
+                        # Test didn't run this date
+                        test_history[test_name]["dates"].append(display_date)
+                        test_history[test_name]["status"].append("not_run")
+                        test_history[test_name]["details"].append({})
+
+                # Process sanity check models
+                if sanity_results:
+                    model_results = sanity_results["model_results"]
+                    for model_name, model_result in model_results.items():
+                        test_name = f"Sanity: {model_name}"
+
+                        # Track unique sanity models
+                        if model_name not in sanity_models:
+                            sanity_models.append(model_name)
+
+                        if test_name not in test_history:
+                            test_history[test_name] = {
+                                "dates": [],
+                                "status": [],
+                                "details": [],
+                            }
+
+                        test_history[test_name]["dates"].append(display_date)
+                        test_history[test_name]["status"].append(model_result["status"])
+
+                        details = {}
+                        if model_result.get("accuracy") is not None:
+                            details["accuracy"] = round(model_result["accuracy"], 2)
+                        test_history[test_name]["details"].append(details)
+
+                    # Add empty entries for sanity models that didn't run
+                    for model_name in sanity_models:
+                        test_name = f"Sanity: {model_name}"
+                        if test_name in test_history:
+                            # Check if we already added data for this date
+                            if (
+                                not test_history[test_name]["dates"]
+                                or test_history[test_name]["dates"][-1] != display_date
+                            ):
+                                test_history[test_name]["dates"].append(display_date)
+                                test_history[test_name]["status"].append("not_run")
+                                test_history[test_name]["details"].append({})
+
+            except Exception as e:
+                print(f"Warning: Could not process test history for {date_str}: {e}")
+                continue
+
+        return test_history

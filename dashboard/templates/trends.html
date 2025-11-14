@@ -143,6 +143,39 @@
     </div>
 </div>
 
+<!-- Individual Test History -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0"><i class="bi bi-list-check"></i> Individual Test History</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="testSelect">
+                            <option value="">Select a test...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="test-history-info" class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Select a test from the dropdown above to view its pass/fail history over time.
+                </div>
+                <div id="test-history-loading" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="test-history-chart" style="display: none;">
+                    <canvas id="testHistoryCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -151,6 +184,8 @@
     let statusDistChart = null;
     let accuracyChart = null;
     let runtimeChart = null;
+    let testHistoryChart = null;
+    let currentTestHistory = null;
 
     function showLoadingProgress() {
         document.getElementById('loading-progress').style.display = 'block';
@@ -194,22 +229,25 @@
 
         const startTime = Date.now();
 
-        fetch(`/api/trends/${hardware}?days=${days}`)
-            .then(response => {
+        // Fetch both trends and test history
+        Promise.all([
+            fetch(`/api/trends/${hardware}?days=${days}`).then(r => r.json()),
+            fetch(`/api/test-history/${hardware}?days=${days}`).then(r => r.json())
+        ])
+            .then(([trendsData, historyData]) => {
                 clearInterval(progressInterval);
                 updateProgressBar(95, 'Processing data...');
-                return response.json();
-            })
-            .then(data => {
+
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
                 updateProgressBar(100, `Completed in ${elapsed}s`);
 
                 setTimeout(() => {
                     hideLoadingProgress();
-                    renderPassRateTrend(data.trends);
-                    renderStatusDistribution(data.trends);
-                    renderAccuracyTrends(data.trends);
-                    renderRuntimeTrends(data.trends);
+                    renderPassRateTrend(trendsData.trends);
+                    renderStatusDistribution(trendsData.trends);
+                    renderAccuracyTrends(trendsData.trends);
+                    renderRuntimeTrends(trendsData.trends);
+                    loadTestHistory(historyData);
                 }, 500);
             })
             .catch(error => {
@@ -223,6 +261,170 @@
                 document.getElementById('loading-detail').textContent = error.message;
                 updateProgressBar(0);
             });
+    }
+
+    function loadTestHistory(data) {
+        currentTestHistory = data.test_history;
+
+        // Populate test selector dropdown
+        const testSelect = document.getElementById('testSelect');
+        testSelect.innerHTML = '<option value="">Select a test...</option>';
+
+        // Sort tests alphabetically
+        const testNames = Object.keys(currentTestHistory).sort();
+
+        // Group tests by category
+        const benchmarks = testNames.filter(t => t.includes('Benchmark'));
+        const tests = testNames.filter(t => t.includes('Test') && !t.includes('Sanity'));
+        const sanity = testNames.filter(t => t.includes('Sanity'));
+        const checks = testNames.filter(t => t.includes('Check') || t.includes('Unit') || t.includes('PD'));
+
+        // Add optgroups
+        if (benchmarks.length > 0) {
+            const benchmarkGroup = document.createElement('optgroup');
+            benchmarkGroup.label = 'Benchmarks';
+            benchmarks.forEach(test => {
+                const option = document.createElement('option');
+                option.value = test;
+                option.textContent = test;
+                benchmarkGroup.appendChild(option);
+            });
+            testSelect.appendChild(benchmarkGroup);
+        }
+
+        if (tests.length > 0) {
+            const testGroup = document.createElement('optgroup');
+            testGroup.label = 'Integration Tests';
+            tests.forEach(test => {
+                const option = document.createElement('option');
+                option.value = test;
+                option.textContent = test;
+                testGroup.appendChild(option);
+            });
+            testSelect.appendChild(testGroup);
+        }
+
+        if (sanity.length > 0) {
+            const sanityGroup = document.createElement('optgroup');
+            sanityGroup.label = 'Sanity Checks';
+            sanity.forEach(test => {
+                const option = document.createElement('option');
+                option.value = test;
+                option.textContent = test;
+                testGroup.appendChild(option);
+            });
+            testSelect.appendChild(sanityGroup);
+        }
+
+        if (checks.length > 0) {
+            const checkGroup = document.createElement('optgroup');
+            checkGroup.label = 'Validation Checks';
+            checks.forEach(test => {
+                const option = document.createElement('option');
+                option.value = test;
+                option.textContent = test;
+                checkGroup.appendChild(option);
+            });
+            testSelect.appendChild(checkGroup);
+        }
+    }
+
+    function renderTestHistory(testName) {
+        if (!currentTestHistory || !currentTestHistory[testName]) {
+            return;
+        }
+
+        document.getElementById('test-history-info').style.display = 'none';
+        document.getElementById('test-history-loading').style.display = 'none';
+        document.getElementById('test-history-chart').style.display = 'block';
+
+        const testData = currentTestHistory[testName];
+        const ctx = document.getElementById('testHistoryCanvas').getContext('2d');
+
+        if (testHistoryChart) {
+            testHistoryChart.destroy();
+        }
+
+        // Convert status to numeric values for display
+        // pass = 1, fail = -1, unknown = 0, not_run = null
+        const statusValues = testData.status.map(s => {
+            if (s === 'pass') return 1;
+            if (s === 'fail') return -1;
+            if (s === 'unknown') return 0;
+            return null;
+        });
+
+        // Create background colors based on status
+        const backgroundColors = testData.status.map(s => {
+            if (s === 'pass') return 'rgba(25, 135, 84, 0.8)';
+            if (s === 'fail') return 'rgba(220, 53, 69, 0.8)';
+            if (s === 'unknown') return 'rgba(255, 193, 7, 0.8)';
+            return 'rgba(108, 117, 125, 0.3)';
+        });
+
+        testHistoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: testData.dates,
+                datasets: [{
+                    label: testName,
+                    data: statusValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: backgroundColors.map(c => c.replace('0.8', '1').replace('0.3', '0.6')),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        min: -1.5,
+                        max: 1.5,
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 1) return 'PASS';
+                                if (value === -1) return 'FAIL';
+                                if (value === 0) return 'UNKNOWN';
+                                return '';
+                            },
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const idx = context.dataIndex;
+                                const status = testData.status[idx];
+                                const details = testData.details[idx];
+
+                                let lines = [`Status: ${status.toUpperCase()}`];
+
+                                if (details.runtime) {
+                                    lines.push(`Runtime: ${details.runtime}`);
+                                }
+                                if (details.gsm8k_accuracy !== undefined) {
+                                    lines.push(`GSM8K Accuracy: ${details.gsm8k_accuracy}%`);
+                                }
+                                if (details.accuracy !== undefined) {
+                                    lines.push(`Accuracy: ${details.accuracy}`);
+                                }
+                                if (details.error) {
+                                    lines.push(`Error: ${details.error}`);
+                                }
+
+                                return lines;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function renderPassRateTrend(trends) {
@@ -471,6 +673,15 @@
     // Event listeners
     document.getElementById('hardwareSelect').addEventListener('change', loadTrends);
     document.getElementById('daysSelect').addEventListener('change', loadTrends);
+    document.getElementById('testSelect').addEventListener('change', function() {
+        const selectedTest = this.value;
+        if (selectedTest) {
+            renderTestHistory(selectedTest);
+        } else {
+            document.getElementById('test-history-info').style.display = 'block';
+            document.getElementById('test-history-chart').style.display = 'none';
+        }
+    });
 
     // Load initial data
     loadTrends();
