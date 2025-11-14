@@ -239,17 +239,24 @@ class DataIngester:
                 not_run=stats["not_run"],
             )
 
-            # Ingest benchmark results
-            benchmark_tasks = [
+            # Ingest benchmark results and validation tests
+            # Note: We store all test types in benchmark_results for unified filtering
+            all_test_tasks = [
+                # Validation & Checks
+                "Unit Tests",
+                "PD Disaggregation Tests",
+                "Docker Image Check",
+                # Performance Benchmarks
                 "Grok Online Benchmark",
                 "Grok 2 Online Benchmark",
                 "DeepSeek Online Benchmark",
+                # Integration Tests
                 "DeepSeek DP Attention Test",
                 "DeepSeek Torch Compile Test",
                 "DeepSeek DP+Torch Compile",
             ]
 
-            for task_name in benchmark_tasks:
+            for task_name in all_test_tasks:
                 if task_name in task_results:
                     result = task_results[task_name]
 
