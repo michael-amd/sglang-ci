@@ -540,8 +540,11 @@ run_client_gsm8k() {
     local total_accuracy=0
     local runs=$GSM8K_RUNS
     local count=0
+    local valid_count=0
     local run_accuracy=0
     local output
+    # Define threshold for valid accuracy (runs below this are considered failed)
+    local MIN_VALID_ACCURACY=0.1
     # Set log file name based on mode.
     local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${mode}.log"
 
@@ -563,22 +566,40 @@ run_client_gsm8k() {
             run_accuracy=0
          fi
          echo "Run $i: Accuracy: $run_accuracy" | tee -a "$gsm8k_log"
-         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+
          count=$((count+1))
+
+         # Only count runs with accuracy above minimum threshold
+         if awk "BEGIN {exit !($run_accuracy >= $MIN_VALID_ACCURACY)}"; then
+             total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+             valid_count=$((valid_count+1))
+             echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$gsm8k_log"
+         else
+             echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$gsm8k_log"
+         fi
     done
+
     local avg_accuracy
-    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
+    if [ $valid_count -gt 0 ]; then
+        avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_count" 'BEGIN { printf "%.3f", total/count }')
+    else
+        avg_accuracy=0
+        echo "⚠️  Warning: No valid runs found (all runs had accuracy < $MIN_VALID_ACCURACY)" | tee -a "$gsm8k_log"
+    fi
     local gsm8k_end_time=$(date +%s)
     local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
     echo "GSM8K test completed in ${gsm8k_duration} seconds" | tee -a "$gsm8k_log"
-    echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
+    echo "Total runs: $count, Valid runs: $valid_count, Excluded runs: $((count - valid_count))" | tee -a "$gsm8k_log"
+    echo "Average Accuracy over $valid_count valid runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
 
     # Log to timing summary
     echo "" >> "$TIMING_LOG"
     echo "GSM8K Test Results:" >> "$TIMING_LOG"
     echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
-    echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  Total runs: $count" >> "$TIMING_LOG"
+    echo "  Valid runs: $valid_count" >> "$TIMING_LOG"
+    echo "  Excluded runs: $((count - valid_count))" >> "$TIMING_LOG"
     echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
