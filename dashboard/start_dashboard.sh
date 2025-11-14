@@ -161,6 +161,44 @@ if [[ "$PRODUCTION" == true ]]; then
 fi
 
 ###############################################################################
+# Initialize Database
+###############################################################################
+
+echo "💾 Initializing dashboard database..."
+
+# Check if database exists, if not try to sync from GitHub
+DB_FILE="${BASE_DIR}/database/ci_dashboard.db"
+
+if [[ ! -f "$DB_FILE" ]]; then
+    echo "   Database not found locally. Attempting to sync from GitHub..."
+
+    if command -v python3 &> /dev/null; then
+        cd "$BASE_DIR/database"
+        if python3 sync_database.py pull 2>/dev/null; then
+            echo "   ✅ Database synced from GitHub"
+        else
+            echo "   ⚠️  Could not sync database from GitHub. Will use fresh database."
+            echo "   Database will be populated on first data ingestion."
+        fi
+    fi
+else
+    echo "   ✅ Database found at $DB_FILE"
+
+    # Optionally sync with GitHub to get latest updates
+    if [[ "${SYNC_DB_ON_START:-false}" == "true" ]]; then
+        echo "   Syncing with GitHub..."
+        cd "$BASE_DIR/database"
+        if python3 sync_database.py pull --backup 2>/dev/null; then
+            echo "   ✅ Database synced with GitHub"
+        else
+            echo "   ⚠️  Could not sync with GitHub. Using local database."
+        fi
+    fi
+fi
+
+echo ""
+
+###############################################################################
 # Start Dashboard
 ###############################################################################
 
