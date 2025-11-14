@@ -21,6 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Configuration
+# IMPORTANT: Always bind to 0.0.0.0 for internal network access
+# This allows all machines on the network to access the dashboard
 HOST="${DASHBOARD_HOST:-0.0.0.0}"
 PORT="${DASHBOARD_PORT:-5000}"
 

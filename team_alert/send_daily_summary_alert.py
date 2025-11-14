@@ -1319,13 +1319,38 @@ def main():
         help="Send a simple test message to verify Teams connectivity",
     )
 
+    parser.add_argument(
+        "--use-database",
+        action="store_true",
+        default=os.environ.get("USE_DATABASE", "").lower() in ["true", "1", "yes"],
+        help="Use database for data collection (faster, more reliable)",
+    )
+
     args = parser.parse_args()
 
     # Get webhook URL (optional)
     webhook_url = args.teams_webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
 
-    # Create reporter
-    reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
+    # Create reporter (use database-aware version if requested)
+    if args.use_database:
+        try:
+            # Import database-aware collector
+            sys.path.insert(0, args.base_dir)
+            from team_alert.db_alert_data_collector import DatabaseAlertDataCollector
+
+            reporter = DatabaseAlertDataCollector(
+                webhook_url=webhook_url,
+                hardware=args.hardware,
+                base_dir=args.base_dir,
+                use_database=True,
+            )
+            print("📊 Using database for data collection")
+        except Exception as e:
+            print(f"⚠️  Could not use database: {e}")
+            print("   Falling back to filesystem parsing")
+            reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
+    else:
+        reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
 
     # Handle test mode
     if args.test_mode:

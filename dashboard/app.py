@@ -18,6 +18,7 @@ ENVIRONMENT VARIABLES:
 
 import argparse
 import os
+import sqlite3
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -32,6 +33,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dashboard.data_collector import DashboardDataCollector
 from dashboard.github_data_collector import GitHubDataCollector
 
+# Import database collector from database module
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from database.db_data_collector import DatabaseDataCollector
+
 app = Flask(__name__)
 
 # Configure caching
@@ -45,6 +50,7 @@ BASE_DIR = os.environ.get("SGL_BENCHMARK_CI_DIR", "/mnt/raid/michael/sglang-ci")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 USE_GITHUB = os.environ.get("USE_GITHUB", "true").lower() in ["true", "1", "yes"]
+USE_DATABASE = os.environ.get("USE_DATABASE", "true").lower() in ["true", "1", "yes"]
 
 # Determine current hardware from hostname
 CURRENT_HARDWARE = None
@@ -64,9 +70,16 @@ def get_data_collector(hardware: str):
     """
     Get appropriate data collector for hardware
 
-    For mi30x on mi30x server: Use local files first (instant, no GitHub calls)
-    For mi35x or remote access: Use GitHub first (works behind firewall)
+    Priority order:
+    1. Database (fastest, most efficient)
+    2. GitHub (works behind firewall)
+    3. Local filesystem (fallback)
     """
+    # Use database if enabled (fastest option)
+    if USE_DATABASE:
+        return DatabaseDataCollector(hardware=hardware, base_dir=BASE_DIR)
+
+    # Use GitHub or local based on location
     use_local_first = hardware == CURRENT_HARDWARE and hardware == "mi30x"
 
     if use_local_first:
@@ -84,6 +97,22 @@ def get_data_collector(hardware: str):
     else:
         # Local only mode
         return DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
+
+
+def get_database_path() -> str:
+    """Return the path to the dashboard database file"""
+    return os.path.join(BASE_DIR, "database", "ci_dashboard.db")
+
+
+def get_db_connection():
+    """Create a SQLite connection with row factory enabled"""
+    db_path = get_database_path()
+    if not os.path.exists(db_path):
+        return None
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 @app.route("/")
@@ -496,6 +525,426 @@ def serve_github_plot(hardware, model, mode, filename):
         return f"Error fetching plot: {str(e)}", 500
 
 
+@app.route("/database")
+def database_explorer():
+    """Database explorer page"""
+    default_hw = CURRENT_HARDWARE or "mi30x"
+    return render_template(
+        "database.html", github_repo=GITHUB_REPO, default_hardware=default_hw
+    )
+
+
+@app.route("/api/database/overview")
+def api_database_overview():
+    """Get filtered database overview data"""
+    try:
+        hardware = request.args.get("hardware", "mi30x")
+        if hardware not in ["mi30x", "mi35x"]:
+            hardware = "mi30x"
+
+        selected_test = request.args.get("test", "all")
+        range_days = request.args.get("range", "7")
+        try:
+            range_days = int(range_days)
+        except ValueError:
+            range_days = 7
+        range_days = max(1, min(range_days, 90))
+
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error": "Database file not found"}), 404
+
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT DISTINCT run_date
+            FROM test_runs
+            WHERE hardware = ?
+            ORDER BY run_date DESC
+            LIMIT 90
+            """,
+            (hardware,),
+        )
+        available_dates = [row["run_date"] for row in cursor.fetchall()]
+
+        if not available_dates:
+            conn.close()
+            return jsonify({"error": "No data found for hardware"}), 404
+
+        selected_date = request.args.get("date")
+        if not selected_date or selected_date not in available_dates:
+            selected_date = available_dates[0]
+
+        try:
+            selected_dt = datetime.strptime(selected_date, "%Y%m%d")
+        except ValueError:
+            selected_dt = datetime.strptime(available_dates[0], "%Y%m%d")
+            selected_date = available_dates[0]
+
+        start_dt = selected_dt - timedelta(days=range_days - 1)
+        start_date = start_dt.strftime("%Y%m%d")
+
+        cursor.execute(
+            "SELECT DISTINCT benchmark_name FROM benchmark_results ORDER BY benchmark_name;"
+        )
+        benchmark_names = [row["benchmark_name"] for row in cursor.fetchall()]
+        test_options = ["all"] + benchmark_names
+        if selected_test not in test_options:
+            selected_test = "all"
+
+        cursor.execute(
+            """
+            SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
+                   total_tasks, docker_image
+            FROM test_runs
+            WHERE hardware = ? AND run_date BETWEEN ? AND ?
+            ORDER BY run_date DESC
+            """,
+            (hardware, start_date, selected_date),
+        )
+        daily_runs = []
+        for row in cursor.fetchall():
+            total_tasks = row["total_tasks"] or 0
+            passed_tasks = row["passed_tasks"] or 0
+            failed_tasks = row["failed_tasks"] or 0
+            pass_rate = (
+                round((passed_tasks / total_tasks) * 100, 1) if total_tasks else 0
+            )
+            daily_runs.append(
+                {
+                    "run_id": row["id"],
+                    "run_date": row["run_date"],
+                    "overall_status": row["overall_status"],
+                    "passed_tasks": passed_tasks,
+                    "failed_tasks": failed_tasks,
+                    "total_tasks": total_tasks,
+                    "docker_image": row["docker_image"],
+                    "pass_rate": pass_rate,
+                }
+            )
+
+        summary = {
+            "total_runs": len(daily_runs),
+            "passed_runs": sum(
+                1 for r in daily_runs if r["overall_status"] == "passed"
+            ),
+            "failed_runs": sum(
+                1 for r in daily_runs if r["overall_status"] == "failed"
+            ),
+            "partial_runs": sum(
+                1 for r in daily_runs if r["overall_status"] == "partial"
+            ),
+            "average_pass_rate": (
+                round(sum(r["pass_rate"] for r in daily_runs) / len(daily_runs), 1)
+                if daily_runs
+                else 0
+            ),
+            "latest_pass_rate": daily_runs[0]["pass_rate"] if daily_runs else 0,
+            "range_days": range_days,
+        }
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM test_runs
+            WHERE hardware = ? AND run_date = ?
+            LIMIT 1
+            """,
+            (hardware, selected_date),
+        )
+        selected_row = cursor.fetchone()
+        if not selected_row:
+            conn.close()
+            return jsonify({"error": "No data found for selected date"}), 404
+
+        selected_run = {
+            "run_id": selected_row["id"],
+            "run_date": selected_row["run_date"],
+            "hardware": selected_row["hardware"],
+            "overall_status": selected_row["overall_status"],
+            "docker_image": selected_row["docker_image"],
+            "total_tasks": selected_row["total_tasks"] or 0,
+            "passed_tasks": selected_row["passed_tasks"] or 0,
+            "failed_tasks": selected_row["failed_tasks"] or 0,
+            "unknown_tasks": selected_row["unknown_tasks"] or 0,
+            "not_run": selected_row["not_run"] or 0,
+        }
+        total_tasks = selected_run["total_tasks"]
+        selected_run["pass_rate"] = (
+            round((selected_run["passed_tasks"] / total_tasks) * 100, 1)
+            if total_tasks
+            else 0
+        )
+
+        cursor.execute(
+            """
+            SELECT log_type, log_name, local_path, github_url
+            FROM log_files
+            WHERE test_run_id = ?
+            ORDER BY log_type, log_name
+            """,
+            (selected_row["id"],),
+        )
+        selected_run["log_files"] = [
+            {
+                "log_type": row["log_type"],
+                "log_name": row["log_name"],
+                "local_path": row["local_path"],
+                "github_url": row["github_url"],
+            }
+            for row in cursor.fetchall()
+        ]
+
+        cursor.execute(
+            """
+            SELECT model_name, status, accuracy
+            FROM sanity_check_results
+            WHERE test_run_id = ?
+            ORDER BY model_name
+            """,
+            (selected_row["id"],),
+        )
+        selected_run["sanity_results"] = [
+            {
+                "model_name": row["model_name"],
+                "status": row["status"],
+                "accuracy": row["accuracy"],
+            }
+            for row in cursor.fetchall()
+        ]
+
+        cursor.execute(
+            """
+            SELECT benchmark_name, status, gsm8k_accuracy, runtime_minutes, error_message
+            FROM benchmark_results
+            WHERE test_run_id = ?
+            ORDER BY benchmark_name
+            """,
+            (selected_row["id"],),
+        )
+        selected_run["benchmark_results"] = [
+            {
+                "benchmark_name": row["benchmark_name"],
+                "status": row["status"],
+                "gsm8k_accuracy": (
+                    round(row["gsm8k_accuracy"] * 100, 1)
+                    if row["gsm8k_accuracy"] is not None
+                    else None
+                ),
+                "runtime_minutes": row["runtime_minutes"],
+                "error_message": row["error_message"],
+            }
+            for row in cursor.fetchall()
+        ]
+
+        params = [hardware, start_date, selected_date]
+        benchmark_query = """
+            SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy,
+                   br.runtime_minutes, br.error_message
+            FROM benchmark_results br
+            JOIN test_runs tr ON tr.id = br.test_run_id
+            WHERE tr.hardware = ? AND tr.run_date BETWEEN ? AND ?
+            """
+        if selected_test != "all":
+            benchmark_query += " AND br.benchmark_name = ?"
+            params.append(selected_test)
+        benchmark_query += " ORDER BY tr.run_date DESC, br.benchmark_name"
+
+        cursor.execute(benchmark_query, tuple(params))
+        benchmarks_range = [
+            {
+                "run_date": row["run_date"],
+                "benchmark_name": row["benchmark_name"],
+                "status": row["status"],
+                "gsm8k_accuracy": (
+                    round(row["gsm8k_accuracy"] * 100, 1)
+                    if row["gsm8k_accuracy"] is not None
+                    else None
+                ),
+                "runtime_minutes": row["runtime_minutes"],
+                "error_message": row["error_message"],
+            }
+            for row in cursor.fetchall()
+        ]
+
+        benchmark_summary = {
+            "total": len(benchmarks_range),
+            "passed": sum(1 for b in benchmarks_range if b["status"] == "pass"),
+            "failed": sum(1 for b in benchmarks_range if b["status"] == "fail"),
+        }
+        benchmark_summary["pass_rate"] = (
+            round((benchmark_summary["passed"] / benchmark_summary["total"]) * 100, 1)
+            if benchmark_summary["total"]
+            else 0
+        )
+
+        summary["benchmarks_total"] = benchmark_summary["total"]
+        summary["benchmarks_passed"] = benchmark_summary["passed"]
+        summary["benchmarks_failed"] = benchmark_summary["failed"]
+
+        response = {
+            "hardware": hardware,
+            "selected_date": selected_date,
+            "available_dates": available_dates,
+            "date_range": {
+                "start": start_date,
+                "end": selected_date,
+                "days": range_days,
+            },
+            "test_names": test_options,
+            "selected_test": selected_test,
+            "summary": summary,
+            "daily_runs": daily_runs,
+            "selected_run": selected_run,
+            "benchmarks_range": benchmarks_range,
+            "benchmark_summary": benchmark_summary,
+        }
+
+        conn.close()
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/database/query", methods=["POST"])
+def api_database_query():
+    """Execute SQL query on database (SELECT only)"""
+    try:
+        import time
+
+        data = request.get_json() or {}
+        query = data.get("query", "").strip()
+
+        if not query:
+            return jsonify({"error": "No query provided"}), 400
+
+        # Security: Only allow SELECT queries
+        if not query.upper().startswith("SELECT"):
+            return jsonify({"error": "Only SELECT queries are allowed"}), 403
+
+        # Additional security: Block dangerous keywords
+        dangerous_keywords = [
+            "DROP",
+            "DELETE",
+            "UPDATE",
+            "INSERT",
+            "ALTER",
+            "CREATE",
+            "TRUNCATE",
+            "REPLACE",
+        ]
+        query_upper = query.upper()
+        for keyword in dangerous_keywords:
+            if keyword in query_upper:
+                return jsonify({"error": f"Keyword '{keyword}' is not allowed"}), 403
+
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error": "Database file not found"}), 404
+
+        start_time = time.time()
+        cursor = conn.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        columns = (
+            [description[0] for description in cursor.description]
+            if cursor.description
+            else []
+        )
+        conn.close()
+
+        rows_serializable = [list(row) for row in rows]
+        execution_time = int((time.time() - start_time) * 1000)
+
+        return jsonify(
+            {
+                "columns": columns,
+                "rows": rows_serializable,
+                "row_count": len(rows_serializable),
+                "execution_time": execution_time,
+            }
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/database/schema")
+def api_database_schema():
+    """Get database schema"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error": "Database file not found"}), 404
+
+        cursor = conn.cursor()
+
+        # Get all tables
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+        )
+        tables = cursor.fetchall()
+
+        schema = {}
+        for row in tables:
+            table_name = row[0]
+            cursor.execute(f"PRAGMA table_info({table_name});")
+            columns = cursor.fetchall()
+            schema[table_name] = [
+                f"{col[1]} ({col[2]}){' PRIMARY KEY' if col[5] else ''}{' NOT NULL' if col[3] else ''}"
+                for col in columns
+            ]
+
+        conn.close()
+
+        return jsonify({"tables": schema})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/database/stats")
+def api_database_stats():
+    """Get database statistics"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error": "Database file not found"}), 404
+
+        cursor = conn.cursor()
+
+        stats = {}
+        tables = [
+            "test_runs",
+            "benchmark_results",
+            "sanity_check_results",
+            "log_files",
+            "plot_files",
+        ]
+
+        for table in tables:
+            cursor.execute(f"SELECT COUNT(*) FROM {table};")
+            count = cursor.fetchone()[0]
+            stats[table] = count
+
+        cursor.execute("SELECT COUNT(DISTINCT run_date) FROM test_runs;")
+        stats["unique_dates"] = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(DISTINCT hardware) FROM test_runs;")
+        stats["hardware_types"] = cursor.fetchone()[0]
+
+        db_path = get_database_path()
+        stats["database_size_kb"] = int(os.path.getsize(db_path) / 1024)
+
+        conn.close()
+
+        return jsonify({"stats": stats})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     """Health check endpoint"""
@@ -590,9 +1039,13 @@ def main():
     print(f"📁 Base directory: {BASE_DIR}")
     print(f"🌐 Server: http://{args.host}:{args.port}")
     print(f"🔗 GitHub Repo: {GITHUB_REPO}")
-    print(
-        f"📡 Data Source: {'GitHub (with local fallback)' if USE_GITHUB else 'Local filesystem only'}"
-    )
+
+    if USE_DATABASE:
+        print(f"📡 Data Source: Database (with filesystem fallback)")
+    elif USE_GITHUB:
+        print(f"📡 Data Source: GitHub (with local fallback)")
+    else:
+        print(f"📡 Data Source: Local filesystem only")
     print()
 
     app.run(host=args.host, port=args.port, debug=args.debug)
