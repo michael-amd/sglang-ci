@@ -1,0 +1,100 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-torch-compile --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-11-14 09:50:02 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2564029
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo spack... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Torch compile mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b8cb60fdc3c6
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image (rocm700) in 'rocm/sgl-dev' for date 20251114...
+[nightly] Found candidate tag for day -0: v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Successfully obtained image for date 20251114: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: ebfd9ea67db6
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Container name: sgl-dev_v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Reusing container sgl-dev_v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.5.post2-rocm700-mi35x-20251114
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-11-14 09:50:34 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post2-rocm700-mi35x-20251114_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log)
+torch compile mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+[DEBUG] Torch compile mode: using mem-fraction=0.8, cuda-graph-max-bs=16
+Waiting for SGLang server (PID: 43) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post2-rocm700-mi35x-20251114_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log
+.................../mnt/raid/michael/sglang-ci/scripts/deepseek_perf_online_csv.sh: line 601:    43 Killed                  env ${aiter_env_var}=1 python3 -m sglang.launch_server --model-path "${MODEL}" --tp-size "${TP}" --port "$GSM8K_PORT" --trust-remote-code --mem-fraction-static "${mem_fraction}" --max-running-requests "$SERVER_MAX_REQUESTS" ${cuda_graph_bs_flag} ${disable_cuda_graph_flag} ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1
+
+SGLang server process (PID: 43) has terminated unexpectedly!
+Check /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post2-rocm700-mi35x-20251114_DeepSeek-R1-MXFP4-Preview_FP8_online_torch_compile/sglang_server.log for error details:
+--- Last 20 lines of server log ---
+    self.initialize(min_per_gpu_memory)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 490, in initialize
+    self.init_device_graphs()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 2006, in init_device_graphs
+    self.graph_runner = graph_runners[self.device](self)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 392, in __init__
+    raise Exception(
+Exception: Capture cuda graph failed: RuntimeError: PassManager::run failed
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+Possible solutions:
+1. set --mem-fraction-static to a smaller value (e.g., 0.8 or 0.7)
+2. set --cuda-graph-max-bs to a smaller value (e.g., 16)
+3. disable torch compile by not using --enable-torch-compile
+4. disable CUDA graph by --disable-cuda-graph. (Not recommended. Huge performance loss)
+Open an issue on GitHub https://github.com/sgl-project/sglang/issues/new/choose 
+
+
+[2025-11-14 09:52:05] Received sigquit from a child process. It usually means the child failed.
+--- End of server log ---
+Cleaning up...
+Background SGLang server (PID: 43) already stopped.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post2-rocm700-mi35x-20251114 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post2-rocm700-mi35x-20251114_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251114
+scripts/perf_nightly.sh: line 1648: HARDWARE: unbound variable
+[nightly] Cleaning up process lock...
