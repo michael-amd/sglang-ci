@@ -78,6 +78,11 @@ class DashboardDatabase:
                     failed_tasks INTEGER DEFAULT 0,
                     unknown_tasks INTEGER DEFAULT 0,
                     not_run INTEGER DEFAULT 0,
+                    run_datetime_pt TEXT,
+                    github_log_url TEXT,
+                    github_cron_log_url TEXT,
+                    github_detail_log_url TEXT,
+                    plot_github_url TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(run_date, hardware)
@@ -97,6 +102,7 @@ class DashboardDatabase:
                     runtime_minutes INTEGER,
                     error_message TEXT,
                     timing_log_path TEXT,
+                    github_detail_log_url TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (test_run_id) REFERENCES test_runs (id) ON DELETE CASCADE,
                     UNIQUE(test_run_id, benchmark_name)
@@ -189,6 +195,11 @@ class DashboardDatabase:
         failed_tasks: int = 0,
         unknown_tasks: int = 0,
         not_run: int = 0,
+        run_datetime_pt: Optional[str] = None,
+        github_log_url: Optional[str] = None,
+        github_cron_log_url: Optional[str] = None,
+        github_detail_log_url: Optional[str] = None,
+        plot_github_url: Optional[str] = None,
     ) -> int:
         """
         Insert or update a test run record
@@ -215,9 +226,11 @@ class DashboardDatabase:
                 INSERT INTO test_runs (
                     run_date, hardware, docker_image, overall_status,
                     total_tasks, passed_tasks, failed_tasks, unknown_tasks, not_run,
+                    run_datetime_pt, github_log_url, github_cron_log_url,
+                    github_detail_log_url, plot_github_url,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(run_date, hardware) DO UPDATE SET
                     docker_image = excluded.docker_image,
                     overall_status = excluded.overall_status,
@@ -226,6 +239,11 @@ class DashboardDatabase:
                     failed_tasks = excluded.failed_tasks,
                     unknown_tasks = excluded.unknown_tasks,
                     not_run = excluded.not_run,
+                    run_datetime_pt = excluded.run_datetime_pt,
+                    github_log_url = excluded.github_log_url,
+                    github_cron_log_url = excluded.github_cron_log_url,
+                    github_detail_log_url = excluded.github_detail_log_url,
+                    plot_github_url = excluded.plot_github_url,
                     updated_at = CURRENT_TIMESTAMP
             """,
                 (
@@ -238,6 +256,11 @@ class DashboardDatabase:
                     failed_tasks,
                     unknown_tasks,
                     not_run,
+                    run_datetime_pt,
+                    github_log_url,
+                    github_cron_log_url,
+                    github_detail_log_url,
+                    plot_github_url,
                 ),
             )
 
@@ -259,6 +282,7 @@ class DashboardDatabase:
         runtime_minutes: Optional[int] = None,
         error_message: Optional[str] = None,
         timing_log_path: Optional[str] = None,
+        github_detail_log_url: Optional[str] = None,
     ):
         """
         Insert or update a benchmark result
@@ -279,15 +303,16 @@ class DashboardDatabase:
                 """
                 INSERT INTO benchmark_results (
                     test_run_id, benchmark_name, status, gsm8k_accuracy,
-                    runtime_minutes, error_message, timing_log_path
+                    runtime_minutes, error_message, timing_log_path, github_detail_log_url
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(test_run_id, benchmark_name) DO UPDATE SET
                     status = excluded.status,
                     gsm8k_accuracy = excluded.gsm8k_accuracy,
                     runtime_minutes = excluded.runtime_minutes,
                     error_message = excluded.error_message,
-                    timing_log_path = excluded.timing_log_path
+                    timing_log_path = excluded.timing_log_path,
+                    github_detail_log_url = excluded.github_detail_log_url
             """,
                 (
                     test_run_id,
@@ -297,6 +322,7 @@ class DashboardDatabase:
                     runtime_minutes,
                     error_message,
                     timing_log_path,
+                    github_detail_log_url,
                 ),
             )
 

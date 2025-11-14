@@ -167,19 +167,8 @@ def api_summary(hardware, date):
         return jsonify({"error": "Invalid hardware type"}), 400
 
     try:
-        # Use GitHub data collector if enabled, otherwise use local
-        if USE_GITHUB:
-            # Get token from environment (may have been set after module import)
-            github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
-            collector = GitHubDataCollector(
-                hardware=hardware,
-                base_dir=BASE_DIR,
-                github_repo=GITHUB_REPO,
-                use_local_fallback=True,
-                github_token=github_token,
-            )
-        else:
-            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
+        # Use unified data collector (database-first with fallback)
+        collector = get_data_collector(hardware)
 
         task_results = collector.collect_task_results(date)
         sanity_results = collector.parse_sanity_check_log(date)
@@ -228,20 +217,8 @@ def api_available_dates(hardware):
         return jsonify({"error": "Invalid hardware type"}), 400
 
     try:
-        # Use GitHub data collector if enabled, otherwise use local
-        if USE_GITHUB:
-            # Get token from environment (may have been set after module import)
-            github_token = os.environ.get("GITHUB_TOKEN") or GITHUB_TOKEN
-            collector = GitHubDataCollector(
-                hardware=hardware,
-                base_dir=BASE_DIR,
-                github_repo=GITHUB_REPO,
-                use_local_fallback=True,
-                github_token=github_token,
-            )
-        else:
-            collector = DashboardDataCollector(hardware=hardware, base_dir=BASE_DIR)
-
+        # Use unified data collector (database-first with fallback)
+        collector = get_data_collector(hardware)
         dates = collector.get_available_dates()
 
         return jsonify({"hardware": hardware, "dates": dates})
@@ -595,7 +572,8 @@ def api_database_overview():
         cursor.execute(
             """
             SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                   total_tasks, docker_image
+                   total_tasks, docker_image, not_run, run_datetime_pt,
+                   github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
             FROM test_runs
             WHERE hardware = ? AND run_date BETWEEN ? AND ?
             ORDER BY run_date DESC
@@ -607,6 +585,7 @@ def api_database_overview():
             total_tasks = row["total_tasks"] or 0
             passed_tasks = row["passed_tasks"] or 0
             failed_tasks = row["failed_tasks"] or 0
+            not_run = row["not_run"] or 0
             pass_rate = (
                 round((passed_tasks / total_tasks) * 100, 1) if total_tasks else 0
             )
@@ -618,7 +597,13 @@ def api_database_overview():
                     "passed_tasks": passed_tasks,
                     "failed_tasks": failed_tasks,
                     "total_tasks": total_tasks,
+                    "not_run": not_run,
                     "docker_image": row["docker_image"],
+                    "run_datetime_pt": row["run_datetime_pt"],
+                    "github_log_url": row["github_log_url"],
+                    "github_cron_log_url": row["github_cron_log_url"],
+                    "github_detail_log_url": row["github_detail_log_url"],
+                    "plot_github_url": row["plot_github_url"],
                     "pass_rate": pass_rate,
                 }
             )
@@ -740,7 +725,7 @@ def api_database_overview():
         params = [hardware, start_date, selected_date]
         benchmark_query = """
             SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy,
-                   br.runtime_minutes, br.error_message
+                   br.runtime_minutes, br.error_message, br.github_detail_log_url
             FROM benchmark_results br
             JOIN test_runs tr ON tr.id = br.test_run_id
             WHERE tr.hardware = ? AND tr.run_date BETWEEN ? AND ?
@@ -751,21 +736,44 @@ def api_database_overview():
         benchmark_query += " ORDER BY tr.run_date DESC, br.benchmark_name"
 
         cursor.execute(benchmark_query, tuple(params))
-        benchmarks_range = [
-            {
-                "run_date": row["run_date"],
-                "benchmark_name": row["benchmark_name"],
-                "status": row["status"],
-                "gsm8k_accuracy": (
-                    round(row["gsm8k_accuracy"] * 100, 1)
-                    if row["gsm8k_accuracy"] is not None
-                    else None
-                ),
-                "runtime_minutes": row["runtime_minutes"],
-                "error_message": row["error_message"],
-            }
-            for row in cursor.fetchall()
-        ]
+        benchmark_rows = cursor.fetchall()
+
+        # Get plot files for generating per-benchmark plot URLs
+        plot_lookup = {}  # {(run_date, benchmark_name): plot_url}
+        for run in daily_runs:
+            cursor.execute(
+                """
+                SELECT pf.benchmark_name, pf.github_url
+                FROM plot_files pf
+                WHERE pf.test_run_id = ?
+                """,
+                (run["run_id"],),
+            )
+            for plot_row in cursor.fetchall():
+                key = (run["run_date"], plot_row["benchmark_name"])
+                plot_lookup[key] = plot_row["github_url"]
+
+        benchmarks_range = []
+        for row in benchmark_rows:
+            plot_key = (row["run_date"], row["benchmark_name"])
+            benchmarks_range.append(
+                {
+                    "run_date": row["run_date"],
+                    "benchmark_name": row["benchmark_name"],
+                    "status": row["status"],
+                    "gsm8k_accuracy": (
+                        round(row["gsm8k_accuracy"] * 100, 1)
+                        if row["gsm8k_accuracy"] is not None
+                        else None
+                    ),
+                    "runtime_minutes": row["runtime_minutes"],
+                    "error_message": row["error_message"],
+                    "plot_url": plot_lookup.get(plot_key),  # Per-benchmark plot URL
+                    "detail_log_url": row[
+                        "github_detail_log_url"
+                    ],  # Per-test detail log
+                }
+            )
 
         benchmark_summary = {
             "total": len(benchmarks_range),
@@ -943,6 +951,42 @@ def api_database_stats():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/database/sync", methods=["POST"])
+def api_database_sync():
+    """Sync database from GitHub to get latest updates from other machines"""
+    try:
+        import subprocess
+
+        sync_script = os.path.join(BASE_DIR, "database", "sync_database.py")
+
+        # Run sync in background (non-blocking)
+        result = subprocess.run(
+            ["python3", sync_script, "pull"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode == 0:
+            return jsonify(
+                {"status": "success", "message": "Database synced from GitHub"}
+            )
+        else:
+            return (
+                jsonify(
+                    {
+                        "status": "warning",
+                        "message": "Sync attempted but may have issues",
+                    }
+                ),
+                200,
+            )
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route("/health")

@@ -199,8 +199,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Passed/Total</th>
+                                    <th>Tasks Run</th>
+                                    <th>Passed</th>
+                                    <th>Failed</th>
+                                    <th>Not Run</th>
                                     <th>Pass Rate</th>
                                 </tr>
                             </thead>
@@ -289,15 +291,19 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-striped mb-0" id="rangeBenchmarkTable">
+                <table class="table table-striped mb-0 small" id="rangeBenchmarkTable">
                     <thead class="table-light">
                         <tr>
-                            <th>Date</th>
-                            <th>Test Name</th>
+                            <th>Run Date/Time (PT)</th>
+                            <th>Benchmark Name</th>
                             <th>Status</th>
-                            <th>GSM8K</th>
-                            <th>Runtime</th>
-                            <th>Error</th>
+                            <th>GSM8K Accuracy (%)</th>
+                            <th>Runtime (min)</th>
+                            <th>Error Message</th>
+                            <th>Docker Image</th>
+                            <th>Cron Logs</th>
+                            <th>Detail Logs</th>
+                            <th>Plot</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -521,40 +527,42 @@ function renderSummaryCards(data) {
     const benchmarkSummary = data.benchmark_summary || {};
     const selectedRun = data.selected_run || {};
 
+    const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
+
     container.innerHTML = `
         <div class="col-md-3">
             <div class="card summary-card">
                 <div class="card-body">
-                    <div class="card-title">Total Runs</div>
-                    <div class="card-value">${summary.total_runs || 0}</div>
-                    <p class="text-muted mb-0">${summary.passed_runs || 0} passed · ${summary.failed_runs || 0} failed</p>
+                    <div class="card-title">Tasks Run</div>
+                    <div class="card-value">${tasksRun}</div>
+                    <p class="text-muted mb-0">Out of ${selectedRun.total_tasks || 0} total</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card summary-card">
                 <div class="card-body">
-                    <div class="card-title">Average Pass Rate</div>
-                    <div class="card-value text-success">${summary.average_pass_rate || 0}%</div>
-                    <p class="text-muted mb-0">Latest: ${summary.latest_pass_rate || 0}%</p>
+                    <div class="card-title">Passed</div>
+                    <div class="card-value text-success">${selectedRun.passed_tasks || 0}</div>
+                    <p class="text-muted mb-0">${selectedRun.pass_rate || 0}% pass rate</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card summary-card">
                 <div class="card-body">
-                    <div class="card-title">Test Results</div>
-                    <div class="card-value text-primary">${benchmarkSummary.pass_rate || 0}%</div>
-                    <p class="text-muted mb-0">${benchmarkSummary.passed || 0} / ${benchmarkSummary.total || 0} passed</p>
+                    <div class="card-title">Failed</div>
+                    <div class="card-value text-danger">${selectedRun.failed_tasks || 0}</div>
+                    <p class="text-muted mb-0">${selectedRun.unknown_tasks || 0} unknown</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card summary-card">
                 <div class="card-body">
-                    <div class="card-title">Selected Run Status</div>
-                    <div class="card-value">${selectedRun.overall_status ? selectedRun.overall_status.toUpperCase() : '—'}</div>
-                    <p class="text-muted mb-0">Pass rate: ${selectedRun.pass_rate || 0}%</p>
+                    <div class="card-title">Not Run</div>
+                    <div class="card-value text-secondary">${selectedRun.not_run || 0}</div>
+                    <p class="text-muted mb-0">Benchmarks: ${benchmarkSummary.passed || 0}/${benchmarkSummary.total || 0}</p>
                 </div>
             </div>
         </div>
@@ -569,16 +577,20 @@ function renderDailyRuns(runs) {
     tableBody.innerHTML = '';
 
     if (!runs.length) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No data available</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No data available</td></tr>';
     } else {
         runs.forEach((run) => {
+            const tasksRun = (run.total_tasks || 0) - (run.not_run || 0);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${formatDateDisplay(run.run_date)}</td>
-                <td>${statusBadge(run.overall_status)}</td>
-                <td>${run.passed_tasks}/${run.total_tasks}</td>
-                <td>${run.pass_rate}%</td>
+                <td><strong>${tasksRun}</strong></td>
+                <td><span class="text-success">${run.passed_tasks || 0}</span></td>
+                <td><span class="text-danger">${run.failed_tasks || 0}</span></td>
+                <td><span class="text-secondary">${run.not_run || 0}</span></td>
+                <td><strong>${run.pass_rate || 0}%</strong></td>
             `;
+            row.style.cursor = 'pointer';
             row.addEventListener('click', () => {
                 if (dbState.selectedDate !== run.run_date) {
                     dbState.selectedDate = run.run_date;
@@ -617,23 +629,34 @@ function renderSelectedRun(selectedRun) {
     }
 
     if (summaryContainer) {
+        const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
         summaryContainer.innerHTML = `
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="text-muted small">Status</div>
-                    <span class="badge status-badge ${selectedRun.overall_status || ''}">${selectedRun.overall_status || 'unknown'}</span>
+            <div class="row g-2 mb-3">
+                <div class="col-3">
+                    <div class="text-muted small">Tasks Run</div>
+                    <strong>${tasksRun}</strong>
                 </div>
-                <div class="col-6 text-end">
+                <div class="col-3">
+                    <div class="text-muted small">Passed</div>
+                    <strong class="text-success">${selectedRun.passed_tasks || 0}</strong>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Failed</div>
+                    <strong class="text-danger">${selectedRun.failed_tasks || 0}</strong>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Not Run</div>
+                    <strong class="text-secondary">${selectedRun.not_run || 0}</strong>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
                     <div class="text-muted small">Pass Rate</div>
-                    <strong>${selectedRun.pass_rate || 0}%</strong>
-                </div>
-                <div class="col-6">
-                    <div class="text-muted small">Tasks</div>
-                    <div>${selectedRun.passed_tasks || 0} passed / ${selectedRun.total_tasks || 0} total</div>
+                    <strong class="text-primary">${selectedRun.pass_rate || 0}%</strong>
                 </div>
                 <div class="col-6">
                     <div class="text-muted small">Docker Image</div>
-                    <div class="text-truncate" title="${selectedRun.docker_image || '—'}">${selectedRun.docker_image || '—'}</div>
+                    <div class="text-truncate" title="${selectedRun.docker_image || '—'}"><small>${selectedRun.docker_image || '—'}</small></div>
                 </div>
             </div>
         `;
@@ -721,21 +744,72 @@ function renderBenchmarkRange(data) {
     if (!tableBody) return;
 
     const benchmarks = data.benchmarks_range || [];
+    const dailyRuns = data.daily_runs || [];
+
+    // Create lookup for docker images, datetime, and URLs by date
+    const metadataByDate = {};
+    dailyRuns.forEach((run) => {
+        metadataByDate[run.run_date] = {
+            dockerImage: run.docker_image || '—',
+            datetimePt: run.run_datetime_pt || formatDateDisplay(run.run_date),
+            githubCronLogUrl: run.github_cron_log_url,
+            githubDetailLogUrl: run.github_detail_log_url,
+        };
+    });
+
+    // Benchmarks that should have plots
+    const benchmarksWithPlots = [
+        'Grok Online Benchmark',
+        'Grok 2 Online Benchmark',
+        'DeepSeek Online Benchmark',
+        'DeepSeek DP Attention Test',
+        'DeepSeek Torch Compile Test',
+        'DeepSeek DP+Torch Compile'
+    ];
+
     tableBody.innerHTML = '';
 
     if (!benchmarks.length) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No test data for selected range.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No test data for selected range.</td></tr>';
     } else {
-        tableBody.innerHTML = benchmarks.map((bench) => `
+        tableBody.innerHTML = benchmarks.map((bench) => {
+            const meta = metadataByDate[bench.run_date] || {};
+            const dockerImage = meta.dockerImage || '—';
+            const dockerShort = dockerImage.length > 40 ? dockerImage.substring(0, 40) + '...' : dockerImage;
+            const errorText = bench.error_message || '—';
+            const errorShort = errorText.length > 50 ? errorText.substring(0, 50) + '...' : errorText;
+            const datetimePt = meta.datetimePt || formatDateDisplay(bench.run_date);
+
+            const cronLogLink = meta.githubCronLogUrl ?
+                `<a href="${meta.githubCronLogUrl}" target="_blank" class="text-decoration-none" title="Cron log file"><i class="bi bi-file-earmark-code"></i></a>` :
+                '';
+
+            // Per-test detail log URL (from benchmark_results table)
+            // Empty for tests that don't have detail logs (like Docker Check)
+            const detailLogLink = bench.detail_log_url ?
+                `<a href="${bench.detail_log_url}" target="_blank" class="text-decoration-none" title="Detail test logs"><i class="bi bi-file-earmark-text"></i></a>` :
+                '';
+
+            // Only show plot link for benchmarks that have plots
+            const plotLink = (benchmarksWithPlots.includes(bench.benchmark_name) && bench.plot_url) ?
+                `<a href="${bench.plot_url}" target="_blank" class="text-decoration-none" title="Performance plot"><i class="bi bi-graph-up"></i></a>` :
+                '';
+
+            return `
             <tr>
-                <td>${formatDateDisplay(bench.run_date)}</td>
+                <td><small>${datetimePt}</small></td>
                 <td>${bench.benchmark_name}</td>
                 <td>${statusBadge(bench.status)}</td>
-                <td>${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
-                <td>${bench.runtime_minutes ? bench.runtime_minutes + 'm' : '—'}</td>
-                <td>${bench.error_message || ''}</td>
+                <td class="text-end">${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
+                <td class="text-end">${bench.runtime_minutes !== null ? bench.runtime_minutes : '—'}</td>
+                <td title="${errorText}"><small>${errorShort}</small></td>
+                <td title="${dockerImage}"><small class="text-muted">${dockerShort}</small></td>
+                <td class="text-center">${cronLogLink}</td>
+                <td class="text-center">${detailLogLink}</td>
+                <td class="text-center">${plotLink}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     }
 
     if (filterLabel) {
