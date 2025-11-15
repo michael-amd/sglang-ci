@@ -1,0 +1,27 @@
+[docker-cleanup] ==========================================
+[docker-cleanup] Docker Cleanup Script Started
+[docker-cleanup] Date: 2025-11-15 09:30:01 CST
+[docker-cleanup] Cleanup images older than: 7 days
+[docker-cleanup] Critical space threshold: 200 GB
+[docker-cleanup] Dry run mode: false
+[docker-cleanup] ==========================================
+[docker-cleanup] Initial disk usage: 60% (1.4T free)
+[docker-cleanup] Initial free space: 1364 GB
+[docker-cleanup] Disk space is healthy (1364 GB available)
+[docker-cleanup] Step 1: Removing stopped Docker containers...
+[docker-cleanup] No stopped containers found
+[docker-cleanup] Step 2: Removing old sgl-dev images (older than 7 days)...
+permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Head "http://%2Fvar%2Frun%2Fdocker.sock/_ping": dial unix /var/run/docker.sock: connect: permission denied
+[docker-cleanup] No old sgl-dev images found
+[docker-cleanup] Step 3: Removing dangling images and unused data...
+[docker-cleanup] ⚠️  Failed to prune some images
+[docker-cleanup] ✅ Cleaned up dangling images
+[docker-cleanup] ==========================================
+[docker-cleanup] ✅ Docker Cleanup Complete
+[docker-cleanup] Initial disk usage: 60% (1.4T free) (1364 GB free)
+[docker-cleanup] Final disk usage: 60% (1.4T free) (1364 GB free)
+[docker-cleanup] Space freed: 0 GB
+[docker-cleanup] Date: 2025-11-15 09:30:01 CST
+[docker-cleanup] ==========================================
+[docker-cleanup] Docker disk usage summary:
+[docker-cleanup] ⚠️  Failed to get Docker disk usage
