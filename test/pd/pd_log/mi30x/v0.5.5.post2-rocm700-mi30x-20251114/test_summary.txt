@@ -20,7 +20,7 @@ Setup Steps (with runtime):
 - Step 1 - Router Startup: 11s
 - Step 2 - Prefill Server Startup: 155s
 - Step 3 - Decode Server Startup: 155s
-- Step 4 - Health Check Wait: 1455s
+- Step 4 - Health Check Wait: 1450s
 
 Test Results (with runtime):
 - Test 1 - Health Check: PENDING (0s)
@@ -30,8 +30,8 @@ Test Results (with runtime):
 - Test 6 - GSM8K Accuracy: PENDING [PENDING] (0s)
 
 Timing Summary:
-- Total Time (Setup + Tests): 1776s
-- Setup Time (Steps 1-4): 1776s
+- Total Time (Setup + Tests): 1771s
+- Setup Time (Steps 1-4): 1771s
 - GSM8K Test Duration: 0s
 - GSM8K Questions per Second: N/A
 - GSM8K Parallelism: 16 concurrent requests
