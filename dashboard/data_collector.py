@@ -6,13 +6,12 @@ Collects and aggregates CI data from logs for the dashboard.
 Reuses logic from send_daily_summary_alert.py but extends it for dashboard needs.
 """
 
-import glob
 import os
 import re
 
 # Import the DailySummaryReporter to reuse its parsing logic
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 

@@ -305,6 +305,8 @@ class GitHubDataCollector:
                         ) as f:
                             content = f.read()
                     except Exception:
+                        # Ignore errors reading local fallback log file; fallback will fail
+                        # gracefully if content is not loaded.
                         pass
 
         if not content:
