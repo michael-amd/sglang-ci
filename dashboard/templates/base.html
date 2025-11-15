@@ -50,8 +50,8 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/trends' %}active{% endif %}" href="{{ url_for('trends') }}">
-                            <i class="bi bi-graph-up-arrow"></i> Trends
+                        <a class="nav-link {% if request.path == '/database' %}active{% endif %}" href="{{ url_for('database_explorer') }}">
+                            <i class="bi bi-database"></i> Database
                         </a>
                     </li>
                     <li class="nav-item dropdown">
@@ -66,11 +66,6 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/upstream-ci' %}active{% endif %}" href="{{ url_for('upstream_ci_view') }}">
                             <i class="bi bi-shield-check"></i> Upstream CI
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/database' %}active{% endif %}" href="{{ url_for('database_explorer') }}">
-                            <i class="bi bi-database"></i> Database
                         </a>
                     </li>
                 </ul>
