@@ -63,6 +63,7 @@ try:
     elif "35" in hostname or "355" in hostname or "350" in hostname:
         CURRENT_HARDWARE = "mi35x"
 except Exception:
+    # Ignore hostname detection errors; CURRENT_HARDWARE will remain None (default)
     pass
 
 
