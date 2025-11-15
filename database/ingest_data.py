@@ -104,6 +104,7 @@ class DataIngester:
                     if match:
                         return match.group(1)
             except Exception:
+                # Ignore parsing errors, will return None
                 pass
 
         return None
@@ -334,7 +335,6 @@ class DataIngester:
 
             # Try to parse from latest cron log or detail log
             # Priority: Detail log (more accurate) > Cron log
-            import re
             from datetime import datetime
 
             # Try detail logs first (timing_summary from online benchmarks)
@@ -377,13 +377,13 @@ class DataIngester:
                             )
                             if match:
                                 timestamp_str = match.group(1)
-                                tz = match.group(2)
                                 dt = datetime.strptime(
                                     timestamp_str, "%Y-%m-%d %H:%M:%S"
                                 )
                                 run_datetime_pt = dt.strftime("%Y-%m-%d %I:%M %p PT")
                                 break
-                    except:
+                    except Exception:
+                        # Ignore parsing errors, continue to next log
                         pass
 
             # Fallback to cron log if detail log didn't have timestamp
@@ -416,7 +416,8 @@ class DataIngester:
                                         "%Y-%m-%d %I:%M %p PT"
                                     )
                                     break
-                        except:
+                        except Exception:
+                            # Ignore parsing errors, continue to next log
                             pass
 
             # Final fallback - use date only

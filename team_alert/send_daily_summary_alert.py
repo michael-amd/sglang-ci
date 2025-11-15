@@ -16,6 +16,7 @@ ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (optional - if not provided, only logs are saved)
     HARDWARE_TYPE: Hardware type (mi30x, mi35x) - default: mi30x
     SGL_BENCHMARK_CI_DIR: Base directory for CI logs - default: /mnt/raid/michael/sglang-ci
+    DASHBOARD_URL: Base URL for the CI dashboard (e.g., http://10.194.129.138:5000)
 
 REQUIREMENTS:
     - requests library
@@ -96,6 +97,9 @@ class DailySummaryReporter:
         self.base_dir = base_dir
         self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
         self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
+        self.dashboard_url = os.environ.get(
+            "DASHBOARD_URL", "http://10.194.129.138:5000"
+        )
 
     def find_timing_summary_log(
         self, model_dir, mode_suffix: str, date_str: str
@@ -875,14 +879,15 @@ class DailySummaryReporter:
         )
 
         # Add CI Dashboard link
-        dashboard_url = f"http://10.194.129.138:5000/hardware/{self.hardware}"
-        actions.append(
-            {
-                "type": "Action.OpenUrl",
-                "title": "📊 CI Dashboard",
-                "url": dashboard_url,
-            }
-        )
+        if self.dashboard_url:
+            dashboard_url = f"{self.dashboard_url}/hardware/{self.hardware}"
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📊 CI Dashboard",
+                    "url": dashboard_url,
+                }
+            )
 
         # Create the adaptive card
         card = {
