@@ -407,9 +407,47 @@ function setupFilterControls() {
         loadDatabaseOverview();
     });
 
-    document.getElementById('refreshButton').addEventListener('click', () => {
+    document.getElementById('refreshButton').addEventListener('click', async () => {
+        // Sync database from GitHub first to get updates from other machines
+        await syncDatabaseFromGitHub();
         loadDatabaseOverview();
     });
+}
+
+async function syncDatabaseFromGitHub() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.textContent = '🔄 Syncing database from GitHub...';
+        indicator.classList.remove('d-none', 'alert-danger');
+        indicator.classList.add('alert-info');
+    }
+
+    try {
+        const response = await fetch('/api/database/sync', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (indicator) {
+            if (data.status === 'success') {
+                indicator.textContent = '✅ Database synced from GitHub';
+                indicator.classList.add('alert-success');
+                setTimeout(() => indicator.classList.add('d-none'), 2000);
+            } else {
+                indicator.textContent = '⚠️ ' + (data.message || 'Sync completed with warnings');
+                setTimeout(() => indicator.classList.add('d-none'), 3000);
+            }
+        }
+    } catch (error) {
+        if (indicator) {
+            indicator.textContent = '⚠️ Could not sync (using local database)';
+            setTimeout(() => indicator.classList.add('d-none'), 3000);
+        }
+    }
 }
 
 function setLoading(isLoading, message = '', isError = false) {
@@ -418,11 +456,11 @@ function setLoading(isLoading, message = '', isError = false) {
 
     if (isLoading) {
         indicator.textContent = message || 'Loading data...';
-        indicator.classList.remove('d-none', 'alert-danger', 'alert-info');
+        indicator.classList.remove('d-none', 'alert-danger', 'alert-info', 'alert-success');
         indicator.classList.add('alert-info');
     } else if (message) {
         indicator.textContent = message;
-        indicator.classList.remove('d-none', 'alert-info', 'alert-danger');
+        indicator.classList.remove('d-none', 'alert-info', 'alert-danger', 'alert-success');
         indicator.classList.add(isError ? 'alert-danger' : 'alert-info');
         setTimeout(() => indicator.classList.add('d-none'), 4000);
     } else {
