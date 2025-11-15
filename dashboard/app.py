@@ -135,12 +135,6 @@ def hardware_view(hardware):
     )
 
 
-@app.route("/trends")
-def trends():
-    """Historical trends page"""
-    return render_template("trends.html", github_repo=GITHUB_REPO)
-
-
 @app.route("/plots/<hardware>")
 def plots_view(hardware):
     """Plots viewer page"""
@@ -185,26 +179,6 @@ def api_summary(hardware, date):
                 "stats": stats,
             }
         )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/trends/<hardware>")
-@cache.cached(timeout=600, query_string=True)  # Cache for 10 minutes
-def api_trends(hardware):
-    """Get historical trends for specific hardware"""
-    if hardware not in ["mi30x", "mi35x"]:
-        return jsonify({"error": "Invalid hardware type"}), 400
-
-    # Get days parameter (default: 7 days to improve performance)
-    days = request.args.get("days", 7, type=int)
-    days = min(days, 90)  # Cap at 90 days
-
-    try:
-        collector = get_data_collector(hardware)
-        trends_data = collector.get_historical_trends(days=days)
-
-        return jsonify({"hardware": hardware, "days": days, "trends": trends_data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
