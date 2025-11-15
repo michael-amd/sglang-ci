@@ -248,10 +248,13 @@ elif [ "$ENABLE_DP_TEST" = "true" ]; then
     echo "[dp] DP test enabled - setting runs per concurrency to 1"
 fi
 
-# Increase timeout for DP attention + torch compile (first-run compilation takes longer)
+# Increase timeout for torch compile (first-run compilation takes longer)
 if [ "$CHECK_DP_ATTENTION" = "true" ] && [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     SERVER_TIMEOUT=2700  # 45 minutes for torch compile + DP attention
     echo "[config] DP attention + torch compile detected - increased server timeout to ${SERVER_TIMEOUT}s (45 minutes)"
+elif [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    SERVER_TIMEOUT=1800  # 30 minutes for torch compile alone
+    echo "[config] Torch compile detected - increased server timeout to ${SERVER_TIMEOUT}s (30 minutes)"
 fi
 
 # If not provided by flag, use positional argument or default
