@@ -21,8 +21,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Configuration
-# IMPORTANT: Always bind to 0.0.0.0 for internal network access
-# This allows all machines on the network to access the dashboard
+# IMPORTANT: By default, binds to 0.0.0.0 for internal network access.
+# This allows all machines on the network to access the dashboard.
+# WARNING: Binding to 0.0.0.0 exposes the dashboard to all network interfaces.
+#          For production deployments, set DASHBOARD_HOST=127.0.0.1 (localhost only)
+#          or a specific network interface, and ensure proper authentication.
 HOST="${DASHBOARD_HOST:-0.0.0.0}"
 PORT="${DASHBOARD_PORT:-5000}"
 

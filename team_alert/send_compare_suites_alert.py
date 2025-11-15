@@ -14,6 +14,7 @@ USAGE:
 ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (optional - if not provided, only logs are saved)
     SGL_BENCHMARK_CI_DIR: Base directory for CI logs - default: /mnt/raid/michael/sglang-ci
+    DASHBOARD_URL: Base URL for the CI dashboard (e.g., http://10.194.129.138:5000)
 
 REQUIREMENTS:
     - requests library
@@ -62,6 +63,9 @@ class CompareSuitesReporter:
         self.base_dir = base_dir
         self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
         self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
+        self.dashboard_url = os.environ.get(
+            "DASHBOARD_URL", "http://10.194.129.138:5000"
+        )
 
     def run_compare_suites(self) -> Tuple[bool, List[Dict[str, str]], str]:
         """
@@ -293,12 +297,15 @@ class CompareSuitesReporter:
                 "title": "📋 View Cron Logs",
                 "url": f"https://github.com/{self.github_repo}/tree/log/cron_log/mi30x/{date_str}",
             },
-            {
-                "type": "Action.OpenUrl",
-                "title": "📊 CI Dashboard",
-                "url": "http://10.194.129.138:5000/upstream-ci",
-            },
         ]
+        if self.dashboard_url:
+            actions.append(
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "📊 CI Dashboard",
+                    "url": f"{self.dashboard_url}/upstream-ci",
+                }
+            )
 
         # Create the adaptive card
         card = {

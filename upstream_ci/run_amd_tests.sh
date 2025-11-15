@@ -16,7 +16,7 @@
 #   --sglang-path=PATH          Path to sglang repository [default: /mnt/raid/michael/hubertlu-tw/sglang]
 #   --num-gpus=N                Number of GPUs to use [default: 8]
 #   --timeout=SECONDS           Timeout per test in seconds [default: 1800]
-#   --hf-token=TOKEN            HuggingFace token for model access [default: HF_TOKEN_REDACTED]
+#   --hf-token=TOKEN            HuggingFace token for model access (or use HF_TOKEN env var)
 #   --help, -h                  Show help message
 #
 # EXAMPLES:
@@ -86,7 +86,7 @@ Optional:
   --sglang-path=PATH          Path to sglang repository [default: $DEFAULT_SGLANG_REPO_DIR]
   --num-gpus=N                Number of GPUs to use [default: $DEFAULT_NUM_GPUS]
   --timeout=SECONDS           Timeout per test in seconds [default: $DEFAULT_TIMEOUT]
-  --hf-token=TOKEN            HuggingFace token for model access [default: $DEFAULT_HF_TOKEN]
+  --hf-token=TOKEN            HuggingFace token for model access (or use HF_TOKEN env var)
   --help, -h                  Show this help message
 
 Examples:
@@ -97,7 +97,7 @@ Examples:
 
 Log Files:
   Logs are saved to: $BASE_CI_DIR/upstream_ci/upstream_test_log/<docker_image_tag>/{num_gpus}-gpu-amd-{date}_{test_name}.log
-  Example: /mnt/raid/michael/sglang-ci/upstream_ci/upstream_test_log/v0.5.4.post1-rocm630-mi30x-20251030/8-gpu-amd-20251030_test_harmony_parser.log
+  Example: /mnt/raid/michael/sglang-ci/upstream_ci/upstream_test_log/v0.5.4.post1-rocm700-mi30x-20251030/8-gpu-amd-20251030_test_harmony_parser.log
 
 EOF
 }
@@ -363,7 +363,7 @@ main() {
     local num_gpus=$DEFAULT_NUM_GPUS
     local timeout_seconds=$DEFAULT_TIMEOUT
     local sglang_repo_dir="$DEFAULT_SGLANG_REPO_DIR"
-    local hf_token="$DEFAULT_HF_TOKEN"
+    local hf_token="${HF_TOKEN:-$DEFAULT_HF_TOKEN}"
 
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -466,7 +466,7 @@ main() {
         exit 1
     fi
 
-    # Extract docker image tag from docker_image (e.g., "rocm/sgl-dev:v0.5.4.post1-rocm630-mi30x-20251030" -> "v0.5.4.post1-rocm630-mi30x-20251030")
+    # Extract docker image tag from docker_image (e.g., "rocm/sgl-dev:v0.5.4.post1-rocm700-mi30x-20251030" -> "v0.5.4.post1-rocm700-mi30x-20251030")
     local docker_image_tag
     if [[ -n "$docker_image" ]]; then
         docker_image_tag="${docker_image##*:}"
