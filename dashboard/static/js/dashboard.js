@@ -245,13 +245,6 @@ function getCurrentDate() {
 }
 
 /**
- * Get current date in UTC (YYYY-MM-DD format)
- */
-function getCurrentDateUTC() {
-    return new Date().toISOString().split('T')[0];
-}
-
-/**
  * Get date N days ago in YYYY-MM-DD format
  */
 function getDaysAgo(days) {
