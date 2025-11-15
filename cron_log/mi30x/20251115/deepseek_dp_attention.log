@@ -1,0 +1,79 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-15 09:30:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2048123
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 02a9f116d9b2
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251115...
+[nightly] Primary version (rocm700) not found, trying fallback (rocm630)...
+[nightly] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251115...
+[nightly] No image found for today. Checking yesterday as a fallback...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251114...
+[nightly] Fallback found candidate tag: v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Successfully obtained fallback image for date 20251114: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 8a09bd8d1ae8
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251114_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Container name: sgl-dev_v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Reusing container sgl-dev_v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.5.post2-rocm700-mi30x-20251114
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-11-15 09:30:38 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Incomplete: GSM8K log file missing final accuracy summary (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251114_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image
+Waiting for SGLang server (PID: 43) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post2-rocm700-mi30x-20251114_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log
+......................................
+SGLang server started successfully after 191 seconds.
+=== Online GSM8K Benchmark: TP=8, Questions=2000, Parallel=2000, Shots=5 ===
+[progress] Total benchmark runs to execute: 5 (GSM8K only - DP attention mode)
+[progress] [--------------------------------------------------] 0/5 (0%) 
+Starting GSM8K Online Benchmark...
+Running 5 test iterations...
+Executing GSM8K test Run 1 ...
