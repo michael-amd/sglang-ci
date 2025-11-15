@@ -11,10 +11,10 @@
 #
 # Environment variables (set these before running crontab):
 SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
-GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
-GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
-GROK2_TOKENIZER_PATH="/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer"
-DEEPSEEK_MODEL_PATH="/data2/models/amd-DeepSeek-R1-MXFP4-Preview"
+GROK_MODEL_PATH="/data/amd--grok-1-W4A8KV8"
+GROK2_MODEL_PATH="/data/grok-2"
+GROK2_TOKENIZER_PATH="/data/alvarobartt--grok-2-tokenizer"
+DEEPSEEK_MODEL_PATH="/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview"
 HARDWARE_TYPE="mi35x"
 
 # Public Teams webhook left empty by default – fill in to enable alerts
@@ -23,6 +23,9 @@ TEAMS_WEBHOOK_URL=""
 # GitHub repository configuration (fill in to enable log/plot uploads)
 GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
+
+# 8:30 AM PT (10:30 AM CT) - Docker cleanup to prevent disk space issues [Runtime: ~2-5 min]
+30 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" CRITICAL_SPACE_GB=200 bash cron/docker_cleanup.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_cleanup.log 2>&1
 
 # 9 AM PT (11 AM CT) - Docker image availability check with Teams notifications [Runtime: ~30s]
 0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash scripts/nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_database_upload.sh
