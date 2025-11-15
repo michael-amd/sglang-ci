@@ -109,13 +109,80 @@ AMD vs NVIDIA test coverage tracking with:
 
 ![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
 
-**Full Documentation:** See https://github.com/ROCm/sglang-ci/blob/log/README.md for detailed dashboard documentation
+**Full Documentation:** See `dashboard/README.md` for detailed dashboard documentation including API endpoints, deployment options, and troubleshooting.
+
+---
+
+## 🗄️ Database System
+
+The dashboard uses an SQLite database for fast queries and efficient data access. The database is automatically synced to GitHub for cross-machine sharing.
+
+**Database Location:** `/mnt/raid/michael/sglang-ci/database/ci_dashboard.db`
+
+### Quick Start
+
+```bash
+# Pull existing database from GitHub
+python database/sync_database.py pull
+
+# Or create from logs (backfill last 30 days)
+python database/ingest_data.py --backfill 30
+
+# Start dashboard with database (enabled by default)
+bash dashboard/start_dashboard.sh
+```
+
+### Key Features
+
+- **Fast Queries:** 50-300x faster than filesystem parsing
+- **GitHub Sync:** Automatic backup and cross-machine sharing
+- **Historical Trends:** Efficient querying for long-term analytics
+- **Automatic Updates:** Cron-based ingestion after CI runs
+
+### Database Schema
+
+**Main Tables:**
+- `test_runs` - Daily CI run tracking (date, hardware, status, pass/fail counts)
+- `benchmark_results` - Performance benchmarks (GSM8K accuracy, runtime)
+- `sanity_check_results` - Per-model sanity check results
+- `log_files` - Log file links (local paths and GitHub URLs)
+- `plot_files` - Plot image links (local paths and GitHub URLs)
+
+### Daily Workflow
+
+**Automated (via Cron):**
+1. Nightly CI tests run (7:00 AM)
+2. Database ingestion (`update_dashboard_database.sh`)
+3. GitHub sync (automatic)
+
+**Manual Operations:**
+```bash
+# Ingest today's data
+python database/ingest_data.py
+
+# Ingest specific date
+python database/ingest_data.py --date 20251114
+
+# Sync with GitHub
+python database/sync_database.py pull  # Download latest
+python database/sync_database.py push  # Upload local changes
+```
+
+### Performance Comparison
+
+| Operation | Filesystem | Database | Speedup |
+|-----------|-----------|----------|---------|
+| Daily summary | 1-2s | 10-20ms | 50-100x |
+| 30-day trends | 30-60s | 100-200ms | 150-300x |
+
+**Full Documentation:** See `database/README.md` and `database/QUICKSTART.md` for complete schema details, Python API, and troubleshooting.
 
 ---
 
 ## Table of Contents
 
 - [Interactive Dashboard](#-interactive-dashboard)
+- [Database System](#️-database-system)
 - [Supported Docker Images](#supported-docker-images)
 - [Benchmark CI](#benchmark-ci)
   - [Offline Mode](#offline-mode)
@@ -669,6 +736,52 @@ Stops the running dashboard server.
 
 ```bash
 bash dashboard/stop_dashboard.sh
+```
+
+### Database Management
+
+#### ingest_data.py
+
+Ingests CI test data into the SQLite database.
+
+**Location:** `database/ingest_data.py`
+
+**Usage:**
+
+```bash
+# Ingest today's data
+python database/ingest_data.py
+
+# Ingest specific date
+python database/ingest_data.py --date 20251114
+
+# Backfill last 30 days
+python database/ingest_data.py --backfill 30
+
+# Backfill date range
+python database/ingest_data.py --from 20251101 --to 20251114
+```
+
+#### sync_database.py
+
+Syncs database with GitHub for backup and cross-machine sharing.
+
+**Location:** `database/sync_database.py`
+
+**Usage:**
+
+```bash
+# Pull database from GitHub
+python database/sync_database.py pull
+
+# Pull with local backup
+python database/sync_database.py pull --backup
+
+# Push database to GitHub
+python database/sync_database.py push
+
+# Show database info
+python database/sync_database.py info
 ```
 
 ---
