@@ -504,22 +504,23 @@ class DataIngester:
                 if task_name in task_results:
                     result = task_results[task_name]
 
-                    if result.get("exists", False):
-                        # Generate detail log URL for this specific test
-                        detail_log_url = self.get_detail_log_url(
-                            task_name, date_str, hardware
-                        )
+                    # Generate detail log URL for this specific test (even if not run)
+                    detail_log_url = self.get_detail_log_url(
+                        task_name, date_str, hardware
+                    )
 
-                        self.db.upsert_benchmark_result(
-                            test_run_id=test_run_id,
-                            benchmark_name=task_name,
-                            status=result["status"],
-                            gsm8k_accuracy=result.get("gsm8k_accuracy"),
-                            runtime_minutes=self.parse_runtime(result.get("runtime")),
-                            error_message=result.get("error"),
-                            timing_log_path=None,  # Could extract from logs
-                            github_detail_log_url=detail_log_url,
-                        )
+                    # Store all tasks, including those that didn't run (exists=False)
+                    # This ensures the dashboard can show "not run" status and accurate task counts
+                    self.db.upsert_benchmark_result(
+                        test_run_id=test_run_id,
+                        benchmark_name=task_name,
+                        status=result["status"],
+                        gsm8k_accuracy=result.get("gsm8k_accuracy"),
+                        runtime_minutes=self.parse_runtime(result.get("runtime")),
+                        error_message=result.get("error"),
+                        timing_log_path=None,  # Could extract from logs
+                        github_detail_log_url=detail_log_url,
+                    )
 
             # Ingest sanity check results
             if sanity_results:

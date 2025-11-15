@@ -120,27 +120,35 @@ def parse_test_log(log_file_path: str) -> Dict:
             try:
                 # Try to parse the datetime strings
                 # Handle different possible formats
-                time_formats = [
-                    "%Y-%m-%d %H:%M:%S %Z",  # 2025-09-03 22:42:28 CDT
-                    "%Y-%m-%d %H:%M:%S %z",  # With timezone offset
-                    "%Y-%m-%d %H:%M:%S",  # Without timezone
-                ]
-
                 start_dt = None
                 end_dt = None
 
-                for fmt in time_formats:
-                    try:
-                        # Remove timezone abbreviations like CDT, CST, etc. for parsing
-                        start_clean = re.sub(r"\s+[A-Z]{3,4}$", "", start_str)
-                        end_clean = re.sub(r"\s+[A-Z]{3,4}$", "", end_str)
+                # Try parsing with timezone abbreviations stripped (most common format)
+                try:
+                    start_clean = re.sub(r"\s+[A-Z]{3,4}$", "", start_str)
+                    end_clean = re.sub(r"\s+[A-Z]{3,4}$", "", end_str)
+                    start_dt = datetime.strptime(start_clean, "%Y-%m-%d %H:%M:%S")
+                    end_dt = datetime.strptime(end_clean, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    pass
 
-                        if fmt == "%Y-%m-%d %H:%M:%S":
-                            start_dt = datetime.strptime(start_clean, fmt)
-                            end_dt = datetime.strptime(end_clean, fmt)
-                            break
+                # Try parsing with numeric timezone offset (e.g., +0000, -0800)
+                if not start_dt:
+                    try:
+                        from datetime import datetime as dt_module
+
+                        start_dt = dt_module.strptime(start_str, "%Y-%m-%d %H:%M:%S %z")
+                        end_dt = dt_module.strptime(end_str, "%Y-%m-%d %H:%M:%S %z")
+                    except (ValueError, ImportError):
+                        pass
+
+                # Try parsing without any timezone info
+                if not start_dt:
+                    try:
+                        start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+                        end_dt = datetime.strptime(end_str, "%Y-%m-%d %H:%M:%S")
                     except ValueError:
-                        continue
+                        pass
 
                 if start_dt and end_dt:
                     duration = end_dt - start_dt
