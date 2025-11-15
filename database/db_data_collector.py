@@ -62,41 +62,23 @@ class DatabaseDataCollector:
             # Build results from database
             results = {}
 
-            # Get benchmark results
+            # Get benchmark results (now includes all tasks, even those not run)
             benchmark_results = self.db.get_benchmark_results(test_run["id"])
 
             for br in benchmark_results:
+                # Check if task actually ran by looking at status
+                # Status will be "unknown" for tasks that didn't run
+                task_exists = (
+                    br["status"] not in ["unknown"] or br["runtime_minutes"] is not None
+                )
+
                 results[br["benchmark_name"]] = {
-                    "exists": True,
+                    "exists": task_exists,
                     "status": br["status"],
                     "runtime": self._format_runtime(br["runtime_minutes"]),
                     "error": br["error_message"],
                     "gsm8k_accuracy": br["gsm8k_accuracy"],
                 }
-
-            # Add validation tasks (these are tracked separately in filesystem)
-            # We'll need to check logs for these
-            validation_tasks = {
-                "Unit Tests": "test_nightly.log",
-                "PD Disaggregation Tests": "test_nightly_pd.log",
-                "Sanity Check": "sanity_check_nightly.log",
-                "Docker Image Check": "docker_image_check.log",
-            }
-
-            for task_name, log_file in validation_tasks.items():
-                # Check if we have this in log_files table
-                log_files = self.db.get_log_files(test_run["id"])
-                log_exists = any(lf["log_name"] == log_file for lf in log_files)
-
-                if log_exists:
-                    # Try to get status from logs if available
-                    # For now, mark as unknown and rely on fallback
-                    results[task_name] = {
-                        "exists": log_exists,
-                        "status": "unknown",
-                        "runtime": None,
-                        "error": None,
-                    }
 
             return results
 
