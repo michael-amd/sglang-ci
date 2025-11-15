@@ -1,0 +1,13 @@
+Online Serving Benchmark - DeepSeek-R1-MXFP4-Preview (v0.5.5.post2-rocm700-mi35x-20251114)
+
+Median E2E Latency (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-R1-MXFP4-Preview-FP8	84990.19	61903.56	44198.64	36701.81	
+
+Median TTFT (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-R1-MXFP4-Preview-FP8	22437.25	12747.84	4347.85	1240.96	
+
+Median ITL (ms, lower better)
+concurrency	128	64	16	4	1
+DeepSeek-R1-MXFP4-Preview-FP8	67.01	57.72	49.89	46.66	
