@@ -32,8 +32,6 @@ Found GSM8K accuracy (single run) for mode aiter: 0.929
 Found GSM8K accuracy for mode aiter: 0.926
 Found GSM8K accuracy (single run) for mode aiter: 0.929
 Found GSM8K accuracy for mode aiter: 0.933
-Found GSM8K accuracy (single run) for mode aiter: 0.927
-Found GSM8K accuracy for mode aiter: 0.926
 Found GSM8K accuracy (single run) for mode aiter: 0.929
 Found GSM8K accuracy for mode aiter: 0.929
 Found GSM8K accuracy (single run) for mode aiter: 0.922
@@ -75,7 +73,6 @@ Date 20251025, Variant standard: Complete and valid data for all modes and reque
 Date 20251108, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251104, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251105, Variant standard: Complete and valid data for all modes and request_rates
-Date 20251016, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251026, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251027, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251024, Variant standard: Complete and valid data for all modes and request_rates
@@ -91,15 +88,14 @@ Date 20251019, Variant standard: Complete and valid data for all modes and reque
 Date 20251107, Variant standard: Complete and valid data for all modes and request_rates
 Date 20251101, Variant standard: Complete and valid data for all modes and request_rates
 
-Kept 24 date+variant combinations with complete and valid data: [('20251016', 'standard'), ('20251017', 'standard'), ('20251018', 'standard'), ('20251019', 'standard'), ('20251020', 'standard'), ('20251021', 'standard'), ('20251024', 'standard'), ('20251025', 'standard'), ('20251026', 'standard'), ('20251027', 'standard'), ('20251028', 'standard'), ('20251029', 'standard'), ('20251030', 'standard'), ('20251031', 'standard'), ('20251101', 'standard'), ('20251103', 'standard'), ('20251104', 'standard'), ('20251105', 'standard'), ('20251107', 'standard'), ('20251108', 'standard'), ('20251110', 'standard'), ('20251112', 'standard'), ('20251113', 'standard'), ('20251114', 'standard')]
-Total records after filtering: 120
+Kept 23 date+variant combinations with complete and valid data: [('20251017', 'standard'), ('20251018', 'standard'), ('20251019', 'standard'), ('20251020', 'standard'), ('20251021', 'standard'), ('20251024', 'standard'), ('20251025', 'standard'), ('20251026', 'standard'), ('20251027', 'standard'), ('20251028', 'standard'), ('20251029', 'standard'), ('20251030', 'standard'), ('20251031', 'standard'), ('20251101', 'standard'), ('20251103', 'standard'), ('20251104', 'standard'), ('20251105', 'standard'), ('20251107', 'standard'), ('20251108', 'standard'), ('20251110', 'standard'), ('20251112', 'standard'), ('20251113', 'standard'), ('20251114', 'standard')]
+Total records after filtering: 115
 Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/GROK2/GROK2_FP8_online_all_variants_aiter_summary_dell300x-pla-t10-23.csv
 Processed all variants
 Processed modes: aiter
 Variants found in output: standard
 Modes found in output: aiter
 === PLOT GENERATION PHASE ===
-Date 20251016: Complete and valid data for all modes and request_rates
 Date 20251017: Complete and valid data for all modes and request_rates
 Date 20251018: Complete and valid data for all modes and request_rates
 Date 20251019: Complete and valid data for all modes and request_rates
@@ -124,8 +120,8 @@ Date 20251112: Complete and valid data for all modes and request_rates
 Date 20251113: Complete and valid data for all modes and request_rates
 Date 20251114: Complete and valid data for all modes and request_rates
 
-Kept 24 dates with complete and valid data for plotting
-Total records after filtering: 120
+Kept 23 dates with complete and valid data for plotting
+Total records after filtering: 115
 Plotting modes: aiter
 Using 3x2 layout (with token/KV cache data)
 Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online/20251114_GROK2_online_standard.png

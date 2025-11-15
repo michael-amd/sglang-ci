@@ -1,0 +1,55 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-15 12:30:41 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+Model: /mnt/raid/models/huggingface/grok-2
+Hostname: dell300x-pla-t10-23
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+All logs already complete - skipping server startup
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 11479.92 ms
+  TTFT: 150.35 ms
+  ITL: 19.09 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 13237.85 ms
+  TTFT: 155.26 ms
+  ITL: 20.03 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 23263.96 ms
+  TTFT: 202.90 ms
+  ITL: 29.66 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 92192.98 ms
+  TTFT: 289.33 ms
+  ITL: 116.56 ms
+  Throughput: N/A requests/s
+
+Request Rate 16:
+  E2E Latency: 139123.73 ms
+  TTFT: 308.74 ms
+  ITL: 134.97 ms
+  Throughput: N/A requests/s
+
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-15 12:30:41 PST
+Total execution time: 0 seconds (0 minutes)
+========================================
