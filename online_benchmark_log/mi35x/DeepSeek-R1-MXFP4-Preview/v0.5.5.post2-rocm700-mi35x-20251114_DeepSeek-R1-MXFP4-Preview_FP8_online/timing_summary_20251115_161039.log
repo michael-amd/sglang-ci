@@ -1,0 +1,81 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-15 16:10:39 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi35x-20251114
+Model: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 75 seconds
+
+GSM8K Test Results:
+  Total duration: 265 seconds
+  Average accuracy: 0.943
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.943
+
+Serving Benchmark Results:
+  Start time: 2025-11-15 16:16:19 PST
+Completed concurrency 128 - Total time: 2 seconds
+Completed concurrency 64 - Total time: 2 seconds
+Completed concurrency 16 - Total time: 2 seconds
+Completed concurrency 4 - Total time: 2 seconds
+Completed concurrency 1 - Total time: 2 seconds
+  End time: 2025-11-15 16:16:41 PST
+  Total duration: 22 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: 76422.32 ms
+  TTFT: 14434.03 ms
+  ITL: 62.43 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 64:
+  E2E Latency: 42235.68 ms
+  TTFT: 759.65 ms
+  ITL: 49.20 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 16:
+  E2E Latency: 31031.57 ms
+  TTFT: 309.08 ms
+  ITL: 38.38 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 4:
+  E2E Latency: 28399.10 ms
+  TTFT: 227.09 ms
+  ITL: 35.25 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 1:
+  E2E Latency: 27259.92 ms
+  TTFT: 133.19 ms
+  ITL: 33.95 ms
+  Output throughput: (tok/s): tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-15 16:16:41 PST
+Total execution time: 362 seconds (6 minutes)
+========================================
