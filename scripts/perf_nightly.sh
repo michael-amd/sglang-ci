@@ -923,7 +923,16 @@ echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
 if [ "$MODE" = "sanity" ]; then
     LOCKFILE="/tmp/perf_nightly_sanity.lock"
 else
-    LOCKFILE="/tmp/perf_nightly_${MODEL}.lock"
+    # Build lock file name with test-specific suffix to prevent conflicts
+    LOCK_SUFFIX=""
+    if [[ "$ENABLE_DP_TEST" == "true" && "$ENABLE_MTP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_dp_mtp"
+    elif [[ "$ENABLE_DP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_dp"
+    elif [[ "$ENABLE_MTP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_mtp"
+    fi
+    LOCKFILE="/tmp/perf_nightly_${MODEL}${LOCK_SUFFIX}.lock"
 fi
 
 if [ -f "$LOCKFILE" ]; then
