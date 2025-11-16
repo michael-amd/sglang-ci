@@ -223,6 +223,30 @@ class DatabaseAlertDataCollector(DailySummaryReporter):
         # Return empty dict (plots are optional)
         return plots
 
+    def extract_docker_image(self, date_str: str) -> Optional[str]:
+        """
+        Extract the Docker image used for tests/benchmarks from database
+
+        Args:
+            date_str: Date string in YYYYMMDD format
+
+        Returns:
+            Docker image name or None
+        """
+        # Try database first
+        if self.use_database and self.db:
+            try:
+                test_run = self.db.get_test_run(date_str, self.hardware)
+
+                if test_run and test_run.get("docker_image"):
+                    return test_run["docker_image"]
+            except Exception as e:
+                print(f"⚠️  Could not get docker image from database: {e}")
+                print("   Falling back to filesystem parsing")
+
+        # Fallback to parent class filesystem parsing
+        return super().extract_docker_image(date_str)
+
     def _format_runtime(self, runtime_minutes: Optional[int]) -> Optional[str]:
         """
         Format runtime minutes to human-readable string

@@ -374,6 +374,43 @@ trap cleanup EXIT
 ensure_gpu_idle
 
 ###############################################################################
+# Check yesterday's run status
+###############################################################################
+check_yesterday_run_status() {
+  # Check if yesterday's run was successful
+  # Returns: 0 if yesterday's run failed/didn't run/incomplete, 1 if successful
+  local yesterday_date=$(date_pst 1)
+  local yesterday_log_dir="${MOUNT_DIR}/cron/cron_log/${HARDWARE_TYPE}/${yesterday_date}"
+
+  # Determine which log file to check based on test type
+  local log_file=""
+  if [[ "$TEST_TYPE" == "pd" ]]; then
+    log_file="test_nightly_pd.log"
+  else
+    log_file="test_nightly.log"
+  fi
+
+  local yesterday_log="${yesterday_log_dir}/${log_file}"
+
+  # If log doesn't exist, yesterday didn't run
+  if [[ ! -f "$yesterday_log" ]]; then
+    echo "[test] Yesterday's run log not found - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  # Check if yesterday's run completed successfully
+  if grep -q "Result: PASSED" "$yesterday_log" || grep -q "\[test\] Test completed for image:" "$yesterday_log"; then
+    # Yesterday's run was successful
+    echo "[test] Yesterday's run completed successfully"
+    return 1  # Don't allow fallback - yesterday was successful
+  else
+    # Yesterday's run failed or didn't complete
+    echo "[test] Yesterday's run failed or did not complete"
+    return 0  # Allow fallback
+  fi
+}
+
+###############################################################################
 # Pick image tag based on date
 ###############################################################################
 date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
@@ -480,26 +517,34 @@ else
     fi
   fi
 
-  # If no image found for today, try yesterday as fallback
+  # If no image found for today, check if we should try yesterday as fallback
   if [[ -z "$SELECTED_TAG" ]]; then
-    echo "[test] No image found for today. Checking yesterday as a fallback..."
-    date_suffix=$(date_pst 1)
+    echo "[test] No image found for today. Checking if yesterday's image should be used as fallback..."
 
-    # For yesterday fallback, only try primary ROCM version (rocm700)
-    # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+    # Only use yesterday's image if yesterday's run failed/didn't run/didn't complete
+    if check_yesterday_run_status; then
+      echo "[test] Proceeding with yesterday's image fallback..."
+      date_suffix=$(date_pst 1)
 
-    if [[ -n "$candidate_tag" ]]; then
-      echo "[test] Fallback found candidate tag: ${candidate_tag}"
-      echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-      if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
-        SELECTED_TAG="$candidate_tag"
-        echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+      # For yesterday fallback, only try primary ROCM version (rocm700)
+      # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
+      candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+      if [[ -n "$candidate_tag" ]]; then
+        echo "[test] Fallback found candidate tag: ${candidate_tag}"
+        echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+        if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+          SELECTED_TAG="$candidate_tag"
+          echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+        else
+          echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+        fi
       else
-        echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+        echo "[test] No fallback image found for yesterday either."
       fi
     else
-      echo "[test] No fallback image found for yesterday either."
+      echo "[test] Skipping yesterday's image fallback - yesterday's run was successful"
+      echo "[test] Status: SKIPPED (prerequisites not met)"
     fi
   fi
 fi

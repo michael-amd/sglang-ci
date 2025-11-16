@@ -287,6 +287,25 @@ class DailySummaryReporter:
                 result["error"] = "Script not found"
                 return result
 
+            # Special handling for docker_image_check.log
+            # This log contains the actual check result AND a Teams notification status
+            # We need to check the actual image availability, not just the Teams notification
+            if "docker_image_check" in os.path.basename(log_path):
+                # Check if images are missing
+                if "Missing images:" in content:
+                    # Extract the count of missing images
+                    missing_match = re.search(r"Missing images:\s*(\d+)", content)
+                    if missing_match and int(missing_match.group(1)) > 0:
+                        result["status"] = "fail"
+                        result["error"] = (
+                            f"{missing_match.group(1)} Docker image(s) not available"
+                        )
+                        return result
+                # Check if all images are available
+                if "✓ All expected images are available!" in content:
+                    result["status"] = "pass"
+                    return result
+
             # Check for common success/failure patterns (order matters - check failures first for tests)
             if "Status: SKIPPED (prerequisites not met)" in content:
                 # Test was skipped due to failed prerequisites
@@ -457,6 +476,65 @@ class DailySummaryReporter:
 
         return {"model_results": model_results, "log_file": log_file}
 
+    def extract_docker_image(self, date_str: str) -> Optional[str]:
+        """
+        Extract the Docker image used for tests/benchmarks
+
+        Args:
+            date_str: Date string in YYYYMMDD format
+
+        Returns:
+            Docker image name or None
+        """
+        # Try to extract from various log files
+        log_dir = os.path.join(
+            self.base_dir, "cron", "cron_log", self.hardware, date_str
+        )
+
+        # Priority order: unit test logs (most likely to have been run)
+        log_files = [
+            "test_nightly.log",
+            "test_nightly_pd.log",
+            "sanity_check_nightly.log",
+            "grok_nightly.log",
+            "grok2_nightly_online.log",
+            "deepseek_nightly_online.log",
+        ]
+
+        for log_file in log_files:
+            log_path = os.path.join(log_dir, log_file)
+            if not os.path.exists(log_path):
+                continue
+
+            try:
+                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+
+                # Look for Docker image patterns
+                # Pattern 1: [test] Selected image to run tests on: rocm/sgl-dev:...
+                match = re.search(
+                    r"\[test\] Selected image to run tests on:\s*(\S+)", content
+                )
+                if match:
+                    return match.group(1)
+
+                # Pattern 2: Using Docker image: rocm/sgl-dev:...
+                match = re.search(r"Using Docker image:\s*(\S+)", content)
+                if match:
+                    return match.group(1)
+
+                # Pattern 3: [test] Starting tests for image: rocm/sgl-dev:...
+                match = re.search(
+                    r"\[test\] Starting tests for image:\s*(\S+)", content
+                )
+                if match:
+                    return match.group(1)
+
+            except Exception:
+                continue
+
+        return None
+
     def collect_task_results(self, date_str: str) -> Dict:
         """
         Collect results from all nightly tasks for a given date
@@ -566,6 +644,9 @@ class DailySummaryReporter:
         except ValueError:
             report_date = date_str
 
+        # Extract Docker image used for runs
+        docker_image = self.extract_docker_image(date_str)
+
         # Parse sanity results to include individual model tests in counts
         sanity_results = self.parse_sanity_check_log(date_str)
         sanity_model_count = 0
@@ -646,28 +727,46 @@ class DailySummaryReporter:
                 "isSubtle": True,
                 "spacing": "None",
             },
-            {
-                "type": "TextBlock",
-                "text": "**Overall Status:**",
-                "weight": "Bolder",
-                "size": "Medium",
-                "spacing": "Medium",
-            },
-            {
-                "type": "TextBlock",
-                "text": f"• Tasks run: **{total_tasks - not_run}/{total_tasks}**",
-                "wrap": True,
-                "size": "Small",
-                "spacing": "Small",
-            },
-            {
-                "type": "TextBlock",
-                "text": f"• Passed: **{passed_tasks}**, Failed: **{failed_tasks}**, Unknown: **{unknown_tasks}**",
-                "wrap": True,
-                "size": "Small",
-                "spacing": "None",
-            },
         ]
+
+        # Add Docker Image information if available
+        if docker_image:
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "size": "Small",
+                    "text": f"Docker Image: {docker_image}",
+                    "isSubtle": True,
+                    "spacing": "None",
+                }
+            )
+
+        # Add Overall Status section
+        body_elements.extend(
+            [
+                {
+                    "type": "TextBlock",
+                    "text": "**Overall Status:**",
+                    "weight": "Bolder",
+                    "size": "Medium",
+                    "spacing": "Medium",
+                },
+                {
+                    "type": "TextBlock",
+                    "text": f"• Tasks run: **{total_tasks - not_run}/{total_tasks}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                },
+                {
+                    "type": "TextBlock",
+                    "text": f"• Passed: **{passed_tasks}**, Failed: **{failed_tasks}**, Unknown: **{unknown_tasks}**",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "None",
+                },
+            ]
+        )
 
         # Add task details section
         body_elements.append(
@@ -1019,6 +1118,9 @@ class DailySummaryReporter:
             if k != "Sanity Check" and not r["exists"]
         )
 
+        # Extract Docker image
+        docker_image = self.extract_docker_image(date_str)
+
         # Print header
         print("\n" + "=" * 80)
         print(f"Alert sent: {report_date} Daily CI Summary Report")
@@ -1026,6 +1128,8 @@ class DailySummaryReporter:
         print(f"\nGenerated on {current_date} at {current_time}")
         print(f"Hostname: {socket.gethostname()}")
         print(f"Hardware: {self.hardware}")
+        if docker_image:
+            print(f"Docker Image: {docker_image}")
 
         # Print overall status
         print("\nOverall Status:")
@@ -1144,6 +1248,49 @@ class DailySummaryReporter:
 
         print("\n" + "=" * 80 + "\n")
 
+    def should_send_alert(self, date_str: str, docker_image: Optional[str]) -> bool:
+        """
+        Check if alert should be sent based on Docker image date
+
+        Only send alerts if today's Docker image is being used.
+        Skip alerts if using yesterday's image (fallback scenario).
+
+        Args:
+            date_str: Expected date string in YYYYMMDD format
+            docker_image: Docker image name (e.g., rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114)
+
+        Returns:
+            True if alert should be sent, False otherwise
+        """
+        if not docker_image:
+            # No docker image found, allow alert (could be an error condition we want to report)
+            print(
+                "⚠️  No Docker image found - skipping alert to avoid reporting on fallback runs"
+            )
+            return False
+
+        # Extract date from Docker image tag
+        # Format: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-YYYYMMDD
+        date_match = re.search(r"-(\d{8})(?:$|[^0-9])", docker_image)
+        if not date_match:
+            print(f"⚠️  Could not extract date from Docker image: {docker_image}")
+            print("   Skipping alert to avoid reporting on fallback runs")
+            return False
+
+        image_date = date_match.group(1)
+
+        if image_date != date_str:
+            print(
+                f"🔔 Alert suppressed: Docker image is from {image_date}, expected {date_str}"
+            )
+            print(f"   Using yesterday's image as fallback - not sending alert")
+            return False
+
+        print(
+            f"✅ Docker image date matches expected date ({date_str}) - proceeding with alert"
+        )
+        return True
+
     def send_summary_notification(self, date_str: str) -> bool:
         """
         Send daily summary notification to Teams and save to log
@@ -1158,6 +1305,14 @@ class DailySummaryReporter:
             # Collect task results
             print(f"📊 Collecting task results for {date_str}...")
             task_results = self.collect_task_results(date_str)
+
+            # Extract Docker image to check if we should send alert
+            docker_image = self.extract_docker_image(date_str)
+
+            # Check if we should send alert (only for today's image)
+            if not self.should_send_alert(date_str, docker_image):
+                print("ℹ️  Alert sending skipped - not using today's Docker image")
+                return False
 
             # Create card
             card = self.create_summary_card(date_str, task_results)
