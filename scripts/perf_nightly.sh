@@ -1009,6 +1009,60 @@ if ! command -v curl &> /dev/null; then
 fi
 
 ###############################################################################
+# Check yesterday's run status
+###############################################################################
+check_yesterday_run_status() {
+  # Check if yesterday's run was successful for the specified model and mode
+  # Returns: 0 if yesterday's run failed/didn't run/incomplete, 1 if successful
+  local yesterday_date=$(date_pst 1)
+  local yesterday_log_dir="${BENCHMARK_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${yesterday_date}"
+
+  # Determine which log file to check based on model
+  local log_file=""
+  if [[ "$MODE" == "sanity" ]]; then
+    log_file="sanity_check_nightly.log"
+  elif [[ "$MODEL" == "grok" ]]; then
+    log_file="grok_nightly.log"
+  elif [[ "$MODEL" == "grok2" ]]; then
+    log_file="grok2_nightly_online.log"
+  elif [[ "$MODEL" == "deepseek" ]]; then
+    # Check for specific mode variants
+    if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$CHECK_DP_ATTENTION" == "true" ]]; then
+      log_file="deepseek_dp_attention_torch_compile.log"
+    elif [[ "$ENABLE_TORCH_COMPILE" == "true" ]]; then
+      log_file="deepseek_torch_compile.log"
+    elif [[ "$CHECK_DP_ATTENTION" == "true" ]]; then
+      log_file="deepseek_dp_attention.log"
+    else
+      log_file="deepseek_nightly_online.log"
+    fi
+  else
+    # Unknown model, allow fallback
+    echo "[nightly] Unknown model for run status check - allowing fallback"
+    return 0
+  fi
+
+  local yesterday_log="${yesterday_log_dir}/${log_file}"
+
+  # If log doesn't exist, yesterday didn't run
+  if [[ ! -f "$yesterday_log" ]]; then
+    echo "[nightly] Yesterday's run log not found - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  # Check if yesterday's run completed successfully
+  if grep -q "OVERALL SCRIPT SUMMARY" "$yesterday_log" && grep -q "Total execution time:" "$yesterday_log"; then
+    # Yesterday's run was successful
+    echo "[nightly] Yesterday's run completed successfully"
+    return 1  # Don't allow fallback - yesterday was successful
+  else
+    # Yesterday's run failed or didn't complete
+    echo "[nightly] Yesterday's run failed or did not complete"
+    return 0  # Allow fallback
+  fi
+}
+
+###############################################################################
 # Docker image management functions
 ###############################################################################
 
@@ -1099,23 +1153,31 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
 done
 
 if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
-  echo "[nightly] No image found for today. Checking yesterday as a fallback..."
-  date_suffix=$(date_pst 1)
+  echo "[nightly] No image found for today. Checking if yesterday's image should be used as fallback..."
 
-  # For yesterday fallback, only try primary ROCM version (rocm700)
-  # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+  # Only use yesterday's image if yesterday's run failed/didn't run/didn't complete
+  if check_yesterday_run_status; then
+    echo "[nightly] Proceeding with yesterday's image fallback..."
+    date_suffix=$(date_pst 1)
 
-  if [[ -n "$candidate_tag" ]]; then
-    echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
-    if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
-      SELECTED_TAGS+=("$candidate_tag")
-      echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+    # For yesterday fallback, only try primary ROCM version (rocm700)
+    # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
+      if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
+        SELECTED_TAGS+=("$candidate_tag")
+        echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+      else
+        echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
+      fi
     else
-      echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
+      echo "[nightly] No fallback image found for yesterday either."
     fi
   else
-    echo "[nightly] No fallback image found for yesterday either."
+    echo "[nightly] Skipping yesterday's image fallback - yesterday's run was successful"
+    echo "[nightly] Status: SKIPPED (prerequisites not met)"
   fi
 fi
 
