@@ -1,0 +1,186 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x
+[nightly] Start time: 2025-11-17 21:03:11 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2548770
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 48005a699c55
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251117...
+[nightly] Found candidate tag for day -0: v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Successfully obtained image for date 20251117: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: ce9d5e7206d8
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Reusing container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251117
+[online] Auto-detected model type: grok1 from path: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Script started at: 2025-11-17 21:03:43 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.5.post3-rocm700-mi30x-20251117_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok1 environment: SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+[2025-11-17 21:05:17 TP7] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP3] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP1] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP5] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP0] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP2] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP4] Registering 6708 cuda graph addresses
+[aiter] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP6] Registering 6708 cuda graph addresses
+[2025-11-17 21:05:17 TP2] Capture cuda graph end. Time elapsed: 35.41 s. mem usage=1.31 GB. avail mem=25.97 GB.
+[2025-11-17 21:05:17 TP5] Capture cuda graph end. Time elapsed: 34.45 s. mem usage=1.31 GB. avail mem=26.11 GB.
+[2025-11-17 21:05:17 TP6] Capture cuda graph end. Time elapsed: 35.48 s. mem usage=1.31 GB. avail mem=26.10 GB.
+[2025-11-17 21:05:17 TP7] Capture cuda graph end. Time elapsed: 35.37 s. mem usage=1.31 GB. avail mem=26.11 GB.
+[2025-11-17 21:05:17 TP0] Capture cuda graph end. Time elapsed: 35.59 s. mem usage=1.31 GB. avail mem=26.39 GB.
+[2025-11-17 21:05:17 TP3] Capture cuda graph end. Time elapsed: 35.72 s. mem usage=1.31 GB. avail mem=25.98 GB.
+[2025-11-17 21:05:17 TP1] Capture cuda graph end. Time elapsed: 35.57 s. mem usage=1.31 GB. avail mem=25.97 GB.
+[2025-11-17 21:05:18 TP4] Capture cuda graph end. Time elapsed: 35.48 s. mem usage=1.31 GB. avail mem=26.03 GB.
+[2025-11-17 21:05:18 TP0] max_total_num_tokens=4609641, chunked_prefill_size=16384, max_prefill_tokens=16384, max_running_requests=4096, context_len=8192, available_gpu_mem=26.39 GB
+[2025-11-17 21:05:19] INFO:     Started server process [48]
+[2025-11-17 21:05:19] INFO:     Waiting for application startup.
+[2025-11-17 21:05:19] Using default chat sampling params from model generation config: {'repetition_penalty': 1.0, 'temperature': 1.0, 'top_k': 50, 'top_p': 1.0}
+[2025-11-17 21:05:19] Using default chat sampling params from model generation config: {'repetition_penalty': 1.0, 'temperature': 1.0, 'top_k': 50, 'top_p': 1.0}
+[2025-11-17 21:05:19] INFO:     Application startup complete.
+[2025-11-17 21:05:19] INFO:     Uvicorn running on http://127.0.0.1:30000 (Press CTRL+C to quit)
+[2025-11-17 21:05:20] Endpoint '/get_model_info' is deprecated and will be removed in a future version. Please use '/model_info' instead.
+[2025-11-17 21:05:20] INFO:     127.0.0.1:36754 - "GET /get_model_info HTTP/1.1" 200 OK
+[2025-11-17 21:05:20] Start of co-locate warmup ...
+[2025-11-17 21:05:20 TP0] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, token usage: 0.00, #running-req: 0, #queue-req: 0, 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP6] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP7] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP3] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP2] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP1] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP0] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP4] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[2025-11-17 21:05:20 TP5] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_mha_batch_prefill_bf16_logits_nbias_mask_nlse_ndropout
+[nightly] === Online benchmark dispatched for GROK; check logs in sgl-dev_v0.5.5.post3-rocm700-mi30x-20251117 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.5.post3-rocm700-mi30x-20251117_GROK1_MOE-I4F8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251117
+[nightly] Teams notifications skipped - --teams-webhook-url not provided
+[nightly] === Online post-processing completed for GROK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251117
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251117 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
