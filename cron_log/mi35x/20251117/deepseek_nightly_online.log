@@ -179,3 +179,70 @@ Concurrency 4, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 
 Sleeping 3 seconds before next concurrency level...
 Processing concurrency 1 with 1 runs...
 Running serving benchmark with concurrency 1 (Run 1) - 128 prompts...
+Concurrency 1, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 27209.76ms E2E latency (3495s)
+[progress] [==================================================] 10/10 (100%) ✅ Complete!
+ | Serving: C1 R1
+✅ Best results for concurrency 1: E2E=27209.76ms, TTFT=132.19ms, ITL=33.89ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 1: E2E=27209.76ms, TTFT=132.19ms, ITL=33.89ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 1
+✅ Serving benchmark completed successfully in 5357 seconds (standard mode).
+Structured serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Individual concurrency logs saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/sglang_serving_benchmark_concurrency_*_run*.log
+GSM8K accuracy results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log
+Shutting down SGLang server...
+Server shutdown completed in 0 seconds
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-11-17 17:47:10 PST
+Total execution time: 5796 seconds (96 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online
+Serving CSV: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_serving.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/timing_summary_20251117_161034.log
+===========================================
+Cleaning up...
+Killing background SGLang server (PID: 47)...
+Server process 47 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post3-rocm700-mi35x-20251117 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251117
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251117
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi35x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+   🔍 Uploading 20251117_DeepSeek-R1-MXFP4-Preview_online_all.png to GitHub...
+   📋 Log branch already exists
+   📄 Creating new file: plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251117_DeepSeek-R1-MXFP4-Preview_online_all.png
+   ✅ Uploaded to GitHub (log branch): 20251117_DeepSeek-R1-MXFP4-Preview_online_all.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251117_DeepSeek-R1-MXFP4-Preview_online_all.png
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251117_DeepSeek-R1-MXFP4-Preview_online_all.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251117: timing_summary_20251117_161034.log
+   Found timing_summary log for deepseek online on 20251117: timing_summary_20251117_161034.log
+   Found timing_summary log for deepseek online on 20251117: timing_summary_20251117_161034.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251117_DeepSeek-R1-MXFP4-Preview_online_all.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251117
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi35x-20251117 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
