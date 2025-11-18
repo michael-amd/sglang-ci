@@ -102,3 +102,40 @@ From https://github.com/ROCm/sglang-ci
    5d477af..273889c  log        -> origin/log
 [github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118
 [github_log_upload] Destination in repo: cron_log/mi30x/20251118
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+[github_log_upload] ✅  Logs uploaded successfully: cron_log/mi30x/20251118
+[github_log_upload] Auto-detecting latest directory for model: DeepSeek-R1-MXFP4-Preview
+[github_log_upload] Found latest directory: v0.5.5.post3-rocm700-mi30x-20251118_DeepSeek-R1-MXFP4-Preview_FP8_online
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   273889c..a0784dc  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi30x-20251118_DeepSeek-R1-MXFP4-Preview_FP8_online
+[github_log_upload] Destination in repo: online_benchmark_log/mi30x/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi30x-20251118_DeepSeek-R1-MXFP4-Preview_FP8_online
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+[github_log_upload] ✅  Logs uploaded successfully: online_benchmark_log/mi30x/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi30x-20251118_DeepSeek-R1-MXFP4-Preview_FP8_online
+[retry] 
+[retry] ==================== Retrying: DeepSeek MTP Test ====================
+[retry] Command: HSA_ENABLE_COREDUMP=0 GITHUB_REPO="ROCm/sglang-ci" GITHUB_TOKEN="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" bash scripts/perf_nightly.sh --model=deepseek --model-path="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="mi30x" --enable-mtp-test --teams-webhook-url="https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns"
+[retry] Log: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118/deepseek_r1_mxfp4_mtp.log (replacing original)
+[retry] Start Time: 2025-11-18 15:54:01 PST
+[retry] End Time: 2025-11-18 15:56:29 PST
+[retry] ✓ Retry succeeded: DeepSeek MTP Test
+[retry] Updating database and uploading logs for DeepSeek MTP Test...
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   53cfbb9..1531133  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118
+[github_log_upload] Destination in repo: cron_log/mi30x/20251118
