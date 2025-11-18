@@ -1,19 +1,19 @@
 [nightly] ==========================================
 [nightly] SGL Nightly Benchmark Started
 [nightly] ==========================================
-[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[nightly] Start time: 2025-11-17 08:40:01 PST
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=
+[nightly] Start time: 2025-11-17 16:48:05 PST
 [nightly] Machine: dell300x-pla-t10-23
 [nightly] Working directory: /mnt/raid/michael/sglang-ci
 [nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
-[nightly] Process ID: 2089587
+[nightly] Process ID: 2239494
 [nightly] ==========================================
 
 [nightly] Runtime Environment:
 [nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
 [nightly] Testing Docker daemon access...
 [nightly] Docker daemon accessible - proceeding...
-[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
 [nightly] Will run 3 trials per model for sanity check
 [nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
 [nightly] Hardware: mi30x, ROCM Version: rocm700
@@ -21,17 +21,6 @@
 [nightly] Model: sanity, Mode(s): sanity
 [nightly] Created process lock: /tmp/perf_nightly_sanity.lock
 [nightly] GPU is busy. Attempting to stop running Docker containers...
-[nightly] Stopping running containers: 29b38ddf69d2
+[nightly] Stopping running containers: 49cc2b874c43
+6b3690e53930
 [nightly] Waiting 15s for GPU to become idle...
-[nightly] WARN: GPU may still be busy, but proceeding as requested.
-[nightly] Searching for non-SRT images for sanity for the last 1 days...
-[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251117...
-[nightly] Primary version (rocm700) not found, trying fallback (rocm630)...
-[nightly] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251117...
-[nightly] No image found for today. Checking if yesterday's image should be used as fallback...
-[nightly] Yesterday's run failed or did not complete
-[nightly] Proceeding with yesterday's image fallback...
-[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251116...
-[nightly] No fallback image found for yesterday either.
-[nightly] ERROR: Could not find and obtain any valid non-SRT images for the last 1 days.
-[nightly] Cleaning up process lock...
