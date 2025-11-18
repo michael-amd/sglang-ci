@@ -74,6 +74,3 @@ GITHUB_TOKEN=""
 
 # 6:20 PM PT (8:20 PM CT) - Daily CI Summary Report with Teams notification [Runtime: ~1s]
 20 20 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_daily_summary_alert.py --hardware="$HARDWARE_TYPE" --base-dir="$SGL_BENCHMARK_CI_DIR" --teams-webhook-url="$TEAMS_WEBHOOK_URL" --use-database > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/daily_summary_alert.log 2>&1; bash cron/github_log_upload.sh
-
-# 6:25 PM PT (8:25 PM CT) - Retry tests that failed due to Docker image unavailability [Runtime: variable, 0s-4h depending on retries]
-25 20 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash cron/retry_failed_docker_tests.sh --crontab-file="$SGL_BENCHMARK_CI_DIR/cron/crontab_rules_mi35x.txt" --date=$(date +\%Y\%m\%d) > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/retry_failed_tests.log 2>&1
