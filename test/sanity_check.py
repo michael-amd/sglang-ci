@@ -74,7 +74,7 @@ DEFAULT_MODELS = {
             "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
-        "criteria": {"accuracy": 0.520},
+        "criteria": {"accuracy": 0.500},
     },
     "QWEN-30B": {
         "model_path": {

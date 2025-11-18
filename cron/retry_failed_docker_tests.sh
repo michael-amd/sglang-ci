@@ -310,12 +310,22 @@ fi
 # Convert to array
 mapfile -t FAILED_TESTS <<< "$FAILED_TESTS_OUTPUT"
 
-# Filter empty lines
+# Filter empty lines and hardware-specific tests
 FILTERED_FAILED_TESTS=()
 for test in "${FAILED_TESTS[@]}"; do
-  if [[ -n "$test" ]]; then
-    FILTERED_FAILED_TESTS+=("$test")
+  if [[ -z "$test" ]]; then
+    continue
   fi
+
+  # Skip MTP tests on mi30x hardware (they only run on mi35x)
+  if [[ "$HARDWARE_TYPE" == "mi30x" ]]; then
+    if [[ "$test" == "DeepSeek MTP Test" || "$test" == "DeepSeek DP+MTP Test" ]]; then
+      log_info "⏭️  Skipping $test (not supported on mi30x hardware)"
+      continue
+    fi
+  fi
+
+  FILTERED_FAILED_TESTS+=("$test")
 done
 
 # Step 3: Exit if no failed tests found
