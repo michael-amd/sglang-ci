@@ -1657,7 +1657,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
 
     # Ensure log directory exists before redirecting output
-    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"; then
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" bash -c "mkdir -p \"\$(dirname \"${COMBINED_LOG_FILE}\")\""; then
       echo "[nightly] ERROR: Failed to create log directory in container"
       send_error_notification \
         "Docker Exec Failure" \
@@ -1740,7 +1740,7 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     fi
 
     # Ensure log directory exists before redirecting output
-    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"; then
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" bash -c "mkdir -p \"\$(dirname \"${COMBINED_LOG_FILE}\")\""; then
       echo "[nightly] ERROR: Failed to create log directory in container"
       send_error_notification \
         "Docker Exec Failure" \
