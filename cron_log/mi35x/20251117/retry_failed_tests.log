@@ -138,3 +138,26 @@ From https://github.com/ROCm/sglang-ci
    84ae5d2..50dfd0f  log        -> origin/log
 [github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251117
 [github_log_upload] Destination in repo: cron_log/mi35x/20251117
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+[github_log_upload] ✅  Logs uploaded successfully: cron_log/mi35x/20251117
+[github_log_upload] No logs found in /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi35x – skipping upload.
+
+[retry] ==========================================
+[retry] Retry Summary
+[retry] ==========================================
+[retry] Total tests retried: 3
+[retry] Successful retries: 3
+[retry] Failed retries: 0
+
+
+[retry] ==========================================
+[retry] Sending Final Daily Summary
+[retry] ==========================================
+[retry] ✓ Final daily summary sent to Teams
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   50dfd0f..d100fbf  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251117
+[github_log_upload] Destination in repo: cron_log/mi35x/20251117
