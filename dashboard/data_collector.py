@@ -480,17 +480,20 @@ class DashboardDataCollector:
                 "online_dp_attention_torch_compile",
                 "deepseek_dp_attention_torch_compile.log",
             ),
-            "DeepSeek MTP Test": (
+        }
+
+        # MTP tests only run on mi35x hardware
+        if self.hardware != "mi30x":
+            integration_tests["DeepSeek MTP Test"] = (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_mtp",
                 "deepseek_r1_mxfp4_mtp.log",
-            ),
-            "DeepSeek DP+MTP Test": (
+            )
+            integration_tests["DeepSeek DP+MTP Test"] = (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_dp_mtp",
                 "deepseek_r1_mxfp4_dp_mtp.log",
-            ),
-        }
+            )
 
         for task_name, (model_dir, mode_suffix, cron_log) in integration_tests.items():
             timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
