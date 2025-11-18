@@ -651,6 +651,18 @@ function renderDailyRuns(runs) {
     }
 }
 
+function formatAccuracy(value) {
+    if (value === null || value === undefined) return '—';
+    const num = Number(value);
+    if (Number.isNaN(num)) return '—';
+    try {
+        return num.toFixed(1) + '%';
+    } catch (e) {
+        console.error('Error formatting accuracy:', e);
+        return '—';
+    }
+}
+
 function renderSelectedRun(selectedRun) {
     const label = document.getElementById('selectedRunLabel');
     const summaryContainer = document.getElementById('selectedRunSummary');
@@ -776,7 +788,7 @@ function renderSelectedRun(selectedRun) {
                 <tr>
                     <td>${model.model_name}</td>
                     <td>${statusBadge(model.status)}</td>
-                    <td>${model.accuracy !== null ? model.accuracy.toFixed(2) : '—'}</td>
+                    <td>${formatAccuracy(model.accuracy || model.gsm8k_accuracy)}</td>
                 </tr>
             `).join('');
         }
