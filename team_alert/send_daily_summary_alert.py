@@ -101,419 +101,34 @@ class DailySummaryReporter:
             "DASHBOARD_URL", "http://10.194.129.138:5000"
         )
 
+        # Initialize data collector for fallback parsing (when database unavailable)
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from dashboard.data_collector import DashboardDataCollector
+
+        self._fallback_collector = DashboardDataCollector(
+            hardware=hardware,
+            base_dir=base_dir,
+        )
+
     def find_timing_summary_log(
         self, model_dir, mode_suffix: str, date_str: str
     ) -> Optional[str]:
-        """
-        Find timing_summary log file for benchmark tasks
-
-        Args:
-            model_dir: Model directory name(s) - can be string or list of strings to try
-                      (e.g., "GROK2", ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"])
-            mode_suffix: Mode suffix (e.g., "online", "online_dp_attention")
-            date_str: Date string (YYYYMMDD)
-
-        Returns:
-            Path to timing_summary log file or None
-        """
-        # Support both single string and list of directories
-        model_dirs = [model_dir] if isinstance(model_dir, str) else model_dir
-
-        for model_dir_name in model_dirs:
-            online_dir = os.path.join(self.base_dir, "online", model_dir_name)
-
-            if not os.path.exists(online_dir):
-                continue
-
-            # Look for directories matching the date and mode
-            # Note: timing_summary logs may have different dates in filename (overnight runs)
-            # so we look for any timing_summary*.log in directories matching the date
-            patterns = [
-                f"{online_dir}/*{date_str}*{mode_suffix}*/timing_summary_*.log",
-                f"{online_dir}/*{date_str}*{mode_suffix}/timing_summary_*.log",
-            ]
-
-            matching_files = []
-            for pattern in patterns:
-                files = glob.glob(pattern)
-                for file_path in files:
-                    # Extract directory name from file path
-                    dir_name = os.path.basename(os.path.dirname(file_path))
-                    # Only include files where directory name ends with the exact mode suffix
-                    # This prevents "online" from matching "online_dp_attention" etc.
-                    if dir_name.endswith(f"_{mode_suffix}") or dir_name.endswith(
-                        mode_suffix
-                    ):
-                        # Additional check: ensure it's not a longer mode string
-                        # e.g., "online" shouldn't match if dir ends with "online_torch_compile"
-                        suffix_pos = dir_name.rfind(mode_suffix)
-                        if suffix_pos != -1 and suffix_pos + len(mode_suffix) == len(
-                            dir_name
-                        ):
-                            matching_files.append(file_path)
-
-            if matching_files:
-                # Return most recent
-                matching_files.sort(key=os.path.getmtime, reverse=True)
-                return matching_files[0]
-
-        # Try next model directory name if no match found
-        return None
+        """Delegate to fallback collector"""
+        return self._fallback_collector.find_timing_summary_log(
+            model_dir, mode_suffix, date_str
+        )
 
     def parse_timing_summary_log(self, log_path: str) -> Dict:
-        """
-        Parse timing_summary log for benchmark results
-
-        Args:
-            log_path: Path to timing_summary log file
-
-        Returns:
-            Dictionary with status info
-        """
-        result = {
-            "exists": True,
-            "status": "unknown",
-            "runtime": None,
-            "error": None,
-            "gsm8k_accuracy": None,
-        }
-
-        try:
-            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-
-            # Check if log is incomplete (truncated during run)
-            # Incomplete logs won't have GSM8K results or final status
-            lines = content.strip().split("\n")
-            if (
-                len(lines) < 20
-                and "GSM8K" not in content
-                and "Total execution time" not in content
-            ):
-                result["status"] = "fail"
-                result["error"] = "Test failed or did not complete"
-                return result
-
-            # Extract GSM8K accuracy
-            gsm8k_match = re.search(r"GSM8K accuracy:\s*([\d.]+)", content)
-            if gsm8k_match:
-                result["gsm8k_accuracy"] = float(gsm8k_match.group(1))
-
-            # Check for errors
-            error_count_match = re.search(r"RuntimeError count:\s*(\d+)", content)
-            if error_count_match and int(error_count_match.group(1)) > 0:
-                result["status"] = "fail"
-                result["error"] = f"RuntimeError count: {error_count_match.group(1)}"
-            elif "Server error status: FAIL" in content:
-                result["status"] = "fail"
-                result["error"] = "Server errors detected"
-            elif result["gsm8k_accuracy"] is not None:
-                # If we got accuracy, benchmark completed successfully
-                result["status"] = "pass"
-            elif "Status: SKIPPED (prerequisites not met)" in content:
-                # Test was skipped due to failed prerequisites
-                result["exists"] = False  # Treat as not run
-                return result
-            elif "OVERALL SCRIPT SUMMARY" in content:
-                # Script completed (even if it was just CSV regeneration)
-                result["status"] = "pass"
-            else:
-                # Check if it's an incomplete run
-                # A run is considered complete if it has ANY of these markers:
-                # - "Total execution time:" (old/ideal marker)
-                # - "End time:" + "Total duration:" (client benchmark completion)
-                # - "Server error status: PASS/FAIL" (indicates full run completed)
-                has_completion_marker = (
-                    "Total execution time:" in content
-                    or ("End time:" in content and "Total duration:" in content)
-                    or re.search(r"Server error status:\s*(PASS|FAIL)", content)
-                )
-
-                if "Script started at:" in content and not has_completion_marker:
-                    result["status"] = "fail"
-                    result["error"] = "Test did not complete"
-                else:
-                    result["status"] = "unknown"
-
-            # Extract runtime
-            runtime_match = re.search(
-                r"Total execution time:\s*(\d+)\s*seconds\s*\((\d+)\s*minutes\)",
-                content,
-            )
-            if runtime_match:
-                minutes = int(runtime_match.group(2))
-                hours = minutes // 60
-                remaining_minutes = minutes % 60
-                if hours > 0:
-                    result["runtime"] = f"{hours}h {remaining_minutes}m"
-                else:
-                    result["runtime"] = f"{minutes}m"
-
-        except Exception as e:
-            result["error"] = f"Failed to parse: {str(e)}"
-            result["status"] = "fail"
-
-        return result
+        """Delegate to fallback collector"""
+        return self._fallback_collector.parse_timing_summary_log(log_path)
 
     def parse_cron_log_file(self, log_path: str) -> Dict:
-        """
-        Parse a cron log file for non-benchmark tasks
-
-        Args:
-            log_path: Path to the log file
-
-        Returns:
-            Dictionary with status info
-        """
-        result = {
-            "exists": False,
-            "status": "unknown",
-            "runtime": None,
-            "error": None,
-        }
-
-        if not os.path.exists(log_path):
-            return result
-
-        result["exists"] = True
-
-        try:
-            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-
-            # Check for bash errors
-            if "bash:" in content and "No such file or directory" in content:
-                result["status"] = "fail"
-                result["error"] = "Script not found"
-                return result
-
-            # Check for Docker image unavailability (should be treated as "not run")
-            # This takes priority over other status checks
-            docker_image_error_patterns = [
-                (
-                    r"ERROR:\s*Could not find and (pull|obtain) any valid.*images?",
-                    "Docker image not available",
-                ),
-                (
-                    r"No image found for today.*yesterday either",
-                    "Docker image not found for today or yesterday",
-                ),
-                (
-                    r"Primary version.*not found.*fallback.*not found",
-                    "Docker image not available (tried primary and fallback)",
-                ),
-                (r"ERROR:.*Image.*not found", "Docker image not found"),
-                (
-                    r"Failed to pull.*Image might be a local build",
-                    "Failed to pull Docker image",
-                ),
-            ]
-
-            for pattern, error_msg in docker_image_error_patterns:
-                if re.search(pattern, content, re.IGNORECASE | re.DOTALL):
-                    result["status"] = "not run"
-                    result["exists"] = False  # Treat as not run
-                    # Extract more specific error message if available
-                    error_match = re.search(r"ERROR:\s*(.+)", content)
-                    if error_match:
-                        error_text = error_match.group(1).strip()
-                        # Get first line only
-                        error_text = error_text.split("\n")[0]
-                        if len(error_text) > 150:
-                            error_text = error_text[:150] + "..."
-                        result["error"] = error_text
-                    else:
-                        result["error"] = error_msg
-                    return result
-
-            # Special handling for docker_image_check.log
-            # This log contains the actual check result AND a Teams notification status
-            # We need to check the actual image availability, not just the Teams notification
-            if "docker_image_check" in os.path.basename(log_path):
-                # Check if images are missing
-                if "Missing images:" in content:
-                    # Extract the count of missing images
-                    missing_match = re.search(r"Missing images:\s*(\d+)", content)
-                    if missing_match and int(missing_match.group(1)) > 0:
-                        result["status"] = "fail"
-                        result["error"] = (
-                            f"{missing_match.group(1)} Docker image(s) not available"
-                        )
-                        return result
-                # Check if all images are available
-                if "✓ All expected images are available!" in content:
-                    result["status"] = "pass"
-                    return result
-
-            # Check for common success/failure patterns (order matters - check failures first for tests)
-            if "Status: SKIPPED (prerequisites not met)" in content:
-                # Test was skipped due to failed prerequisites
-                result["exists"] = False  # Treat as not run
-                return result
-            elif "test FAILED" in content or "Result: FAILED" in content:
-                # Test explicitly failed
-                result["status"] = "fail"
-            elif "FAIL" in content and "[test]" in content:
-                # Other test failure patterns
-                result["status"] = "fail"
-            elif "Result: PASSED" in content or "Models passed:" in content:
-                result["status"] = "pass"
-            elif "Overall:" in content and "models passed (100" in content:
-                # Sanity check success pattern
-                result["status"] = "pass"
-            elif (
-                "OVERALL SCRIPT SUMMARY" in content
-                and "Total execution time:" in content
-            ):
-                # Benchmark/test completed successfully
-                result["status"] = "pass"
-            elif "✅ CSV generated from existing logs successfully" in content:
-                # Benchmark reprocessing completed successfully
-                result["status"] = "pass"
-            elif "[test] Test completed for image:" in content:
-                # Unit test script ran to completion (test infrastructure worked)
-                # Even if some tests failed, the framework itself succeeded
-                result["status"] = "pass"
-            elif "Total execution time:" in content or "✅" in content:
-                result["status"] = "pass"
-            else:
-                # If log exists but no clear status
-                result["status"] = "unknown"
-
-            # Extract runtime if available
-            runtime_match = re.search(
-                r"Total execution time:\s*(\d+)\s*seconds\s*\((\d+\.?\d*)\s*minutes\)",
-                content,
-            )
-            if runtime_match:
-                minutes = int(float(runtime_match.group(2)))
-                hours = minutes // 60
-                remaining_minutes = minutes % 60
-                if hours > 0:
-                    result["runtime"] = f"{hours}h {remaining_minutes}m"
-                else:
-                    result["runtime"] = f"{minutes}m"
-
-            # Extract error details for failed tasks
-            if result["status"] == "fail":
-                error_patterns = [
-                    r"Error:\s*(.+)",
-                    r"FAILED\s*\((.+?)\)",
-                    r"RuntimeError:\s*(.+)",
-                    r"bash:\s*(.+)",
-                ]
-                for pattern in error_patterns:
-                    error_match = re.search(pattern, content, re.IGNORECASE)
-                    if error_match:
-                        error_text = error_match.group(1).strip()
-                        if len(error_text) > 100:
-                            error_text = error_text[:100] + "..."
-                        result["error"] = error_text
-                        break
-
-        except Exception as e:
-            result["error"] = f"Failed to parse log: {str(e)}"
-
-        return result
+        """Delegate to fallback collector"""
+        return self._fallback_collector.parse_cron_log_file(log_path)
 
     def parse_sanity_check_log(self, date_str: str) -> Optional[Dict]:
-        """
-        Parse sanity check timing_summary log for model accuracies
-
-        Args:
-            date_str: Date string in YYYYMMDD format
-
-        Returns:
-            Dictionary with sanity check results or None
-        """
-        # Find the sanity check log directory
-        sanity_base = os.path.join(
-            self.base_dir, "test", "sanity_check_log", self.hardware
-        )
-
-        if not os.path.exists(sanity_base):
-            return None
-
-        # Look for directories matching the date
-        pattern = f"*{date_str}"
-        matching_dirs = glob.glob(os.path.join(sanity_base, pattern))
-
-        if not matching_dirs:
-            return None
-
-        # Get the most recent directory
-        matching_dirs.sort(key=os.path.getmtime, reverse=True)
-        log_dir = matching_dirs[0]
-
-        # Find timing_summary log
-        timing_logs = glob.glob(
-            os.path.join(log_dir, f"timing_summary_{date_str}_*.log")
-        )
-        if not timing_logs:
-            timing_logs = glob.glob(os.path.join(log_dir, "timing_summary_*.log"))
-
-        if not timing_logs:
-            return None
-
-        timing_logs.sort(key=os.path.getmtime, reverse=True)
-        log_file = timing_logs[0]
-
-        # Parse the timing_summary log
-        model_results = {}
-
-        try:
-            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-
-            # Extract model sections
-            model_sections = re.findall(
-                r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
-            )
-
-            for model_name, _platform, section_content in model_sections:
-                # Extract final result
-                result_match = re.search(
-                    r"Final result:\s*(PASS \[OK\]|FAIL \[X\])", section_content
-                )
-
-                status = "unknown"
-                if result_match:
-                    status = "pass" if "PASS" in result_match.group(1) else "fail"
-
-                # Extract average accuracy
-                avg_accuracy = None
-                avg_acc_match = re.search(
-                    r"Average accuracy:\s*([\d.]+)", section_content
-                )
-                if avg_acc_match:
-                    avg_accuracy = float(avg_acc_match.group(1))
-                else:
-                    # Try to extract from individual accuracies
-                    accuracies_match = re.search(
-                        r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
-                    )
-                    if accuracies_match:
-                        acc_str = accuracies_match.group(1)
-                        accs = [
-                            float(a.strip()) for a in acc_str.split(",") if a.strip()
-                        ]
-                        if accs:
-                            avg_accuracy = sum(accs) / len(accs)
-
-                if avg_accuracy is not None:
-                    model_results[model_name] = {
-                        "status": status,
-                        "accuracy": avg_accuracy,
-                    }
-
-        except Exception as e:
-            print(f"   Warning: Could not parse sanity check log {log_file}: {e}")
-            return None
-
-        if not model_results:
-            return None
-
-        return {"model_results": model_results, "log_file": log_file}
+        """Delegate to fallback collector"""
+        return self._fallback_collector.parse_sanity_check_log(date_str)
 
     def extract_docker_image(self, date_str: str) -> Optional[str]:
         """
@@ -576,7 +191,7 @@ class DailySummaryReporter:
 
     def collect_task_results(self, date_str: str) -> Dict:
         """
-        Collect results from all nightly tasks for a given date
+        Collect results from all nightly tasks (FALLBACK - delegates to DashboardDataCollector)
 
         Args:
             date_str: Date string in YYYYMMDD format
@@ -584,83 +199,8 @@ class DailySummaryReporter:
         Returns:
             Dictionary with all task results
         """
-        results = {}
-
-        # Performance Benchmarks - use timing_summary logs, fallback to cron logs
-        # Note: For model_dir, use list to try multiple directory names
-        benchmarks = {
-            "Grok 2 Online Benchmark": (
-                ["GROK2"],
-                "online",
-                "grok2_nightly_online.log",
-            ),
-            "Grok Online Benchmark": (["GROK1"], "online", "grok_nightly.log"),
-            "DeepSeek Online Benchmark": (
-                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online",
-                "deepseek_nightly_online.log",
-            ),
-        }
-
-        for task_name, (model_dir, mode_suffix, cron_log) in benchmarks.items():
-            timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
-            if timing_log:
-                results[task_name] = self.parse_timing_summary_log(timing_log)
-            else:
-                # Timing summary doesn't exist - check cron log for errors (e.g., Docker image unavailable)
-                log_dir = os.path.join(
-                    self.base_dir, "cron", "cron_log", self.hardware, date_str
-                )
-                cron_log_path = os.path.join(log_dir, cron_log)
-                results[task_name] = self.parse_cron_log_file(cron_log_path)
-
-        # Integration Tests - use timing_summary logs with mode suffixes, fallback to cron logs
-        integration_tests = {
-            "DeepSeek DP Attention Test": (
-                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online_dp_attention",
-                "deepseek_dp_attention.log",
-            ),
-            "DeepSeek Torch Compile Test": (
-                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online_torch_compile",
-                "deepseek_torch_compile.log",
-            ),
-            "DeepSeek DP+Torch Compile": (
-                ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online_dp_attention_torch_compile",
-                "deepseek_dp_attention_torch_compile.log",
-            ),
-        }
-
-        for task_name, (model_dir, mode_suffix, cron_log) in integration_tests.items():
-            timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
-            if timing_log:
-                results[task_name] = self.parse_timing_summary_log(timing_log)
-            else:
-                # Timing summary doesn't exist - check cron log for errors (e.g., Docker image unavailable)
-                log_dir = os.path.join(
-                    self.base_dir, "cron", "cron_log", self.hardware, date_str
-                )
-                cron_log_path = os.path.join(log_dir, cron_log)
-                results[task_name] = self.parse_cron_log_file(cron_log_path)
-
-        # Validation & Checks - use cron logs
-        log_dir = os.path.join(
-            self.base_dir, "cron", "cron_log", self.hardware, date_str
-        )
-        validation_tasks = {
-            "Unit Tests": "test_nightly.log",
-            "PD Disaggregation Tests": "test_nightly_pd.log",
-            "Sanity Check": "sanity_check_nightly.log",
-            "Docker Image Check": "docker_image_check.log",
-        }
-
-        for task_name, log_file in validation_tasks.items():
-            log_path = os.path.join(log_dir, log_file)
-            results[task_name] = self.parse_cron_log_file(log_path)
-
-        return results
+        # Delegate to DashboardDataCollector which has the PRIMARY parsing logic
+        return self._fallback_collector.collect_task_results(date_str)
 
     def create_summary_card(self, date_str: str, task_results: Dict) -> Dict:
         """
@@ -836,6 +376,8 @@ class DailySummaryReporter:
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
             "DeepSeek DP+Torch Compile",
+            "DeepSeek MTP Test",
+            "DeepSeek DP+MTP Test",
         ]
         validation = [
             "Unit Tests",
@@ -1203,6 +745,8 @@ class DailySummaryReporter:
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
             "DeepSeek DP+Torch Compile",
+            "DeepSeek MTP Test",
+            "DeepSeek DP+MTP Test",
         ]
 
         # Print Validation & Checks first
