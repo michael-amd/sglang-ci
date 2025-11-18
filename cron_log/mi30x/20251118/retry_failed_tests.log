@@ -1,0 +1,67 @@
+[retry] ==========================================
+[retry] Docker Image Retry Check Started
+[retry] ==========================================
+[retry] Run Time: 2025-11-18 15:35:01 PST
+[retry] Machine: dell300x-pla-t10-23
+[retry] Crontab File: /mnt/raid/michael/sglang-ci/cron/crontab_rules.txt
+
+[retry] Loading configuration from crontab file...
+[retry]   SGL_BENCHMARK_CI_DIR=/mnt/raid/michael/sglang-ci
+[retry]   GROK_MODEL_PATH=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[retry]   DEEPSEEK_MODEL_PATH=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[retry]   HARDWARE_TYPE=mi30x
+[retry]   TEAMS_WEBHOOK_URL=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[retry]   GITHUB_REPO=ROCm/sglang-ci
+[retry]   GITHUB_TOKEN=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
+
+[retry] Configuration:
+[retry]   Base Directory: /mnt/raid/michael/sglang-ci
+[retry]   Hardware: mi30x
+[retry]   Check Date: 20251118
+[retry]   Cron Log Directory: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118
+
+[retry] Checking if Docker image is available for mi30x...
+[retry] ✓ Docker image is now available for mi30x
+
+[retry] ==========================================
+[retry] Querying Database for Failed Tests
+[retry] ==========================================
+[retry] Querying database for tests with 'not run' status or Docker image errors...
+
+[retry] ==========================================
+[retry] Retry Plan
+[retry] ==========================================
+[retry] Found 4 test(s) to retry:
+[retry]   - DeepSeek DP+MTP Test
+[retry]   - DeepSeek DP+Torch Compile
+[retry]   - DeepSeek MTP Test
+[retry]   - DeepSeek Torch Compile Test
+
+
+[retry] ==========================================
+[retry] Re-running Failed Tests
+[retry] ==========================================
+[retry] 
+[retry] ==================== Retrying: DeepSeek DP+MTP Test ====================
+[retry] Command: HSA_ENABLE_COREDUMP=0 GITHUB_REPO="ROCm/sglang-ci" GITHUB_TOKEN="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" bash scripts/perf_nightly.sh --model=deepseek --model-path="/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="mi30x" --enable-dp-test --enable-mtp-test --teams-webhook-url="https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns"
+[retry] Log: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118/deepseek_r1_mxfp4_dp_mtp.log (replacing original)
+[retry] Start Time: 2025-11-18 15:35:10 PST
+[retry] End Time: 2025-11-18 15:52:52 PST
+[retry] ERROR: ✗ Retry failed: DeepSeek DP+MTP Test (exit code: 143)
+[retry] Updating database and uploading logs for DeepSeek DP+MTP Test...
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   15807b4..55933fd  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251118
+[github_log_upload] Destination in repo: cron_log/mi30x/20251118
