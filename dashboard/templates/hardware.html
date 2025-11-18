@@ -386,14 +386,20 @@
     }
 
     function getStatusIcon(status, exists) {
-        if (!exists) return '<i class="bi bi-skip-forward-fill text-secondary"></i>';
+        // Handle "not run" status explicitly with blue color
+        if (!exists || status === 'not run' || status === 'not_run') {
+            return '<i class="bi bi-skip-forward-fill text-primary" style="font-weight: 600;"></i>';
+        }
         if (status === 'pass') return '<i class="bi bi-check-circle-fill text-success"></i>';
         if (status === 'fail') return '<i class="bi bi-x-circle-fill text-danger"></i>';
         return '<i class="bi bi-question-circle-fill text-warning"></i>';
     }
 
     function getStatusClass(status, exists) {
-        if (!exists) return '';
+        // Handle "not run" status explicitly with blue background
+        if (!exists || status === 'not run' || status === 'not_run') {
+            return 'list-group-item-info';
+        }
         if (status === 'pass') return 'list-group-item-success';
         if (status === 'fail') return 'list-group-item-danger';
         if (status === 'unknown') return 'list-group-item-warning';

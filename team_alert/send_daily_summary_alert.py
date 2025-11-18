@@ -287,6 +287,45 @@ class DailySummaryReporter:
                 result["error"] = "Script not found"
                 return result
 
+            # Check for Docker image unavailability (should be treated as "not run")
+            # This takes priority over other status checks
+            docker_image_error_patterns = [
+                (
+                    r"ERROR:\s*Could not find and (pull|obtain) any valid.*images?",
+                    "Docker image not available",
+                ),
+                (
+                    r"No image found for today.*yesterday either",
+                    "Docker image not found for today or yesterday",
+                ),
+                (
+                    r"Primary version.*not found.*fallback.*not found",
+                    "Docker image not available (tried primary and fallback)",
+                ),
+                (r"ERROR:.*Image.*not found", "Docker image not found"),
+                (
+                    r"Failed to pull.*Image might be a local build",
+                    "Failed to pull Docker image",
+                ),
+            ]
+
+            for pattern, error_msg in docker_image_error_patterns:
+                if re.search(pattern, content, re.IGNORECASE | re.DOTALL):
+                    result["status"] = "not run"
+                    result["exists"] = False  # Treat as not run
+                    # Extract more specific error message if available
+                    error_match = re.search(r"ERROR:\s*(.+)", content)
+                    if error_match:
+                        error_text = error_match.group(1).strip()
+                        # Get first line only
+                        error_text = error_text.split("\n")[0]
+                        if len(error_text) > 150:
+                            error_text = error_text[:150] + "..."
+                        result["error"] = error_text
+                    else:
+                        result["error"] = error_msg
+                    return result
+
             # Special handling for docker_image_check.log
             # This log contains the actual check result AND a Teams notification status
             # We need to check the actual image availability, not just the Teams notification
@@ -547,56 +586,64 @@ class DailySummaryReporter:
         """
         results = {}
 
-        # Performance Benchmarks - use timing_summary logs
+        # Performance Benchmarks - use timing_summary logs, fallback to cron logs
         # Note: For model_dir, use list to try multiple directory names
         benchmarks = {
-            "Grok 2 Online Benchmark": (["GROK2"], "online"),
-            "Grok Online Benchmark": (["GROK1"], "online"),
+            "Grok 2 Online Benchmark": (
+                ["GROK2"],
+                "online",
+                "grok2_nightly_online.log",
+            ),
+            "Grok Online Benchmark": (["GROK1"], "online", "grok_nightly.log"),
             "DeepSeek Online Benchmark": (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online",
+                "deepseek_nightly_online.log",
             ),
         }
 
-        for task_name, (model_dir, mode_suffix) in benchmarks.items():
+        for task_name, (model_dir, mode_suffix, cron_log) in benchmarks.items():
             timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
             if timing_log:
                 results[task_name] = self.parse_timing_summary_log(timing_log)
             else:
-                results[task_name] = {
-                    "exists": False,
-                    "status": "unknown",
-                    "runtime": None,
-                    "error": None,
-                }
+                # Timing summary doesn't exist - check cron log for errors (e.g., Docker image unavailable)
+                log_dir = os.path.join(
+                    self.base_dir, "cron", "cron_log", self.hardware, date_str
+                )
+                cron_log_path = os.path.join(log_dir, cron_log)
+                results[task_name] = self.parse_cron_log_file(cron_log_path)
 
-        # Integration Tests - use timing_summary logs with mode suffixes
+        # Integration Tests - use timing_summary logs with mode suffixes, fallback to cron logs
         integration_tests = {
             "DeepSeek DP Attention Test": (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_dp_attention",
+                "deepseek_dp_attention.log",
             ),
             "DeepSeek Torch Compile Test": (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_torch_compile",
+                "deepseek_torch_compile.log",
             ),
             "DeepSeek DP+Torch Compile": (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
                 "online_dp_attention_torch_compile",
+                "deepseek_dp_attention_torch_compile.log",
             ),
         }
 
-        for task_name, (model_dir, mode_suffix) in integration_tests.items():
+        for task_name, (model_dir, mode_suffix, cron_log) in integration_tests.items():
             timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
             if timing_log:
                 results[task_name] = self.parse_timing_summary_log(timing_log)
             else:
-                results[task_name] = {
-                    "exists": False,
-                    "status": "unknown",
-                    "runtime": None,
-                    "error": None,
-                }
+                # Timing summary doesn't exist - check cron log for errors (e.g., Docker image unavailable)
+                log_dir = os.path.join(
+                    self.base_dir, "cron", "cron_log", self.hardware, date_str
+                )
+                cron_log_path = os.path.join(log_dir, cron_log)
+                results[task_name] = self.parse_cron_log_file(cron_log_path)
 
         # Validation & Checks - use cron logs
         log_dir = os.path.join(

@@ -34,8 +34,9 @@ function getStatusBadge(status) {
  * Get status icon HTML
  */
 function getStatusIcon(status, exists = true) {
-    if (!exists) {
-        return '<i class="bi bi-skip-forward-fill text-secondary"></i>';
+    // Handle "not run" status explicitly
+    if (!exists || status === 'not run' || status === 'not_run') {
+        return '<i class="bi bi-skip-forward-fill text-primary" style="font-weight: 600;"></i>';
     }
 
     const icons = {
@@ -50,7 +51,10 @@ function getStatusIcon(status, exists = true) {
  * Get status CSS class for list items
  */
 function getStatusClass(status, exists = true) {
-    if (!exists) return '';
+    // Handle "not run" status explicitly
+    if (!exists || status === 'not run' || status === 'not_run') {
+        return 'list-group-item-info';
+    }
 
     const classes = {
         'pass': 'list-group-item-success',
