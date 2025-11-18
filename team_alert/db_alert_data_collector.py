@@ -74,47 +74,20 @@ class DatabaseAlertDataCollector(DailySummaryReporter):
                 if test_run:
                     results = {}
 
-                    # Get benchmark results from database
+                    # Get ALL benchmark results from database (includes validation tests, benchmarks, integration tests)
                     benchmark_results = self.db.get_benchmark_results(test_run["id"])
 
                     for br in benchmark_results:
+                        # Check if task actually ran or was marked as "not run"
+                        exists = br["status"] != "not run"
+
                         results[br["benchmark_name"]] = {
-                            "exists": True,
+                            "exists": exists,
                             "status": br["status"],
                             "runtime": self._format_runtime(br["runtime_minutes"]),
                             "error": br["error_message"],
                             "gsm8k_accuracy": br["gsm8k_accuracy"],
                         }
-
-                    # Get validation task results from cron log parsing
-                    # (These are lightweight and not stored in database detail)
-                    validation_tasks = {
-                        "Unit Tests": "test_nightly.log",
-                        "PD Disaggregation Tests": "test_nightly_pd.log",
-                        "Sanity Check": "sanity_check_nightly.log",
-                        "Docker Image Check": "docker_image_check.log",
-                    }
-
-                    for task_name, log_file in validation_tasks.items():
-                        # Use parent class method to parse cron log
-                        cron_log_path = os.path.join(
-                            self.base_dir,
-                            "cron",
-                            "cron_log",
-                            self.hardware,
-                            date_str,
-                            log_file,
-                        )
-
-                        if os.path.exists(cron_log_path):
-                            results[task_name] = self.parse_cron_log_file(cron_log_path)
-                        else:
-                            results[task_name] = {
-                                "exists": False,
-                                "status": "unknown",
-                                "runtime": None,
-                                "error": None,
-                            }
 
                     # Get log file links from database
                     log_files = self.db.get_log_files(test_run["id"])

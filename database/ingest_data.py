@@ -498,6 +498,8 @@ class DataIngester:
                 "DeepSeek DP Attention Test",
                 "DeepSeek Torch Compile Test",
                 "DeepSeek DP+Torch Compile",
+                "DeepSeek MTP Test",
+                "DeepSeek DP+MTP Test",
             ]
 
             for task_name in all_test_tasks:

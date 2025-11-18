@@ -203,8 +203,10 @@ for result in results:
     status = result['status'] or ''
     error_msg = result['error_message'] or ''
 
-    # Tests with 'not run' status or Docker-related errors
+    # Tests with 'not run', 'unknown' status, or Docker-related errors
+    # 'unknown' status often indicates test couldn't run due to Docker issues
     if (status.lower() == 'not run' or
+        status.lower() == 'unknown' or
         'could not find' in error_msg.lower() or
         'image' in error_msg.lower() and 'not found' in error_msg.lower() or
         'failed to pull' in error_msg.lower()):
@@ -235,13 +237,13 @@ get_test_command() {
       echo "bash scripts/perf_nightly.sh --mode=sanity --hardware=\"$HARDWARE_TYPE\" --sanity-trials=3 --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     "DeepSeek DP Attention Test")
-      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --check-dp-attention --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --check-dp-attention --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     "DeepSeek Torch Compile Test")
-      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --enable-torch-compile --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --enable-torch-compile --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     "DeepSeek DP+Torch Compile")
-      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --check-dp-attention --enable-torch-compile --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --check-dp-attention --enable-torch-compile --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     "Grok Online Benchmark")
       echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=grok --model-path=\"$GROK_MODEL_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
@@ -250,7 +252,13 @@ get_test_command() {
       echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=grok2 --model-path=\"$GROK2_MODEL_PATH\" --tokenizer-path=\"$GROK2_TOKENIZER_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     "DeepSeek Online Benchmark")
-      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --mode=online --hardware=\"$HARDWARE_TYPE\" --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      ;;
+    "DeepSeek MTP Test")
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --enable-mtp-test --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
+      ;;
+    "DeepSeek DP+MTP Test")
+      echo "HSA_ENABLE_COREDUMP=0 GITHUB_REPO=\"$GITHUB_REPO\" GITHUB_TOKEN=\"$GITHUB_TOKEN\" bash scripts/perf_nightly.sh --model=deepseek --model-path=\"$DEEPSEEK_MODEL_PATH\" --model-name=\"DeepSeek-R1-MXFP4-Preview\" --mode=online --hardware=\"$HARDWARE_TYPE\" --enable-dp-test --enable-mtp-test --teams-webhook-url=\"$TEAMS_WEBHOOK_URL\""
       ;;
     *)
       echo ""
@@ -268,6 +276,8 @@ get_log_filename() {
     "DeepSeek DP Attention Test") echo "deepseek_dp_attention.log" ;;
     "DeepSeek Torch Compile Test") echo "deepseek_torch_compile.log" ;;
     "DeepSeek DP+Torch Compile") echo "deepseek_dp_attention_torch_compile.log" ;;
+    "DeepSeek MTP Test") echo "deepseek_r1_mxfp4_mtp.log" ;;
+    "DeepSeek DP+MTP Test") echo "deepseek_r1_mxfp4_dp_mtp.log" ;;
     "Grok Online Benchmark") echo "grok_nightly.log" ;;
     "Grok 2 Online Benchmark") echo "grok2_nightly_online.log" ;;
     "DeepSeek Online Benchmark") echo "deepseek_nightly_online.log" ;;
@@ -386,14 +396,14 @@ for test_name in "${FILTERED_FAILED_TESTS[@]}"; do
     "Sanity Check"|"Sanity")
       bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" sanity "$(ls -t test/sanity_check_log/$HARDWARE_TYPE/ 2>/dev/null | head -1)" || true
       ;;
-    *"Online Benchmark"*|*"Grok"*|*"DeepSeek"*)
+    *"Online Benchmark"*|*"Grok"*|*"DeepSeek"*|*"MTP"*|*"DP"*)
       # Extract model name
       if [[ "$test_name" =~ "Grok 2" ]]; then
         bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" online GROK2 || true
       elif [[ "$test_name" =~ "Grok" ]]; then
         bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" online GROK1 || true
       elif [[ "$test_name" =~ "DeepSeek" ]]; then
-        bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" online DeepSeek-V3-0324 || true
+        bash cron/github_log_upload.sh "" "$HARDWARE_TYPE" online DeepSeek-R1-MXFP4-Preview || true
       fi
       ;;
   esac
