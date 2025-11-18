@@ -1,0 +1,53 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251118
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251118...
+✅ Docker image date matches expected date (20251118) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-11-18 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-11-18 at 15:30:01 PST
+Hostname: dell300x-pla-t10-23
+Hardware: mi30x
+Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251118
+
+Overall Status:
+• Tasks run: 18/18
+• Passed: 11, Failed: 3, Unknown: 4
+
+Task Results:
+
+Validation & Checks:
+  ✅ Unit Tests: Pass
+  ❌ PD Disaggregation Tests: Failed
+    Error: cannot unpack non-iterable ForwardMetadata object
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 81.3%) [31m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 92.7%) [33m]
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 93.5%) [1h 6m]
+
+Integration Tests:
+  ❌ DeepSeek DP Attention Test: Failed
+    Error: Test failed or did not complete
+  ❓ DeepSeek Torch Compile Test: Unknown
+  ❓ DeepSeek DP+Torch Compile: Unknown
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ gpt-oss-120b-bf16 - GSM8K: 84.7% (threshold ≥ 82.0%)
+  ❌ gpt-oss-20b-bf16 - GSM8K: 51.0% (threshold ≥ 52.0%)
+  ✅ GROK1-FP8 - GSM8K: 82.2% (threshold ≥ 80.0%)
+  ✅ GROK1-IN4 - GSM8K: 82.3% (threshold ≥ 80.0%)
+  ✅ GROK2.5 - GSM8K: 92.7% (threshold ≥ 91.5%)
+  ✅ Qwen3-30B-A3B-Thinking-2507 - GSM8K: 85.0% (threshold ≥ 84.0%)
+  ✅ Llama-4-Maverick-17B-128E-Instruct-FP8 - GSM8K: 93.7% (threshold ≥ 90.0%)
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251118_mi30x_20251118_153001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
