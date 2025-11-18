@@ -59,6 +59,14 @@
         color: #41464b;
     }
 
+    .status-badge.not_run,
+    .status-badge.not-run {
+        background-color: #cfe2ff;
+        color: #084298;
+        font-weight: 600;
+        border: 1px solid #b6d4fe;
+    }
+
     .log-link {
         display: inline-flex;
         align-items: center;
@@ -598,8 +606,8 @@ function renderSummaryCards(data) {
             <div class="card summary-card">
                 <div class="card-body">
                     <div class="card-title">Not Run</div>
-                    <div class="card-value text-secondary">${selectedRun.not_run || 0}</div>
-                    <p class="text-muted mb-0">Benchmarks: ${benchmarkSummary.passed || 0}/${benchmarkSummary.total || 0}</p>
+                    <div class="card-value text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</div>
+                    <p class="text-muted mb-0">Docker image unavailable</p>
                 </div>
             </div>
         </div>
@@ -624,7 +632,7 @@ function renderDailyRuns(runs) {
                 <td><strong>${tasksRun}</strong></td>
                 <td><span class="text-success">${run.passed_tasks || 0}</span></td>
                 <td><span class="text-danger">${run.failed_tasks || 0}</span></td>
-                <td><span class="text-secondary">${run.not_run || 0}</span></td>
+                <td><span class="text-primary" style="font-weight: 600;">${run.not_run || 0}</span></td>
                 <td><strong>${run.pass_rate || 0}%</strong></td>
             `;
             row.style.cursor = 'pointer';
@@ -683,7 +691,7 @@ function renderSelectedRun(selectedRun) {
                 </div>
                 <div class="col-3">
                     <div class="text-muted small">Not Run</div>
-                    <strong class="text-secondary">${selectedRun.not_run || 0}</strong>
+                    <strong class="text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</strong>
                 </div>
             </div>
             <div class="row g-2 mb-3">
@@ -900,9 +908,20 @@ function updatePassRateChart(dailyRuns) {
 }
 
 function statusBadge(status) {
-    if (!status) return '<span class="badge bg-secondary">unknown</span>';
+    if (!status) return '<span class="badge status-badge unknown">Unknown</span>';
+
     const normalized = status.toLowerCase();
-    return `<span class="badge status-badge ${normalized}">${normalized}</span>`;
+
+    // Handle "not run" status with proper styling
+    if (normalized === 'not run' || normalized === 'not_run') {
+        return '<span class="badge status-badge not-run"><i class="bi bi-skip-forward-fill"></i> Not Run</span>';
+    }
+
+    // Handle other statuses
+    const displayText = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    const badgeClass = normalized.replace(/[_ ]/g, '-');  // Convert spaces/underscores to hyphens for CSS
+
+    return `<span class="badge status-badge ${badgeClass}">${displayText}</span>`;
 }
 
 function formatDateDisplay(dateStr) {

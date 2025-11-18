@@ -1,5 +1,11 @@
 # machine is at CT time
 #
+# RETRY MECHANISM FOR DOCKER IMAGE UNAVAILABILITY:
+# If Docker images are not available during scheduled runs, tests will fail.
+# The retry job (6:35 PM CT, 5 min after daily summary) checks if images became available
+# and automatically re-runs failed tests, replacing original logs and updating database.
+# Individual test alerts are sent, and after retries, an updated daily summary is sent to Teams.
+#
 # REQUIRED ENVIRONMENT VARIABLES - Set these before installing cron jobs:
 # - SGL_BENCHMARK_CI_DIR: Path to sgl_benchmark_ci directory (e.g., /home/user/sgl_benchmark_ci)
 # - GROK_MODEL_PATH: Path to Grok model (e.g., /data/grok-1-W4A8KV8)
@@ -58,3 +64,6 @@ GITHUB_TOKEN=""
 
 # 4:30 PM PT (6:30 PM CT) - Daily CI Summary Report with Teams notification [Runtime: ~1s]
 30 18 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_daily_summary_alert.py --hardware="$HARDWARE_TYPE" --base-dir="$SGL_BENCHMARK_CI_DIR" --teams-webhook-url="$TEAMS_WEBHOOK_URL" --use-database > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/daily_summary_alert.log 2>&1; bash cron/github_log_upload.sh
+
+# 4:35 PM PT (6:35 PM CT) - Retry tests that failed due to Docker image unavailability [Runtime: variable, 0s-4h depending on retries]
+35 18 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash cron/retry_failed_docker_tests.sh --crontab-file="$SGL_BENCHMARK_CI_DIR/cron/crontab_rules_mi30x.txt" --date=$(date +\%Y\%m\%d) > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/retry_failed_tests.log 2>&1
