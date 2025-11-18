@@ -498,9 +498,16 @@ class DataIngester:
                 "DeepSeek DP Attention Test",
                 "DeepSeek Torch Compile Test",
                 "DeepSeek DP+Torch Compile",
-                "DeepSeek MTP Test",
-                "DeepSeek DP+MTP Test",
             ]
+
+            # MTP tests only run on mi35x hardware
+            if hardware != "mi30x":
+                all_test_tasks.extend(
+                    [
+                        "DeepSeek MTP Test",
+                        "DeepSeek DP+MTP Test",
+                    ]
+                )
 
             for task_name in all_test_tasks:
                 if task_name in task_results:

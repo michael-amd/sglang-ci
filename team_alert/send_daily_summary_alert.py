@@ -376,9 +376,15 @@ class DailySummaryReporter:
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
             "DeepSeek DP+Torch Compile",
-            "DeepSeek MTP Test",
-            "DeepSeek DP+MTP Test",
         ]
+        # MTP tests only run on mi35x hardware
+        if self.hardware != "mi30x":
+            tests.extend(
+                [
+                    "DeepSeek MTP Test",
+                    "DeepSeek DP+MTP Test",
+                ]
+            )
         validation = [
             "Unit Tests",
             "PD Disaggregation Tests",
@@ -745,9 +751,15 @@ class DailySummaryReporter:
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
             "DeepSeek DP+Torch Compile",
-            "DeepSeek MTP Test",
-            "DeepSeek DP+MTP Test",
         ]
+        # MTP tests only run on mi35x hardware
+        if self.hardware != "mi30x":
+            tests.extend(
+                [
+                    "DeepSeek MTP Test",
+                    "DeepSeek DP+MTP Test",
+                ]
+            )
 
         # Print Validation & Checks first
         for category, task_list in [

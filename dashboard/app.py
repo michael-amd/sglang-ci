@@ -657,7 +657,7 @@ def api_database_overview():
 
         cursor.execute(
             """
-            SELECT model_name, status, gsm8k_accuracy, gsm8k_threshold
+            SELECT model_name, status, accuracy
             FROM sanity_check_results
             WHERE test_run_id = ?
             ORDER BY model_name
@@ -669,22 +669,18 @@ def api_database_overview():
                 "model_name": row["model_name"],
                 "status": row["status"],
                 "gsm8k_accuracy": (
-                    round(row["gsm8k_accuracy"] * 100, 1)
-                    if row["gsm8k_accuracy"] is not None
+                    round(row["accuracy"] * 100, 1)
+                    if row["accuracy"] is not None
                     else None
                 ),
-                "gsm8k_threshold": (
-                    round(row["gsm8k_threshold"] * 100, 1)
-                    if row["gsm8k_threshold"] is not None
-                    else None
-                ),
+                "gsm8k_threshold": None,  # Not stored in database
             }
             for row in cursor.fetchall()
         ]
 
         cursor.execute(
             """
-            SELECT benchmark_name, status, gsm8k_accuracy, gsm8k_threshold, runtime_minutes, error_message
+            SELECT benchmark_name, status, gsm8k_accuracy, runtime_minutes, error_message
             FROM benchmark_results
             WHERE test_run_id = ?
             ORDER BY benchmark_name
@@ -700,11 +696,7 @@ def api_database_overview():
                     if row["gsm8k_accuracy"] is not None
                     else None
                 ),
-                "gsm8k_threshold": (
-                    round(row["gsm8k_threshold"] * 100, 1)
-                    if row["gsm8k_threshold"] is not None
-                    else None
-                ),
+                "gsm8k_threshold": None,  # Not stored in database
                 "runtime_minutes": row["runtime_minutes"],
                 "error_message": row["error_message"],
             }
@@ -713,7 +705,7 @@ def api_database_overview():
 
         params = [hardware, start_date, selected_date]
         benchmark_query = """
-            SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy, br.gsm8k_threshold,
+            SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy,
                    br.runtime_minutes, br.error_message, br.github_detail_log_url
             FROM benchmark_results br
             JOIN test_runs tr ON tr.id = br.test_run_id
@@ -755,11 +747,7 @@ def api_database_overview():
                         if row["gsm8k_accuracy"] is not None
                         else None
                     ),
-                    "gsm8k_threshold": (
-                        round(row["gsm8k_threshold"] * 100, 1)
-                        if row["gsm8k_threshold"] is not None
-                        else None
-                    ),
+                    "gsm8k_threshold": None,  # Not stored in database
                     "runtime_minutes": row["runtime_minutes"],
                     "error_message": row["error_message"],
                     "plot_url": plot_lookup.get(plot_key),  # Per-benchmark plot URL
