@@ -375,8 +375,20 @@ class DailySummaryReporter:
         tests = [
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
-            "DeepSeek DP+Torch Compile",
         ]
+
+        # Only show DP+Torch Compile if both DP and Torch tests passed/exist
+        dp_result = task_results.get("DeepSeek DP Attention Test", {})
+        torch_result = task_results.get("DeepSeek Torch Compile Test", {})
+        show_dp_torch_combo = (
+            dp_result.get("exists")
+            and dp_result.get("status") != "fail"
+            and torch_result.get("exists")
+            and torch_result.get("status") != "fail"
+        )
+        if show_dp_torch_combo:
+            tests.append("DeepSeek DP+Torch Compile")
+
         # MTP tests only run on mi35x hardware
         if self.hardware != "mi30x":
             tests.extend(
@@ -750,8 +762,20 @@ class DailySummaryReporter:
         tests = [
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
-            "DeepSeek DP+Torch Compile",
         ]
+
+        # Only show DP+Torch Compile if both DP and Torch tests passed/exist
+        dp_result = task_results.get("DeepSeek DP Attention Test", {})
+        torch_result = task_results.get("DeepSeek Torch Compile Test", {})
+        show_dp_torch_combo = (
+            dp_result.get("exists")
+            and dp_result.get("status") != "fail"
+            and torch_result.get("exists")
+            and torch_result.get("status") != "fail"
+        )
+        if show_dp_torch_combo:
+            tests.append("DeepSeek DP+Torch Compile")
+
         # MTP tests only run on mi35x hardware
         if self.hardware != "mi30x":
             tests.extend(
