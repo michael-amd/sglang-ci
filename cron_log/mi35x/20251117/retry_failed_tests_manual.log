@@ -93,3 +93,40 @@ From https://github.com/ROCm/sglang-ci
    fc40c95..465827d  log        -> origin/log
 [github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251117
 [github_log_upload] Destination in repo: cron_log/mi35x/20251117
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+[github_log_upload] ✅  Logs uploaded successfully: cron_log/mi35x/20251117
+[github_log_upload] Auto-detecting latest directory for model: DeepSeek-R1-MXFP4-Preview
+[github_log_upload] Found latest directory: v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   465827d..1412c72  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+[github_log_upload] Destination in repo: online_benchmark_log/mi35x/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+[github_log_upload] ✅  Logs uploaded successfully: online_benchmark_log/mi35x/DeepSeek-R1-MXFP4-Preview/v0.5.5.post3-rocm700-mi35x-20251117_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test
+[retry] 
+[retry] ==================== Retrying: DeepSeek DP+Torch Compile ====================
+[retry] Command: HSA_ENABLE_COREDUMP=0 GITHUB_REPO="ROCm/sglang-ci" GITHUB_TOKEN="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" bash scripts/perf_nightly.sh --model=deepseek --model-path="/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="mi35x" --check-dp-attention --enable-torch-compile --teams-webhook-url="https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0"
+[retry] Log: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251117/deepseek_dp_attention_torch_compile.log (replacing original)
+[retry] Start Time: 2025-11-17 22:17:08 PST
+[retry] End Time: 2025-11-17 22:19:07 PST
+[retry] ✓ Retry succeeded: DeepSeek DP+Torch Compile
+[retry] Updating database and uploading logs for DeepSeek DP+Torch Compile...
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   1ef02b4..286b0c9  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251117
+[github_log_upload] Destination in repo: cron_log/mi35x/20251117
