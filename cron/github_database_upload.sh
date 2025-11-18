@@ -80,8 +80,27 @@ cd "$WORK_CLONE_DIR"
 git fetch origin log
 git checkout -q log
 
-# Rebase to avoid merge commits
-git pull --rebase --quiet || true
+# Rebase to avoid merge commits, with automatic conflict resolution
+if ! git pull --rebase --quiet 2>&1; then
+  echo "[github_database_upload] Rebase conflict detected – auto-resolving…"
+
+  # Check if we're in a rebase state
+  if [[ -d ".git/rebase-merge" ]] || [[ -d ".git/rebase-apply" ]]; then
+    # Accept remote version of database (newer data)
+    if [[ -f "database/ci_dashboard.db" ]]; then
+      git checkout --theirs database/ci_dashboard.db 2>/dev/null || true
+      git add database/ci_dashboard.db
+    fi
+
+    # Continue rebase with the original commit message
+    if ! git -c core.editor=true rebase --continue 2>&1; then
+      echo "[github_database_upload] Rebase failed, aborting and using current state"
+      git rebase --abort 2>/dev/null || true
+    else
+      echo "[github_database_upload] ✅ Conflict auto-resolved (accepted remote database)"
+    fi
+  fi
+fi
 
 ###########################################################################
 # 4. Copy database file

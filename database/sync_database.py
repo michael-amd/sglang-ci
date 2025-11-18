@@ -92,8 +92,38 @@ class DatabaseSyncer:
         subprocess.run(["git", "fetch", "origin", "log"], check=True)
         subprocess.run(["git", "checkout", "-q", "log"], check=True)
 
-        # Pull latest changes
-        subprocess.run(["git", "pull", "--rebase", "--quiet"], check=True)
+        # Pull latest changes with automatic conflict resolution
+        result = subprocess.run(
+            ["git", "pull", "--rebase", "--quiet"],
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            print("⚠️  Rebase conflict detected – auto-resolving...")
+
+            # Check if in rebase state
+            rebase_merge = os.path.join(self.work_dir, ".git", "rebase-merge")
+            rebase_apply = os.path.join(self.work_dir, ".git", "rebase-apply")
+
+            if os.path.exists(rebase_merge) or os.path.exists(rebase_apply):
+                # Accept remote version (newer data)
+                db_in_repo = os.path.join(self.work_dir, self.repo_db_path)
+                if os.path.exists(db_in_repo):
+                    subprocess.run(
+                        ["git", "checkout", "--theirs", self.repo_db_path],
+                        capture_output=True,
+                    )
+                    subprocess.run(
+                        ["git", "add", self.repo_db_path], capture_output=True
+                    )
+
+                # Continue rebase
+                subprocess.run(
+                    ["git", "-c", "core.editor=true", "rebase", "--continue"],
+                    capture_output=True,
+                )
+                print("✅ Conflict auto-resolved (accepted remote database)")
 
         # Check if database exists in repo
         repo_db_file = os.path.join(self.work_dir, self.repo_db_path)
@@ -142,9 +172,39 @@ class DatabaseSyncer:
         subprocess.run(["git", "fetch", "origin", "log"], check=True)
         subprocess.run(["git", "checkout", "-q", "log"], check=True)
 
-        # Pull latest changes (unless force)
+        # Pull latest changes (unless force) with conflict resolution
         if not force:
-            subprocess.run(["git", "pull", "--rebase", "--quiet"], check=True)
+            result = subprocess.run(
+                ["git", "pull", "--rebase", "--quiet"],
+                capture_output=True,
+                text=True,
+            )
+
+            if result.returncode != 0:
+                print("⚠️  Rebase conflict detected during push – auto-resolving...")
+
+                # Check if in rebase state
+                rebase_merge = os.path.join(self.work_dir, ".git", "rebase-merge")
+                rebase_apply = os.path.join(self.work_dir, ".git", "rebase-apply")
+
+                if os.path.exists(rebase_merge) or os.path.exists(rebase_apply):
+                    # Accept remote version first
+                    db_in_repo = os.path.join(self.work_dir, self.repo_db_path)
+                    if os.path.exists(db_in_repo):
+                        subprocess.run(
+                            ["git", "checkout", "--theirs", self.repo_db_path],
+                            capture_output=True,
+                        )
+                        subprocess.run(
+                            ["git", "add", self.repo_db_path], capture_output=True
+                        )
+
+                    # Continue rebase
+                    subprocess.run(
+                        ["git", "-c", "core.editor=true", "rebase", "--continue"],
+                        capture_output=True,
+                    )
+                    print("✅ Conflict auto-resolved – will re-apply local changes")
 
         # Copy database from local to repo
         repo_db_file = os.path.join(self.work_dir, self.repo_db_path)
