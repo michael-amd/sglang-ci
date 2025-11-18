@@ -657,7 +657,7 @@ def api_database_overview():
 
         cursor.execute(
             """
-            SELECT model_name, status, accuracy
+            SELECT model_name, status, gsm8k_accuracy, gsm8k_threshold
             FROM sanity_check_results
             WHERE test_run_id = ?
             ORDER BY model_name
@@ -668,14 +668,23 @@ def api_database_overview():
             {
                 "model_name": row["model_name"],
                 "status": row["status"],
-                "accuracy": row["accuracy"],
+                "gsm8k_accuracy": (
+                    round(row["gsm8k_accuracy"] * 100, 1)
+                    if row["gsm8k_accuracy"] is not None
+                    else None
+                ),
+                "gsm8k_threshold": (
+                    round(row["gsm8k_threshold"] * 100, 1)
+                    if row["gsm8k_threshold"] is not None
+                    else None
+                ),
             }
             for row in cursor.fetchall()
         ]
 
         cursor.execute(
             """
-            SELECT benchmark_name, status, gsm8k_accuracy, runtime_minutes, error_message
+            SELECT benchmark_name, status, gsm8k_accuracy, gsm8k_threshold, runtime_minutes, error_message
             FROM benchmark_results
             WHERE test_run_id = ?
             ORDER BY benchmark_name
@@ -691,6 +700,11 @@ def api_database_overview():
                     if row["gsm8k_accuracy"] is not None
                     else None
                 ),
+                "gsm8k_threshold": (
+                    round(row["gsm8k_threshold"] * 100, 1)
+                    if row["gsm8k_threshold"] is not None
+                    else None
+                ),
                 "runtime_minutes": row["runtime_minutes"],
                 "error_message": row["error_message"],
             }
@@ -699,7 +713,7 @@ def api_database_overview():
 
         params = [hardware, start_date, selected_date]
         benchmark_query = """
-            SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy,
+            SELECT tr.run_date, br.benchmark_name, br.status, br.gsm8k_accuracy, br.gsm8k_threshold,
                    br.runtime_minutes, br.error_message, br.github_detail_log_url
             FROM benchmark_results br
             JOIN test_runs tr ON tr.id = br.test_run_id
@@ -739,6 +753,11 @@ def api_database_overview():
                     "gsm8k_accuracy": (
                         round(row["gsm8k_accuracy"] * 100, 1)
                         if row["gsm8k_accuracy"] is not None
+                        else None
+                    ),
+                    "gsm8k_threshold": (
+                        round(row["gsm8k_threshold"] * 100, 1)
+                        if row["gsm8k_threshold"] is not None
                         else None
                     ),
                     "runtime_minutes": row["runtime_minutes"],
@@ -787,6 +806,9 @@ def api_database_overview():
         return jsonify(response)
 
     except Exception as e:
+        import traceback
+
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 

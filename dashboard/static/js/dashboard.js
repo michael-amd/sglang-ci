@@ -283,7 +283,13 @@ function formatNumber(num) {
  */
 function calculatePercentage(value, total) {
     if (total === 0) return 0;
-    return ((value / total) * 100).toFixed(1);
+    const result = (value / total) * 100;
+    try {
+        return (result || 0).toFixed(1);
+    } catch (e) {
+        console.error('Error calculating percentage:', e);
+        return 0;
+    }
 }
 
 /**
