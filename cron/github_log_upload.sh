@@ -18,10 +18,19 @@
 #     bash cron/github_log_upload.sh 20251005 mi30x cron      # Same as above (explicit)
 #
 #     # Sanity logs (4th arg is docker image tag/folder name)
-#     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm630-mi30x-20251005
+#     bash cron/github_log_upload.sh "" mi30x sanity v0.5.3rc0-rocm700-mi30x-20251005
 #
 #     # PD logs (4th arg is docker image tag/folder name)
 #     bash cron/github_log_upload.sh "" mi30x pd v0.5.4.post1-rocm700-mi30x-20251029
+#
+#     # Unit test logs (upload entire directory)
+#     bash cron/github_log_upload.sh "" mi30x unit-test
+#
+#     # Upstream CI reports (entire ci_report directory)
+#     bash cron/github_log_upload.sh "" mi30x upstream-ci
+#
+#     # Online benchmark logs (4th arg is model name, 5th is result directory name)
+#     bash cron/github_log_upload.sh "" mi30x online GROK2 v0.5.5-rocm700-mi30x-20251113_GROK2_FP8_online
 #
 #     # Direct path upload (auto-detects type when 4th arg is absolute path)
 #     bash cron/github_log_upload.sh "" "" "" /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.3rc0
@@ -29,8 +38,10 @@
 # Arguments:
 #   DATE          – Optional. Date in YYYYMMDD format (defaults to today). Ignored if FOLDER is provided.
 #   HARDWARE_TYPE – Optional. Machine descriptor (defaults to $HARDWARE_TYPE env var or 'unknown')
-#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', or 'pd' (defaults to 'cron')
+#   LOG_TYPE      – Optional. Type of logs: 'cron', 'sanity', 'pd', 'unit-test', 'upstream-ci', or 'online' (defaults to 'cron')
 #   FOLDER        – Optional. Folder name (relative) or full path (absolute). If relative, builds path based on LOG_TYPE.
+#                    For 'online' type: use MODEL_NAME (e.g., 'GROK2', 'DeepSeek-V3-0324')
+#   MODEL_DIR     – Optional. For 'online' type only: the result directory name within the model folder
 #
 # Requirements:
 #   • GITHUB_REPO     – Repository identifier in 'owner/repo' format (defaults to 'ROCm/sglang-ci')
@@ -62,6 +73,7 @@ readonly ARG_DATE="${1:-}"
 readonly ARG_HARDWARE="${2:-}"
 readonly ARG_LOG_TYPE="${3:-cron}"  # Default to 'cron' if not specified
 readonly ARG_FOLDER="${4:-}"        # Folder name or full path (optional)
+readonly ARG_MODEL_DIR="${5:-}"     # For online type: result directory name (optional)
 
 # Determine source log directory
 if [[ -n "$ARG_FOLDER" ]]; then
@@ -86,6 +98,23 @@ if [[ -n "$ARG_FOLDER" ]]; then
       # Extract hardware from path: .../pd/pd_log/<hw>/<docker_name>
       HARDWARE_TYPE=$(echo "$SRC_LOG_DIR" | grep -oP 'pd/pd_log/\K[^/]+' || echo "${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}")
       DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/unit-test-backend-"* ]]; then
+      readonly LOG_TYPE="unit-test"
+      # Extract hardware from path or use provided hardware type
+      HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
+      DATE_FOLDER=$(basename "$SRC_LOG_DIR")
+    elif [[ "$SRC_LOG_DIR" == *"/upstream_ci/ci_report"* ]]; then
+      readonly LOG_TYPE="upstream-ci"
+      # Upstream CI reports are shared across hardware
+      HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-mi30x}}"
+      DATE_FOLDER="ci_report"
+    elif [[ "$SRC_LOG_DIR" == *"/online/"* ]]; then
+      readonly LOG_TYPE="online"
+      # Extract model name and result directory from path: .../online/<model>/<result_dir>
+      HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
+      # Get model name (parent directory) and result directory (base directory)
+      MODEL_FOLDER=$(basename "$(dirname "$SRC_LOG_DIR")")
+      DATE_FOLDER=$(basename "$SRC_LOG_DIR")
     else
       readonly LOG_TYPE="$ARG_LOG_TYPE"
       HARDWARE_TYPE="${ARG_HARDWARE:-${HARDWARE_TYPE:-unknown}}"
@@ -101,6 +130,34 @@ if [[ -n "$ARG_FOLDER" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     elif [[ "$LOG_TYPE" == "pd" ]]; then
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
+    elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+      # For unit-test, use the hardware-specific subdirectory
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
+    elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+      # For upstream-ci, use the ci_report directory
+      readonly SRC_LOG_DIR="${SGL_CI_DIR}/upstream_ci/ci_report"
+    elif [[ "$LOG_TYPE" == "online" ]]; then
+      # For online logs, ARG_FOLDER is the model name, and ARG_MODEL_DIR is the result directory
+      MODEL_FOLDER="$ARG_FOLDER"
+
+      if [[ -n "$ARG_MODEL_DIR" ]]; then
+        # Specific directory provided
+        DATE_FOLDER="$ARG_MODEL_DIR"
+        readonly SRC_LOG_DIR="${SGL_CI_DIR}/online/${ARG_FOLDER}/${ARG_MODEL_DIR}"
+      else
+        # Auto-detect latest directory - find the most recent result directory
+        echo "[github_log_upload] Auto-detecting latest directory for model: ${ARG_FOLDER}"
+        LATEST_DIR=$(ls -t "${SGL_CI_DIR}/online/${ARG_FOLDER}/" 2>/dev/null | grep -E '^v.*_online' | head -1)
+
+        if [[ -z "$LATEST_DIR" ]]; then
+          echo "[github_log_upload] No online result directories found in online/${ARG_FOLDER}/"
+          exit 0
+        fi
+
+        echo "[github_log_upload] Found latest directory: ${LATEST_DIR}"
+        DATE_FOLDER="$LATEST_DIR"
+        readonly SRC_LOG_DIR="${SGL_CI_DIR}/online/${ARG_FOLDER}/${LATEST_DIR}"
+      fi
     else
       readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${ARG_FOLDER}"
     fi
@@ -119,6 +176,30 @@ else
     # For PD logs, DATE is actually the docker image tag
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/pd/pd_log/${HARDWARE_TYPE}/${DATE}"
     DATE_FOLDER="$DATE"
+  elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+    # For unit-test logs, use the hardware-specific subdirectory
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/test/unit-test-backend-8-gpu-CAR-amd/${HARDWARE_TYPE}"
+    DATE_FOLDER="${HARDWARE_TYPE}"
+  elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+    # For upstream-ci logs, use the ci_report directory
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/upstream_ci/ci_report"
+    DATE_FOLDER="ci_report"
+  elif [[ "$LOG_TYPE" == "online" ]]; then
+    # For online logs, DATE is actually the model name
+    MODEL_FOLDER="${DATE}"
+
+    # Auto-detect latest directory
+    echo "[github_log_upload] Auto-detecting latest directory for model: ${DATE}"
+    LATEST_DIR=$(ls -t "${SGL_CI_DIR}/online/${DATE}/" 2>/dev/null | grep -E '^v.*_online' | head -1)
+
+    if [[ -z "$LATEST_DIR" ]]; then
+      echo "[github_log_upload] No online result directories found in online/${DATE}/"
+      exit 0
+    fi
+
+    echo "[github_log_upload] Found latest directory: ${LATEST_DIR}"
+    DATE_FOLDER="$LATEST_DIR"
+    readonly SRC_LOG_DIR="${SGL_CI_DIR}/online/${DATE}/${LATEST_DIR}"
   else
     # For cron logs, DATE is YYYYMMDD format
     readonly SRC_LOG_DIR="${SGL_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${DATE}"
@@ -128,6 +209,10 @@ fi
 
 readonly HARDWARE_TYPE
 readonly DATE_FOLDER
+# For online logs, we also need to track the model folder
+if [[ "$LOG_TYPE" == "online" ]]; then
+  readonly MODEL_FOLDER="${MODEL_FOLDER:-}"
+fi
 
 # Skip gracefully if there is nothing to upload yet
 if [[ ! -d "$SRC_LOG_DIR" ]]; then
@@ -139,7 +224,28 @@ fi
 readonly WORK_CLONE_DIR="/mnt/raid/michael/sglang-ci-data"
 
 ###########################################################################
-# 2. Ensure we have a clone of the data repository
+# 2. Acquire lock for Git operations (prevent concurrent access)
+###########################################################################
+
+# Lock file location (shared across all cron jobs)
+readonly LOCK_FILE="/tmp/github_log_upload.lock"
+
+# Use flock to serialize Git operations across concurrent cron jobs
+# File descriptor 200 is used for the lock
+exec 200>"$LOCK_FILE"
+
+if ! flock -x -w 300 200; then
+  echo "[github_log_upload] ERROR: Failed to acquire lock after 300 seconds. Aborting."
+  exit 1
+fi
+
+echo "[github_log_upload] Lock acquired – proceeding with upload"
+
+# Ensure lock is released on exit (normal or error)
+trap 'flock -u 200' EXIT
+
+###########################################################################
+# 3. Ensure we have a clone of the data repository
 ###########################################################################
 
 if [[ ! -d "$WORK_CLONE_DIR/.git" ]]; then
@@ -164,7 +270,7 @@ git checkout -q log
 git pull --rebase --quiet || true
 
 ###########################################################################
-# 3. Copy / stage logs
+# 4. Copy / stage logs
 ###########################################################################
 
 # Determine destination path based on log type
@@ -172,6 +278,17 @@ if [[ "$LOG_TYPE" == "sanity" ]]; then
   readonly DEST_PATH="test/sanity_check_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 elif [[ "$LOG_TYPE" == "pd" ]]; then
   readonly DEST_PATH="test/pd/pd_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+  readonly DEST_PATH="test/unit-test-backend-8-gpu-CAR-amd/${DATE_FOLDER}"
+elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+  readonly DEST_PATH="upstream_ci/ci_report"
+elif [[ "$LOG_TYPE" == "online" ]]; then
+  # For online logs, preserve the hardware/model/result_dir structure
+  if [[ -n "${MODEL_FOLDER:-}" && "$MODEL_FOLDER" != "$DATE_FOLDER" ]]; then
+    readonly DEST_PATH="online_benchmark_log/${HARDWARE_TYPE}/${MODEL_FOLDER}/${DATE_FOLDER}"
+  else
+    readonly DEST_PATH="online_benchmark_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
+  fi
 else
   readonly DEST_PATH="cron_log/${HARDWARE_TYPE}/${DATE_FOLDER}"
 fi
@@ -198,7 +315,7 @@ if git diff --cached --quiet; then
 fi
 
 ###########################################################################
-# 4. Commit & push
+# 5. Commit & push
 ###########################################################################
 
 # Generate commit message based on log type
@@ -206,6 +323,16 @@ if [[ "$LOG_TYPE" == "sanity" ]]; then
   COMMIT_MSG="Backup sanity logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
 elif [[ "$LOG_TYPE" == "pd" ]]; then
   COMMIT_MSG="Backup PD test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "unit-test" ]]; then
+  COMMIT_MSG="Backup unit test logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "upstream-ci" ]]; then
+  COMMIT_MSG="Backup upstream CI reports ($(date +%Y%m%d_%H%M))"
+elif [[ "$LOG_TYPE" == "online" ]]; then
+  if [[ -n "${MODEL_FOLDER:-}" && "$MODEL_FOLDER" != "$DATE_FOLDER" ]]; then
+    COMMIT_MSG="Backup online benchmark logs for ${HARDWARE_TYPE}/${MODEL_FOLDER} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+  else
+    COMMIT_MSG="Backup online benchmark logs for ${HARDWARE_TYPE} – ${DATE_FOLDER} ($(date +%Y%m%d_%H%M))"
+  fi
 else
   COMMIT_MSG="Backup cron logs for ${HARDWARE_TYPE} – ${DATE_FOLDER}"
 fi
