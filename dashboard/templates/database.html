@@ -1,0 +1,1142 @@
+{% extends "base.html" %}
+
+{% block title %}Database Explorer - SGLang CI Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+    .db-filter-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .summary-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .summary-card .card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .summary-card .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .status-badge {
+        text-transform: capitalize;
+    }
+
+    .status-badge.passed,
+    .status-badge.pass {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-badge.failed,
+    .status-badge.fail {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+
+    .status-badge.partial {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+
+    .status-badge.unknown {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+
+    .status-badge.not_run,
+    .status-badge.not-run {
+        background-color: #cfe2ff;
+        color: #084298;
+        font-weight: 600;
+        border: 1px solid #b6d4fe;
+    }
+
+    .log-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 10px;
+        margin-bottom: 6px;
+    }
+
+    .table-responsive {
+        max-height: 420px;
+        overflow-y: auto;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 320px;
+    }
+
+    .advanced-card {
+        border: 1px solid #e9ecef;
+    }
+
+    .template-btn {
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        background: #f8f9fa;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .template-btn:hover {
+        background: #e9ecef;
+    }
+
+    .query-textarea {
+        width: 100%;
+        min-height: 160px;
+        font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.9rem;
+    }
+
+    .loading-indicator {
+        transition: opacity 0.2s ease;
+    }
+
+    .selected-date-pill {
+        font-weight: 600;
+    }
+
+    .badge-log {
+        background-color: #e0f2ff;
+        color: #0c5460;
+    }
+
+    @media (max-width: 992px) {
+        .chart-container {
+            height: 260px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="databaseExplorer" data-default-hardware="{{ default_hardware }}">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-6"><i class="bi bi-database"></i> Database Explorer</h1>
+            <p class="text-muted mb-0">Explore CI database results by hardware, date, and test type. View summary trends, detailed run information, and advanced SQL queries.</p>
+        </div>
+    </div>
+
+    <div class="alert alert-info d-none" id="loadingIndicator"></div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-6 col-md-3">
+                    <label for="hardwareSelect" class="db-filter-label">Hardware</label>
+                    <select class="form-select" id="hardwareSelect">
+                        <option value="mi30x">MI30X</option>
+                        <option value="mi35x">MI35X</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="dateSelect" class="db-filter-label">Date</label>
+                    <select class="form-select" id="dateSelect"></select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="rangeSelect" class="db-filter-label">Date Range</label>
+                    <select class="form-select" id="rangeSelect">
+                        <option value="7">Last 7 days</option>
+                        <option value="14">Last 14 days</option>
+                        <option value="30">Last 30 days</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="testSelect" class="db-filter-label">Test Type</label>
+                    <select class="form-select" id="testSelect">
+                        <option value="all">All Tests</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-1 d-grid">
+                    <button class="btn btn-primary" id="refreshButton"><i class="bi bi-arrow-repeat"></i> Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4" id="summaryCards"></div>
+
+    <!-- Pass Rate Chart -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Pass Rate Trend (Last <span id="rangeLabel">7</span> Days)</h5>
+            <span class="text-muted"><i class="bi bi-calendar3"></i> <span id="dateRangeLabel">—</span></span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="passRateChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Daily Runs Table -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Daily Run Overview</h5>
+                    <span class="badge bg-light text-dark" id="dailyRunCount">0 runs</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="dailyRunsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Tasks Run</th>
+                                    <th>Passed</th>
+                                    <th>Failed</th>
+                                    <th>Not Run</th>
+                                    <th>Pass Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Run Details -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Selected Run Details</h5>
+                        <span class="badge bg-secondary" id="selectedRunLabel">—</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="selectedRunSummary" class="mb-3"></div>
+
+                    <div class="mb-3">
+                        <h6>Log Links</h6>
+                        <div id="selectedRunLogs" class="d-flex flex-wrap"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Validation & Checks</h6>
+                        <div class="table-responsive small-table">
+                            <table class="table table-sm" id="selectedValidationTable">
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Status</th>
+                                        <th>Runtime</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Benchmarks & Integration Tests</h6>
+                        <div class="table-responsive small-table">
+                            <table class="table table-sm" id="selectedBenchmarksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Status</th>
+                                        <th>GSM8K</th>
+                                        <th>Runtime</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6>Sanity Checks</h6>
+                        <div class="table-responsive small-table">
+                            <table class="table table-sm" id="selectedSanityTable">
+                                <thead>
+                                    <tr>
+                                        <th>Model</th>
+                                        <th>Status</th>
+                                        <th>Accuracy</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Results Table -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Test Results (Filtered)</h5>
+            <span class="badge bg-light text-dark" id="benchmarkFilterLabel">All Tests</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0 small" id="rangeBenchmarkTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Run Date/Time (PT)</th>
+                            <th>Benchmark Name</th>
+                            <th>Status</th>
+                            <th>GSM8K Accuracy (%)</th>
+                            <th>Runtime (min)</th>
+                            <th>Error Message</th>
+                            <th>Docker Image</th>
+                            <th>Cron Logs</th>
+                            <th>Detail Logs</th>
+                            <th>Plot</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced SQL Tools -->
+    <div class="accordion mb-4" id="advancedTools">
+        <div class="accordion-item advanced-card">
+            <h2 class="accordion-header" id="advancedHeading">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#advancedCollapse">
+                    <i class="bi bi-code-square me-2"></i> Advanced SQL & Tools (Optional)
+                </button>
+            </h2>
+            <div id="advancedCollapse" class="accordion-collapse collapse" data-bs-parent="#advancedTools">
+                <div class="accordion-body">
+                    <div class="row g-4">
+                        <div class="col-lg-7">
+                            <h5>SQL Query Editor</h5>
+                            <p class="text-muted">Only SELECT queries are allowed for safety. Use the templates below or write your own query.</p>
+                            <textarea id="query-input" class="form-control query-textarea" placeholder="SELECT * FROM test_runs ORDER BY run_date DESC LIMIT 10;"></textarea>
+                            <div class="d-flex flex-wrap gap-2 my-3">
+                                <button class="btn btn-primary" onclick="executeQuery()"><i class="bi bi-play-fill"></i> Execute</button>
+                                <button class="btn btn-secondary" onclick="clearQuery()"><i class="bi bi-x-circle"></i> Clear</button>
+                                <button class="btn btn-light" onclick="showQueryExamples()"><i class="bi bi-lightbulb"></i> Examples</button>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="text-muted">Templates:</span>
+                                <button class="template-btn" onclick="loadTemplate('recent_runs')">Recent Runs</button>
+                                <button class="template-btn" onclick="loadTemplate('benchmark_results')">Benchmarks</button>
+                                <button class="template-btn" onclick="loadTemplate('sanity_checks')">Sanity</button>
+                                <button class="template-btn" onclick="loadTemplate('failed_tests')">Failures</button>
+                                <button class="template-btn" onclick="loadTemplate('gsm8k_trends')">GSM8K</button>
+                            </div>
+                            <div id="query-results" class="results-container"></div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-diagram-2"></i> Schema Browser</h6>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadSchema(true)">Refresh</button>
+                                </div>
+                                <div class="card-body" id="schema-content">
+                                    <div class="text-muted">Loading schema...</div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-clipboard-data"></i> Database Stats</h6>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadStats(true)">Refresh</button>
+                                </div>
+                                <div class="card-body" id="stats-content">
+                                    <div class="text-muted">Loading stats...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const dbState = {
+    hardware: 'mi30x',
+    selectedDate: null,
+    rangeDays: 7,
+    testName: 'all',
+    availableDates: []
+};
+
+let passRateChart = null;
+let currentResults = null;
+let schemaLoaded = false;
+let statsLoaded = false;
+
+function setupFilterControls() {
+    document.getElementById('hardwareSelect').addEventListener('change', (event) => {
+        dbState.hardware = event.target.value;
+        dbState.selectedDate = null;
+        loadDatabaseOverview();
+    });
+
+    document.getElementById('dateSelect').addEventListener('change', (event) => {
+        dbState.selectedDate = event.target.value || null;
+        loadDatabaseOverview();
+    });
+
+    document.getElementById('rangeSelect').addEventListener('change', (event) => {
+        dbState.rangeDays = parseInt(event.target.value, 10) || 7;
+        loadDatabaseOverview();
+    });
+
+    document.getElementById('testSelect').addEventListener('change', (event) => {
+        dbState.testName = event.target.value || 'all';
+        loadDatabaseOverview();
+    });
+
+    document.getElementById('refreshButton').addEventListener('click', async () => {
+        // Sync database from GitHub first to get updates from other machines
+        await syncDatabaseFromGitHub();
+        loadDatabaseOverview();
+    });
+}
+
+async function syncDatabaseFromGitHub() {
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.textContent = '🔄 Syncing database from GitHub...';
+        indicator.classList.remove('d-none', 'alert-danger');
+        indicator.classList.add('alert-info');
+    }
+
+    try {
+        const response = await fetch('/api/database/sync', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (indicator) {
+            if (data.status === 'success') {
+                indicator.textContent = '✅ Database synced from GitHub';
+                indicator.classList.add('alert-success');
+                setTimeout(() => indicator.classList.add('d-none'), 2000);
+            } else {
+                indicator.textContent = '⚠️ ' + (data.message || 'Sync completed with warnings');
+                setTimeout(() => indicator.classList.add('d-none'), 3000);
+            }
+        }
+    } catch (error) {
+        if (indicator) {
+            indicator.textContent = '⚠️ Could not sync (using local database)';
+            setTimeout(() => indicator.classList.add('d-none'), 3000);
+        }
+    }
+}
+
+function setLoading(isLoading, message = '', isError = false) {
+    const indicator = document.getElementById('loadingIndicator');
+    if (!indicator) return;
+
+    if (isLoading) {
+        indicator.textContent = message || 'Loading data...';
+        indicator.classList.remove('d-none', 'alert-danger', 'alert-info', 'alert-success');
+        indicator.classList.add('alert-info');
+    } else if (message) {
+        indicator.textContent = message;
+        indicator.classList.remove('d-none', 'alert-info', 'alert-danger', 'alert-success');
+        indicator.classList.add(isError ? 'alert-danger' : 'alert-info');
+        setTimeout(() => indicator.classList.add('d-none'), 4000);
+    } else {
+        indicator.classList.add('d-none');
+    }
+}
+
+async function loadDatabaseOverview() {
+    const explorer = document.getElementById('databaseExplorer');
+    if (explorer && !dbState.initialized) {
+        dbState.hardware = explorer.dataset.defaultHardware || 'mi30x';
+        dbState.initialized = true;
+    }
+
+    const params = new URLSearchParams({
+        hardware: dbState.hardware,
+        range: dbState.rangeDays,
+        test: dbState.testName
+    });
+
+    if (dbState.selectedDate) {
+        params.set('date', dbState.selectedDate);
+    }
+
+    setLoading(true);
+    try {
+        const response = await fetch(`/api/database/overview?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.error) {
+            setLoading(false, data.error, true);
+            return;
+        }
+
+        dbState.selectedDate = data.selected_date;
+        dbState.availableDates = data.available_dates || [];
+        renderOverview(data);
+        setLoading(false);
+    } catch (error) {
+        setLoading(false, error.message, true);
+    }
+}
+
+function renderOverview(data) {
+    updateFilterControls(data);
+    renderSummaryCards(data);
+    renderDailyRuns(data.daily_runs || []);
+    renderSelectedRun(data.selected_run);
+    renderBenchmarkRange(data);
+    updatePassRateChart(data.daily_runs || []);
+}
+
+function updateFilterControls(data) {
+    const hardwareSelect = document.getElementById('hardwareSelect');
+    if (hardwareSelect) hardwareSelect.value = dbState.hardware;
+
+    const dateSelect = document.getElementById('dateSelect');
+    if (dateSelect) {
+        dateSelect.innerHTML = '';
+        (data.available_dates || []).forEach((dateStr) => {
+            const option = document.createElement('option');
+            option.value = dateStr;
+            option.textContent = formatDateDisplay(dateStr);
+            dateSelect.appendChild(option);
+        });
+        if (dbState.selectedDate) {
+            dateSelect.value = dbState.selectedDate;
+        }
+    }
+
+    const rangeSelect = document.getElementById('rangeSelect');
+    if (rangeSelect) rangeSelect.value = dbState.rangeDays;
+
+    const testSelect = document.getElementById('testSelect');
+    if (testSelect) {
+        testSelect.innerHTML = '';
+        (data.test_names || ['all']).forEach((name) => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name === 'all' ? 'All Tests' : name;
+            testSelect.appendChild(option);
+        });
+        testSelect.value = data.selected_test || 'all';
+    }
+
+    const dateRangeLabel = document.getElementById('dateRangeLabel');
+    if (dateRangeLabel) {
+        dateRangeLabel.textContent = `${formatDateDisplay(data.date_range.start)} → ${formatDateDisplay(data.date_range.end)}`;
+    }
+
+    const rangeLabel = document.getElementById('rangeLabel');
+    if (rangeLabel) {
+        rangeLabel.textContent = data.date_range.days;
+    }
+}
+
+function renderSummaryCards(data) {
+    const container = document.getElementById('summaryCards');
+    if (!container) return;
+
+    const selectedRun = data.selected_run || {};
+
+    const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
+
+    container.innerHTML = `
+        <div class="col-md-3">
+            <div class="card summary-card">
+                <div class="card-body">
+                    <div class="card-title">Tasks Run</div>
+                    <div class="card-value">${tasksRun}</div>
+                    <p class="text-muted mb-0">Out of ${selectedRun.total_tasks || 0} total</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card">
+                <div class="card-body">
+                    <div class="card-title">Passed</div>
+                    <div class="card-value text-success">${selectedRun.passed_tasks || 0}</div>
+                    <p class="text-muted mb-0">${selectedRun.pass_rate || 0}% pass rate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card">
+                <div class="card-body">
+                    <div class="card-title">Failed</div>
+                    <div class="card-value text-danger">${selectedRun.failed_tasks || 0}</div>
+                    <p class="text-muted mb-0">${selectedRun.unknown_tasks || 0} unknown</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card">
+                <div class="card-body">
+                    <div class="card-title">Not Run</div>
+                    <div class="card-value text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</div>
+                    <p class="text-muted mb-0">Docker image unavailable</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderDailyRuns(runs) {
+    const tableBody = document.querySelector('#dailyRunsTable tbody');
+    const runCount = document.getElementById('dailyRunCount');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    if (!runs.length) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No data available</td></tr>';
+    } else {
+        runs.forEach((run) => {
+            const tasksRun = (run.total_tasks || 0) - (run.not_run || 0);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDateDisplay(run.run_date)}</td>
+                <td><strong>${tasksRun}</strong></td>
+                <td><span class="text-success">${run.passed_tasks || 0}</span></td>
+                <td><span class="text-danger">${run.failed_tasks || 0}</span></td>
+                <td><span class="text-primary" style="font-weight: 600;">${run.not_run || 0}</span></td>
+                <td><strong>${run.pass_rate || 0}%</strong></td>
+            `;
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', () => {
+                if (dbState.selectedDate !== run.run_date) {
+                    dbState.selectedDate = run.run_date;
+                    loadDatabaseOverview();
+                }
+            });
+            tableBody.appendChild(row);
+        });
+    }
+
+    if (runCount) {
+        runCount.textContent = `${runs.length} run${runs.length === 1 ? '' : 's'}`;
+    }
+}
+
+function formatAccuracy(value) {
+    if (value === null || value === undefined) return '—';
+    const num = Number(value);
+    if (Number.isNaN(num)) return '—';
+    try {
+        return num.toFixed(1) + '%';
+    } catch (e) {
+        console.error('Error formatting accuracy:', e);
+        return '—';
+    }
+}
+
+function renderSelectedRun(selectedRun) {
+    const label = document.getElementById('selectedRunLabel');
+    const summaryContainer = document.getElementById('selectedRunSummary');
+    const validationTableBody = document.querySelector('#selectedValidationTable tbody');
+    const benchmarkTableBody = document.querySelector('#selectedBenchmarksTable tbody');
+    const sanityTableBody = document.querySelector('#selectedSanityTable tbody');
+    const logsContainer = document.getElementById('selectedRunLogs');
+
+    if (!selectedRun) {
+        if (label) label.textContent = 'No run selected';
+        if (summaryContainer) summaryContainer.innerHTML = '<p class="text-muted">No run data available.</p>';
+        if (validationTableBody) validationTableBody.innerHTML = '';
+        if (benchmarkTableBody) benchmarkTableBody.innerHTML = '';
+        if (sanityTableBody) sanityTableBody.innerHTML = '';
+        if (logsContainer) logsContainer.innerHTML = '';
+        return;
+    }
+
+    if (label) {
+        label.textContent = `${formatDateDisplay(selectedRun.run_date)} · ${selectedRun.hardware}`;
+    }
+
+    if (summaryContainer) {
+        const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
+        summaryContainer.innerHTML = `
+            <div class="row g-2 mb-3">
+                <div class="col-3">
+                    <div class="text-muted small">Tasks Run</div>
+                    <strong>${tasksRun}</strong>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Passed</div>
+                    <strong class="text-success">${selectedRun.passed_tasks || 0}</strong>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Failed</div>
+                    <strong class="text-danger">${selectedRun.failed_tasks || 0}</strong>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Not Run</div>
+                    <strong class="text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</strong>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="text-muted small">Pass Rate</div>
+                    <strong class="text-primary">${selectedRun.pass_rate || 0}%</strong>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Docker Image</div>
+                    <div class="text-truncate" title="${selectedRun.docker_image || '—'}"><small>${selectedRun.docker_image || '—'}</small></div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (logsContainer) {
+        const logs = selectedRun.log_files || [];
+        if (!logs.length) {
+            logsContainer.innerHTML = '<span class="text-muted">No log links available.</span>';
+        } else {
+            logsContainer.innerHTML = logs.map((log) => {
+                const link = log.github_url || log.local_path || '#';
+                const icon = log.github_url ? 'bi-link-45deg' : 'bi-file-text';
+                const disabled = link === '#';
+                return `<a class="badge badge-log text-decoration-none ${disabled ? 'disabled' : ''}" href="${disabled ? '#!' : link}" target="_blank">` +
+                    `<i class="bi ${icon}"></i> ${log.log_name}` +
+                    `${log.log_type ? ` <span class=\"text-muted\">(${log.log_type})</span>` : ''}` +
+                `</a>`;
+            }).join('');
+        }
+    }
+
+    // Split test results into validation and benchmarks
+    if (benchmarkTableBody || validationTableBody) {
+        const allTests = selectedRun.benchmark_results || [];
+
+        // Define validation test names
+        const validationTests = ['Unit Tests', 'PD Disaggregation Tests', 'Docker Image Check'];
+
+        // Split tests into two categories
+        const validation = allTests.filter(test => validationTests.includes(test.benchmark_name));
+        const benchmarks = allTests.filter(test => !validationTests.includes(test.benchmark_name));
+
+        // Render validation tests (no GSM8K column)
+        if (validationTableBody) {
+            if (!validation.length) {
+                validationTableBody.innerHTML = '<tr><td colspan="3" class="text-muted">No validation data</td></tr>';
+            } else {
+                validationTableBody.innerHTML = validation.map((test) => `
+                    <tr>
+                        <td>${test.benchmark_name}</td>
+                        <td>${statusBadge(test.status)}</td>
+                        <td>${test.runtime_minutes ? test.runtime_minutes + 'm' : '—'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Render benchmarks (with GSM8K column)
+        if (benchmarkTableBody) {
+            if (!benchmarks.length) {
+                benchmarkTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">No benchmark data</td></tr>';
+            } else {
+                benchmarkTableBody.innerHTML = benchmarks.map((bench) => `
+                    <tr>
+                        <td>${bench.benchmark_name}</td>
+                        <td>${statusBadge(bench.status)}</td>
+                        <td>${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
+                        <td>${bench.runtime_minutes ? bench.runtime_minutes + 'm' : '—'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+    }
+
+    if (sanityTableBody) {
+        const sanity = selectedRun.sanity_results || [];
+        if (!sanity.length) {
+            sanityTableBody.innerHTML = '<tr><td colspan="3" class="text-muted">No sanity data</td></tr>';
+        } else {
+            sanityTableBody.innerHTML = sanity.map((model) => `
+                <tr>
+                    <td>${model.model_name}</td>
+                    <td>${statusBadge(model.status)}</td>
+                    <td>${formatAccuracy(model.accuracy || model.gsm8k_accuracy)}</td>
+                </tr>
+            `).join('');
+        }
+    }
+}
+
+function renderBenchmarkRange(data) {
+    const tableBody = document.querySelector('#rangeBenchmarkTable tbody');
+    const filterLabel = document.getElementById('benchmarkFilterLabel');
+    if (!tableBody) return;
+
+    const benchmarks = data.benchmarks_range || [];
+    const dailyRuns = data.daily_runs || [];
+
+    // Create lookup for docker images, datetime, and URLs by date
+    const metadataByDate = {};
+    dailyRuns.forEach((run) => {
+        metadataByDate[run.run_date] = {
+            dockerImage: run.docker_image || '—',
+            datetimePt: run.run_datetime_pt || formatDateDisplay(run.run_date),
+            githubCronLogUrl: run.github_cron_log_url,
+            githubDetailLogUrl: run.github_detail_log_url,
+        };
+    });
+
+    // Benchmarks that should have plots
+    const benchmarksWithPlots = [
+        'Grok Online Benchmark',
+        'Grok 2 Online Benchmark',
+        'DeepSeek Online Benchmark',
+        'DeepSeek DP Attention Test',
+        'DeepSeek Torch Compile Test',
+        'DeepSeek DP+Torch Compile'
+    ];
+
+    tableBody.innerHTML = '';
+
+    if (!benchmarks.length) {
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No test data for selected range.</td></tr>';
+    } else {
+        tableBody.innerHTML = benchmarks.map((bench) => {
+            const meta = metadataByDate[bench.run_date] || {};
+            const dockerImage = meta.dockerImage || '—';
+            const dockerShort = dockerImage.length > 40 ? dockerImage.substring(0, 40) + '...' : dockerImage;
+            const errorText = bench.error_message || '—';
+            const errorShort = errorText.length > 50 ? errorText.substring(0, 50) + '...' : errorText;
+            const datetimePt = meta.datetimePt || formatDateDisplay(bench.run_date);
+
+            const cronLogLink = meta.githubCronLogUrl ?
+                `<a href="${meta.githubCronLogUrl}" target="_blank" class="text-decoration-none" title="Cron log file"><i class="bi bi-file-earmark-code"></i></a>` :
+                '';
+
+            // Per-test detail log URL (from benchmark_results table)
+            // Empty for tests that don't have detail logs (like Docker Check)
+            const detailLogLink = bench.detail_log_url ?
+                `<a href="${bench.detail_log_url}" target="_blank" class="text-decoration-none" title="Detail test logs"><i class="bi bi-file-earmark-text"></i></a>` :
+                '';
+
+            // Only show plot link for benchmarks that have plots
+            const plotLink = (benchmarksWithPlots.includes(bench.benchmark_name) && bench.plot_url) ?
+                `<a href="${bench.plot_url}" target="_blank" class="text-decoration-none" title="Performance plot"><i class="bi bi-graph-up"></i></a>` :
+                '';
+
+            return `
+            <tr>
+                <td><small>${datetimePt}</small></td>
+                <td>${bench.benchmark_name}</td>
+                <td>${statusBadge(bench.status)}</td>
+                <td class="text-end">${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
+                <td class="text-end">${bench.runtime_minutes !== null ? bench.runtime_minutes : '—'}</td>
+                <td title="${errorText}"><small>${errorShort}</small></td>
+                <td title="${dockerImage}"><small class="text-muted">${dockerShort}</small></td>
+                <td class="text-center">${cronLogLink}</td>
+                <td class="text-center">${detailLogLink}</td>
+                <td class="text-center">${plotLink}</td>
+            </tr>
+        `;
+        }).join('');
+    }
+
+    if (filterLabel) {
+        filterLabel.textContent = data.selected_test === 'all' ? 'All Tests' : data.selected_test;
+    }
+}
+
+function updatePassRateChart(dailyRuns) {
+    const ctx = document.getElementById('passRateChart');
+    if (!ctx) return;
+
+    const labels = dailyRuns.map((run) => formatDateShort(run.run_date)).reverse();
+    const dataPoints = dailyRuns.map((run) => run.pass_rate).reverse();
+
+    if (!passRateChart) {
+        passRateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Pass Rate %',
+                        data: dataPoints,
+                        fill: false,
+                        borderColor: '#0d6efd',
+                        tension: 0.2,
+                        pointRadius: 4,
+                        pointHoverRadius: 5,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: {
+                            callback: (value) => `${value}%`
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        passRateChart.data.labels = labels;
+        passRateChart.data.datasets[0].data = dataPoints;
+        passRateChart.update();
+    }
+}
+
+function statusBadge(status) {
+    if (!status) return '<span class="badge status-badge unknown">Unknown</span>';
+
+    const normalized = status.toLowerCase();
+
+    // Handle "not run" status with proper styling
+    if (normalized === 'not run' || normalized === 'not_run') {
+        return '<span class="badge status-badge not-run"><i class="bi bi-skip-forward-fill"></i> Not Run</span>';
+    }
+
+    // Handle other statuses
+    const displayText = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    const badgeClass = normalized.replace(/[_ ]/g, '-');  // Convert spaces/underscores to hyphens for CSS
+
+    return `<span class="badge status-badge ${badgeClass}">${displayText}</span>`;
+}
+
+function formatDateDisplay(dateStr) {
+    if (!dateStr || dateStr.length !== 8) return dateStr || '—';
+    const year = dateStr.substring(0, 4);
+    const month = dateStr.substring(4, 6);
+    const day = dateStr.substring(6, 8);
+    return `${year}-${month}-${day}`;
+}
+
+function formatDateShort(dateStr) {
+    if (!dateStr || dateStr.length !== 8) return dateStr || '';
+    const month = dateStr.substring(4, 6);
+    const day = dateStr.substring(6, 8);
+    return `${month}/${day}`;
+}
+
+// Advanced SQL helper functions
+const queryTemplates = {
+    recent_runs: `SELECT \n    run_date, \n    hardware, \n    overall_status, \n    passed_tasks, \n    total_tasks,\n    docker_image\nFROM test_runs \nORDER BY run_date DESC \nLIMIT 10;`,
+    benchmark_results: `SELECT \n    tr.run_date,\n    br.benchmark_name,\n    br.status,\n    ROUND(br.gsm8k_accuracy * 100, 1) as gsm8k_pct,\n    br.runtime_minutes\nFROM benchmark_results br\nJOIN test_runs tr ON tr.id = br.test_run_id\nWHERE tr.hardware = 'mi30x'\nORDER BY tr.run_date DESC, br.benchmark_name\nLIMIT 20;`,
+    sanity_checks: `SELECT \n    tr.run_date,\n    sc.model_name,\n    sc.status,\n    ROUND(sc.accuracy, 2) as accuracy\nFROM sanity_check_results sc\nJOIN test_runs tr ON tr.id = sc.test_run_id\nWHERE tr.hardware = 'mi30x'\nORDER BY tr.run_date DESC\nLIMIT 20;`,
+    failed_tests: `SELECT \n    tr.run_date,\n    tr.hardware,\n    br.benchmark_name,\n    br.status,\n    br.error_message\nFROM benchmark_results br\nJOIN test_runs tr ON tr.id = br.test_run_id\nWHERE br.status = 'fail'\nORDER BY tr.run_date DESC\nLIMIT 20;`,
+    gsm8k_trends: `SELECT \n    tr.run_date,\n    br.benchmark_name,\n    ROUND(AVG(br.gsm8k_accuracy * 100), 1) as avg_accuracy\nFROM benchmark_results br\nJOIN test_runs tr ON tr.id = br.test_run_id\nWHERE br.gsm8k_accuracy IS NOT NULL\n    AND tr.hardware = 'mi30x'\nGROUP BY tr.run_date, br.benchmark_name\nORDER BY tr.run_date DESC, br.benchmark_name\nLIMIT 30;`
+};
+
+function loadTemplate(templateName) {
+    const textarea = document.getElementById('query-input');
+    if (!textarea) return;
+    textarea.value = queryTemplates[templateName] || '';
+}
+
+function clearQuery() {
+    const textarea = document.getElementById('query-input');
+    const resultsDiv = document.getElementById('query-results');
+    if (textarea) textarea.value = '';
+    if (resultsDiv) resultsDiv.innerHTML = '';
+}
+
+function showQueryExamples() {
+    alert('Use the template buttons above the editor to load example queries.');
+}
+
+async function executeQuery() {
+    const textarea = document.getElementById('query-input');
+    const resultsDiv = document.getElementById('query-results');
+    if (!textarea || !resultsDiv) return;
+
+    const query = textarea.value.trim();
+    if (!query) {
+        alert('Please enter a SQL query.');
+        return;
+    }
+
+    resultsDiv.innerHTML = '<div class="text-muted">Executing query...</div>';
+
+    try {
+        const response = await fetch('/api/database/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query })
+        });
+        const data = await response.json();
+        if (data.error) {
+            resultsDiv.innerHTML = `<div class="text-danger">❌ ${data.error}</div>`;
+            return;
+        }
+
+        currentResults = data;
+        if (!data.rows || !data.rows.length) {
+            resultsDiv.innerHTML = '<div class="text-success">✅ Query executed successfully. No rows returned.</div>';
+            return;
+        }
+
+        const table = `
+            <div class="d-flex gap-2 mb-2">
+                <button class="btn btn-sm btn-outline-primary" onclick="exportCSV()"><i class="bi bi-download"></i> Export CSV</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportJSON()"><i class="bi bi-braces"></i> Export JSON</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>${data.columns.map((column) => `<th>${column}</th>`).join('')}</tr>
+                    </thead>
+                    <tbody>
+                        ${data.rows.map((row) => `<tr>${row.map((cell) => `<td>${cell !== null ? cell : '<em>NULL</em>'}</td>`).join('')}</tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted small">Returned ${data.row_count} row(s) in ${data.execution_time} ms.</p>
+        `;
+        resultsDiv.innerHTML = table;
+    } catch (error) {
+        resultsDiv.innerHTML = `<div class="text-danger">❌ ${error.message}</div>`;
+    }
+}
+
+function exportCSV() {
+    if (!currentResults) return;
+    const { columns, rows } = currentResults;
+    let csv = columns.join(',') + '\n';
+    rows.forEach((row) => {
+        csv += row.map((cell) => {
+            if (cell === null || cell === undefined) return '';
+            const value = String(cell);
+            return value.includes(',') ? `"${value}"` : value;
+        }).join(',') + '\n';
+    });
+    downloadFile(csv, 'query_results.csv', 'text/csv');
+}
+
+function exportJSON() {
+    if (!currentResults) return;
+    const { columns, rows } = currentResults;
+    const json = rows.map((row) => {
+        const obj = {};
+        columns.forEach((col, idx) => {
+            obj[col] = row[idx];
+        });
+        return obj;
+    });
+    downloadFile(JSON.stringify(json, null, 2), 'query_results.json', 'application/json');
+}
+
+function downloadFile(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+async function loadSchema(force = false) {
+    if (schemaLoaded && !force) return;
+    const schemaDiv = document.getElementById('schema-content');
+    if (!schemaDiv) return;
+
+    schemaDiv.innerHTML = '<div class="text-muted">Loading schema...</div>';
+    try {
+        const response = await fetch('/api/database/schema');
+        const data = await response.json();
+        if (data.error) {
+            schemaDiv.innerHTML = `<div class="text-danger">${data.error}</div>`;
+            return;
+        }
+
+        let html = '';
+        Object.entries(data.tables || {}).forEach(([table, columns]) => {
+            html += `
+                <div class="mb-3">
+                    <strong>${table}</strong>
+                    <ul class="mb-0 small">
+                        ${columns.map((column) => `<li>${column}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        });
+        schemaDiv.innerHTML = html || '<div class="text-muted">No schema information available.</div>';
+        schemaLoaded = true;
+    } catch (error) {
+        schemaDiv.innerHTML = `<div class="text-danger">${error.message}</div>`;
+    }
+}
+
+async function loadStats(force = false) {
+    if (statsLoaded && !force) return;
+    const statsDiv = document.getElementById('stats-content');
+    if (!statsDiv) return;
+
+    statsDiv.innerHTML = '<div class="text-muted">Loading statistics...</div>';
+    try {
+        const response = await fetch('/api/database/stats');
+        const data = await response.json();
+        if (data.error) {
+            statsDiv.innerHTML = `<div class="text-danger">${data.error}</div>`;
+            return;
+        }
+
+        const stats = data.stats || {};
+        let html = '<ul class="list-unstyled mb-0">';
+        Object.entries(stats).forEach(([key, value]) => {
+            html += `<li><strong>${key}:</strong> ${value}</li>`;
+        });
+        html += '</ul>';
+        statsDiv.innerHTML = html;
+        statsLoaded = true;
+    } catch (error) {
+        statsDiv.innerHTML = `<div class="text-danger">${error.message}</div>`;
+    }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+    setupFilterControls();
+    loadDatabaseOverview();
+    loadSchema();
+    loadStats();
+    loadTemplate('recent_runs');
+});
+</script>
+{% endblock %}

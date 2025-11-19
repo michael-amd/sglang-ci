@@ -10,10 +10,10 @@
 # IMAGE DISCOVERY:
 #   • Uses Docker Hub API with pagination to find images
 #   • Searches for non-SRT images from today, then yesterday
-#   • Supports mi30x (rocm630) and mi35x (rocm700) hardware variants
+#   • Supports mi30x (rocm700) and mi35x (rocm700) hardware variants
 #   • Examples:
-#     - rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#     - rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250716
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   • Automatically excludes SRT variants (ends with -srt)
 #
 # MODEL DOWNLOAD:
@@ -110,8 +110,14 @@ HARDWARE_TYPE="${HARDWARE_TYPE:-mi35x}"  # Default to mi35x, can be mi30x or mi3
 
 # ROCM version mapping based on hardware
 declare -A ROCM_VERSIONS=(
-  ["mi30x"]="rocm630"
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
+)
+
+# Fallback ROCM versions if primary version not available
+declare -A ROCM_FALLBACK_VERSIONS=(
+  ["mi30x"]="rocm630"
+  ["mi35x"]=""  # No fallback for mi35x
 )
 
 # Model configuration - will be set based on --model parameter
@@ -323,6 +329,66 @@ download_hf_model() {
     echo "[nightly] ERROR: Failed to download model from HuggingFace (exit code: $DOWNLOAD_EXIT_CODE)"
     return 1
   fi
+}
+
+###############################################################################
+# Teams error notification function
+###############################################################################
+send_error_notification() {
+  local error_type="$1"
+  local error_message="$2"
+  local model="${3:-unknown}"
+  local mode="${4:-unknown}"
+
+  if [[ "$TEAMS_WEBHOOK_FROM_CLI" != "true" || -z "$TEAMS_WEBHOOK_URL" ]]; then
+    echo "[nightly] Error notification skipped - no webhook URL configured"
+    return 0
+  fi
+
+  echo "[nightly] Sending error notification to Teams..."
+
+  # Create a simple error payload
+  local timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+  local hostname=$(hostname)
+
+  # Build JSON payload
+  local payload=$(cat <<EOF
+{
+  "@type": "MessageCard",
+  "@context": "http://schema.org/extensions",
+  "themeColor": "FF0000",
+  "summary": "❌ Nightly Benchmark Error: ${error_type}",
+  "sections": [{
+    "activityTitle": "❌ Nightly Benchmark Error",
+    "activitySubtitle": "${error_type}",
+    "facts": [
+      {"name": "Error Type", "value": "${error_type}"},
+      {"name": "Model", "value": "${model}"},
+      {"name": "Mode", "value": "${mode}"},
+      {"name": "Machine", "value": "${hostname}"},
+      {"name": "Hardware", "value": "${HARDWARE_TYPE}"},
+      {"name": "Timestamp", "value": "${timestamp}"},
+      {"name": "Details", "value": "${error_message}"}
+    ],
+    "markdown": true
+  }]
+}
+EOF
+)
+
+  # Send notification using curl (more reliable than docker exec when container is having issues)
+  curl -H "Content-Type: application/json" \
+       -d "${payload}" \
+       "${TEAMS_WEBHOOK_URL}" \
+       -s -o /dev/null -w "%{http_code}" > /tmp/teams_error_response.txt 2>&1
+
+  local http_code=$(cat /tmp/teams_error_response.txt 2>/dev/null || echo "000")
+  if [[ "$http_code" == "200" ]]; then
+    echo "[nightly] Error notification sent successfully (HTTP ${http_code})"
+  else
+    echo "[nightly] WARN: Error notification failed (HTTP ${http_code})"
+  fi
+  rm -f /tmp/teams_error_response.txt
 }
 
 ###############################################################################
@@ -857,7 +923,16 @@ echo "[nightly] Model: $MODEL, Mode(s): $MODES_TO_RUN"
 if [ "$MODE" = "sanity" ]; then
     LOCKFILE="/tmp/perf_nightly_sanity.lock"
 else
-    LOCKFILE="/tmp/perf_nightly_${MODEL}.lock"
+    # Build lock file name with test-specific suffix to prevent conflicts
+    LOCK_SUFFIX=""
+    if [[ "$ENABLE_DP_TEST" == "true" && "$ENABLE_MTP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_dp_mtp"
+    elif [[ "$ENABLE_DP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_dp"
+    elif [[ "$ENABLE_MTP_TEST" == "true" ]]; then
+        LOCK_SUFFIX="_mtp"
+    fi
+    LOCKFILE="/tmp/perf_nightly_${MODEL}${LOCK_SUFFIX}.lock"
 fi
 
 if [ -f "$LOCKFILE" ]; then
@@ -866,6 +941,14 @@ if [ -f "$LOCKFILE" ]; then
         echo "[nightly] ERROR: Another instance is already running (PID: $EXISTING_PID)"
         echo "[nightly] Lock file: $LOCKFILE"
         echo "[nightly] If this is incorrect, remove $LOCKFILE and try again"
+
+        # Send error notification about lock conflict
+        send_error_notification \
+          "Lock File Conflict" \
+          "Another benchmark instance is already running (PID: $EXISTING_PID). Lock file: $LOCKFILE" \
+          "$MODEL" \
+          "$MODE"
+
         exit 1
     else
         echo "[nightly] Removing stale lock file from PID $EXISTING_PID"
@@ -896,12 +979,12 @@ date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 # Find non-SRT Docker image for a specific date using Docker Hub API
 find_image_for_date() {
-  local repo="$1" target_date="$2"
+  local repo="$1" target_date="$2" rocm_version="${3:-$ROCM_VERSION}"
   local next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
   local use_jq=$(command -v jq &> /dev/null && echo "true" || echo "false")
-  local search_pattern="-${ROCM_VERSION}-${HARDWARE_TYPE}-${target_date}"
+  local search_pattern="-${rocm_version}-${HARDWARE_TYPE}-${target_date}"
 
-  echo "[nightly] Searching for non-SRT ${HARDWARE_TYPE} image in '${repo}' for date ${target_date}..." >&2
+  echo "[nightly] Searching for non-SRT ${HARDWARE_TYPE} image (${rocm_version}) in '${repo}' for date ${target_date}..." >&2
 
   while [[ -n "$next_url" && "$next_url" != "null" ]]; do
     local response=$(curl -s --max-time 15 "$next_url")
@@ -933,6 +1016,60 @@ if ! command -v curl &> /dev/null; then
   echo "[nightly] ERROR: curl is required but not found." >&2
   exit 1
 fi
+
+###############################################################################
+# Check yesterday's run status
+###############################################################################
+check_yesterday_run_status() {
+  # Check if yesterday's run was successful for the specified model and mode
+  # Returns: 0 if yesterday's run failed/didn't run/incomplete, 1 if successful
+  local yesterday_date=$(date_pst 1)
+  local yesterday_log_dir="${BENCHMARK_CI_DIR}/cron/cron_log/${HARDWARE_TYPE}/${yesterday_date}"
+
+  # Determine which log file to check based on model
+  local log_file=""
+  if [[ "$MODE" == "sanity" ]]; then
+    log_file="sanity_check_nightly.log"
+  elif [[ "$MODEL" == "grok" ]]; then
+    log_file="grok_nightly.log"
+  elif [[ "$MODEL" == "grok2" ]]; then
+    log_file="grok2_nightly_online.log"
+  elif [[ "$MODEL" == "deepseek" ]]; then
+    # Check for specific mode variants
+    if [[ "$ENABLE_TORCH_COMPILE" == "true" && "$CHECK_DP_ATTENTION" == "true" ]]; then
+      log_file="deepseek_dp_attention_torch_compile.log"
+    elif [[ "$ENABLE_TORCH_COMPILE" == "true" ]]; then
+      log_file="deepseek_torch_compile.log"
+    elif [[ "$CHECK_DP_ATTENTION" == "true" ]]; then
+      log_file="deepseek_dp_attention.log"
+    else
+      log_file="deepseek_nightly_online.log"
+    fi
+  else
+    # Unknown model, allow fallback
+    echo "[nightly] Unknown model for run status check - allowing fallback"
+    return 0
+  fi
+
+  local yesterday_log="${yesterday_log_dir}/${log_file}"
+
+  # If log doesn't exist, yesterday didn't run
+  if [[ ! -f "$yesterday_log" ]]; then
+    echo "[nightly] Yesterday's run log not found - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  # Check if yesterday's run completed successfully
+  if grep -q "OVERALL SCRIPT SUMMARY" "$yesterday_log" && grep -q "Total execution time:" "$yesterday_log"; then
+    # Yesterday's run was successful
+    echo "[nightly] Yesterday's run completed successfully"
+    return 1  # Don't allow fallback - yesterday was successful
+  else
+    # Yesterday's run failed or didn't complete
+    echo "[nightly] Yesterday's run failed or did not complete"
+    return 0  # Allow fallback
+  fi
+}
 
 ###############################################################################
 # Docker image management functions
@@ -997,7 +1134,22 @@ pull_image_with_retry() {
 # Try each day from today going back CONTINUE_RUN_DAYS
 for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
   date_suffix=$(date_pst "$offset")
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || continue
+
+  # Try primary ROCM version first
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+  # If not found and fallback version exists for this hardware, try fallback
+  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
+    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
+    echo "[nightly] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[nightly] Using fallback ROCM version: $fallback_version"
+    fi
+  fi
+
+  # Skip if still no candidate found
+  [[ -z "$candidate_tag" ]] && continue
 
   echo "[nightly] Found candidate tag for day -${offset}: ${candidate_tag}"
 
@@ -1010,19 +1162,31 @@ for offset in $(seq 0 $((CONTINUE_RUN_DAYS - 1))); do
 done
 
 if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
-  echo "[nightly] No image found for today. Checking yesterday as a fallback..."
-  date_suffix=$(date_pst 1)
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
-  if [[ -n "$candidate_tag" ]]; then
-    echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
-    if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
-      SELECTED_TAGS+=("$candidate_tag")
-      echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+  echo "[nightly] No image found for today. Checking if yesterday's image should be used as fallback..."
+
+  # Only use yesterday's image if yesterday's run failed/didn't run/didn't complete
+  if check_yesterday_run_status; then
+    echo "[nightly] Proceeding with yesterday's image fallback..."
+    date_suffix=$(date_pst 1)
+
+    # For yesterday fallback, only try primary ROCM version (rocm700)
+    # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[nightly] Fallback found candidate tag: ${candidate_tag}"
+      if pull_image_with_retry "${IMAGE_REPO}:${candidate_tag}"; then
+        SELECTED_TAGS+=("$candidate_tag")
+        echo "[nightly] Successfully obtained fallback image for date ${date_suffix}: ${IMAGE_REPO}:${candidate_tag}"
+      else
+        echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
+      fi
     else
-      echo "[nightly] WARN: Failed to obtain fallback tag ${candidate_tag}. It may be private or invalid."
+      echo "[nightly] No fallback image found for yesterday either."
     fi
   else
-    echo "[nightly] No fallback image found for yesterday either."
+    echo "[nightly] Skipping yesterday's image fallback - yesterday's run was successful"
+    echo "[nightly] Status: SKIPPED (prerequisites not met)"
   fi
 fi
 
@@ -1155,6 +1319,14 @@ if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME
 
   # Always mount the models directory explicitly to ensure accessibility for sanity checks
   mount_args="${mount_args} -v /mnt/raid/models:/mnt/raid/models"
+
+  # Always mount /data and /data2 for sanity checks (models are typically stored there)
+  if [[ -d "/data" ]]; then
+      mount_args="${mount_args} -v /data:/data"
+  fi
+  if [[ -d "/data2" ]]; then
+      mount_args="${mount_args} -v /data2:/data2"
+  fi
 
   # If benchmark CI directory is not under MOUNT_DIR, mount it separately
   if [[ "${BENCHMARK_CI_DIR}" != "${MOUNT_DIR}"* ]]; then
@@ -1408,6 +1580,9 @@ fi
       -e LATEST_TAG="${SELECTED_TAG}" \
       -e FULL_IMAGE="${DOCKER_IMAGE}" \
       -e TZ='America/Los_Angeles' \
+      $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
+      $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
+      $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
       "${CONTAINER_NAME}" \
       bash -c "'$SCRIPT' $SCRIPT_ARGS" || BENCHMARK_EXIT_CODE=$?
   else
@@ -1482,13 +1657,34 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     echo "[nightly] Processing offline CSV data and generating plots... Logs will be saved to ${COMBINED_LOG_FILE}"
 
     # Ensure log directory exists before redirecting output
-    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" bash -c "mkdir -p \"\$(dirname \"${COMBINED_LOG_FILE}\")\""; then
+      echo "[nightly] ERROR: Failed to create log directory in container"
+      send_error_notification \
+        "Docker Exec Failure" \
+        "Failed to create log directory in container ${CONTAINER_NAME}. Container may be unhealthy." \
+        "${MODEL}" \
+        "offline"
+      continue
+    fi
 
+    # Run post-processing with error handling
+    POST_PROCESS_EXIT_CODE=0
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
-               python3 '${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1"
+               python3 '${PROCESS_AND_GENERATE_OFFLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1" || POST_PROCESS_EXIT_CODE=$?
+
+    if [ $POST_PROCESS_EXIT_CODE -ne 0 ]; then
+      echo "[nightly] ERROR: Offline post-processing failed (exit code: $POST_PROCESS_EXIT_CODE)"
+      send_error_notification \
+        "Post-Processing Failure" \
+        "Offline plot generation failed with exit code ${POST_PROCESS_EXIT_CODE}. Check ${COMBINED_LOG_FILE} for details." \
+        "${MODEL}" \
+        "offline"
+      # Continue to next iteration instead of sending normal notification
+      continue
+    fi
 
     # Send Teams notification for offline plots
     send_teams_notification "${MODEL}" "offline"
@@ -1519,6 +1715,12 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
       echo "[nightly] Could not extract date from tag ${SELECTED_TAG}, using current date for plots"
     fi
 
+    # For MI355 hardware, exclude rate 16 for grok/grok2 (known scheduler timeout limitation)
+    if [[ "${HARDWARE_TYPE}" == *"mi35"* && ("${MODEL}" == "grok" || "${MODEL}" == "grok2") ]]; then
+      PYTHON_ARGS="${PYTHON_ARGS} --request-rates '1,2,4,8'"
+      echo "[nightly] MI355 hardware detected for ${MODEL} - using request rates [1, 2, 4, 8] (excluding 16)"
+    fi
+
     # Determine the correct directory name for DeepSeek-V3
     if [[ "$MODEL" == "DeepSeek-V3" ]]; then
       DIRECTORY_NAME="DeepSeek-V3"
@@ -1538,13 +1740,34 @@ for MODE_TO_RUN in $MODES_TO_RUN; do
     fi
 
     # Ensure log directory exists before redirecting output
-    "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" mkdir -p "$(dirname "${COMBINED_LOG_FILE}")"
+    if ! "${DOCKER_CMD[@]}" exec "${CONTAINER_NAME}" bash -c "mkdir -p \"\$(dirname \"${COMBINED_LOG_FILE}\")\""; then
+      echo "[nightly] ERROR: Failed to create log directory in container"
+      send_error_notification \
+        "Docker Exec Failure" \
+        "Failed to create log directory in container ${CONTAINER_NAME}. Container may be unhealthy." \
+        "${MODEL}" \
+        "online"
+      continue
+    fi
 
+    # Run post-processing with error handling
+    POST_PROCESS_EXIT_CODE=0
     "${DOCKER_CMD[@]}" exec \
       -e INSIDE_CONTAINER=1 \
       "${CONTAINER_NAME}" \
       bash -c "pip install pandas matplotlib > /dev/null 2>&1 && \
-               python3 '${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1"
+               python3 '${PROCESS_AND_GENERATE_ONLINE_PLOTS_SCRIPT}' ${PYTHON_ARGS} > '${COMBINED_LOG_FILE}' 2>&1" || POST_PROCESS_EXIT_CODE=$?
+
+    if [ $POST_PROCESS_EXIT_CODE -ne 0 ]; then
+      echo "[nightly] ERROR: Online post-processing failed (exit code: $POST_PROCESS_EXIT_CODE)"
+      send_error_notification \
+        "Post-Processing Failure" \
+        "Online plot generation failed with exit code ${POST_PROCESS_EXIT_CODE}. Check ${COMBINED_LOG_FILE} for details." \
+        "${MODEL}" \
+        "online"
+      # Continue to next iteration instead of sending normal notification
+      continue
+    fi
 
     # Send Teams notification for online plots
     send_teams_notification "${MODEL}" "online"
