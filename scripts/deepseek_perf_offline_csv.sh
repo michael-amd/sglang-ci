@@ -5,7 +5,7 @@
 # Offline-throughput benchmark for DeepSeek on TP=8 MI300x.
 #
 # USAGE:
-#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash deepseek_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash deepseek_perf_offline_csv.sh --model-path=/raid/deepseek-v3 --model-name=DeepSeek-V3
 #   bash deepseek_perf_offline_csv.sh --work-dir=/path/to/workdir --output-dir=/path/to/output
 # ------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ set -euo pipefail
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 
 # Default paths - can be overridden
