@@ -16,7 +16,6 @@ ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (optional - if not provided, only logs are saved)
     HARDWARE_TYPE: Hardware type (mi30x, mi35x) - default: mi30x
     SGL_BENCHMARK_CI_DIR: Base directory for CI logs - default: /mnt/raid/michael/sglang-ci
-    DASHBOARD_URL: Base URL for the CI dashboard (e.g., http://10.194.129.138:5000)
 
 REQUIREMENTS:
     - requests library
@@ -97,101 +96,325 @@ class DailySummaryReporter:
         self.base_dir = base_dir
         self.github_repo = os.environ.get("GITHUB_REPO", "ROCm/sglang-ci")
         self.alert_log_dir = os.path.join(base_dir, "team_alert", "alert_log")
-        self.dashboard_url = os.environ.get(
-            "DASHBOARD_URL", "http://10.194.129.138:5000"
-        )
-
-        # Initialize data collector for fallback parsing (when database unavailable)
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from dashboard.data_collector import DashboardDataCollector
-
-        self._fallback_collector = DashboardDataCollector(
-            hardware=hardware,
-            base_dir=base_dir,
-        )
 
     def find_timing_summary_log(
-        self, model_dir, mode_suffix: str, date_str: str
+        self, model_dir: str, mode_suffix: str, date_str: str
     ) -> Optional[str]:
-        """Delegate to fallback collector"""
-        return self._fallback_collector.find_timing_summary_log(
-            model_dir, mode_suffix, date_str
-        )
+        """
+        Find timing_summary log file for benchmark tasks
+
+        Args:
+            model_dir: Model directory (e.g., "GROK2", "DeepSeek-V3-0324")
+            mode_suffix: Mode suffix (e.g., "online", "online_dp_attention")
+            date_str: Date string (YYYYMMDD)
+
+        Returns:
+            Path to timing_summary log file or None
+        """
+        online_dir = os.path.join(self.base_dir, "online", model_dir)
+
+        if not os.path.exists(online_dir):
+            return None
+
+        # Look for directories matching the date and mode
+        # Note: timing_summary logs may have different dates in filename (overnight runs)
+        # so we look for any timing_summary*.log in directories matching the date
+        patterns = [
+            f"{online_dir}/*{date_str}*{mode_suffix}*/timing_summary_*.log",
+            f"{online_dir}/*{date_str}*{mode_suffix}/timing_summary_*.log",
+        ]
+
+        matching_files = []
+        for pattern in patterns:
+            files = glob.glob(pattern)
+            for file_path in files:
+                # Extract directory name from file path
+                dir_name = os.path.basename(os.path.dirname(file_path))
+                # Only include files where directory name ends with the exact mode suffix
+                # This prevents "online" from matching "online_dp_attention" etc.
+                if dir_name.endswith(f"_{mode_suffix}") or dir_name.endswith(
+                    mode_suffix
+                ):
+                    # Additional check: ensure it's not a longer mode string
+                    # e.g., "online" shouldn't match if dir ends with "online_torch_compile"
+                    suffix_pos = dir_name.rfind(mode_suffix)
+                    if suffix_pos != -1 and suffix_pos + len(mode_suffix) == len(
+                        dir_name
+                    ):
+                        matching_files.append(file_path)
+
+        if matching_files:
+            # Return most recent
+            matching_files.sort(key=os.path.getmtime, reverse=True)
+            return matching_files[0]
+
+        return None
 
     def parse_timing_summary_log(self, log_path: str) -> Dict:
-        """Delegate to fallback collector"""
-        return self._fallback_collector.parse_timing_summary_log(log_path)
+        """
+        Parse timing_summary log for benchmark results
+
+        Args:
+            log_path: Path to timing_summary log file
+
+        Returns:
+            Dictionary with status info
+        """
+        result = {
+            "exists": True,
+            "status": "unknown",
+            "runtime": None,
+            "error": None,
+            "gsm8k_accuracy": None,
+        }
+
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Check if log is incomplete (truncated during run)
+            # Incomplete logs won't have GSM8K results or final status
+            lines = content.strip().split("\n")
+            if (
+                len(lines) < 20
+                and "GSM8K" not in content
+                and "Total execution time" not in content
+            ):
+                result["status"] = "fail"
+                result["error"] = "Test failed or did not complete"
+                return result
+
+            # Extract GSM8K accuracy
+            gsm8k_match = re.search(r"GSM8K accuracy:\s*([\d.]+)", content)
+            if gsm8k_match:
+                result["gsm8k_accuracy"] = float(gsm8k_match.group(1))
+
+            # Check for errors
+            error_count_match = re.search(r"RuntimeError count:\s*(\d+)", content)
+            if error_count_match and int(error_count_match.group(1)) > 0:
+                result["status"] = "fail"
+                result["error"] = f"RuntimeError count: {error_count_match.group(1)}"
+            elif "Server error status: FAIL" in content:
+                result["status"] = "fail"
+                result["error"] = "Server errors detected"
+            elif result["gsm8k_accuracy"] is not None:
+                # If we got accuracy, benchmark completed successfully
+                result["status"] = "pass"
+            else:
+                # Check if it's an incomplete run
+                if (
+                    "Script started at:" in content
+                    and "Total execution time:" not in content
+                ):
+                    result["status"] = "fail"
+                    result["error"] = "Test did not complete"
+                else:
+                    result["status"] = "unknown"
+
+            # Extract runtime
+            runtime_match = re.search(
+                r"Total execution time:\s*(\d+)\s*seconds\s*\((\d+)\s*minutes\)",
+                content,
+            )
+            if runtime_match:
+                minutes = int(runtime_match.group(2))
+                hours = minutes // 60
+                remaining_minutes = minutes % 60
+                if hours > 0:
+                    result["runtime"] = f"{hours}h {remaining_minutes}m"
+                else:
+                    result["runtime"] = f"{minutes}m"
+
+        except Exception as e:
+            result["error"] = f"Failed to parse: {str(e)}"
+            result["status"] = "fail"
+
+        return result
 
     def parse_cron_log_file(self, log_path: str) -> Dict:
-        """Delegate to fallback collector"""
-        return self._fallback_collector.parse_cron_log_file(log_path)
+        """
+        Parse a cron log file for non-benchmark tasks
+
+        Args:
+            log_path: Path to the log file
+
+        Returns:
+            Dictionary with status info
+        """
+        result = {
+            "exists": False,
+            "status": "unknown",
+            "runtime": None,
+            "error": None,
+        }
+
+        if not os.path.exists(log_path):
+            return result
+
+        result["exists"] = True
+
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Check for bash errors
+            if "bash:" in content and "No such file or directory" in content:
+                result["status"] = "fail"
+                result["error"] = "Script not found"
+                return result
+
+            # Check for common success/failure patterns
+            if "Result: PASSED" in content or "Models passed:" in content:
+                result["status"] = "pass"
+            elif "Overall:" in content and "models passed (100" in content:
+                # Sanity check success pattern
+                result["status"] = "pass"
+            elif "Result: FAILED" in content or "FAIL" in content:
+                result["status"] = "fail"
+            elif "Total execution time:" in content or "✅" in content:
+                result["status"] = "pass"
+            else:
+                # If log exists but no clear status
+                result["status"] = "unknown"
+
+            # Extract runtime if available
+            runtime_match = re.search(
+                r"Total execution time:\s*(\d+)\s*seconds\s*\((\d+\.?\d*)\s*minutes\)",
+                content,
+            )
+            if runtime_match:
+                minutes = int(float(runtime_match.group(2)))
+                hours = minutes // 60
+                remaining_minutes = minutes % 60
+                if hours > 0:
+                    result["runtime"] = f"{hours}h {remaining_minutes}m"
+                else:
+                    result["runtime"] = f"{minutes}m"
+
+            # Extract error details for failed tasks
+            if result["status"] == "fail":
+                error_patterns = [
+                    r"Error:\s*(.+)",
+                    r"FAILED\s*\((.+?)\)",
+                    r"RuntimeError:\s*(.+)",
+                    r"bash:\s*(.+)",
+                ]
+                for pattern in error_patterns:
+                    error_match = re.search(pattern, content, re.IGNORECASE)
+                    if error_match:
+                        error_text = error_match.group(1).strip()
+                        if len(error_text) > 100:
+                            error_text = error_text[:100] + "..."
+                        result["error"] = error_text
+                        break
+
+        except Exception as e:
+            result["error"] = f"Failed to parse log: {str(e)}"
+
+        return result
 
     def parse_sanity_check_log(self, date_str: str) -> Optional[Dict]:
-        """Delegate to fallback collector"""
-        return self._fallback_collector.parse_sanity_check_log(date_str)
-
-    def extract_docker_image(self, date_str: str) -> Optional[str]:
         """
-        Extract the Docker image used for tests/benchmarks
+        Parse sanity check timing_summary log for model accuracies
 
         Args:
             date_str: Date string in YYYYMMDD format
 
         Returns:
-            Docker image name or None
+            Dictionary with sanity check results or None
         """
-        # Try to extract from various log files
-        log_dir = os.path.join(
-            self.base_dir, "cron", "cron_log", self.hardware, date_str
+        # Find the sanity check log directory
+        sanity_base = os.path.join(
+            self.base_dir, "test", "sanity_check_log", self.hardware
         )
 
-        # Priority order: unit test logs (most likely to have been run)
-        log_files = [
-            "test_nightly.log",
-            "test_nightly_pd.log",
-            "sanity_check_nightly.log",
-            "grok_nightly.log",
-            "grok2_nightly_online.log",
-            "deepseek_nightly_online.log",
-        ]
+        if not os.path.exists(sanity_base):
+            return None
 
-        for log_file in log_files:
-            log_path = os.path.join(log_dir, log_file)
-            if not os.path.exists(log_path):
-                continue
+        # Look for directories matching the date
+        pattern = f"*{date_str}"
+        matching_dirs = glob.glob(os.path.join(sanity_base, pattern))
 
-            try:
-                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
+        if not matching_dirs:
+            return None
 
-                # Look for Docker image patterns
-                # Pattern 1: [test] Selected image to run tests on: rocm/sgl-dev:...
-                match = re.search(
-                    r"\[test\] Selected image to run tests on:\s*(\S+)", content
+        # Get the most recent directory
+        matching_dirs.sort(key=os.path.getmtime, reverse=True)
+        log_dir = matching_dirs[0]
+
+        # Find timing_summary log
+        timing_logs = glob.glob(
+            os.path.join(log_dir, f"timing_summary_{date_str}_*.log")
+        )
+        if not timing_logs:
+            timing_logs = glob.glob(os.path.join(log_dir, "timing_summary_*.log"))
+
+        if not timing_logs:
+            return None
+
+        timing_logs.sort(key=os.path.getmtime, reverse=True)
+        log_file = timing_logs[0]
+
+        # Parse the timing_summary log
+        model_results = {}
+
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            # Extract model sections
+            model_sections = re.findall(
+                r"===\s+(\S+)\s+on\s+(\S+)\s+===(.*?)(?====|$)", content, re.DOTALL
+            )
+
+            for model_name, _platform, section_content in model_sections:
+                # Extract final result
+                result_match = re.search(
+                    r"Final result:\s*(PASS \[OK\]|FAIL \[X\])", section_content
                 )
-                if match:
-                    return match.group(1)
 
-                # Pattern 2: Using Docker image: rocm/sgl-dev:...
-                match = re.search(r"Using Docker image:\s*(\S+)", content)
-                if match:
-                    return match.group(1)
+                status = "unknown"
+                if result_match:
+                    status = "pass" if "PASS" in result_match.group(1) else "fail"
 
-                # Pattern 3: [test] Starting tests for image: rocm/sgl-dev:...
-                match = re.search(
-                    r"\[test\] Starting tests for image:\s*(\S+)", content
+                # Extract average accuracy
+                avg_accuracy = None
+                avg_acc_match = re.search(
+                    r"Average accuracy:\s*([\d.]+)", section_content
                 )
-                if match:
-                    return match.group(1)
+                if avg_acc_match:
+                    avg_accuracy = float(avg_acc_match.group(1))
+                else:
+                    # Try to extract from individual accuracies
+                    accuracies_match = re.search(
+                        r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
+                    )
+                    if accuracies_match:
+                        acc_str = accuracies_match.group(1)
+                        accs = [
+                            float(a.strip()) for a in acc_str.split(",") if a.strip()
+                        ]
+                        if accs:
+                            avg_accuracy = sum(accs) / len(accs)
 
-            except Exception:
-                continue
+                if avg_accuracy is not None:
+                    model_results[model_name] = {
+                        "status": status,
+                        "accuracy": avg_accuracy,
+                    }
 
-        return None
+        except Exception as e:
+            print(f"   Warning: Could not parse sanity check log {log_file}: {e}")
+            return None
+
+        if not model_results:
+            return None
+
+        return {"model_results": model_results, "log_file": log_file}
 
     def collect_task_results(self, date_str: str) -> Dict:
         """
-        Collect results from all nightly tasks (FALLBACK - delegates to DashboardDataCollector)
+        Collect results from all nightly tasks for a given date
 
         Args:
             date_str: Date string in YYYYMMDD format
@@ -199,8 +422,65 @@ class DailySummaryReporter:
         Returns:
             Dictionary with all task results
         """
-        # Delegate to DashboardDataCollector which has the PRIMARY parsing logic
-        return self._fallback_collector.collect_task_results(date_str)
+        results = {}
+
+        # Performance Benchmarks - use timing_summary logs
+        benchmarks = {
+            "Grok 2 Online Benchmark": ("GROK2", "online"),
+            "Grok Online Benchmark": ("GROK1", "online"),
+            "DeepSeek Online Benchmark": ("DeepSeek-V3-0324", "online"),
+        }
+
+        for task_name, (model_dir, mode_suffix) in benchmarks.items():
+            timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
+            if timing_log:
+                results[task_name] = self.parse_timing_summary_log(timing_log)
+            else:
+                results[task_name] = {
+                    "exists": False,
+                    "status": "unknown",
+                    "runtime": None,
+                    "error": None,
+                }
+
+        # Integration Tests - use timing_summary logs with mode suffixes
+        integration_tests = {
+            "DeepSeek DP Attention Test": ("DeepSeek-V3-0324", "online_dp_attention"),
+            "DeepSeek Torch Compile Test": ("DeepSeek-V3-0324", "online_torch_compile"),
+            "DeepSeek DP+Torch Compile": (
+                "DeepSeek-V3-0324",
+                "online_dp_attention_torch_compile",
+            ),
+        }
+
+        for task_name, (model_dir, mode_suffix) in integration_tests.items():
+            timing_log = self.find_timing_summary_log(model_dir, mode_suffix, date_str)
+            if timing_log:
+                results[task_name] = self.parse_timing_summary_log(timing_log)
+            else:
+                results[task_name] = {
+                    "exists": False,
+                    "status": "unknown",
+                    "runtime": None,
+                    "error": None,
+                }
+
+        # Validation & Checks - use cron logs
+        log_dir = os.path.join(
+            self.base_dir, "cron", "cron_log", self.hardware, date_str
+        )
+        validation_tasks = {
+            "Unit Tests": "test_nightly.log",
+            "PD Disaggregation Tests": "test_nightly_pd.log",
+            "Sanity Check": "sanity_check_nightly.log",
+            "Docker Image Check": "docker_image_check.log",
+        }
+
+        for task_name, log_file in validation_tasks.items():
+            log_path = os.path.join(log_dir, log_file)
+            results[task_name] = self.parse_cron_log_file(log_path)
+
+        return results
 
     def create_summary_card(self, date_str: str, task_results: Dict) -> Dict:
         """
@@ -230,9 +510,6 @@ class DailySummaryReporter:
             report_date = report_date_obj.strftime("%Y-%m-%d")
         except ValueError:
             report_date = date_str
-
-        # Extract Docker image used for runs
-        docker_image = self.extract_docker_image(date_str)
 
         # Parse sanity results to include individual model tests in counts
         sanity_results = self.parse_sanity_check_log(date_str)
@@ -314,46 +591,28 @@ class DailySummaryReporter:
                 "isSubtle": True,
                 "spacing": "None",
             },
+            {
+                "type": "TextBlock",
+                "text": "**Overall Status:**",
+                "weight": "Bolder",
+                "size": "Medium",
+                "spacing": "Medium",
+            },
+            {
+                "type": "TextBlock",
+                "text": f"• Tasks run: **{total_tasks - not_run}/{total_tasks}**",
+                "wrap": True,
+                "size": "Small",
+                "spacing": "Small",
+            },
+            {
+                "type": "TextBlock",
+                "text": f"• Passed: **{passed_tasks}**, Failed: **{failed_tasks}**, Unknown: **{unknown_tasks}**",
+                "wrap": True,
+                "size": "Small",
+                "spacing": "None",
+            },
         ]
-
-        # Add Docker Image information if available
-        if docker_image:
-            body_elements.append(
-                {
-                    "type": "TextBlock",
-                    "size": "Small",
-                    "text": f"Docker Image: {docker_image}",
-                    "isSubtle": True,
-                    "spacing": "None",
-                }
-            )
-
-        # Add Overall Status section
-        body_elements.extend(
-            [
-                {
-                    "type": "TextBlock",
-                    "text": "**Overall Status:**",
-                    "weight": "Bolder",
-                    "size": "Medium",
-                    "spacing": "Medium",
-                },
-                {
-                    "type": "TextBlock",
-                    "text": f"• Tasks run: **{total_tasks - not_run}/{total_tasks}**",
-                    "wrap": True,
-                    "size": "Small",
-                    "spacing": "Small",
-                },
-                {
-                    "type": "TextBlock",
-                    "text": f"• Passed: **{passed_tasks}**, Failed: **{failed_tasks}**, Unknown: **{unknown_tasks}**",
-                    "wrap": True,
-                    "size": "Small",
-                    "spacing": "None",
-                },
-            ]
-        )
 
         # Add task details section
         body_elements.append(
@@ -375,28 +634,8 @@ class DailySummaryReporter:
         tests = [
             "DeepSeek DP Attention Test",
             "DeepSeek Torch Compile Test",
+            "DeepSeek DP+Torch Compile",
         ]
-
-        # Only show DP+Torch Compile if both DP and Torch tests passed/exist
-        dp_result = task_results.get("DeepSeek DP Attention Test", {})
-        torch_result = task_results.get("DeepSeek Torch Compile Test", {})
-        show_dp_torch_combo = (
-            dp_result.get("exists")
-            and dp_result.get("status") != "fail"
-            and torch_result.get("exists")
-            and torch_result.get("status") != "fail"
-        )
-        if show_dp_torch_combo:
-            tests.append("DeepSeek DP+Torch Compile")
-
-        # MTP tests only run on mi35x hardware
-        if self.hardware != "mi30x":
-            tests.extend(
-                [
-                    "DeepSeek MTP Test",
-                    "DeepSeek DP+MTP Test",
-                ]
-            )
         validation = [
             "Unit Tests",
             "PD Disaggregation Tests",
@@ -453,31 +692,18 @@ class DailySummaryReporter:
                 if result.get("runtime"):
                     task_line += f" [{result['runtime']}]"
 
-                # Add plot link for Performance Benchmarks on the same line (only if benchmark ran)
-                if category == "Performance Benchmarks" and result["exists"]:
-                    # Map benchmark names to model directories and plot suffixes (hardware-specific for DeepSeek)
-                    if self.hardware == "mi35x":
-                        benchmark_model_map = {
-                            "Grok Online Benchmark": ("GROK1", "standard"),
-                            "Grok 2 Online Benchmark": ("GROK2", "standard"),
-                            "DeepSeek Online Benchmark": (
-                                "DeepSeek-R1-MXFP4-Preview",
-                                "all",
-                            ),
-                        }
-                    else:  # mi30x and other hardware
-                        benchmark_model_map = {
-                            "Grok Online Benchmark": ("GROK1", "standard"),
-                            "Grok 2 Online Benchmark": ("GROK2", "standard"),
-                            "DeepSeek Online Benchmark": (
-                                "DeepSeek-V3-0324",
-                                "standard",
-                            ),
-                        }
+                # Add plot link for Performance Benchmarks on the same line
+                if category == "Performance Benchmarks":
+                    # Map benchmark names to model directories
+                    benchmark_model_map = {
+                        "Grok Online Benchmark": "GROK1",
+                        "Grok 2 Online Benchmark": "GROK2",
+                        "DeepSeek Online Benchmark": "DeepSeek-V3-0324",
+                    }
 
                     if task_name in benchmark_model_map:
-                        model_dir, plot_suffix = benchmark_model_map[task_name]
-                        plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_{plot_suffix}.png"
+                        model_dir = benchmark_model_map[task_name]
+                        plot_url = f"https://github.com/{self.github_repo}/blob/log/plot/{self.hardware}/{model_dir}/online/{date_str}_{model_dir}_online_standard.png"
                         task_line += f" 🔗 [View Plot]({plot_url})"
 
                 body_elements.append(
@@ -584,17 +810,6 @@ class DailySummaryReporter:
             }
         )
 
-        # Add CI Dashboard link
-        if self.dashboard_url:
-            dashboard_url = f"{self.dashboard_url}/hardware/{self.hardware}"
-            actions.append(
-                {
-                    "type": "Action.OpenUrl",
-                    "title": "📊 CI Dashboard",
-                    "url": dashboard_url,
-                }
-            )
-
         # Create the adaptive card
         card = {
             "type": "message",
@@ -651,273 +866,6 @@ class DailySummaryReporter:
             print(f"❌ Error saving alert log: {e}")
             return False
 
-    def _print_summary_to_log(self, date_str: str, task_results: Dict) -> None:
-        """
-        Print detailed summary to console/log file
-
-        Args:
-            date_str: Date string in YYYYMMDD format
-            task_results: Dictionary of task results
-        """
-        # Format the report date
-        try:
-            report_date_obj = datetime.strptime(date_str, "%Y%m%d")
-            report_date = report_date_obj.strftime("%Y-%m-%d")
-        except ValueError:
-            report_date = date_str
-
-        # Get current time
-        if PYTZ_AVAILABLE:
-            pacific_tz = pytz.timezone("America/Los_Angeles")
-            pacific_time = datetime.now(pacific_tz)
-            current_date = pacific_time.strftime("%Y-%m-%d")
-            tz_name = "PDT" if pacific_time.dst() else "PST"
-            current_time = pacific_time.strftime(f"%H:%M:%S {tz_name}")
-        else:
-            current_date = datetime.now().strftime("%Y-%m-%d")
-            current_time = datetime.now().strftime("%H:%M:%S UTC")
-
-        # Parse sanity results for counts
-        sanity_results = self.parse_sanity_check_log(date_str)
-        sanity_model_count = 0
-        sanity_passed = 0
-        sanity_failed = 0
-
-        if sanity_results:
-            model_results = sanity_results["model_results"]
-            sanity_model_count = len(model_results)
-            sanity_passed = sum(
-                1 for r in model_results.values() if r["status"] == "pass"
-            )
-            sanity_failed = sum(
-                1 for r in model_results.values() if r["status"] == "fail"
-            )
-
-        # Count task statuses
-        total_tasks = (
-            len([k for k in task_results.keys() if k != "Sanity Check"])
-            + sanity_model_count
-        )
-        passed_tasks = (
-            sum(
-                1
-                for k, r in task_results.items()
-                if k != "Sanity Check" and r["status"] == "pass"
-            )
-            + sanity_passed
-        )
-        failed_tasks = (
-            sum(
-                1
-                for k, r in task_results.items()
-                if k != "Sanity Check" and r["status"] == "fail"
-            )
-            + sanity_failed
-        )
-        unknown_tasks = sum(
-            1
-            for k, r in task_results.items()
-            if k != "Sanity Check" and r["status"] == "unknown"
-        )
-        not_run = sum(
-            1
-            for k, r in task_results.items()
-            if k != "Sanity Check" and not r["exists"]
-        )
-
-        # Extract Docker image
-        docker_image = self.extract_docker_image(date_str)
-
-        # Print header
-        print("\n" + "=" * 80)
-        print(f"Alert sent: {report_date} Daily CI Summary Report")
-        print("=" * 80)
-        print(f"\nGenerated on {current_date} at {current_time}")
-        print(f"Hostname: {socket.gethostname()}")
-        print(f"Hardware: {self.hardware}")
-        if docker_image:
-            print(f"Docker Image: {docker_image}")
-
-        # Print overall status
-        print("\nOverall Status:")
-        print(f"• Tasks run: {total_tasks - not_run}/{total_tasks}")
-        print(
-            f"• Passed: {passed_tasks}, Failed: {failed_tasks}, Unknown: {unknown_tasks}"
-        )
-
-        # Print task results by category
-        print("\nTask Results:")
-
-        # Define task groups
-        validation = [
-            "Unit Tests",
-            "PD Disaggregation Tests",
-            "Docker Image Check",
-        ]
-        benchmarks = [
-            "Grok Online Benchmark",
-            "Grok 2 Online Benchmark",
-            "DeepSeek Online Benchmark",
-        ]
-        tests = [
-            "DeepSeek DP Attention Test",
-            "DeepSeek Torch Compile Test",
-        ]
-
-        # Only show DP+Torch Compile if both DP and Torch tests passed/exist
-        dp_result = task_results.get("DeepSeek DP Attention Test", {})
-        torch_result = task_results.get("DeepSeek Torch Compile Test", {})
-        show_dp_torch_combo = (
-            dp_result.get("exists")
-            and dp_result.get("status") != "fail"
-            and torch_result.get("exists")
-            and torch_result.get("status") != "fail"
-        )
-        if show_dp_torch_combo:
-            tests.append("DeepSeek DP+Torch Compile")
-
-        # MTP tests only run on mi35x hardware
-        if self.hardware != "mi30x":
-            tests.extend(
-                [
-                    "DeepSeek MTP Test",
-                    "DeepSeek DP+MTP Test",
-                ]
-            )
-
-        # Print Validation & Checks first
-        for category, task_list in [
-            ("Validation & Checks", validation),
-            ("Performance Benchmarks", benchmarks),
-            ("Integration Tests", tests),
-        ]:
-            print(f"\n{category}:")
-
-            for task_name in task_list:
-                if task_name not in task_results:
-                    continue
-
-                result = task_results[task_name]
-
-                if not result["exists"]:
-                    task_icon = "⏭️"
-                    task_status_text = "Not run"
-                elif result["status"] == "pass":
-                    task_icon = "✅"
-                    task_status_text = "Pass"
-                elif result["status"] == "fail":
-                    task_icon = "❌"
-                    task_status_text = "Failed"
-                else:
-                    task_icon = "❓"
-                    task_status_text = "Unknown"
-
-                # Build task line
-                task_line = f"{task_icon} {task_name}: {task_status_text}"
-
-                # Add GSM8K accuracy for benchmarks
-                if result.get("gsm8k_accuracy") is not None:
-                    accuracy_pct = result["gsm8k_accuracy"] * 100
-                    task_line += f" (GSM8K: {accuracy_pct:.1f}%)"
-
-                if result.get("runtime"):
-                    task_line += f" [{result['runtime']}]"
-
-                print(f"  {task_line}")
-
-                # Print error details for failed tasks
-                if result["status"] == "fail" and result.get("error"):
-                    print(f"    Error: {result['error']}")
-
-        # Print Sanity Check results
-        if sanity_results:
-            model_results = sanity_results["model_results"]
-            models_passed = sum(
-                1 for r in model_results.values() if r["status"] == "pass"
-            )
-            sanity_accuracy_passed = models_passed > 1
-
-            sanity_icon = "✅" if sanity_accuracy_passed else "❌"
-            sanity_status = "Pass" if sanity_accuracy_passed else "Failed"
-
-            print(f"\nSanity Check (Accuracy): {sanity_icon} {sanity_status}")
-
-            # Map short model names to full display names
-            model_display_names = {
-                "llama4": "Llama-4-Maverick-17B-128E-Instruct-FP8",
-                "QWEN-30B": "Qwen3-30B-A3B-Thinking-2507",
-                "GPT-OSS-120B": "gpt-oss-120b-bf16",
-                "GPT-OSS-20B": "gpt-oss-20b-bf16",
-            }
-
-            for model_name, result in model_results.items():
-                accuracy = result["accuracy"]
-                accuracy_percent = accuracy * 100
-                status = result["status"]
-
-                # Get threshold from model criteria
-                threshold = _MODEL_CRITERIA.get(model_name)
-
-                # Use full model name for display if available
-                display_name = model_display_names.get(model_name, model_name)
-
-                task_icon = "✅" if status == "pass" else "❌"
-
-                if threshold is not None:
-                    threshold_percent = threshold * 100
-                    task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
-                else:
-                    task_line = (
-                        f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
-                    )
-
-                print(f"  {task_line}")
-
-        print("\n" + "=" * 80 + "\n")
-
-    def should_send_alert(self, date_str: str, docker_image: Optional[str]) -> bool:
-        """
-        Check if alert should be sent based on Docker image date
-
-        Only send alerts if today's Docker image is being used.
-        Skip alerts if using yesterday's image (fallback scenario).
-
-        Args:
-            date_str: Expected date string in YYYYMMDD format
-            docker_image: Docker image name (e.g., rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114)
-
-        Returns:
-            True if alert should be sent, False otherwise
-        """
-        if not docker_image:
-            # No docker image found, allow alert (could be an error condition we want to report)
-            print(
-                "⚠️  No Docker image found - skipping alert to avoid reporting on fallback runs"
-            )
-            return False
-
-        # Extract date from Docker image tag
-        # Format: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-YYYYMMDD
-        date_match = re.search(r"-(\d{8})(?:$|[^0-9])", docker_image)
-        if not date_match:
-            print(f"⚠️  Could not extract date from Docker image: {docker_image}")
-            print("   Skipping alert to avoid reporting on fallback runs")
-            return False
-
-        image_date = date_match.group(1)
-
-        if image_date != date_str:
-            print(
-                f"🔔 Alert suppressed: Docker image is from {image_date}, expected {date_str}"
-            )
-            print(f"   Using yesterday's image as fallback - not sending alert")
-            return False
-
-        print(
-            f"✅ Docker image date matches expected date ({date_str}) - proceeding with alert"
-        )
-        return True
-
     def send_summary_notification(self, date_str: str) -> bool:
         """
         Send daily summary notification to Teams and save to log
@@ -933,19 +881,8 @@ class DailySummaryReporter:
             print(f"📊 Collecting task results for {date_str}...")
             task_results = self.collect_task_results(date_str)
 
-            # Extract Docker image to check if we should send alert
-            docker_image = self.extract_docker_image(date_str)
-
-            # Check if we should send alert (only for today's image)
-            if not self.should_send_alert(date_str, docker_image):
-                print("ℹ️  Alert sending skipped - not using today's Docker image")
-                return False
-
             # Create card
             card = self.create_summary_card(date_str, task_results)
-
-            # Print detailed summary to log
-            self._print_summary_to_log(date_str, task_results)
 
             # Always save to log file
             log_saved = self.save_alert_log(card, date_str)
@@ -1106,38 +1043,13 @@ def main():
         help="Send a simple test message to verify Teams connectivity",
     )
 
-    parser.add_argument(
-        "--use-database",
-        action="store_true",
-        default=os.environ.get("USE_DATABASE", "").lower() in ["true", "1", "yes"],
-        help="Use database for data collection (faster, more reliable)",
-    )
-
     args = parser.parse_args()
 
     # Get webhook URL (optional)
     webhook_url = args.teams_webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
 
-    # Create reporter (use database-aware version if requested)
-    if args.use_database:
-        try:
-            # Import database-aware collector
-            sys.path.insert(0, args.base_dir)
-            from team_alert.db_alert_data_collector import DatabaseAlertDataCollector
-
-            reporter = DatabaseAlertDataCollector(
-                webhook_url=webhook_url,
-                hardware=args.hardware,
-                base_dir=args.base_dir,
-                use_database=True,
-            )
-            print("📊 Using database for data collection")
-        except Exception as e:
-            print(f"⚠️  Could not use database: {e}")
-            print("   Falling back to filesystem parsing")
-            reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
-    else:
-        reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
+    # Create reporter
+    reporter = DailySummaryReporter(webhook_url, args.hardware, args.base_dir)
 
     # Handle test mode
     if args.test_mode:

@@ -8,8 +8,8 @@
 #   links to GitHub workflow for troubleshooting build issues.
 #
 # IMAGE FORMAT:
-#   • mi30x: v0.5.5-rocm700-mi30x-YYYYMMDD (ROCM version auto-detected)
-#   • mi35x: v0.5.5-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)
+#   • mi30x: v0.5.0rc2-rocm630-mi30x-YYYYMMDD (ROCM version auto-detected)
+#   • mi35x: v0.5.0rc2-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)
 #   • Automatically excludes SRT variants (ends with -srt)
 #   • ROCM versions are dynamically discovered from available Docker images
 #
@@ -93,8 +93,8 @@ for arg in "$@"; do
       echo "  $0 --teams-webhook=\"https://...\" # Check images with Teams alerts"
       echo ""
       echo "Hardware Types Checked:"
-      echo "  mi30x: Images like v0.5.5-rocm700-mi30x-YYYYMMDD (ROCM version auto-detected)"
-      echo "  mi35x: Images like v0.5.5-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)"
+      echo "  mi30x: Images like v0.5.0rc2-rocm630-mi30x-YYYYMMDD (ROCM version auto-detected)"
+      echo "  mi35x: Images like v0.5.0rc2-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)"
       echo ""
       echo "Teams Notifications:"
       echo "  Automatically sends Teams alerts when --teams-webhook is provided"

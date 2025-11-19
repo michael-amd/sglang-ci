@@ -1,11 +1,5 @@
 # machine is at CT time
 #
-# RETRY MECHANISM FOR DOCKER IMAGE UNAVAILABILITY:
-# If Docker images are not available during scheduled runs, tests will fail.
-# The retry job (8:25 PM CT, 5 min after daily summary) checks if images became available
-# and automatically re-runs failed tests, replacing original logs and updating database.
-# Individual test alerts are sent, and after retries, an updated daily summary is sent to Teams.
-#
 # REQUIRED ENVIRONMENT VARIABLES - Set these before installing cron jobs:
 # - SGL_BENCHMARK_CI_DIR: Path to sgl_benchmark_ci directory (e.g., /home/user/sgl_benchmark_ci)
 # - GROK_MODEL_PATH: Path to Grok model (e.g., /data/grok-1-W4A8KV8)
@@ -17,10 +11,10 @@
 #
 # Environment variables (set these before running crontab):
 SGL_BENCHMARK_CI_DIR="/mnt/raid/michael/sglang-ci"
-GROK_MODEL_PATH="/data/amd--grok-1-W4A8KV8"
-GROK2_MODEL_PATH="/data/grok-2"
-GROK2_TOKENIZER_PATH="/data/alvarobartt--grok-2-tokenizer"
-DEEPSEEK_MODEL_PATH="/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview"
+GROK_MODEL_PATH="/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8"
+GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
+GROK2_TOKENIZER_PATH="/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer"
+DEEPSEEK_MODEL_PATH="/mnt/raid/models/huggingface/amd/DeepSeek-R1-MXFP4-Preview"
 HARDWARE_TYPE="mi35x"
 
 # Public Teams webhook left empty by default – fill in to enable alerts
@@ -30,47 +24,44 @@ TEAMS_WEBHOOK_URL=""
 GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
-# 8:30 AM PT (10:30 AM CT) - Docker cleanup to prevent disk space issues [Runtime: ~2-5 min]
-30 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" CRITICAL_SPACE_GB=200 bash cron/docker_cleanup.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_cleanup.log 2>&1
-
 # 9 AM PT (11 AM CT) - Docker image availability check with Teams notifications [Runtime: ~30s]
-0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash scripts/nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_database_upload.sh
+0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash scripts/nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1 && bash cron/github_log_upload.sh
 
 # 9:01 AM PT (11:01 AM CT) - Unit test nightly run with Teams notifications [Runtime: ~1 min]
-1 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE cron; bash cron/github_log_upload.sh "" $HARDWARE_TYPE unit-test; bash cron/github_database_upload.sh
+1 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly.log 2>&1 && bash cron/github_log_upload.sh
 
 # 9:15 AM PT (11:15 AM CT) - PD disaggregation test nightly run with Teams notifications [Runtime: 2414s (~40 min)]
-15 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/test_nightly.sh --model-path="$DEEPSEEK_MODEL_PATH" --test-type=pd --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly_pd.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE cron; bash cron/github_log_upload.sh "" $HARDWARE_TYPE pd $(ls -t test/pd/pd_log/$HARDWARE_TYPE/ | head -1); bash cron/github_database_upload.sh
+15 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash test/test_nightly.sh --model-path="$DEEPSEEK_MODEL_PATH" --test-type=pd --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/test_nightly_pd.log 2>&1 && bash cron/github_log_upload.sh
 
 # 10 AM PT (12 PM CT) - Sanity check with latest nightly image + Teams alert + Upload sanity logs [Runtime: 2544s (~42 min)]
-0 12 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE cron; bash cron/github_log_upload.sh "" $HARDWARE_TYPE sanity $(ls -t test/sanity_check_log/$HARDWARE_TYPE/ | head -1); bash cron/github_database_upload.sh
+0 12 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --mode=sanity --hardware="$HARDWARE_TYPE" --sanity-trials=3 --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/sanity_check_nightly.log 2>&1 && bash cron/github_log_upload.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE cron && bash cron/github_log_upload.sh "" $HARDWARE_TYPE sanity $(ls -t test/sanity_check_log/$HARDWARE_TYPE/ | head -1)
 
 # 10:45 AM PT (12:45 PM CT) - DeepSeek online with DP attention checking + Teams notifications [Runtime: 478s (~8 min)] [DISABLED - duplicate of DP test at 2:50 PM]
-#45 12 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_dp_attention.log 2>&1; bash cron/github_log_upload.sh
+#45 12 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_dp_attention.log 2>&1 && bash cron/github_log_upload.sh
 
 # 11 AM PT (1 PM CT) - DeepSeek-R1-MXFP4-Preview online with torch compile + Teams notifications [Runtime: 1012s (~17 min)]
-0 13 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-torch-compile --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_torch_compile.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+0 13 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-torch-compile --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_torch_compile.log 2>&1 && bash cron/github_log_upload.sh
 
 # 11:30 AM PT (1:30 PM CT) - DeepSeek-R1-MXFP4-Preview online with DP attention + torch compile + Teams notifications [Runtime: 880s (~15 min)]
-30 13 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --enable-torch-compile --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_dp_attention_torch_compile.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+30 13 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --check-dp-attention --enable-torch-compile --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_dp_attention_torch_compile.log 2>&1 && bash cron/github_log_upload.sh
 
 # 12 PM PT (2 PM CT) - DeepSeek-R1-MXFP4-Preview MTP test + Teams notifications [Runtime: 2223s (~37 min)]
-0 14 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-mtp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_mtp.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+0 14 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-mtp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_mtp.log 2>&1 && bash cron/github_log_upload.sh
 
 # 12:50 PM PT (2:50 PM CT) - DeepSeek-R1-MXFP4-Preview DP test (GSM8K + throughput) + Teams notifications [Runtime: 2778s (~46 min)]
-50 14 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-dp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_dp_test.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+50 14 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-dp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_dp_test.log 2>&1 && bash cron/github_log_upload.sh
 
 # 2 PM PT (4 PM CT) - DeepSeek-R1-MXFP4-Preview DP test with MTP artifacts + Teams notifications [Runtime: 2752s (~46 min)]
-0 16 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-dp-test --enable-mtp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_dp_mtp.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+0 16 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --enable-dp-test --enable-mtp-test --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_r1_mxfp4_dp_mtp.log 2>&1 && bash cron/github_log_upload.sh
 
 # 3 PM PT (5 PM CT) - Grok 2 online serving benchmark + Teams notifications [Runtime: 2351s (~39 min)]
-0 17 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online GROK2; bash cron/github_database_upload.sh
+0 17 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=grok2 --model-path="$GROK2_MODEL_PATH" --tokenizer-path="$GROK2_TOKENIZER_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok2_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
 
-# 3:45 PM PT (5:45 PM CT) - Grok online benchmark with gating logic + Teams notifications [Runtime: 1776s (~30 min)]
-45 17 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok_nightly.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online GROK1; bash cron/github_database_upload.sh
+# 3:45 PM PT (5:45 PM CT) - Grok online benchmark with gating logic + Teams notifications [Runtime: 4740s (~79 min)]
+45 17 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=grok --model-path="$GROK_MODEL_PATH" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/grok_nightly.log 2>&1 && bash cron/github_log_upload.sh
 
-# 5:10 PM PT (7:10 PM CT) - DeepSeek-R1-MXFP4-Preview online serving benchmark + Teams notifications [Runtime: 5796s (~96 min)]
-10 19 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && GITHUB_REPO="$GITHUB_REPO" GITHUB_TOKEN="$GITHUB_TOKEN" bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_log_upload.sh "" $HARDWARE_TYPE online DeepSeek-R1-MXFP4-Preview; bash cron/github_database_upload.sh
+# 5:10 PM PT (7:10 PM CT) - DeepSeek-R1-MXFP4-Preview online serving benchmark + Teams notifications [Runtime: 3875s (~65 min)]
+10 19 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && bash scripts/perf_nightly.sh --model=deepseek --model-path="$DEEPSEEK_MODEL_PATH" --model-name="DeepSeek-R1-MXFP4-Preview" --mode=online --hardware="$HARDWARE_TYPE" --teams-webhook-url="$TEAMS_WEBHOOK_URL" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/deepseek_nightly_online.log 2>&1 && bash cron/github_log_upload.sh
 
 # 6:20 PM PT (8:20 PM CT) - Daily CI Summary Report with Teams notification [Runtime: ~1s]
-20 20 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_daily_summary_alert.py --hardware="$HARDWARE_TYPE" --base-dir="$SGL_BENCHMARK_CI_DIR" --teams-webhook-url="$TEAMS_WEBHOOK_URL" --use-database > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/daily_summary_alert.log 2>&1; bash cron/github_log_upload.sh
+20 20 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && python3 team_alert/send_daily_summary_alert.py --hardware="$HARDWARE_TYPE" --base-dir="$SGL_BENCHMARK_CI_DIR" > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/daily_summary_alert.log 2>&1 && bash cron/github_log_upload.sh

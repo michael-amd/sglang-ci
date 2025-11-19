@@ -197,8 +197,32 @@ class DockerImageTeamsNotifier:
                 }
             )
 
-        # Add details section - show all images with their status
-        if details or available_images:
+        # Add available images details for success status
+        if status == "success" and available_images:
+            for available_image in available_images:
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• {available_image}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "Small",
+                    }
+                )
+        elif message and status != "success":
+            # Add main message for non-success statuses
+            body_elements.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"• {message}",
+                    "wrap": True,
+                    "size": "Small",
+                    "spacing": "Small",
+                }
+            )
+
+        # Add details section if we have details
+        if details:
             body_elements.append(
                 {
                     "type": "TextBlock",
@@ -209,52 +233,41 @@ class DockerImageTeamsNotifier:
                 }
             )
 
-            # Show available images first
-            if available_images:
-                for available_image in available_images:
-                    # Extract hardware type and format as "Available"
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"✅ {available_image}: Available",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                            "color": "Good",
-                        }
-                    )
+            for detail in details:
+                body_elements.append(
+                    {
+                        "type": "TextBlock",
+                        "text": f"• {detail}",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
+                    }
+                )
 
-            # Show missing/unavailable images
-            if details:
-                for detail in details:
-                    body_elements.append(
-                        {
-                            "type": "TextBlock",
-                            "text": f"❌ {detail}: Not available",
-                            "wrap": True,
-                            "size": "Small",
-                            "spacing": "Small",
-                            "color": "Attention",
-                        }
-                    )
-
-        # Add admin action reminder for warnings and errors
+        # Add troubleshooting section for warnings and errors
         if status in ["warning", "error"]:
             body_elements.extend(
                 [
                     {
                         "type": "TextBlock",
-                        "text": "**Action Required:**",
+                        "text": "**Troubleshooting:**",
                         "weight": "Bolder",
                         "size": "Medium",
                         "spacing": "Medium",
                     },
                     {
                         "type": "TextBlock",
-                        "text": "• Please rerun failed Docker builds at the [GitHub Actions workflow](https://github.com/sgl-project/sglang/actions/workflows/release-docker-amd-nightly.yml)",
+                        "text": "• Missing images may indicate build failures in the nightly pipeline",
                         "wrap": True,
                         "size": "Small",
                         "spacing": "Small",
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "• Check the GitHub workflow for recent build errors or resource issues",
+                        "wrap": True,
+                        "size": "Small",
+                        "spacing": "None",
                     },
                 ]
             )
