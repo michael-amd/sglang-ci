@@ -60,8 +60,6 @@ def should_send_alert(docker_image: Optional[str], expected_date: str) -> bool:
 
     # Extract date from Docker image tag
     # Format: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-YYYYMMDD
-    import re
-
     date_match = re.search(r"-(\d{8})(?:$|[^0-9])", docker_image)
     if not date_match:
         print(f"⚠️  Could not extract date from Docker image: {docker_image}")
@@ -176,6 +174,7 @@ def parse_test_log(log_file_path: str) -> Dict:
                     start_dt = datetime.strptime(start_clean, "%Y-%m-%d %H:%M:%S")
                     end_dt = datetime.strptime(end_clean, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
+                    # Failed to parse with timezone stripped - try other formats
                     pass
 
                 # Try parsing with numeric timezone offset (e.g., +0000, -0800)
@@ -186,6 +185,7 @@ def parse_test_log(log_file_path: str) -> Dict:
                         start_dt = dt_module.strptime(start_str, "%Y-%m-%d %H:%M:%S %z")
                         end_dt = dt_module.strptime(end_str, "%Y-%m-%d %H:%M:%S %z")
                     except (ValueError, ImportError):
+                        # Failed to parse with timezone - try without timezone
                         pass
 
                 # Try parsing without any timezone info
