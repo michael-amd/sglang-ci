@@ -5,7 +5,7 @@
 # Offline Grok-1 and Grok-2 benchmark.  Supports --docker_image=<image[:tag]> override.
 #
 # USAGE:
-#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash grok_perf_offline_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
 #   bash grok_perf_offline_csv.sh --model-type=grok2 --model=/data2/grok-2/
 #   bash grok_perf_offline_csv.sh --mode=long_context
 #   bash grok_perf_offline_csv.sh --mode=dummy
@@ -18,7 +18,7 @@
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
 
 # Model type configuration (grok1 or grok2)
 DEFAULT_MODEL_TYPE="${DEFAULT_MODEL_TYPE:-grok1}"
@@ -343,7 +343,7 @@ cd "${WORK_DIR}" || { echo "Cannot change to ${WORK_DIR} directory"; exit 1; }
 # If LATEST_TAG is not already defined, extract it from docker_image.
 if [ -z "$LATEST_TAG" ]; then
     IMAGE_WITH_TAG=${docker_image#*/}
-    # Handle case where there's no repository prefix (e.g., "v0.4.7-rocm700")
+    # Handle case where there's no repository prefix (e.g., "v0.4.7-rocm630")
     if [[ "$IMAGE_WITH_TAG" == "$docker_image" ]]; then
         # No slash found, so the whole thing is the tag
         LATEST_TAG="$docker_image"
