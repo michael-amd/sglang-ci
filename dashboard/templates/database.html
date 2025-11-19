@@ -569,7 +569,6 @@ function renderSummaryCards(data) {
     const container = document.getElementById('summaryCards');
     if (!container) return;
 
-    const benchmarkSummary = data.benchmark_summary || {};
     const selectedRun = data.selected_run || {};
 
     const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);

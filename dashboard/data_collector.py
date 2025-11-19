@@ -9,9 +9,7 @@ This is the source of truth for all CI data before it goes into the database.
 import glob
 import os
 import re
-import sys
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
 
 
@@ -435,6 +433,7 @@ class DashboardDataCollector:
                         f"{missing_match.group(1)} Docker image(s) not available"
                     )
             except Exception:
+                # Ignore errors reading docker check log - it's optional validation
                 pass
 
         # Performance Benchmarks
