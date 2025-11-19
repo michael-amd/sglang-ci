@@ -1,0 +1,44 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251119
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251119...
+✅ Docker image date matches expected date (20251119) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-11-19 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-11-19 at 13:30:02 PST
+Hostname: dell300x-pla-t10-23
+Hardware: mi30x
+Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251119
+
+Overall Status:
+• Tasks run: 9/9
+• Passed: 4, Failed: 3, Unknown: 2
+
+Task Results:
+
+Validation & Checks:
+  ✅ Unit Tests: Pass
+  ❌ PD Disaggregation Tests: Failed
+    Error: cannot unpack non-iterable ForwardMetadata object
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 82.0%) [32m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 93.1%)
+  ❌ DeepSeek Online Benchmark: Failed
+    Error: Test failed or did not complete
+
+Integration Tests:
+  ❌ DeepSeek DP Attention Test: Failed
+    Error: Test did not complete
+  ❓ DeepSeek Torch Compile Test: Unknown
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251119_mi30x_20251119_133002.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
