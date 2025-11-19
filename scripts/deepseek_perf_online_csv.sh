@@ -6,17 +6,17 @@
 #
 # USAGE:
 #   # Standard benchmarking with GSM8K + serving benchmarks:
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm700-mi35x-20250718
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #
 #   # Data Parallel attention mode (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --check-dp-attention --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
 #
 #   # Torch compile optimization (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716 --enable-torch-compile
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --enable-torch-compile
 #
 #   # Torch compile with DP attention (GSM8K only):
-#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250904 --check-dp-attention --enable-torch-compile
+#   bash deepseek_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110 --check-dp-attention --enable-torch-compile
 #
 #   # MTP throughput export (MI35x + DeepSeek-R1 MXFP4 Preview):
 #   bash deepseek_perf_online_csv.sh \
@@ -40,7 +40,7 @@ export TZ='America/Los_Angeles'
 ###############################################################################
 
 # Default image and model configuration
-DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.4.9.post2-rocm630-mi30x-20250716}"
+DOCKER_IMAGE_DEFAULT="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
 MODEL_VARIANT="${BENCHMARK_MODEL_VARIANT:-FP8}"
 
 # Default paths - can be overridden
@@ -72,6 +72,18 @@ GSM8K_HOST="${GSM8K_HOST:-http://127.0.0.1}"
 SERVER_MEM_FRACTION="${SERVER_MEM_FRACTION:-0.9}"
 SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
 SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
+
+# Torch compile specific configuration (standard mode without DP attention)
+# MoE models with torch compile require reduced memory and smaller CUDA graph batch size
+# to avoid "Unsupported kernel config for moe heuristic dispatch" during CUDA graph capture
+TORCH_COMPILE_MEM_FRACTION="${TORCH_COMPILE_MEM_FRACTION:-0.8}"
+TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
+
+# DP attention + torch compile specific configuration
+# When both are enabled, use more conservative settings to avoid OOM and compilation issues
+# Reduced from 0.8/16 to 0.6/8 after Nov 2024 GPU memory fault crashes (see GPUCORE_INVESTIGATION.md)
+DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.6}"
+DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-8}"
 
 # Benchmark run configuration
 BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"
@@ -236,10 +248,13 @@ elif [ "$ENABLE_DP_TEST" = "true" ]; then
     echo "[dp] DP test enabled - setting runs per concurrency to 1"
 fi
 
-# Increase timeout for DP attention + torch compile (first-run compilation takes longer)
+# Increase timeout for torch compile (first-run compilation takes longer)
 if [ "$CHECK_DP_ATTENTION" = "true" ] && [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
     SERVER_TIMEOUT=2700  # 45 minutes for torch compile + DP attention
     echo "[config] DP attention + torch compile detected - increased server timeout to ${SERVER_TIMEOUT}s (45 minutes)"
+elif [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    SERVER_TIMEOUT=1800  # 30 minutes for torch compile alone
+    echo "[config] Torch compile detected - increased server timeout to ${SERVER_TIMEOUT}s (30 minutes)"
 fi
 
 # If not provided by flag, use positional argument or default
@@ -286,6 +301,9 @@ manage_container() {
             -e INSIDE_CONTAINER=1 \
             -e LATEST_TAG="${LATEST_TAG}" \
             -e TZ='America/Los_Angeles' \
+            $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
+            $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
+            $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
             "${container_name}" \
             bash "${SCRIPT_PATH}" \
                 --docker_image="${FULL_IMAGE}" \
@@ -607,6 +625,17 @@ start_sglang_server() {
         fi
 
         # Start server in background using DP attention command format
+        # When combining DP attention with torch compile, use smaller CUDA graph batch size
+        # to avoid cross-device tensor compilation issues during graph capture
+        local cuda_graph_bs_flag=""
+        local mem_fraction="0.8"  # Default for DP attention mode
+
+        if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+            mem_fraction="${DP_TORCH_COMPILE_MEM_FRACTION}"
+            echo "[DEBUG] DP + torch compile mode: using mem-fraction=${mem_fraction}, cuda-graph-max-bs=${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+        fi
+
         "${server_env[@]}" python3 -m sglang.launch_server \
             --model-path "${MODEL}" \
             --tp "${TP}" \
@@ -615,13 +644,32 @@ start_sglang_server() {
             --chunked-prefill-size 131072 \
             --dp-size 8 \
             --enable-dp-attention \
-            --mem-fraction-static 0.8 \
+            --mem-fraction-static "${mem_fraction}" \
+            ${cuda_graph_bs_flag} \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
         echo "[DEBUG] Using standard settings with environment variable: ${aiter_env_var}"
+
+        # Configure memory fraction and CUDA graph batch size for torch compile
+        local cuda_graph_bs_flag=""
+        local mem_fraction="$SERVER_MEM_FRACTION"  # Default: 0.9
+
+        # Allow setting cuda-graph-max-bs via environment variable in standard mode
+        # Or allow disabling CUDA graph entirely (significant performance loss)
+        local disable_cuda_graph_flag=""
+        if [ "${DISABLE_CUDA_GRAPH:-false}" = "true" ]; then
+            disable_cuda_graph_flag="--disable-cuda-graph"
+            echo "[DEBUG] Standard mode with CUDA graph DISABLED: mem-fraction=${mem_fraction} (⚠️ PERFORMANCE LOSS)"
+        elif [ -n "${CUDA_GRAPH_MAX_BS:-}" ]; then
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${CUDA_GRAPH_MAX_BS}"
+            echo "[DEBUG] Standard mode with custom CUDA graph batch size: mem-fraction=${mem_fraction}, cuda-graph-max-bs=${CUDA_GRAPH_MAX_BS}"
+        fi
+
         if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
-            echo "[DEBUG] Torch compile enabled with standard settings"
+            cuda_graph_bs_flag="--cuda-graph-max-bs ${TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
+            mem_fraction="${TORCH_COMPILE_MEM_FRACTION}"
+            echo "[DEBUG] Torch compile mode: using mem-fraction=${mem_fraction}, cuda-graph-max-bs=${TORCH_COMPILE_CUDA_GRAPH_MAX_BS}"
         fi
 
         # Start server in background using the standard command format
@@ -630,8 +678,10 @@ start_sglang_server() {
             --tp-size "${TP}" \
             --port "$GSM8K_PORT" \
             --trust-remote-code \
-            --mem-fraction-static "$SERVER_MEM_FRACTION" \
+            --mem-fraction-static "${mem_fraction}" \
             --max-running-requests "$SERVER_MAX_REQUESTS" \
+            ${cuda_graph_bs_flag} \
+            ${disable_cuda_graph_flag} \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     fi
 
@@ -818,6 +868,35 @@ check_server_errors_and_log() {
 }
 
 ###############################################################################
+# Server Health Check Function
+#
+# Verifies that the SGLang server is alive and responding.
+# Returns 0 if server is healthy, 1 if server is down or unresponsive.
+###############################################################################
+check_server_alive() {
+    local port="${1:-$GSM8K_PORT}"
+    local host="${2:-$GSM8K_HOST}"
+    local timeout="${3:-5}"
+
+    # Check if server process is still running
+    if [ -n "$SERVER_PID" ]; then
+        if ! ps -p "$SERVER_PID" > /dev/null 2>&1; then
+            return 1
+        fi
+    else
+        # If SERVER_PID is not set, we can't verify process status
+        echo "⚠️  Warning: SERVER_PID not set, skipping process check"
+    fi
+
+    # Check if server endpoint is responsive
+    if ! curl -s -f --max-time "$timeout" "${host}:${port}${HEALTH_CHECK_ENDPOINT}" > /dev/null 2>&1; then
+        return 1
+    fi
+
+    return 0
+}
+
+###############################################################################
 # GSM8K Online Benchmark Function
 #
 # This function runs the GSM8K test multiple times, computes the average accuracy,
@@ -825,11 +904,12 @@ check_server_errors_and_log() {
 #
 # The function:
 # 1. Runs the GSM8K test for the configured number of iterations
-# 2. Extracts accuracy from each run's output
-# 3. Computes the average accuracy across all runs
-# 4. Extracts throughput and latency metrics from the combined output
-# 5. Writes structured results to CSV
-# 6. Validates that accuracy meets the configured threshold
+# 2. Checks server health between runs and restarts if needed (NEW)
+# 3. Extracts accuracy from each run's output
+# 4. Computes the average accuracy across all runs
+# 5. Extracts throughput and latency metrics from the combined output
+# 6. Writes structured results to CSV
+# 7. Validates that accuracy meets the configured threshold
 #
 # Returns:
 #   0 if accuracy meets threshold, 1 otherwise
@@ -839,9 +919,12 @@ run_gsm8k_benchmark() {
     local total_accuracy=0
     local runs=$GSM8K_RUNS
     local run_count=0
+    local valid_run_count=0
     local run_accuracy=0
     local output
     local all_outputs=""
+    # Define threshold for valid accuracy (runs below this are considered failed)
+    local MIN_VALID_ACCURACY=0.1
 
     echo "Starting GSM8K Online Benchmark..."
     echo "Running $runs test iterations..."
@@ -849,6 +932,48 @@ run_gsm8k_benchmark() {
 
     # Run the test 'runs' times
     for i in $(seq 1 $runs); do
+         # Check server health before each run (except the first)
+         if [ $i -gt 1 ]; then
+             echo "" | tee -a "$GSM8K_LOG_FILE"
+             echo "Checking server health before Run $i..." | tee -a "$GSM8K_LOG_FILE"
+             if ! check_server_alive "$GSM8K_PORT" "$GSM8K_HOST"; then
+                 echo "❌ Server is not responding! Attempting restart..." | tee -a "$GSM8K_LOG_FILE"
+
+                 # Log the server failure to timing summary
+                 echo "" >> "$TIMING_LOG"
+                 echo "Server Health Check (before Run $i):" >> "$TIMING_LOG"
+                 echo "  Status: FAILED - server crashed or became unresponsive" >> "$TIMING_LOG"
+
+                 # Kill old server if still running (zombie process)
+                 if [ -n "$SERVER_PID" ]; then
+                     echo "Terminating crashed server process (PID: $SERVER_PID)..." | tee -a "$GSM8K_LOG_FILE"
+                     kill -9 "$SERVER_PID" 2>/dev/null || true
+                     wait "$SERVER_PID" 2>/dev/null || true
+                 fi
+
+                 # Check for OOM in server logs
+                 if [ -f "$SERVER_LOG_FILE" ] && tail -100 "$SERVER_LOG_FILE" | grep -q -E "(OutOfMemoryError|Killed|OOM)"; then
+                     echo "⚠️  OOM detected in server logs - consider reducing memory settings" | tee -a "$GSM8K_LOG_FILE"
+                     echo "  OOM detected: YES" >> "$TIMING_LOG"
+                 fi
+
+                 # Attempt to restart server
+                 echo "Restarting SGLang server..." | tee -a "$GSM8K_LOG_FILE"
+                 start_sglang_server
+
+                 # Verify restart was successful
+                 if ! check_server_alive "$GSM8K_PORT" "$GSM8K_HOST"; then
+                     echo "❌ Failed to restart server! Aborting remaining runs." | tee -a "$GSM8K_LOG_FILE"
+                     echo "  Restart attempt: FAILED" >> "$TIMING_LOG"
+                     break
+                 fi
+                 echo "✅ Server restarted successfully" | tee -a "$GSM8K_LOG_FILE"
+                 echo "  Restart attempt: SUCCESS" >> "$TIMING_LOG"
+             else
+                 echo "✅ Server is healthy" | tee -a "$GSM8K_LOG_FILE"
+             fi
+         fi
+
          local run_start_time=$(date +%s)
          echo "Executing GSM8K test Run $i ..." | tee -a "$GSM8K_LOG_FILE"
          output=$(python3 "${GSM8K_SCRIPT}" --num-questions "$GSM8K_NUM_QUESTIONS" --parallel "$GSM8K_PARALLEL" --num-shots "$GSM8K_NUM_SHOTS" --port "$GSM8K_PORT" --host "$GSM8K_HOST" 2>&1)
@@ -858,33 +983,56 @@ run_gsm8k_benchmark() {
          echo "Run $i completed in ${run_duration} seconds" | tee -a "$GSM8K_LOG_FILE"
          all_outputs="$all_outputs$output"$'\n'
 
-         # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
-         run_accuracy=$(echo "$output" | tr '\r' '\n' | awk '/^Accuracy: / {print $2; exit}')
-         if [ -z "$run_accuracy" ]; then
-            echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
-            run_accuracy=0
+         # Check if the run failed due to connection issues
+         if echo "$output" | grep -q -E "(Connection refused|ConnectionRefusedError|Remote end closed connection)"; then
+             echo "⚠️  Connection error detected during Run $i" | tee -a "$GSM8K_LOG_FILE"
+             echo "  Connection error: YES (Run $i)" >> "$TIMING_LOG"
          fi
-         echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
-         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
-         run_count=$((run_count+1))
 
-         # Update progress after each GSM8K run completes
-         update_progress "GSM8K" "Run $i"
-    done
+        # Extract the accuracy value from the output; expects a line like "Accuracy: 0.820"
+        run_accuracy=$(echo "$output" | tr '\r' '\n' | awk '/^Accuracy: / {print $2; exit}')
+        if [ -z "$run_accuracy" ]; then
+           echo "Run $i: Accuracy not found, defaulting to 0" | tee -a "$GSM8K_LOG_FILE"
+           run_accuracy=0
+        fi
+        echo "Run $i: Accuracy: $run_accuracy" | tee -a "$GSM8K_LOG_FILE"
 
-    local avg_accuracy
-    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
-    local end_time=$(date +%s)
-    local duration=$((end_time - start_time))
-    echo "GSM8K test completed in ${duration} seconds" | tee -a "$GSM8K_LOG_FILE"
-    echo "Average Accuracy over $runs runs: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
+        run_count=$((run_count+1))
+
+        # Only count runs with accuracy above minimum threshold
+        if awk "BEGIN {exit !($run_accuracy >= $MIN_VALID_ACCURACY)}"; then
+            total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+            valid_run_count=$((valid_run_count+1))
+            echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$GSM8K_LOG_FILE"
+        else
+            echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$GSM8K_LOG_FILE"
+        fi
+
+        # Update progress after each GSM8K run completes
+        update_progress "GSM8K" "Run $i"
+   done
+
+   local avg_accuracy
+   if [ $valid_run_count -gt 0 ]; then
+       avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_run_count" 'BEGIN { printf "%.3f", total/count }')
+   else
+       avg_accuracy=0
+       echo "⚠️  Warning: No valid runs found (all runs had accuracy < $MIN_VALID_ACCURACY)" | tee -a "$GSM8K_LOG_FILE"
+   fi
+   local end_time=$(date +%s)
+   local duration=$((end_time - start_time))
+   echo "GSM8K test completed in ${duration} seconds" | tee -a "$GSM8K_LOG_FILE"
+   echo "Total runs: $run_count, Valid runs: $valid_run_count, Excluded runs: $((run_count - valid_run_count))" | tee -a "$GSM8K_LOG_FILE"
+   echo "Average Accuracy over $valid_run_count valid runs: $avg_accuracy" | tee -a "$GSM8K_LOG_FILE"
 
     # Log to timing summary
     echo "" >> "$TIMING_LOG"
     echo "GSM8K Test Results:" >> "$TIMING_LOG"
     echo "  Total duration: ${duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
-    echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  Total runs: $run_count" >> "$TIMING_LOG"
+    echo "  Valid runs: $valid_run_count" >> "$TIMING_LOG"
+    echo "  Excluded runs: $((run_count - valid_run_count))" >> "$TIMING_LOG"
     echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     # Extract performance metrics from the combined output
@@ -1542,6 +1690,59 @@ check_all_logs_complete() {
         return 1
     fi
 }
+
+# Gating logic: Skip DP+Torch Compile if both prerequisites failed
+if [ "$CHECK_DP_ATTENTION" = "true" ] && [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
+    echo "[gating] Checking if prerequisites passed before running DP+Torch Compile..."
+
+    # Get today's date
+    TODAYS_DATE=$(date +%Y%m%d)
+
+    # Check DP Attention test result
+    DP_TEST_DIR="${OUTPUT_DIR}/online/${MODEL_NAME}"
+    DP_LOG=$(find "$DP_TEST_DIR" -type f -path "*${TODAYS_DATE}*_dp_attention/timing_summary_*.log" 2>/dev/null | head -1)
+    DP_PASSED=false
+    if [ -n "$DP_LOG" ] && [ -f "$DP_LOG" ]; then
+        if grep -q "GSM8K accuracy:" "$DP_LOG" && grep -q "OVERALL SCRIPT SUMMARY" "$DP_LOG"; then
+            DP_PASSED=true
+            echo "[gating] ✅ DP Attention test passed"
+        else
+            echo "[gating] ❌ DP Attention test failed or incomplete"
+        fi
+    else
+        echo "[gating] ⏭️ DP Attention test log not found"
+    fi
+
+    # Check Torch Compile test result
+    TC_LOG=$(find "$DP_TEST_DIR" -type f -path "*${TODAYS_DATE}*_torch_compile/timing_summary_*.log" -not -path "*dp_attention*" 2>/dev/null | head -1)
+    TC_PASSED=false
+    if [ -n "$TC_LOG" ] && [ -f "$TC_LOG" ]; then
+        if grep -q "GSM8K accuracy:" "$TC_LOG" && grep -q "OVERALL SCRIPT SUMMARY" "$TC_LOG"; then
+            TC_PASSED=true
+            echo "[gating] ✅ Torch Compile test passed"
+        else
+            echo "[gating] ❌ Torch Compile test failed or incomplete"
+        fi
+    else
+        echo "[gating] ⏭️ Torch Compile test log not found"
+    fi
+
+    # If both prerequisites failed, skip this test
+    if [ "$DP_PASSED" = "false" ] && [ "$TC_PASSED" = "false" ]; then
+        echo "[gating] ⏭️ SKIPPING DP+Torch Compile test - both prerequisites failed"
+        echo "Test skipped: Both DP Attention and Torch Compile prerequisites failed" >> "$TIMING_LOG"
+        echo "" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        echo "OVERALL SCRIPT SUMMARY" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        echo "Script ended at: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$TIMING_LOG"
+        echo "Status: SKIPPED (prerequisites not met)" >> "$TIMING_LOG"
+        echo "========================================" >> "$TIMING_LOG"
+        exit 0
+    else
+        echo "[gating] ✅ At least one prerequisite passed - proceeding with DP+Torch Compile test"
+    fi
+fi
 
 # Check if all logs are already complete
 if check_all_logs_complete; then

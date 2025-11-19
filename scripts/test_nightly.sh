@@ -11,8 +11,8 @@
 #   • Searches for non-SRT images from today, then yesterday
 #   • Supports mi30x and mi35x hardware variants
 #   • Examples:
-#     - rocm/sgl-dev:v0.5.2rc1-rocm630-mi30x-20250903
-#     - rocm/sgl-dev:v0.5.2rc1-rocm700-mi35x-20250903
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#     - rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   • Automatically excludes SRT variants (ends with -srt)
 #
 # UNIT TESTS:
@@ -84,14 +84,26 @@ TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
 
 # ROCM version mapping based on hardware (for unit tests)
 declare -A ROCM_VERSIONS=(
-  ["mi30x"]="rocm630"
+  ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
+)
+
+# Fallback ROCM versions if primary version not available
+declare -A ROCM_FALLBACK_VERSIONS=(
+  ["mi30x"]="rocm630"
+  ["mi35x"]=""  # No fallback for mi35x
 )
 
 # ROCM version for PD tests (use rocm700 for both hardware types)
 declare -A PD_ROCM_VERSIONS=(
   ["mi30x"]="rocm700"
   ["mi35x"]="rocm700"
+)
+
+# Fallback ROCM versions for PD tests
+declare -A PD_ROCM_FALLBACK_VERSIONS=(
+  ["mi30x"]="rocm630"
+  ["mi35x"]=""  # No fallback for mi35x
 )
 
 # GPU monitoring thresholds
@@ -362,18 +374,55 @@ trap cleanup EXIT
 ensure_gpu_idle
 
 ###############################################################################
+# Check yesterday's run status
+###############################################################################
+check_yesterday_run_status() {
+  # Check if yesterday's run was successful
+  # Returns: 0 if yesterday's run failed/didn't run/incomplete, 1 if successful
+  local yesterday_date=$(date_pst 1)
+  local yesterday_log_dir="${MOUNT_DIR}/cron/cron_log/${HARDWARE_TYPE}/${yesterday_date}"
+
+  # Determine which log file to check based on test type
+  local log_file=""
+  if [[ "$TEST_TYPE" == "pd" ]]; then
+    log_file="test_nightly_pd.log"
+  else
+    log_file="test_nightly.log"
+  fi
+
+  local yesterday_log="${yesterday_log_dir}/${log_file}"
+
+  # If log doesn't exist, yesterday didn't run
+  if [[ ! -f "$yesterday_log" ]]; then
+    echo "[test] Yesterday's run log not found - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  # Check if yesterday's run completed successfully
+  if grep -q "Result: PASSED" "$yesterday_log" || grep -q "\[test\] Test completed for image:" "$yesterday_log"; then
+    # Yesterday's run was successful
+    echo "[test] Yesterday's run completed successfully"
+    return 1  # Don't allow fallback - yesterday was successful
+  else
+    # Yesterday's run failed or didn't complete
+    echo "[test] Yesterday's run failed or did not complete"
+    return 0  # Allow fallback
+  fi
+}
+
+###############################################################################
 # Pick image tag based on date
 ###############################################################################
 date_pst() { TZ="$TIME_ZONE" date -d "-$1 day" +%Y%m%d; }
 
 # Find non-SRT Docker image for a specific date using Docker Hub API
 find_image_for_date() {
-  local repo="$1" target_date="$2"
+  local repo="$1" target_date="$2" rocm_version="${3:-$ROCM_VERSION}"
   local next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
   local use_jq=$(command -v jq &> /dev/null && echo "true" || echo "false")
-  local search_pattern="-${ROCM_VERSION}-${HARDWARE_TYPE}-${target_date}"
+  local search_pattern="-${rocm_version}-${HARDWARE_TYPE}-${target_date}"
 
-  echo "[test] Searching for non-SRT ${HARDWARE_TYPE} image in '${repo}' for date ${target_date}..." >&2
+  echo "[test] Searching for non-SRT ${HARDWARE_TYPE} image (${rocm_version}) in '${repo}' for date ${target_date}..." >&2
 
   while [[ -n "$next_url" && "$next_url" != "null" ]]; do
     local response=$(curl -s --max-time 15 "$next_url")
@@ -414,7 +463,19 @@ SELECTED_TAG=""
 if [[ -n "$IMAGE_DATE" ]]; then
   # If IMAGE_DATE is specified, use that specific date
   echo "[test] Looking for image with date: ${IMAGE_DATE}"
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE") || true
+
+  # Try primary ROCM version first
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$ROCM_VERSION" || true)
+
+  # If not found and fallback version exists for this hardware, try fallback
+  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
+    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
+    echo "[test] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$IMAGE_DATE" "$fallback_version" || true)
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[test] Using fallback ROCM version: $fallback_version"
+    fi
+  fi
 
   if [[ -n "$candidate_tag" ]]; then
     echo "[test] Found candidate tag for ${IMAGE_DATE}: ${candidate_tag}"
@@ -431,7 +492,19 @@ if [[ -n "$IMAGE_DATE" ]]; then
 else
   # Try today first
   date_suffix=$(date_pst 0)
-  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix") || true
+
+  # Try primary ROCM version first
+  candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+  # If not found and fallback version exists for this hardware, try fallback
+  if [[ -z "$candidate_tag" && -n "${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}" ]]; then
+    fallback_version="${ROCM_FALLBACK_VERSIONS[$HARDWARE_TYPE]}"
+    echo "[test] Primary version ($ROCM_VERSION) not found, trying fallback ($fallback_version)..."
+    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$fallback_version" || true)
+    if [[ -n "$candidate_tag" ]]; then
+      echo "[test] Using fallback ROCM version: $fallback_version"
+    fi
+  fi
 
   if [[ -n "$candidate_tag" ]]; then
     echo "[test] Found candidate tag for today: ${candidate_tag}"
@@ -444,22 +517,34 @@ else
     fi
   fi
 
-  # If no image found for today, try yesterday as fallback
+  # If no image found for today, check if we should try yesterday as fallback
   if [[ -z "$SELECTED_TAG" ]]; then
-    echo "[test] No image found for today. Checking yesterday as a fallback..."
-    date_suffix=$(date_pst 1)
-    candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" || true)
-    if [[ -n "$candidate_tag" ]]; then
-      echo "[test] Fallback found candidate tag: ${candidate_tag}"
-      echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
-      if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
-        SELECTED_TAG="$candidate_tag"
-        echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+    echo "[test] No image found for today. Checking if yesterday's image should be used as fallback..."
+
+    # Only use yesterday's image if yesterday's run failed/didn't run/didn't complete
+    if check_yesterday_run_status; then
+      echo "[test] Proceeding with yesterday's image fallback..."
+      date_suffix=$(date_pst 1)
+
+      # For yesterday fallback, only try primary ROCM version (rocm700)
+      # Do not fallback to rocm630 for yesterday - user wants yesterday's rocm700 only
+      candidate_tag=$(find_image_for_date "$IMAGE_REPO" "$date_suffix" "$ROCM_VERSION" || true)
+
+      if [[ -n "$candidate_tag" ]]; then
+        echo "[test] Fallback found candidate tag: ${candidate_tag}"
+        echo "[test] Attempting to pull ${IMAGE_REPO}:${candidate_tag}..."
+        if "${DOCKER_CMD[@]}" pull "${IMAGE_REPO}:${candidate_tag}" 2>&1; then
+          SELECTED_TAG="$candidate_tag"
+          echo "[test] Successfully pulled fallback image for yesterday: ${IMAGE_REPO}:${candidate_tag}"
+        else
+          echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+        fi
       else
-        echo "[test] WARN: Failed to pull fallback tag ${candidate_tag}."
+        echo "[test] No fallback image found for yesterday either."
       fi
     else
-      echo "[test] No fallback image found for yesterday either."
+      echo "[test] Skipping yesterday's image fallback - yesterday's run was successful"
+      echo "[test] Status: SKIPPED (prerequisites not met)"
     fi
   fi
 fi

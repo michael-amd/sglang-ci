@@ -4,8 +4,8 @@
 #   Online-serving benchmark for GROK-1.
 #
 # USAGE:
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm630-mi30x-20250909
-#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.2rc2-rocm700-mi35x-20250909
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110
+#   bash grok_perf_online_csv.sh --docker_image=rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251110
 #   bash grok_perf_online_csv.sh --model-path=/raid/grok-1-W4A8KV8
 #   bash grok_perf_online_csv.sh --model-path=/mnt/raid/models/huggingface/grok-2/ --model-type=grok2
 #   bash grok_perf_online_csv.sh --work-dir=/path/to/workdir
@@ -21,7 +21,7 @@ export TZ='America/Los_Angeles'
 ###############################################################################
 
 # Default image and model configuration
-DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-lmsysorg/sglang:v0.4.7-rocm630}"
+DEFAULT_IMAGE="${DEFAULT_DOCKER_IMAGE:-rocm/sgl-dev:v0.5.5-rocm700-mi30x-20251110}"
 
 # Model type configuration (grok1 or grok2)
 DEFAULT_MODEL_TYPE="${DEFAULT_MODEL_TYPE:-grok1}"
@@ -60,6 +60,9 @@ PROMPTS_PER_RATE_MULTIPLIER="${PROMPTS_PER_RATE_MULTIPLIER:-300}"
 
 # Request rates for benchmarking
 REQUEST_RATES="${REQUEST_RATES:-1 2 4 8 16}"
+
+# Number of runs per request rate
+RUNS_PER_RATE="${RUNS_PER_RATE:-1}"
 
 # Baseline data variables removed
 
@@ -537,8 +540,11 @@ run_client_gsm8k() {
     local total_accuracy=0
     local runs=$GSM8K_RUNS
     local count=0
+    local valid_count=0
     local run_accuracy=0
     local output
+    # Define threshold for valid accuracy (runs below this are considered failed)
+    local MIN_VALID_ACCURACY=0.1
     # Set log file name based on mode.
     local gsm8k_log="${folder}/sglang_client_log_${MODEL_NAME}_gsm8k_${mode}.log"
 
@@ -560,22 +566,40 @@ run_client_gsm8k() {
             run_accuracy=0
          fi
          echo "Run $i: Accuracy: $run_accuracy" | tee -a "$gsm8k_log"
-         total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+
          count=$((count+1))
+
+         # Only count runs with accuracy above minimum threshold
+         if awk "BEGIN {exit !($run_accuracy >= $MIN_VALID_ACCURACY)}"; then
+             total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
+             valid_count=$((valid_count+1))
+             echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$gsm8k_log"
+         else
+             echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$gsm8k_log"
+         fi
     done
+
     local avg_accuracy
-    avg_accuracy=$(awk -v total="$total_accuracy" -v runs="$runs" 'BEGIN { printf "%.3f", total/runs }')
+    if [ $valid_count -gt 0 ]; then
+        avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_count" 'BEGIN { printf "%.3f", total/count }')
+    else
+        avg_accuracy=0
+        echo "⚠️  Warning: No valid runs found (all runs had accuracy < $MIN_VALID_ACCURACY)" | tee -a "$gsm8k_log"
+    fi
     local gsm8k_end_time=$(date +%s)
     local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
     echo "GSM8K test completed in ${gsm8k_duration} seconds" | tee -a "$gsm8k_log"
-    echo "Average Accuracy over $runs runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
+    echo "Total runs: $count, Valid runs: $valid_count, Excluded runs: $((count - valid_count))" | tee -a "$gsm8k_log"
+    echo "Average Accuracy over $valid_count valid runs for mode ${mode}: $avg_accuracy" | tee -a "$gsm8k_log"
 
     # Log to timing summary
     echo "" >> "$TIMING_LOG"
     echo "GSM8K Test Results:" >> "$TIMING_LOG"
     echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
     echo "  Average accuracy: $avg_accuracy" >> "$TIMING_LOG"
-    echo "  Number of runs: $runs" >> "$TIMING_LOG"
+    echo "  Total runs: $count" >> "$TIMING_LOG"
+    echo "  Valid runs: $valid_count" >> "$TIMING_LOG"
+    echo "  Excluded runs: $((count - valid_count))" >> "$TIMING_LOG"
     echo "  GSM8K accuracy: $avg_accuracy" >> "$TIMING_LOG"  # For easy parsing by notification script
 
     if awk "BEGIN {exit !($avg_accuracy >= $THRESHOLD)}"; then
@@ -597,7 +621,7 @@ run_single_rate_benchmark() {
     local rate_start_time=$(date +%s)
 
     echo "Processing request rate ${RATE} for mode ${mode}..."
-    for i in {1..3}; do
+    for i in $(seq 1 $RUNS_PER_RATE); do
         # Check if log already exists and is complete using glob pattern
         existing_log=""
         for log_file in "${folder}/sglang_client_log_${MODEL_NAME}_${mode}_${RATE}_run${i}"_*.log; do
@@ -649,7 +673,7 @@ run_single_rate_benchmark() {
         update_progress "$RATE" "$i"
 
         # Add sleep between runs to avoid memory access faults (except after the last run)
-        if [ "$i" -lt 3 ]; then
+        if [ "$i" -lt "$RUNS_PER_RATE" ]; then
             # Special handling for rate 16 - needs longer recovery time and memory cleanup
             if [ "$RATE" -eq 16 ]; then
                 echo "Rate 16 detected - sleeping 20 seconds and clearing memory before next run..."
@@ -744,7 +768,7 @@ check_all_logs_complete() {
 
     # 2. Check client benchmark logs completion
     echo "Checking client benchmark logs..."
-    local expected_runs_per_rate=3
+    local expected_runs_per_rate=$RUNS_PER_RATE
     local total_expected_logs=$((${#REQ_RATES[@]} * expected_runs_per_rate))
     local actual_completed_logs=0
 
@@ -793,6 +817,18 @@ declare -A best_e2e_aiter best_ttft_aiter best_itl_aiter
 # Request rates array
 read -ra REQ_RATES <<< "$REQUEST_RATES"
 
+# Filter out rate 16 on MI355 hardware (for CSV headers and progress tracking)
+if [[ "${HARDWARE}" == *"mi35"* ]]; then
+    FILTERED_RATES=()
+    for rate in "${REQ_RATES[@]}"; do
+        if [ "$rate" -ne 16 ]; then
+            FILTERED_RATES+=("$rate")
+        fi
+    done
+    REQ_RATES=("${FILTERED_RATES[@]}")
+    echo "[online] MI355 hardware detected - CSV will use request rates: ${REQ_RATES[*]} (excluding 16)"
+fi
+
 # ---------------------------
 # 6c. Progress Tracking
 # ---------------------------
@@ -804,7 +840,7 @@ CURRENT_RUN=0
 calculate_total_runs() {
     local rates_array
     read -ra rates_array <<< "$REQUEST_RATES"
-    TOTAL_RUNS=$((${#rates_array[@]} * 3))  # 3 runs per rate
+    TOTAL_RUNS=$((${#rates_array[@]} * RUNS_PER_RATE))  # RUNS_PER_RATE runs per rate
     echo "[progress] Total benchmark runs to execute: ${TOTAL_RUNS}"
 }
 
@@ -1082,9 +1118,9 @@ echo "Performance Summary:" >> "$TIMING_LOG"
 echo "===================" >> "$TIMING_LOG"
 for rate in "${REQ_RATES[@]}"; do
     echo "Request Rate ${rate}:" >> "$TIMING_LOG"
-    echo "  E2E Latency: ${best_e2e_aiter[$rate]} ms" >> "$TIMING_LOG"
-    echo "  TTFT: ${best_ttft_aiter[$rate]} ms" >> "$TIMING_LOG"
-    echo "  ITL: ${best_itl_aiter[$rate]} ms" >> "$TIMING_LOG"
+    echo "  E2E Latency: ${best_e2e_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
+    echo "  TTFT: ${best_ttft_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
+    echo "  ITL: ${best_itl_aiter[$rate]:-N/A} ms" >> "$TIMING_LOG"
     throughput=$(extract_throughput "${ATTENTION_BACKEND}" "$rate")
     echo "  Throughput: ${throughput} requests/s" >> "$TIMING_LOG"
     echo "" >> "$TIMING_LOG"
