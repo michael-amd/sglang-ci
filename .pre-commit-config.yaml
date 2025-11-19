@@ -1,4 +1,4 @@
-default_stages: [pre-commit, pre-push, manual]
+default_stages: [commit, push, manual]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -22,7 +22,6 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-        args: ["--profile", "black"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.7
     hooks:

@@ -20,8 +20,7 @@ set -euo pipefail
 export TZ='America/Los_Angeles'
 
 # Configuration
-# Path to store models - can be overridden by setting BASE_DIR environment variable
-BASE_DIR="${BASE_DIR:-/data}"
+BASE_DIR="/mnt/raid/models/huggingface"
 HUGGINGFACE_HUB_CACHE="${BASE_DIR}/.cache"
 
 # Model definitions
