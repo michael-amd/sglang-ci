@@ -1,0 +1,46 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-11-19 08:40:54 PST
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251119
+==================================================
+GPT-OSS-120B: SKIPPED - Model path does not exist: /data/lmsys/gpt-oss-120b-bf16
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+GPT-OSS-20B: SKIPPED - Model path does not exist: /data/lmsys/gpt-oss-20b-bf16
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+QWEN-30B: SKIPPED - Model path does not exist: /data/Qwen/Qwen3-30B-A3B-Thinking-2507
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+GROK1-IN4: SKIPPED - Model path does not exist: /data/amd--grok-1-W4A8KV8
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+GROK1-FP8: SKIPPED - Model path does not exist: /data/lmzheng-grok-1
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+GROK2.5: SKIPPED - Model path does not exist: /data/grok-2
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+llama4: SKIPPED - Model path does not exist: /data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-11-19 08:40:54 PST
+Total execution time: 0.00s (0.0 minutes)
+Average time per model: 0.00s
+Models tested: 0/7
+Models passed: 0 (no models tested)
+Models failed: 0 (no models tested)
+Models skipped: 7/7
+  GPT-OSS-120B: SKIPPED
+  GPT-OSS-20B: SKIPPED
+  QWEN-30B: SKIPPED
+  GROK1-IN4: SKIPPED
+  GROK1-FP8: SKIPPED
+  GROK2.5: SKIPPED
+  llama4: SKIPPED
