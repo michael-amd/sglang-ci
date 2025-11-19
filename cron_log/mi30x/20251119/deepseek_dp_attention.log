@@ -138,3 +138,19 @@ Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3
 SGLang server started successfully after 135 seconds.
 ✅ Server restarted successfully
 Executing GSM8K test Run 2 ...
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post3-rocm700-mi30x-20251119 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251119_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251119
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] ERROR: Failed to create log directory in container
+[nightly] Sending error notification to Teams...
+[nightly] WARN: Error notification failed (HTTP 202)
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251119
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251119 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
