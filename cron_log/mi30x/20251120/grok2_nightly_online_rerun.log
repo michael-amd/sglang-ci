@@ -1,0 +1,71 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-20 13:36:39 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3936613
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi30x hardware
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: e719ff46d055
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251120...
+[nightly] Found candidate tag for day -0: v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Successfully obtained image for date 20251120: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 6a44e4d10460
+132f2fcd9c54
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Reusing container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK2 online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[online] Using Grok 2 configuration
+[online] Using default Grok 2 tokenizer: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-11-20 13:37:15 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.5.post3-rocm700-mi30x-20251120_GROK2_FP8_online/sglang_client_log_GROK2_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok2 environment: RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0
+[online] Launching backend=aiter for grok2
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
