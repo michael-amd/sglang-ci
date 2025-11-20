@@ -1,0 +1,195 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-20 12:16:37 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3900755
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 0f2c0f1513c9
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251120...
+[nightly] Found candidate tag for day -0: v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Successfully obtained image for date 20251120: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: fa0a51b84052
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Reusing container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-11-20 12:17:09 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251120_DeepSeek-V3-0324_FP8_online/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+Checking serving benchmark logs...
+Missing: Concurrency 128, Run 1
+Missing: Concurrency 64, Run 1
+Missing: Concurrency 16, Run 1
+Missing: Concurrency 4, Run 1
+Missing: Concurrency 1, Run 1
+Scan complete: 5 total runs needed, 5 missing/incomplete
+❌ Missing 5 serving benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+Waiting for SGLang server (PID: 47) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251120_DeepSeek-V3-0324_FP8_online/sglang_server.log
+.............................
+SGLang server started successfully after 146 seconds.
+=== Online GSM8K Benchmark: TP=8, Questions=2000, Parallel=2000, Shots=5 ===
+[progress] Total benchmark runs to execute: 10 (GSM8K: 5, Serving: 5) - standard mode
+[progress] [--------------------------------------------------] 0/10 (0%) 
+Starting GSM8K Online Benchmark...
+Running 5 test iterations...
+Executing GSM8K test Run 1 ...
+/mnt/raid/michael/sglang-ci/scripts/deepseek_perf_online_csv.sh: line 981:    47 Killed                  env ${aiter_env_var}=1 python3 -m sglang.launch_server --model-path "${MODEL}" --tp-size "${TP}" --port "$GSM8K_PORT" --trust-remote-code --mem-fraction-static "${mem_fraction}" --max-running-requests "$SERVER_MAX_REQUESTS" ${cuda_graph_bs_flag} ${disable_cuda_graph_flag} ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:17<6:24:55, 17.52s/it]  0%|          | 2/1319 [00:20<3:11:31,  8.73s/it]  0%|          | 3/1319 [00:20<1:49:48,  5.01s/it]  0%|          | 4/1319 [00:21<1:13:58,  3.37s/it]  0%|          | 5/1319 [00:21<39:48,  1.82s/it]    0%|          | 6/1319 [00:21<30:10,  1.38s/it]  1%|          | 9/1319 [00:21<05:46,  3.78it/s]  1%|          | 9/1319 [00:21<05:46,  3.78it/s]  1%|          | 9/1319 [00:21<05:46,  3.78it/s]  1%|          | 11/1319 [00:22<05:40,  3.85it/s]  1%|          | 13/1319 [00:22<04:01,  5.42it/s]  1%|          | 13/1319 [00:22<04:01,  5.42it/s]  1%|          | 14/1319 [00:24<09:00,  2.41it/s]  1%|▏         | 17/1319 [00:24<12:15,  1.77it/s]  1%|▏         | 17/1319 [00:24<12:15,  1.77it/s]  1%|▏         | 17/1319 [00:24<12:15,  1.77it/s]  1%|▏         | 18/1319 [00:26<18:01,  1.20it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 27/1319 [00:26<08:11,  2.63it/s]  2%|▏         | 28/1319 [00:29<11:03,  1.95it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 36/1319 [00:29<09:08,  2.34it/s]  3%|▎         | 37/1319 [00:30<09:31,  2.24it/s]  3%|▎         | 40/1319 [00:30<08:10,  2.61it/s]  3%|▎         | 40/1319 [00:30<08:10,  2.61it/s]  3%|▎         | 41/1319 [00:30<07:59,  2.67it/s]  3%|▎         | 43/1319 [00:30<06:51,  3.10it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 51/1319 [00:30<01:03, 19.99it/s]  4%|▍         | 54/1319 [00:31<01:13, 17.26it/s]  5%|▍         | 63/1319 [00:33<03:16,  6.40it/s]  5%|▍         | 65/1319 [00:33<04:12,  4.96it/s]  5%|▌         | 67/1319 [00:34<04:02,  5.17it/s]  6%|▌         | 74/1319 [00:34<03:22,  6.15it/s]  6%|▋         | 84/1319 [00:35<02:31,  8.18it/s]  7%|▋         | 92/1319 [00:35<01:24, 14.59it/s]  7%|▋         | 94/1319 [00:35<01:23, 14.59it/s]  7%|▋         | 94/1319 [00:35<01:23, 14.59it/s]  7%|▋         | 96/1319 [00:36<01:46, 11.50it/s]  8%|▊         | 105/1319 [00:36<02:08,  9.48it/s]  8%|▊         | 105/1319 [00:36<02:08,  9.48it/s]  8%|▊         | 105/1319 [00:36<02:08,  9.48it/s]  8%|▊         | 105/1319 [00:36<02:08,  9.48it/s]  8%|▊         | 105/1319 [00:36<02:08,  9.48it/s]  8%|▊         | 106/1319 [00:36<02:23,  8.44it/s]  8%|▊         | 112/1319 [00:36<02:05,  9.62it/s]  9%|▊         | 113/1319 [00:36<02:05,  9.62it/s]  9%|▊         | 113/1319 [00:36<02:05,  9.62it/s]  9%|▊         | 114/1319 [00:37<03:13,  6.22it/s]  9%|▉         | 118/1319 [00:37<03:17,  6.07it/s]  9%|▉         | 118/1319 [00:37<03:17,  6.07it/s]  9%|▉         | 118/1319 [00:37<03:17,  6.07it/s]  9%|▉         | 118/1319 [00:37<03:17,  6.07it/s]  9%|▉         | 119/1319 [00:37<04:26,  4.51it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 128/1319 [00:37<02:20,  8.50it/s] 10%|▉         | 129/1319 [00:38<02:59,  6.62it/s] 10%|█         | 135/1319 [00:38<03:04,  6.40it/s] 10%|█         | 136/1319 [00:38<03:04,  6.40it/s] 10%|█         | 136/1319 [00:38<03:04,  6.40it/s] 10%|█         | 136/1319 [00:38<03:04,  6.40it/s] 10%|█         | 137/1319 [00:38<03:21,  5.88it/s] 11%|█         | 146/1319 [00:39<01:51, 10.52it/s] 12%|█▏        | 157/1319 [00:39<01:29, 12.92it/s] 12%|█▏        | 163/1319 [00:40<01:42, 11.29it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 171/1319 [00:40<01:13, 15.63it/s] 13%|█▎        | 173/1319 [00:40<01:20, 14.24it/s] 14%|█▍        | 182/1319 [00:40<01:06, 17.05it/s] 15%|█▍        | 192/1319 [00:41<00:55, 20.34it/s] 15%|█▌        | 203/1319 [00:41<00:59, 18.89it/s] 16%|█▌        | 205/1319 [00:41<00:58, 18.97it/s] 16%|█▌        | 205/1319 [00:41<00:58, 18.97it/s] 17%|█▋        | 219/1319 [00:44<01:49, 10.08it/s] 17%|█▋        | 224/1319 [00:44<02:34,  7.09it/s] 17%|█▋        | 224/1319 [00:44<02:34,  7.09it/s] 17%|█▋        | 224/1319 [00:44<02:34,  7.09it/s] 17%|█▋        | 224/1319 [00:44<02:34,  7.09it/s] 17%|█▋        | 224/1319 [00:44<02:34,  7.09it/s] 17%|█▋        | 225/1319 [00:44<02:41,  6.79it/s] 18%|█▊        | 236/1319 [00:45<02:03,  8.80it/s] 19%|█▉        | 253/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|█▉        | 258/1319 [00:45<00:19, 55.17it/s] 20%|██        | 264/1319 [00:47<01:06, 15.87it/s] 20%|██        | 267/1319 [00:47<02:35,  6.75it/s] 20%|██        | 267/1319 [00:47<02:35,  6.75it/s] 20%|██        | 270/1319 [00:47<02:30,  6.98it/s] 21%|██        | 279/1319 [00:48<01:53,  9.13it/s] 22%|██▏       | 291/1319 [00:48<01:33, 10.98it/s] 23%|██▎       | 304/1319 [00:49<01:18, 12.86it/s] 24%|██▎       | 311/1319 [00:49<01:12, 13.86it/s] 24%|██▍       | 320/1319 [00:50<01:02, 16.03it/s] 25%|██▍       | 324/1319 [00:50<00:35, 28.16it/s] 25%|██▍       | 324/1319 [00:50<00:35, 28.16it/s] 25%|██▍       | 324/1319 [00:50<00:35, 28.16it/s] 25%|██▍       | 324/1319 [00:50<00:35, 28.16it/s] 26%|██▌       | 342/1319 [00:50<00:27, 35.05it/s] 27%|██▋       | 353/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 354/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 355/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 355/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 355/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 355/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 355/1319 [00:50<00:14, 67.31it/s] 27%|██▋       | 362/1319 [00:50<00:15, 59.91it/s] 28%|██▊       | 368/1319 [00:51<00:18, 51.83it/s] 28%|██▊       | 373/1319 [00:51<00:22, 42.60it/s] 28%|██▊       | 374/1319 [00:51<00:22, 42.60it/s] 28%|██▊       | 374/1319 [00:51<00:22, 42.60it/s] 29%|██▊       | 379/1319 [00:51<00:25, 37.21it/s] 29%|██▉       | 385/1319 [00:51<00:26, 34.78it/s] 29%|██▉       | 385/1319 [00:51<00:26, 34.78it/s] 29%|██▉       | 385/1319 [00:51<00:26, 34.78it/s] 29%|██▉       | 389/1319 [00:51<00:31, 29.58it/s] 30%|██▉       | 393/1319 [00:51<00:35, 26.10it/s] 31%|███       | 405/1319 [00:51<00:26, 34.47it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 31%|███▏      | 413/1319 [00:51<00:12, 74.23it/s] 32%|███▏      | 421/1319 [00:52<00:14, 62.56it/s] 32%|███▏      | 425/1319 [00:52<00:17, 51.90it/s] 32%|███▏      | 425/1319 [00:52<00:17, 51.90it/s] 32%|███▏      | 425/1319 [00:52<00:17, 51.90it/s] 32%|███▏      | 425/1319 [00:52<00:17, 51.90it/s] 33%|███▎      | 431/1319 [00:52<00:20, 44.08it/s] 33%|███▎      | 436/1319 [00:52<00:23, 37.17it/s] 34%|███▍      | 449/1319 [00:52<00:19, 43.87it/s] 35%|███▍      | 457/1319 [00:53<00:20, 41.58it/s] 36%|███▌      | 475/1319 [00:53<00:15, 53.76it/s] 37%|███▋      | 484/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 37%|███▋      | 485/1319 [00:53<00:07, 107.60it/s] 38%|███▊      | 496/1319 [00:53<00:11, 68.76it/s]  39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▊      | 509/1319 [00:53<00:21, 38.13it/s] 39%|███▉      | 514/1319 [00:53<00:22, 35.53it/s] 39%|███▉      | 520/1319 [00:53<00:21, 36.36it/s] 39%|███▉      | 521/1319 [00:53<00:21, 36.36it/s] 39%|███▉      | 521/1319 [00:53<00:21, 36.36it/s] 39%|███▉      | 521/1319 [00:53<00:21, 36.36it/s] 40%|███▉      | 525/1319 [00:54<00:25, 31.02it/s] 40%|████      | 530/1319 [00:54<00:27, 28.96it/s] 40%|████      | 534/1319 [00:54<00:30, 25.65it/s] 41%|████      | 540/1319 [00:54<00:29, 26.21it/s] 42%|████▏     | 551/1319 [00:55<00:23, 33.30it/s] 43%|████▎     | 561/1319 [00:55<00:20, 37.20it/s] 43%|████▎     | 568/1319 [00:55<00:13, 54.65it/s] 43%|████▎     | 569/1319 [00:55<00:13, 54.65it/s] 43%|████▎     | 569/1319 [00:55<00:13, 54.65it/s] 43%|████▎     | 569/1319 [00:55<00:13, 54.65it/s] 44%|████▎     | 575/1319 [00:55<00:17, 43.46it/s] 44%|████▎     | 577/1319 [00:55<00:21, 35.19it/s] 44%|████▎     | 577/1319 [00:55<00:21, 35.19it/s] 44%|████▍     | 581/1319 [00:55<00:22, 32.42it/s] 44%|████▍     | 584/1319 [00:55<00:22, 32.31it/s] 44%|████▍     | 585/1319 [00:55<00:22, 32.31it/s] 45%|████▍     | 589/1319 [00:55<00:26, 27.72it/s] 45%|████▍     | 593/1319 [00:56<00:29, 24.26it/s] 46%|████▋     | 612/1319 [00:56<00:16, 43.00it/s] 47%|████▋     | 623/1319 [00:56<00:15, 45.34it/s] 48%|████▊     | 633/1319 [00:56<00:10, 63.79it/s] 48%|████▊     | 637/1319 [00:56<00:10, 63.79it/s] 48%|████▊     | 637/1319 [00:56<00:10, 63.79it/s] 48%|████▊     | 637/1319 [00:56<00:10, 63.79it/s] 48%|████▊     | 637/1319 [00:56<00:10, 63.79it/s] 49%|████▉     | 644/1319 [00:56<00:12, 54.78it/s] 49%|████▉     | 650/1319 [00:57<00:14, 46.70it/s] 50%|█████     | 664/1319 [01:01<01:22,  7.91it/s] 51%|█████     | 673/1319 [01:01<01:05,  9.84it/s] 52%|█████▏    | 685/1319 [01:01<00:47, 13.38it/s] 53%|█████▎    | 701/1319 [01:02<00:31, 19.56it/s] 54%|█████▍    | 710/1319 [01:02<00:27, 22.32it/s] 55%|█████▍    | 724/1319 [01:02<00:28, 21.13it/s] 55%|█████▌    | 731/1319 [01:03<00:32, 18.00it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▌    | 741/1319 [01:03<00:24, 23.76it/s] 56%|█████▋    | 744/1319 [01:03<00:25, 22.38it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 751/1319 [01:03<00:18, 30.75it/s] 57%|█████▋    | 755/1319 [01:04<00:22, 25.51it/s] 58%|█████▊    | 767/1319 [01:04<00:16, 33.43it/s] 59%|█████▉    | 776/1319 [01:04<00:15, 35.61it/s] 60%|█████▉    | 785/1319 [01:05<00:21, 25.18it/s] 60%|██████    | 794/1319 [01:05<00:18, 28.48it/s] 61%|██████    | 800/1319 [01:05<00:18, 28.16it/s] 61%|██████▏   | 808/1319 [01:05<00:12, 40.50it/s] 61%|██████▏   | 808/1319 [01:05<00:12, 40.50it/s] 61%|██████▏   | 809/1319 [01:05<00:12, 40.50it/s] 61%|██████▏   | 809/1319 [01:05<00:12, 40.50it/s] 61%|██████▏   | 809/1319 [01:05<00:12, 40.50it/s] 62%|██████▏   | 819/1319 [01:05<00:11, 45.24it/s] 64%|██████▍   | 848/1319 [01:06<00:11, 39.26it/s] 65%|██████▌   | 862/1319 [01:06<00:09, 46.89it/s] 66%|██████▌   | 873/1319 [01:06<00:08, 50.95it/s] 67%|██████▋   | 887/1319 [01:06<00:07, 60.59it/s] 68%|██████▊   | 901/1319 [01:07<00:06, 69.51it/s] 69%|██████▊   | 906/1319 [01:07<00:04, 88.93it/s] 69%|██████▉   | 907/1319 [01:07<00:04, 88.93it/s] 70%|██████▉   | 918/1319 [01:07<00:04, 84.45it/s] 71%|███████▏  | 941/1319 [01:07<00:03, 111.79it/s] 73%|███████▎  | 958/1319 [01:07<00:03, 113.94it/s] 73%|███████▎  | 964/1319 [01:07<00:02, 139.00it/s] 73%|███████▎  | 965/1319 [01:07<00:02, 139.00it/s] 73%|███████▎  | 965/1319 [01:07<00:02, 139.00it/s] 73%|███████▎  | 965/1319 [01:07<00:02, 139.00it/s] 73%|███████▎  | 965/1319 [01:07<00:02, 139.00it/s] 74%|███████▍  | 980/1319 [01:07<00:02, 130.30it/s] 75%|███████▌  | 994/1319 [01:07<00:02, 110.20it/s] 76%|███████▋  | 1006/1319 [01:07<00:02, 106.70it/s] 77%|███████▋  | 1017/1319 [01:08<00:03, 99.86it/s]  77%|███████▋  | 1019/1319 [01:08<00:03, 97.02it/s] 77%|███████▋  | 1019/1319 [01:08<00:03, 97.02it/s] 78%|███████▊  | 1029/1319 [01:08<00:03, 89.88it/s] 79%|███████▉  | 1040/1319 [01:08<00:02, 93.72it/s] 80%|███████▉  | 1051/1319 [01:08<00:02, 95.44it/s] 80%|████████  | 1061/1319 [01:08<00:02, 91.72it/s] 81%|████████  | 1071/1319 [01:08<00:02, 88.89it/s] 82%|████████▏ | 1080/1319 [01:08<00:02, 85.71it/s] 82%|████████▏ | 1082/1319 [01:08<00:02, 85.90it/s] 83%|████████▎ | 1091/1319 [01:08<00:03, 72.97it/s] 83%|████████▎ | 1099/1319 [01:09<00:03, 72.62it/s] 84%|████████▍ | 1108/1319 [01:09<00:02, 75.25it/s] 85%|████████▍ | 1118/1319 [01:09<00:02, 78.72it/s] 86%|████████▌ | 1131/1319 [01:09<00:02, 90.35it/s] 87%|████████▋ | 1143/1319 [01:09<00:01, 96.32it/s] 87%|████████▋ | 1153/1319 [01:09<00:01, 94.97it/s] 88%|████████▊ | 1163/1319 [01:09<00:01, 82.72it/s] 89%|████████▉ | 1172/1319 [01:09<00:01, 82.95it/s] 90%|████████▉ | 1182/1319 [01:10<00:01, 77.15it/s] 90%|█████████ | 1190/1319 [01:10<00:01, 69.49it/s] 91%|█████████ | 1198/1319 [01:10<00:01, 64.71it/s] 91%|█████████▏| 1205/1319 [01:10<00:02, 53.87it/s] 92%|█████████▏| 1216/1319 [01:10<00:01, 60.69it/s] 93%|█████████▎| 1226/1319 [01:10<00:01, 63.51it/s] 93%|█████████▎| 1233/1319 [01:10<00:01, 60.22it/s] 94%|█████████▍| 1240/1319 [01:11<00:01, 52.64it/s] 95%|█████████▍| 1250/1319 [01:11<00:01, 50.16it/s] 95%|█████████▌| 1256/1319 [01:11<00:01, 48.99it/s] 96%|█████████▌| 1264/1319 [01:11<00:01, 52.86it/s] 96%|█████████▋| 1270/1319 [01:11<00:01, 47.11it/s] 97%|█████████▋| 1275/1319 [01:12<00:01, 36.61it/s] 97%|█████████▋| 1280/1319 [01:12<00:01, 27.84it/s] 97%|█████████▋| 1284/1319 [01:12<00:01, 27.39it/s] 98%|█████████▊| 1288/1319 [01:12<00:01, 28.91it/s] 98%|█████████▊| 1293/1319 [01:12<00:00, 32.67it/s] 98%|█████████▊| 1297/1319 [01:12<00:00, 27.81it/s] 99%|█████████▊| 1302/1319 [01:13<00:00, 26.92it/s] 99%|█████████▉| 1305/1319 [01:13<00:00, 19.42it/s] 99%|█████████▉| 1306/1319 [01:30<00:00, 19.42it/s]/sgl-workspace/sglang/python/sglang/lang/interpreter.py:410: UserWarning: Error in stream_executor: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 408, in _thread_worker_func
+    self._execute(expr)
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 446, in _execute
+    self._execute_gen(other)
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 574, in _execute_gen
+    comp, meta_info = self.backend.generate(
+  File "/sgl-workspace/sglang/python/sglang/lang/backend/runtime_endpoint.py", line 185, in generate
+    res = http_request(
+  File "/sgl-workspace/sglang/python/sglang/utils.py", line 170, in http_request
+    resp = urllib.request.urlopen(req, data=data, cafile=verify)
+  File "/usr/lib/python3.10/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+  File "/usr/lib/python3.10/urllib/request.py", line 519, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.10/urllib/request.py", line 536, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+  File "/usr/lib/python3.10/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.10/urllib/request.py", line 1377, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+  File "/usr/lib/python3.10/urllib/request.py", line 1352, in do_open
+    r = h.getresponse()
+  File "/usr/lib/python3.10/http/client.py", line 1375, in getresponse
+    response.begin()
+  File "/usr/lib/python3.10/http/client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "/usr/lib/python3.10/http/client.py", line 287, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+
+  warnings.warn(f"Error in stream_executor: {get_exception_traceback()}")
+ 99%|█████████▉| 1307/1319 [07:25<06:13, 31.16s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00, 34.14s/it]100%|██████████| 1319/1319 [07:25<00:00,  2.96it/s]
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py", line 148, in <module>
+    main(args)
+  File "/sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py", line 99, in main
+    preds.append(get_answer_value(states[i]["answer"]))
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 993, in __getitem__
+    return self.get_var(name)
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 978, in get_var
+    return self.stream_executor.get_var(name)
+  File "/sgl-workspace/sglang/python/sglang/lang/interpreter.py", line 333, in get_var
+    return self.variables[name]
+KeyError: 'answer'
+Run 1 completed in 453 seconds
+⚠️  Connection error detected during Run 1
+Run 1: Accuracy not found, defaulting to 0
+Run 1: Accuracy: 0
+  ✗ Run 1 excluded from average (accuracy: 0 < 0.1 - likely failed/crashed)
+[progress] [=====---------------------------------------------] 1/10 (10%)  | GSM8K: Run 1
+
+Checking server health before Run 2...
+❌ Server is not responding! Attempting restart...
+Terminating crashed server process (PID: 47)...
+Restarting SGLang server...
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+Waiting for SGLang server (PID: 24721) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251120_DeepSeek-V3-0324_FP8_online/sglang_server.log
+.............................
+SGLang server encountered critical errors during startup!
+Critical errors found in /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251120_DeepSeek-V3-0324_FP8_online/sglang_server.log:
+--- Error details ---
+Memory access fault by GPU node-2 (Agent handle: 0x555db6d623e0) on address 0x7ed301f34000. Reason: Unknown.
+Failed to enable debug interface, debugger might be already attached.
+GPU core dump failed
+Fatal Python error: Aborted
+
+Thread 0x00007ed247fff640 (most recent call first):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler_runtime_checker_mixin.py", line 268 in watchdog_thread
+--- End of error details ---
+Killing server process and exiting...
+Cleaning up...
+Killing background SGLang server (PID: 24721)...
+Server process 24721 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251120_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251120
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251120
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+   🔍 Uploading 20251120_DeepSeek-V3-0324_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📄 Creating new file: plot/mi30x/DeepSeek-V3-0324/online/20251120_DeepSeek-V3-0324_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251120_DeepSeek-V3-0324_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251120_DeepSeek-V3-0324_online_standard.png
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251120_DeepSeek-V3-0324_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251120: timing_summary_20251120_121709.log
+   Found timing_summary log for deepseek online on 20251120: timing_summary_20251120_121709.log
+   Found timing_summary log for deepseek online on 20251120: timing_summary_20251120_121709.log
+   Found timing_summary log for deepseek online on 20251120: timing_summary_20251120_121709.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251120_DeepSeek-V3-0324_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251120
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251120 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
