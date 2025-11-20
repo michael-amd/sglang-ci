@@ -631,7 +631,12 @@ if [[ "$TEST_TYPE" == "pd" ]]; then
   bash "$PD_TEST_SCRIPT" "$PD_MODEL_PATH" "$PD_MODEL_NAME" || TEST_EXIT_CODE=$?
 
   # Find the PD log directory (structure: pd_log/{hardware}/{docker_tag})
-  LATEST_PD_LOG="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}"
+  # Support custom log directory suffix if PD_LOG_DIR_SUFFIX is set
+  if [ -n "${PD_LOG_DIR_SUFFIX:-}" ]; then
+    LATEST_PD_LOG="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}${PD_LOG_DIR_SUFFIX}"
+  else
+    LATEST_PD_LOG="${PD_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}"
+  fi
 
   if [ -d "$LATEST_PD_LOG" ]; then
     LOG_FILE="${LATEST_PD_LOG}/test_summary.txt"
