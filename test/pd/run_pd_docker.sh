@@ -26,7 +26,13 @@ fi
 
 # Log directory structure: test/pd/pd_log/{hardware}/{docker_tag}
 LOG_BASE_DIR="/mnt/raid/michael/sglang-ci/test/pd/pd_log"
-LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
+# Allow custom log directory suffix (e.g., for reruns)
+if [ -n "${PD_LOG_DIR_SUFFIX:-}" ]; then
+  LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}${PD_LOG_DIR_SUFFIX}"
+  echo "[pd-test] Using custom log directory suffix: ${PD_LOG_DIR_SUFFIX}"
+else
+  LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
+fi
 
 # Docker command with sudo
 DOCKER_CMD=(sudo /usr/bin/docker)
@@ -292,14 +298,20 @@ echo "[pd-test] Step 3: Starting Decode Server (GPUs 4-7)..."
 echo "[pd-test] =========================================="
 STEP3_START=$(date +%s)
 
+# Build decode server environment variables
+DECODE_ENV_ARGS="-e HIP_VISIBLE_DEVICES=4,5,6,7 -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib"
+if [ -n "${SGLANG_ROCM_FUSED_DECODE_MLA:-}" ]; then
+  echo "[pd-test] Using SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
+  DECODE_ENV_ARGS="${DECODE_ENV_ARGS} -e SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
+fi
+
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-decode \
   --network=host --ipc=host --cap-add=SYS_PTRACE \
   --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
   --group-add video --privileged \
   -v /mnt/raid:/mnt/raid \
   -v /data2:/data2 \
-  -e HIP_VISIBLE_DEVICES=4,5,6,7 \
-  -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib \
+  $DECODE_ENV_ARGS \
   "${DOCKER_IMAGE}" \
   python3 -m sglang.launch_server \
     --model-path "${MODEL_PATH}" \
