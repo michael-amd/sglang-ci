@@ -424,14 +424,21 @@ function setupFilterControls() {
 
 async function syncDatabaseFromGitHub() {
     const indicator = document.getElementById('loadingIndicator');
+    const refreshBtn = document.getElementById('refreshButton');
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
+    }
+
     if (indicator) {
         indicator.textContent = '🔄 Syncing database from GitHub...';
-        indicator.classList.remove('d-none', 'alert-danger');
+        indicator.classList.remove('d-none', 'alert-danger', 'alert-success');
         indicator.classList.add('alert-info');
     }
 
     try {
-        const response = await fetch('/api/database/sync', {
+        const response = await fetch('/api/database/refresh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -441,19 +448,30 @@ async function syncDatabaseFromGitHub() {
         const data = await response.json();
 
         if (indicator) {
-            if (data.status === 'success') {
-                indicator.textContent = '✅ Database synced from GitHub';
+            if (data.success) {
+                const dbInfo = data.database || {};
+                indicator.textContent = `✅ Database synced! Size: ${dbInfo.size_kb}KB, Last modified: ${dbInfo.last_modified}`;
+                indicator.classList.remove('alert-info');
                 indicator.classList.add('alert-success');
-                setTimeout(() => indicator.classList.add('d-none'), 2000);
-            } else {
-                indicator.textContent = '⚠️ ' + (data.message || 'Sync completed with warnings');
                 setTimeout(() => indicator.classList.add('d-none'), 3000);
+            } else {
+                indicator.textContent = '⚠️ ' + (data.error || 'Sync failed');
+                indicator.classList.remove('alert-info');
+                indicator.classList.add('alert-danger');
+                setTimeout(() => indicator.classList.add('d-none'), 4000);
             }
         }
     } catch (error) {
         if (indicator) {
-            indicator.textContent = '⚠️ Could not sync (using local database)';
-            setTimeout(() => indicator.classList.add('d-none'), 3000);
+            indicator.textContent = '⚠️ Could not sync database: ' + error.message;
+            indicator.classList.remove('alert-info');
+            indicator.classList.add('alert-danger');
+            setTimeout(() => indicator.classList.add('d-none'), 4000);
+        }
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Update';
         }
     }
 }

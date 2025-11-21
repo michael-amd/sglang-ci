@@ -897,6 +897,84 @@ def api_database_schema():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/database/refresh", methods=["POST"])
+def api_database_refresh():
+    """Refresh database from GitHub and clear cache"""
+    try:
+        import subprocess
+
+        # Pull latest database from GitHub
+        db_sync_script = os.path.join(BASE_DIR, "database", "sync_database.py")
+        result = subprocess.run(
+            ["python3", db_sync_script, "pull"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Database sync failed: {result.stderr}",
+                    }
+                ),
+                500,
+            )
+
+        # Clear all Flask caches
+        cache.clear()
+
+        # Get database file info
+        db_path = get_database_path()
+        if os.path.exists(db_path):
+            file_size = os.path.getsize(db_path)
+            file_mtime = os.path.getmtime(db_path)
+            from datetime import datetime
+
+            last_modified = datetime.fromtimestamp(file_mtime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Database refreshed successfully",
+                    "database": {
+                        "path": db_path,
+                        "size_kb": round(file_size / 1024, 1),
+                        "last_modified": last_modified,
+                    },
+                }
+            )
+        else:
+            return (
+                jsonify(
+                    {"success": False, "error": "Database file not found after sync"}
+                ),
+                404,
+            )
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"success": False, "error": "Database sync timed out"}), 504
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+def api_cache_clear():
+    """Clear all Flask caches"""
+    try:
+        cache.clear()
+        return jsonify({"success": True, "message": "Cache cleared successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/database/stats")
 def api_database_stats():
     """Get database statistics"""
