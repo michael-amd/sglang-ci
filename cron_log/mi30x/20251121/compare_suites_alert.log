@@ -1,0 +1,32 @@
+📊 Generating SGLang CI comparison report
+📁 Base directory: /mnt/raid/michael/sglang-ci
+🔄 Running compare_suites.py...
+❌ Error running compare_suites.py:
+Traceback (most recent call last):
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 134, in get_dynamic_additional_categories
+    raise RuntimeError(
+RuntimeError: Could not fetch NVIDIA nightly test file from any of: ['https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_text_models_gsm8k_eval.py', 'https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py', 'https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py']
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 550, in <module>
+    main()
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 499, in main
+    compare_suites(suites_map, format_type)
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 401, in compare_suites
+    additional_categories = get_dynamic_additional_categories()
+  File "/mnt/raid/michael/sglang-ci/upstream_ci/compare_suites.py", line 189, in get_dynamic_additional_categories
+    raise RuntimeError(
+RuntimeError: Failed to fetch dynamic test counts from workflow and nightly files.
+Error: Could not fetch NVIDIA nightly test file from any of: ['https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_text_models_gsm8k_eval.py', 'https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py', 'https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py']
+Please check your internet connection and ensure the following URLs are accessible:
+- https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml
+- https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml
+NVIDIA nightly (trying in order):
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_text_models_gsm8k_eval.py
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_gsm8k_eval.py
+- https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_gsm8k_eval_amd.py
+
+❌ Failed to run compare_suites.py
