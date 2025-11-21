@@ -35,6 +35,7 @@ class DatabaseSyncer:
         db_path: str,
         github_repo: str = "ROCm/sglang-ci",
         github_token: str = None,
+        branch: str = None,
     ):
         """
         Initialize database syncer
@@ -43,10 +44,15 @@ class DatabaseSyncer:
             db_path: Path to local database file
             github_repo: GitHub repository in owner/repo format
             github_token: GitHub personal access token
+            branch: Git branch to use (default: from env GITHUB_DATA_BRANCH or 'log')
         """
         self.db_path = db_path
         self.github_repo = github_repo
         self.github_token = github_token or os.environ.get("GITHUB_TOKEN")
+
+        # Branch for database storage (default: 'log' for backward compatibility)
+        # Can be changed to 'data' to separate database from logs
+        self.branch = branch or os.environ.get("GITHUB_DATA_BRANCH", "log")
 
         # Working directory for git operations
         self.work_dir = "/mnt/raid/michael/sglang-ci-data"
@@ -88,9 +94,9 @@ class DatabaseSyncer:
         # Change to work directory
         os.chdir(self.work_dir)
 
-        # Checkout log branch
-        subprocess.run(["git", "fetch", "origin", "log"], check=True)
-        subprocess.run(["git", "checkout", "-q", "log"], check=True)
+        # Checkout configured branch (log or data)
+        subprocess.run(["git", "fetch", "origin", self.branch], check=True)
+        subprocess.run(["git", "checkout", "-q", self.branch], check=True)
 
         # Pull latest changes with automatic conflict resolution
         result = subprocess.run(
@@ -168,9 +174,9 @@ class DatabaseSyncer:
         # Change to work directory
         os.chdir(self.work_dir)
 
-        # Checkout log branch
-        subprocess.run(["git", "fetch", "origin", "log"], check=True)
-        subprocess.run(["git", "checkout", "-q", "log"], check=True)
+        # Checkout configured branch (log or data)
+        subprocess.run(["git", "fetch", "origin", self.branch], check=True)
+        subprocess.run(["git", "checkout", "-q", self.branch], check=True)
 
         # Pull latest changes (unless force) with conflict resolution
         if not force:
@@ -245,21 +251,21 @@ class DatabaseSyncer:
         )
 
         # Push
-        print("Pushing to GitHub...")
+        print(f"Pushing to GitHub ({self.branch} branch)...")
 
         if self.github_token:
             push_url = f"https://{self.github_token}@github.com/{self.github_repo}.git"
             subprocess.run(
-                ["git", "push", push_url, "log", "--quiet"],
+                ["git", "push", push_url, self.branch, "--quiet"],
                 check=True,
             )
         else:
             subprocess.run(
-                ["git", "push", "origin", "log", "--quiet"],
+                ["git", "push", "origin", self.branch, "--quiet"],
                 check=True,
             )
 
-        print(f"✅ Database pushed to GitHub: {self.github_repo}")
+        print(f"✅ Database pushed to GitHub ({self.github_repo} {self.branch} branch)")
 
     def get_remote_db_info(self):
         """Get information about remote database"""
@@ -267,12 +273,12 @@ class DatabaseSyncer:
 
         os.chdir(self.work_dir)
 
-        # Checkout log branch
+        # Checkout configured branch
         subprocess.run(
-            ["git", "fetch", "origin", "log"], check=True, capture_output=True
+            ["git", "fetch", "origin", self.branch], check=True, capture_output=True
         )
         subprocess.run(
-            ["git", "checkout", "-q", "log"], check=True, capture_output=True
+            ["git", "checkout", "-q", self.branch], check=True, capture_output=True
         )
 
         # Get file info
@@ -331,6 +337,13 @@ def main():
     )
 
     parser.add_argument(
+        "--branch",
+        type=str,
+        default=os.environ.get("GITHUB_DATA_BRANCH", "log"),
+        help="Git branch to use for database storage (default: log)",
+    )
+
+    parser.add_argument(
         "--backup",
         action="store_true",
         help="Create backup before pulling (pull only)",
@@ -348,6 +361,7 @@ def main():
     syncer = DatabaseSyncer(
         db_path=args.db_path,
         github_repo=args.github_repo,
+        branch=args.branch,
     )
 
     # Perform action
