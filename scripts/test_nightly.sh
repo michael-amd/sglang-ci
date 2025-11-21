@@ -18,7 +18,7 @@
 # UNIT TESTS:
 #   • Runs test_custom_allreduce unit test on 8 GPUs
 #   • Uses CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-#   • Executes in /sgl-workspace/sglang/test/srt directory
+#   • Executes in /sgl-workspace/sglang/test/manual directory
 #   • Logs output to structured directory with image name and timestamp
 #
 # USAGE:
@@ -115,7 +115,7 @@ GPU_IDLE_WAIT_TIME="${GPU_IDLE_WAIT_TIME:-15}"
 TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 
 # Test configuration (for unit tests)
-TEST_DIR="${TEST_DIR:-/sgl-workspace/sglang/test/srt}"
+TEST_DIR="${TEST_DIR:-/sgl-workspace/sglang/test/manual}"
 TEST_LOG_BASE_DIR="${TEST_LOG_BASE_DIR:-${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd}"
 TEST_COMMAND="CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce"
 
@@ -299,7 +299,7 @@ for arg in "$@"; do
       echo "Test Details:"
       echo "  Unit Test:"
       echo "    - Test: test_custom_allreduce.TestCustomAllReduce"
-      echo "    - Test Directory: /sgl-workspace/sglang/test/srt"
+      echo "    - Test Directory: /sgl-workspace/sglang/test/manual"
       echo "    - GPUs Used: 0,1,2,3,4,5,6,7 (8 GPUs)"
       echo "    - Log Directory: \${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/[image-name].log"
       echo ""
