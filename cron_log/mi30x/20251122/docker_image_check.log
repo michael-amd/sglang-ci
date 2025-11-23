@@ -1,7 +1,7 @@
 [check] ==========================================
 [check] SGL Nightly Docker Image Availability Check
 [check] ==========================================
-[check] Run Date/Time: 2025-11-22 16:35:24 PST
+[check] Run Date/Time: 2025-11-22 16:39:00 PST
 [check] Machine: dell300x-pla-t10-23
 [check] Repository: rocm/sgl-dev
 [check] Hardware types: mi30x mi35x
