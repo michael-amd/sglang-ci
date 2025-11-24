@@ -1,0 +1,104 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-11-24 09:00:43 PST
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251124
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-11-24 09:00:43 PST
+Server startup: 160.76s
+Trial 1: PASS [OK] (Accuracy: 0.850, Time: 128.13s)
+Trial 2: PASS [OK] (Accuracy: 0.841, Time: 116.11s)
+Trial 3: PASS [OK] (Accuracy: 0.854, Time: 119.12s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.85, 0.841, 0.854]
+Highest accuracy: 0.854 (Required: 0.820)
+Total time: 524.62s
+End time: 2025-11-24 09:09:28 PST
+==================================================
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-11-24 09:09:28 PST
+Server startup: 54.08s
+Trial 1: PASS [OK] (Accuracy: 0.541, Time: 98.11s)
+Trial 2: PASS [OK] (Accuracy: 0.554, Time: 90.09s)
+Trial 3: PASS [OK] (Accuracy: 0.556, Time: 89.09s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.541, 0.554, 0.556]
+Highest accuracy: 0.556 (Required: 0.500)
+Total time: 331.88s
+End time: 2025-11-24 09:15:00 PST
+==================================================
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-11-24 09:15:00 PST
+Server startup: FAILED after 300.03s
+Error: Out of memory (current mem_fraction_static=0.7224999999999999)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-11-24 09:20:01 PST
+Server startup: 89.71s
+Trial 1: PASS [OK] (Accuracy: 0.818, Time: 58.06s)
+Trial 2: PASS [OK] (Accuracy: 0.825, Time: 76.08s)
+Trial 3: PASS [OK] (Accuracy: 0.818, Time: 52.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.818, 0.825, 0.818]
+Highest accuracy: 0.825 (Required: 0.800)
+Total time: 276.41s
+End time: 2025-11-24 09:24:37 PST
+==================================================
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-11-24 09:24:37 PST
+Server startup: 117.19s
+Trial 1: PASS [OK] (Accuracy: 0.823, Time: 56.06s)
+Trial 2: PASS [OK] (Accuracy: 0.827, Time: 50.05s)
+Trial 3: PASS [OK] (Accuracy: 0.821, Time: 50.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.823, 0.827, 0.821]
+Highest accuracy: 0.827 (Required: 0.800)
+Total time: 273.86s
+End time: 2025-11-24 09:29:11 PST
+==================================================
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-11-24 09:29:11 PST
+Server startup: 119.19s
+Trial 1: PASS [OK] (Accuracy: 0.929, Time: 64.07s)
+Trial 2: PASS [OK] (Accuracy: 0.923, Time: 57.06s)
+Trial 3: PASS [OK] (Accuracy: 0.929, Time: 56.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.929, 0.923, 0.929]
+Highest accuracy: 0.929 (Required: 0.915)
+Total time: 296.88s
+End time: 2025-11-24 09:34:08 PST
+==================================================
+llama4: SKIPPED - Model path does not exist: /data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+  Note: Model/tokenizer files not available, not counted as failure
+==================================================
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-11-24 09:34:08 PST
+Total execution time: 2004.69s (33.4 minutes)
+Average time per model: 286.38s
+Models tested: 6/7
+Models passed: 5/6
+Models failed: 1/6
+Models skipped: 1/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: SKIPPED
