@@ -1,0 +1,32 @@
+[docker-cleanup] ==========================================
+[docker-cleanup] Docker Cleanup Script Started
+[docker-cleanup] Date: 2025-11-25 09:30:02 CST
+[docker-cleanup] Cleanup images older than: 7 days
+[docker-cleanup] Critical space threshold: 200 GB
+[docker-cleanup] Dry run mode: false
+[docker-cleanup] ==========================================
+[docker-cleanup] Initial disk usage: 67% (1.1T free)
+[docker-cleanup] Initial free space: 1106 GB
+[docker-cleanup] Disk space is healthy (1106 GB available)
+[docker-cleanup] Step 1: Removing stopped Docker containers...
+[docker-cleanup] Found 2 stopped container(s)
+[docker-cleanup] ✅ Removed stopped containers
+[docker-cleanup] Step 2: Removing old sgl-dev images (older than 7 days)...
+[docker-cleanup] ✅ Removed: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251118
+[docker-cleanup] ✅ Removed: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251117
+[docker-cleanup] Processed old sgl-dev images: 2 removed, 6 kept/skipped
+[docker-cleanup] Step 3: Removing dangling images and unused data...
+[docker-cleanup] ✅ Cleaned up dangling images
+[docker-cleanup] ==========================================
+[docker-cleanup] ✅ Docker Cleanup Complete
+[docker-cleanup] Initial disk usage: 67% (1.1T free) (1106 GB free)
+[docker-cleanup] Final disk usage: 66% (1.2T free) (1145 GB free)
+[docker-cleanup] Space freed: 39 GB
+[docker-cleanup] Date: 2025-11-25 09:30:12 CST
+[docker-cleanup] ==========================================
+[docker-cleanup] Docker disk usage summary:
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          12        2         367.3GB   365.4GB (99%)
+Containers      2         2         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     1         0         0B        0B
