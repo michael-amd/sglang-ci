@@ -50,9 +50,16 @@ SUITE_PAIRS = [
 ]
 
 # URLs for workflow and test files
+# Per-PR CI workflows
 NVIDIA_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test.yml"
 AMD_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/pr-test-amd.yml"
-# Try multiple possible NVIDIA nightly file names (file may have been moved/renamed)
+# Nightly CI workflows
+NVIDIA_NIGHTLY_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/nightly-test-nvidia.yml"
+AMD_NIGHTLY_WORKFLOW_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/.github/workflows/nightly-test-amd.yml"
+# Nightly test suite definitions
+NVIDIA_NIGHTLY_SUITE_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/run_suite_nightly.py"
+AMD_NIGHTLY_SUITE_URL = "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/run_suite.py"  # AMD uses run_suite.py with nightly-amd suite
+# Try multiple possible NVIDIA nightly file names (file may have been moved/renamed) - DEPRECATED, kept for backwards compatibility
 NVIDIA_NIGHTLY_URLS = [
     "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/nightly/test_text_models_gsm8k_eval.py",
     "https://raw.githubusercontent.com/sgl-project/sglang/main/test/srt/test_nightly_text_models_gsm8k_eval.py",
@@ -114,6 +121,59 @@ def count_nightly_models(nightly_content: str) -> int:
     return model_count
 
 
+def count_nightly_suite_tests_from_file(suite_file_content: str) -> int:
+    """Count total tests across all nightly suites in run_suite_nightly.py or similar.
+
+    Excludes hardware-specific suites (B200, H200, H20) for fair comparison with AMD.
+    """
+    # Find the suites dictionary
+    suite_pattern = r"suites\s*=\s*\{([^}]+(?:\}[^}]*)*)\}"
+    match = re.search(suite_pattern, suite_file_content, re.DOTALL)
+
+    if not match:
+        return 0
+
+    suite_content = match.group(1)
+
+    # Hardware-specific suites to exclude (no AMD equivalent)
+    excluded_suites = ["b200", "h200", "h20", "gb200"]
+
+    # Parse suite by suite to exclude specific hardware variants
+    total_count = 0
+    current_suite_name = None
+    in_excluded_suite = False
+
+    lines = suite_content.split("\n")
+    for line in lines:
+        stripped_line = line.strip()
+
+        # Skip commented lines
+        if stripped_line.startswith("#"):
+            continue
+
+        # Check if this is a suite name definition
+        suite_name_match = re.match(r'"([^"]+)"\s*:\s*\[', stripped_line)
+        if suite_name_match:
+            current_suite_name = suite_name_match.group(1).lower()
+            # Check if this suite should be excluded
+            in_excluded_suite = any(hw in current_suite_name for hw in excluded_suites)
+
+        # If we're not in an excluded suite, count TestFile entries
+        if not in_excluded_suite:
+            total_count += len(re.findall(r"TestFile\s*\(", line))
+
+    return total_count
+
+
+def count_nightly_suite_tests(suites_map: Dict[str, List[str]], suite_name: str) -> int:
+    """Count tests in a nightly suite, excluding AMD-incompatible tests."""
+    tests = suites_map.get(suite_name, [])
+    # For NVIDIA suites, exclude AMD-incompatible tests for fair comparison
+    if "amd" not in suite_name.lower():
+        tests = [test for test in tests if not is_amd_incompatible(test)]
+    return len(tests)
+
+
 def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
     """Dynamically fetch test counts from workflow and nightly files."""
     try:
@@ -121,21 +181,44 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
         nvidia_workflow = fetch_text(NVIDIA_WORKFLOW_URL)
         amd_workflow = fetch_text(AMD_WORKFLOW_URL)
 
-        # Fetch nightly test files - try multiple URLs for NVIDIA
-        nvidia_nightly = None
-        for url in NVIDIA_NIGHTLY_URLS:
-            try:
-                nvidia_nightly = fetch_text(url)
-                break  # Success, use this URL
-            except Exception:
-                continue  # Try next URL
-
-        if nvidia_nightly is None:
-            raise RuntimeError(
-                f"Could not fetch NVIDIA nightly test file from any of: {NVIDIA_NIGHTLY_URLS}"
+        # Fetch nightly suite files
+        # NVIDIA: count test files from run_suite_nightly.py (excludes hardware-specific variants)
+        # AMD: count models from test_gsm8k_eval_amd.py (one file tests multiple models)
+        try:
+            nvidia_nightly_suite = fetch_text(NVIDIA_NIGHTLY_SUITE_URL)
+            nvidia_nightly_count = count_nightly_suite_tests_from_file(
+                nvidia_nightly_suite
             )
+        except Exception as e:
+            print(
+                f"⚠️  Warning: Could not fetch NVIDIA nightly suite file from {NVIDIA_NIGHTLY_SUITE_URL}",
+                file=sys.stderr,
+            )
+            print(f"   Error: {e}", file=sys.stderr)
+            print(
+                "   Continuing with NVIDIA nightly count = 0",
+                file=sys.stderr,
+            )
+            nvidia_nightly_count = 0
 
-        amd_nightly = fetch_text(AMD_NIGHTLY_URL)
+        # For AMD, count models from the nightly test file
+        # AMD's nightly suite has 1 test file that tests multiple models
+        # We count models for fair comparison with NVIDIA's multiple test files
+        try:
+            amd_nightly_file = fetch_text(AMD_NIGHTLY_URL)
+            amd_nightly_count = count_nightly_models(amd_nightly_file)
+            if amd_nightly_count == 0:
+                print(
+                    f"⚠️  Warning: No models found in AMD nightly test file",
+                    file=sys.stderr,
+                )
+        except Exception as e:
+            print(
+                f"⚠️  Warning: Could not fetch AMD nightly test file from {AMD_NIGHTLY_URL}",
+                file=sys.stderr,
+            )
+            print(f"   Error: {e}", file=sys.stderr)
+            amd_nightly_count = 0
 
         # Count performance tests - ONLY from specific sections
         # performance-test-1-gpu = part-1 + part-2 for both NVIDIA and AMD
@@ -167,9 +250,7 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
         amd_acc_1 = 1 if "accuracy-test-1-gpu-amd:" in amd_workflow else 0
         amd_acc_2 = 1 if "accuracy-test-2-gpu-amd:" in amd_workflow else 0
 
-        # Count nightly models
-        nvidia_nightly_count = count_nightly_models(nvidia_nightly)
-        amd_nightly_count = count_nightly_models(amd_nightly)
+        # Nightly test counts are already calculated above from suite files
 
         # Count frontend tests
         nvidia_frontend = 1 if "unit-test-frontend:" in nvidia_workflow else 0
@@ -185,15 +266,16 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
         ]
 
     except Exception as e:
-        nvidia_urls_str = "\n".join([f"- {url}" for url in NVIDIA_NIGHTLY_URLS])
         raise RuntimeError(
             f"Failed to fetch dynamic test counts from workflow and nightly files.\n"
             f"Error: {e}\n"
             f"Please check your internet connection and ensure the following URLs are accessible:\n"
+            f"Required:\n"
             f"- {NVIDIA_WORKFLOW_URL}\n"
             f"- {AMD_WORKFLOW_URL}\n"
-            f"NVIDIA nightly (trying in order):\n{nvidia_urls_str}\n"
-            f"- {AMD_NIGHTLY_URL}"
+            f"Optional (for nightly test counts):\n"
+            f"- {NVIDIA_NIGHTLY_SUITE_URL}\n"
+            f"- {AMD_NIGHTLY_SUITE_URL}"
         ) from e
 
 
@@ -382,31 +464,74 @@ def compare_suites(
         # CSV format with coverage analysis
         print("Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)")
 
-        total_amd = 0
-        total_nvidia = 0
+        # Calculate CI category totals first
+        per_pr_amd = 0
+        per_pr_nvidia = 0
 
-        # Process suite pairs
+        # Process suite pairs for per-PR CI
+        suite_details = []
         for nv_suite, amd_suite, display_name in SUITE_PAIRS:
             nv_tests, amd_tests = process_suite_tests(nv_suite, amd_suite, suites_map)
-
             amd_count = len(amd_tests)
             nvidia_count = len(nv_tests)
             coverage = calculate_coverage(amd_count, nvidia_count)
+            suite_details.append((display_name, amd_count, nvidia_count, coverage))
+            per_pr_amd += amd_count
+            per_pr_nvidia += nvidia_count
 
-            print(f"{display_name},{amd_count},{nvidia_count},{coverage}")
-            total_amd += amd_count
-            total_nvidia += nvidia_count
-
-        # Add additional categories from dynamic analysis
+        # Get additional categories from dynamic analysis
         additional_categories = get_dynamic_additional_categories()
+
+        # Separate nightly and other categories
+        nightly_amd = 0
+        nightly_nvidia = 0
+        other_details = []
+
         for category, amd_count, nvidia_count in additional_categories:
             coverage = calculate_coverage(amd_count, nvidia_count)
+            if "nightly" in category.lower():
+                nightly_amd += amd_count
+                nightly_nvidia += nvidia_count
+            else:
+                per_pr_amd += amd_count
+                per_pr_nvidia += nvidia_count
+            other_details.append((category, amd_count, nvidia_count, coverage))
+
+        # Print CI category summaries
+        print("")
+        print("# CI Category Summary")
+        per_pr_coverage = calculate_coverage(per_pr_amd, per_pr_nvidia)
+        print(
+            f"Per-PR CI (total test count),{per_pr_amd},{per_pr_nvidia},{per_pr_coverage}"
+        )
+
+        nightly_coverage = calculate_coverage(nightly_amd, nightly_nvidia)
+        print(
+            f"Nightly/Periodic CI (total test count),{nightly_amd},{nightly_nvidia},{nightly_coverage}"
+        )
+
+        # Per-commit is same as Per-PR in SGLang
+        print(
+            f"Per-Commit CI (total test count),{per_pr_amd},{per_pr_nvidia},{per_pr_coverage}"
+        )
+
+        # Print detailed breakdown
+        print("")
+        print("# Detailed Breakdown")
+        print("## Per-PR CI Tests")
+        for display_name, amd_count, nvidia_count, coverage in suite_details:
+            print(f"{display_name},{amd_count},{nvidia_count},{coverage}")
+
+        print("")
+        print("## Additional Test Categories")
+        for category, amd_count, nvidia_count, coverage in other_details:
             print(f"{category},{amd_count},{nvidia_count},{coverage}")
-            total_amd += amd_count
-            total_nvidia += nvidia_count
 
         # Total
+        total_amd = per_pr_amd + nightly_amd
+        total_nvidia = per_pr_nvidia + nightly_nvidia
         total_coverage = calculate_coverage(total_amd, total_nvidia)
+        print("")
         print(f"Total,{total_amd},{total_nvidia},{total_coverage}")
 
     else:  # markdown format
