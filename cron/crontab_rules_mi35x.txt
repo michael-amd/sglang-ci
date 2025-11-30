@@ -30,8 +30,8 @@ TEAMS_WEBHOOK_URL=""
 GITHUB_REPO="ROCm/sglang-ci"
 GITHUB_TOKEN=""
 
-# 8:30 AM PT (10:30 AM CT) - Docker cleanup to prevent disk space issues [Runtime: ~2-5 min]
-30 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" CRITICAL_SPACE_GB=200 bash cron/docker_cleanup.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_cleanup.log 2>&1
+# 8:30 AM PT (10:30 AM CT) - System cleanup (Docker & GPU cores) to prevent disk space issues [Runtime: ~2-5 min]
+30 10 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" CRITICAL_SPACE_GB=200 GPUCORE_AGE_DAYS=3 bash cron/system_cleanup.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/system_cleanup.log 2>&1
 
 # 9 AM PT (11 AM CT) - Docker image availability check with Teams notifications [Runtime: ~30s]
 0 11 * * * cd "$SGL_BENCHMARK_CI_DIR" && mkdir -p cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d) && TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" bash scripts/nightly_image_check.sh > cron/cron_log/$HARDWARE_TYPE/$(date +\%Y\%m\%d)/docker_image_check.log 2>&1; bash cron/sync_and_ingest_database.sh $(date +\%Y\%m\%d) $HARDWARE_TYPE; bash cron/github_log_upload.sh; bash cron/github_database_upload.sh
