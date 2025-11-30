@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# docker_cleanup.sh - Automatic Docker cleanup to prevent disk space issues
+# system_cleanup.sh - Automatic Docker and GPU core cleanup to prevent disk space issues
 #
 # This script removes:
 # 1. Docker images starting with "sgl-dev" or "rocm/sgl-dev" older than 7 days
 # 2. All stopped Docker containers
 # 3. Dangling images and unused build cache
+# 4. Old GPU core dump files (gpucore.*) older than 3 days
 #
 # Usage:
-#     bash cron/docker_cleanup.sh
+#     bash cron/system_cleanup.sh
 #
 # Optional environment variables:
-#   CLEANUP_AGE_DAYS: Number of days to keep images (default: 7)
+#   CLEANUP_AGE_DAYS: Number of days to keep Docker images (default: 7)
+#   GPUCORE_AGE_DAYS: Number of days to keep GPU core dumps (default: 3)
+#   GPUCORE_SEARCH_DIR: Directory to search for gpucore files (default: script parent dir)
 #   DRY_RUN: Set to "true" to simulate without actually deleting (default: false)
+#   CRITICAL_SPACE_GB: Free space threshold for aggressive cleanup (default: 200)
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
 
 readonly CLEANUP_AGE_DAYS="${CLEANUP_AGE_DAYS:-7}"
 readonly DRY_RUN="${DRY_RUN:-false}"
-readonly LOG_PREFIX="[docker-cleanup]"
+readonly LOG_PREFIX="[system-cleanup]"
 readonly CRITICAL_SPACE_GB="${CRITICAL_SPACE_GB:-200}"
 readonly TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
+readonly GPUCORE_AGE_DAYS="${GPUCORE_AGE_DAYS:-3}"  # Keep GPU core dumps for 3 days by default
+readonly GPUCORE_SEARCH_DIR="${GPUCORE_SEARCH_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 ###########################################################################
 # Helper Functions
@@ -98,9 +104,11 @@ EOF
 ###########################################################################
 
 log_info "=========================================="
-log_info "Docker Cleanup Script Started"
+log_info "Docker & GPU Core Cleanup Script Started"
 log_info "Date: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-log_info "Cleanup images older than: ${CLEANUP_AGE_DAYS} days"
+log_info "Cleanup Docker images older than: ${CLEANUP_AGE_DAYS} days"
+log_info "Cleanup GPU core dumps older than: ${GPUCORE_AGE_DAYS} days"
+log_info "GPU core search directory: ${GPUCORE_SEARCH_DIR}"
 log_info "Critical space threshold: ${CRITICAL_SPACE_GB} GB"
 log_info "Dry run mode: ${DRY_RUN}"
 log_info "=========================================="
@@ -228,7 +236,58 @@ else
 fi
 
 ###########################################################################
-# 4. Remove other old images if in aggressive mode or disk still critically low
+# 4. Remove old GPU core dump files
+###########################################################################
+
+log_info "Step 4: Removing old GPU core dump files (gpucore.*)..."
+
+# Use more aggressive cleanup for GPU cores in critical mode
+EFFECTIVE_GPUCORE_DAYS=$GPUCORE_AGE_DAYS
+if [ "$AGGRESSIVE_CLEANUP" = "true" ]; then
+    EFFECTIVE_GPUCORE_DAYS=1
+    log_warning "Using aggressive cleanup: removing GPU core dumps older than ${EFFECTIVE_GPUCORE_DAYS} day(s)"
+fi
+
+# Find GPU core dump files older than threshold
+GPUCORE_FILES=$(find "$GPUCORE_SEARCH_DIR" -maxdepth 1 -type f -name "gpucore.*" -mtime +${EFFECTIVE_GPUCORE_DAYS} 2>/dev/null || true)
+
+if [ -n "$GPUCORE_FILES" ]; then
+    GPUCORE_COUNT=$(echo "$GPUCORE_FILES" | wc -l)
+    GPUCORE_SIZE=0
+
+    # Calculate total size
+    while IFS= read -r GPUCORE_FILE; do
+        if [ -f "$GPUCORE_FILE" ]; then
+            FILE_SIZE=$(stat -c%s "$GPUCORE_FILE" 2>/dev/null || echo "0")
+            GPUCORE_SIZE=$((GPUCORE_SIZE + FILE_SIZE))
+        fi
+    done <<< "$GPUCORE_FILES"
+
+    GPUCORE_SIZE_GB=$((GPUCORE_SIZE / 1024 / 1024 / 1024))
+    log_info "Found $GPUCORE_COUNT GPU core dump file(s) older than ${EFFECTIVE_GPUCORE_DAYS} day(s) (total: ~${GPUCORE_SIZE_GB} GB)"
+
+    if [ "$DRY_RUN" = "true" ]; then
+        while IFS= read -r GPUCORE_FILE; do
+            log_info "[DRY RUN] Would remove: $(basename "$GPUCORE_FILE")"
+        done <<< "$GPUCORE_FILES"
+    else
+        REMOVED_GPUCORE_COUNT=0
+        while IFS= read -r GPUCORE_FILE; do
+            if rm -f "$GPUCORE_FILE" 2>/dev/null; then
+                log_success "Removed: $(basename "$GPUCORE_FILE")"
+                REMOVED_GPUCORE_COUNT=$((REMOVED_GPUCORE_COUNT + 1))
+            else
+                log_warning "Failed to remove: $(basename "$GPUCORE_FILE")"
+            fi
+        done <<< "$GPUCORE_FILES"
+        log_success "Removed $REMOVED_GPUCORE_COUNT GPU core dump file(s), freed ~${GPUCORE_SIZE_GB} GB"
+    fi
+else
+    log_info "No old GPU core dump files found"
+fi
+
+###########################################################################
+# 5. Remove other old images if in aggressive mode or disk still critically low
 ###########################################################################
 
 CURRENT_FREE_GB=$(get_free_space_gb)
