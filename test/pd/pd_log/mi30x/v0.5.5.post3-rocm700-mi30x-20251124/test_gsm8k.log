@@ -1,0 +1,55 @@
+======================================================================
+GSM8K Benchmark - PD Testing
+======================================================================
+Host: http://10.194.129.138:30028
+Model: DeepSeek-V3-0324
+Num Questions: 200
+Parallelism: 16
+Num Shots: 5
+Max New Tokens: 512
+======================================================================
+Downloading GSM8K dataset from https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl...
+✓ Downloaded 1319 questions
+Loaded 1319 examples
+✓ Server is healthy
+
+Running benchmark with 16 parallel requests...
+Progress: 100/200 questions (0.17 QPS, Acc: 0.0000)
+Progress: 200/200 questions (0.33 QPS, Acc: 0.0000)
+
+======================================================================
+RESULTS
+======================================================================
+Total Questions: 200
+Correct: 0
+Incorrect: 200
+Invalid: 200
+Accuracy: 0.0000
+Invalid Rate: 1.0000
+Total Time: 605.00s
+Questions per Second: 0.33
+======================================================================
+
+Sample Errors (first 5):
+
+1. Q0
+   Expected: 18, Got: -9999999
+   Error: HTTPConnectionPool(host='10.194.129.138', port=30028): Read timed out. (read timeout=600)
+
+2. Q1
+   Expected: 3, Got: -9999999
+   Error: HTTPConnectionPool(host='10.194.129.138', port=30028): Read timed out. (read timeout=600)
+
+3. Q2
+   Expected: 70000, Got: -9999999
+   Error: HTTPConnectionPool(host='10.194.129.138', port=30028): Read timed out. (read timeout=600)
+
+4. Q3
+   Expected: 540, Got: -9999999
+   Error: HTTPConnectionPool(host='10.194.129.138', port=30028): Read timed out. (read timeout=600)
+
+5. Q4
+   Expected: 20, Got: -9999999
+   Error: HTTPConnectionPool(host='10.194.129.138', port=30028): Read timed out. (read timeout=600)
+
+✓ Detailed errors saved to: /tmp/gsm8k_errors_detailed.json
