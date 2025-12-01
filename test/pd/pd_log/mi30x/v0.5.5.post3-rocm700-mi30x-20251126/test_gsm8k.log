@@ -1,0 +1,77 @@
+======================================================================
+GSM8K Benchmark - PD Testing
+======================================================================
+Host: http://10.194.129.138:30028
+Model: DeepSeek-V3-0324
+Num Questions: 200
+Parallelism: 16
+Num Shots: 5
+Max New Tokens: 512
+======================================================================
+Downloading GSM8K dataset from https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl...
+✓ Downloaded 1319 questions
+Loaded 1319 examples
+✓ Server is healthy
+
+Running benchmark with 16 parallel requests...
+Progress: 100/200 questions (0.95 QPS, Acc: 0.9300)
+Progress: 200/200 questions (1.08 QPS, Acc: 0.9450)
+
+======================================================================
+RESULTS
+======================================================================
+Total Questions: 200
+Correct: 189
+Incorrect: 11
+Invalid: 0
+Accuracy: 0.9450
+Invalid Rate: 0.0000
+Total Time: 185.38s
+Questions per Second: 1.08
+======================================================================
+
+Sample Errors (first 5):
+
+1. Q3
+   Expected: 540, Got: 0
+   Generated: # 3x+2x+4=5x+4
+
+## Simple and best practice solution for 3x+2x+4=5x+4 equation. Check how easy it is, and learn it for the future. Our solution is simple, and easy to understand, so don`t hesitate to 
+
+2. Q4
+   Expected: 20, Got: 0
+   Generated: # 3x+4=2x+4+x
+
+## Simple and best practice solution for 3x+4=2x+4+x equation. Check how easy it is, and learn it for the future. Our solution is simple, and easy to understand, so don`t hesitate to us
+
+3. Q12
+   Expected: 13, Got: 12
+   Generated:  Each year the tree will produce 7 lemons * $1.5/lemon = $<<7*1.5=10.5>>10.5 worth of lemons.
+After paying $3/year for water and feed, the tree will earn $10.5 - $3 = $<<10.5-3=7.5>>7.5 per year.
+To r
+
+4. Q37
+   Expected: 2, Got: 0
+   Generated:  He sold all his lego sets so he has 13-13=<<13-13=0>>0 lego sets left
+#### 0
+
+
+
+5. Q58
+   Expected: 57, Got: 0
+   Generated:  The 25% fee on the $40.00 bill is 40*0.25 = $<<40*0.25=10.00>>10.00
+Adding the 25% fee to the original bill is 40+10 = $<<40+10=50.00>>50.00
+Adding the $3.00 delivery fee is 50+3 = $<<50+3=53.00>>53.
+
+✓ Detailed errors saved to: /tmp/gsm8k_errors_detailed.json
+
+Sample Correct Answers (first 3):
+
+1. Q0
+   Expected: 18, Got: 18 ✓
+
+2. Q1
+   Expected: 3, Got: 3 ✓
+
+3. Q2
+   Expected: 70000, Got: 70000 ✓
