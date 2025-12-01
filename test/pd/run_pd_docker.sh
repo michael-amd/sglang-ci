@@ -300,6 +300,13 @@ STEP3_START=$(date +%s)
 
 # Build decode server environment variables
 DECODE_ENV_ARGS="-e HIP_VISIBLE_DEVICES=4,5,6,7 -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib"
+
+# Set KV cache transfer timeout to 600s (10 minutes) for PD disaggregation
+# Default 300s is too short for GSM8K with long 5-shot prompts
+# See: PD_TEST_FIXES_20251123.md for context on timeout requirements
+DECODE_ENV_ARGS="${DECODE_ENV_ARGS} -e SGLANG_DISAGGREGATION_WAITING_TIMEOUT=600"
+echo "[pd-test] Using SGLANG_DISAGGREGATION_WAITING_TIMEOUT=600 (10 minutes for KV cache transfer)"
+
 if [ -n "${SGLANG_ROCM_FUSED_DECODE_MLA:-}" ]; then
   echo "[pd-test] Using SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
   DECODE_ENV_ARGS="${DECODE_ENV_ARGS} -e SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
@@ -640,12 +647,24 @@ if [ $GSM8K_EXIT_CODE -eq 0 ]; then
   # Extract accuracy from log
   GSM8K_ACCURACY=$(grep "Accuracy:" "${LOG_DIR}/test_gsm8k.log" | tail -1 | awk '{print $2}')
   if [ -n "$GSM8K_ACCURACY" ]; then
-    echo "[pd-test] ✓ GSM8K test completed - Accuracy: ${GSM8K_ACCURACY} (Duration: ${GSM8K_DURATION}s)"
+    # Check if accuracy is 0.0000 or invalid (should be treated as FAIL)
+    # Valid accuracy should be > 0.0 for a meaningful test
+    if [ "$GSM8K_ACCURACY" = "0.0000" ] || [ "$GSM8K_ACCURACY" = "0.0" ] || [ "$GSM8K_ACCURACY" = "0" ]; then
+      echo "[pd-test] ✗ GSM8K test completed but FAILED - Accuracy: ${GSM8K_ACCURACY} (all questions failed/timed out)"
+      echo "[pd-test]    Duration: ${GSM8K_DURATION}s"
+      TEST_EXIT_CODE=1
+      GSM8K_ACCURACY="0.0000"
+      TEST6_RESULT="FAIL"
+    else
+      echo "[pd-test] ✓ GSM8K test completed - Accuracy: ${GSM8K_ACCURACY} (Duration: ${GSM8K_DURATION}s)"
+      TEST6_RESULT="PASS"
+    fi
   else
-    echo "[pd-test] ✓ GSM8K test completed (Duration: ${GSM8K_DURATION}s)"
+    echo "[pd-test] ✗ GSM8K test completed but accuracy could not be extracted (Duration: ${GSM8K_DURATION}s)"
+    TEST_EXIT_CODE=1
     GSM8K_ACCURACY="N/A"
+    TEST6_RESULT="FAIL"
   fi
-  TEST6_RESULT="PASS"
 else
   echo "[pd-test] ✗ GSM8K test failed (exit code: ${GSM8K_EXIT_CODE}, Duration: ${GSM8K_DURATION}s)"
   TEST_EXIT_CODE=1

@@ -129,7 +129,7 @@ log_info "Initial free space: ${INITIAL_FREE_GB} GB"
 
 AGGRESSIVE_CLEANUP=false
 
-if [ "$INITIAL_FREE_GB" -lt "$CRITICAL_SPACE_GB" ]; then
+if [ -n "$INITIAL_FREE_GB" ] && [ "$INITIAL_FREE_GB" -lt "$CRITICAL_SPACE_GB" ]; then
     log_error "CRITICAL: Free space (${INITIAL_FREE_GB} GB) is below threshold (${CRITICAL_SPACE_GB} GB)!"
     log_warning "Switching to AGGRESSIVE cleanup mode"
     AGGRESSIVE_CLEANUP=true
@@ -307,7 +307,7 @@ fi
 CURRENT_FREE_GB=$(get_free_space_gb)
 CURRENT_DISK_PERCENT=$(df / | tail -1 | awk '{print int($5)}')
 
-if [ "$AGGRESSIVE_CLEANUP" = "true" ] || [ "$CURRENT_DISK_PERCENT" -gt 85 ]; then
+if [ "$AGGRESSIVE_CLEANUP" = "true" ] || { [ -n "$CURRENT_DISK_PERCENT" ] && [ "$CURRENT_DISK_PERCENT" -gt 85 ]; }; then
     log_warning "Additional cleanup needed - Free: ${CURRENT_FREE_GB} GB, Usage: ${CURRENT_DISK_PERCENT}%"
     log_info "Removing all unused Docker images older than ${EFFECTIVE_CLEANUP_DAYS} days..."
 
@@ -327,7 +327,7 @@ if [ "$AGGRESSIVE_CLEANUP" = "true" ] || [ "$CURRENT_DISK_PERCENT" -gt 85 ]; the
 
     # Check if cleanup was effective
     AFTER_CLEANUP_FREE_GB=$(get_free_space_gb)
-    if [ "$AFTER_CLEANUP_FREE_GB" -lt "$CRITICAL_SPACE_GB" ]; then
+    if [ -n "$AFTER_CLEANUP_FREE_GB" ] && [ "$AFTER_CLEANUP_FREE_GB" -lt "$CRITICAL_SPACE_GB" ]; then
         log_error "WARNING: Space still critically low after cleanup (${AFTER_CLEANUP_FREE_GB} GB free)"
 
         # Send critical alert
