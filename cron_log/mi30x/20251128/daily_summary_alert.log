@@ -1,0 +1,52 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251128
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251128...
+✅ Docker image date matches expected date (20251128) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-11-28 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-11-28 at 13:30:01 PST
+Hostname: dell300x-pla-t10-23
+Hardware: mi30x
+Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm630-mi30x-20251128
+
+Overall Status:
+• Tasks run: 16/16
+• Passed: 12, Failed: 2, Unknown: 2
+
+Task Results:
+
+Validation & Checks:
+  ✅ Unit Tests: Pass
+  ❌ PD Disaggregation Tests: Failed
+    Error: exit code: 1
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 81.8%) [30m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 92.6%) [33m]
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 0.0%)
+
+Integration Tests:
+  ❌ DeepSeek DP Attention Test: Failed
+    Error: Test failed or did not complete
+  ❓ DeepSeek Torch Compile Test: Unknown
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ gpt-oss-120b-bf16 - GSM8K: 85.8% (threshold ≥ 82.0%)
+  ✅ gpt-oss-20b-bf16 - GSM8K: 51.4% (threshold ≥ 50.0%)
+  ✅ GROK1-FP8 - GSM8K: 82.4% (threshold ≥ 80.0%)
+  ✅ GROK1-IN4 - GSM8K: 81.2% (threshold ≥ 80.0%)
+  ✅ GROK2.5 - GSM8K: 92.8% (threshold ≥ 91.5%)
+  ✅ Qwen3-30B-A3B-Thinking-2507 - GSM8K: 85.9% (threshold ≥ 84.0%)
+  ✅ Llama-4-Maverick-17B-128E-Instruct-FP8 - GSM8K: 93.3% (threshold ≥ 90.0%)
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251128_mi30x_20251128_133001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)

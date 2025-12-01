@@ -1,0 +1,420 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-11-28 08:40:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2426787
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b9f8ac646896
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251128...
+[nightly] Found candidate tag for day -0: v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128...
+v0.5.5.post3-rocm700-mi30x-20251128: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+8d32a84a0d7f: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+1b9ff34abad4: Pulling fs layer
+8e5b8d7df763: Pulling fs layer
+8e122d3f245b: Pulling fs layer
+3c436379c90f: Pulling fs layer
+47f045b0073a: Pulling fs layer
+bd5ab03fedcf: Pulling fs layer
+a66cb87e462f: Pulling fs layer
+47f045b0073a: Waiting
+4e7504cfe733: Pulling fs layer
+8e5b8d7df763: Waiting
+5efeb9aa9161: Pulling fs layer
+e9ac53516abf: Pulling fs layer
+a66cb87e462f: Waiting
+e38bef1bc64e: Pulling fs layer
+9f289891572b: Pulling fs layer
+e9ac53516abf: Waiting
+a71044040ed7: Pulling fs layer
+c1dae47bc9af: Pulling fs layer
+4e7504cfe733: Waiting
+a71044040ed7: Waiting
+5efeb9aa9161: Waiting
+4f4fb700ef54: Download complete
+1b9ff34abad4: Verifying Checksum
+1b9ff34abad4: Download complete
+8d32a84a0d7f: Verifying Checksum
+8d32a84a0d7f: Download complete
+8e5b8d7df763: Verifying Checksum
+8e5b8d7df763: Download complete
+8d32a84a0d7f: Pull complete
+4f4fb700ef54: Pull complete
+1b9ff34abad4: Pull complete
+8e5b8d7df763: Pull complete
+3c436379c90f: Verifying Checksum
+3c436379c90f: Download complete
+bd5ab03fedcf: Verifying Checksum
+bd5ab03fedcf: Download complete
+8e122d3f245b: Verifying Checksum
+8e122d3f245b: Download complete
+4e7504cfe733: Verifying Checksum
+4e7504cfe733: Download complete
+5efeb9aa9161: Verifying Checksum
+5efeb9aa9161: Download complete
+8e122d3f245b: Pull complete
+a66cb87e462f: Verifying Checksum
+a66cb87e462f: Download complete
+e9ac53516abf: Verifying Checksum
+e9ac53516abf: Download complete
+9f289891572b: Download complete
+a71044040ed7: Verifying Checksum
+a71044040ed7: Download complete
+c1dae47bc9af: Verifying Checksum
+c1dae47bc9af: Download complete
+3c436379c90f: Pull complete
+e38bef1bc64e: Verifying Checksum
+e38bef1bc64e: Download complete
+47f045b0073a: Verifying Checksum
+47f045b0073a: Download complete
+47f045b0073a: Pull complete
+bd5ab03fedcf: Pull complete
+a66cb87e462f: Pull complete
+4e7504cfe733: Pull complete
+5efeb9aa9161: Pull complete
+e9ac53516abf: Pull complete
+e38bef1bc64e: Pull complete
+9f289891572b: Pull complete
+a71044040ed7: Pull complete
+c1dae47bc9af: Pull complete
+Digest: sha256:f408253fae72ba9159629978e6e38de859094b5761b525e8268b47a4b2d2f0da
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+docker.io/rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Successfully obtained image for date 20251128: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 1e2081402228
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Creating container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251128
+67fe80a241e8f81674a5855e6ecbcf5a7a4a919806bd0bc7ad30d4880e846527
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+🔧 Testing on platform: mi30x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251128
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+
+=== Testing GPT-OSS-120B on mi30x ===
+🚀 Starting server for GPT-OSS-120B...
+✅ Server ready in 177.71s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+    ⏳ Trial 1 still running... (105s elapsed)
+    ⏳ Trial 1 still running... (120s elapsed)
+    ⏳ Trial 1 still running... (135s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.858, Time: 143.14s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+    ⏳ Trial 2 still running... (90s elapsed)
+    ⏳ Trial 2 still running... (105s elapsed)
+    ⏳ Trial 2 still running... (120s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.862, Time: 130.13s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+    ⏳ Trial 3 still running... (90s elapsed)
+    ⏳ Trial 3 still running... (105s elapsed)
+    ⏳ Trial 3 still running... (120s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.853, Time: 128.13s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-120B on mi30x: PASS [OK]
+   Accuracies: [0.858, 0.862, 0.853]
+   Highest Accuracy: 0.862 (Required: 0.820)
+   Total Time: 579.61s
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ✅ GPT-OSS-120B completed in 579.6s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+
+=== Testing GPT-OSS-20B on mi30x ===
+🚀 Starting server for GPT-OSS-20B...
+✅ Server ready in 88.61s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.505, Time: 94.09s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.537, Time: 81.08s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.501, Time: 78.08s)
+🛑 Stopping server...
+📋 Result for GPT-OSS-20B on mi30x: PASS [OK]
+   Accuracies: [0.505, 0.537, 0.501]
+   Highest Accuracy: 0.537 (Required: 0.500)
+   Total Time: 342.37s
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ✅ GPT-OSS-20B completed in 342.4s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+
+=== Testing QWEN-30B on mi30x ===
+🚀 Starting server for QWEN-30B...
+   ⏳ Kernel compilation in progress... (119s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+✅ Server ready in 163.20s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.857, Time: 89.08s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+    ⏳ Trial 2 still running... (75s elapsed)
+    ⏳ Trial 2 still running... (90s elapsed)
+    ⏳ Trial 2 still running... (105s elapsed)
+    ⏳ Trial 2 still running... (120s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.862, Time: 129.13s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+    ⏳ Trial 3 still running... (45s elapsed)
+    ⏳ Trial 3 still running... (60s elapsed)
+    ⏳ Trial 3 still running... (75s elapsed)
+    ⏳ Trial 3 still running... (90s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.857, Time: 92.09s)
+🛑 Stopping server...
+📋 Result for QWEN-30B on mi30x: PASS [OK]
+   Accuracies: [0.857, 0.862, 0.857]
+   Highest Accuracy: 0.862 (Required: 0.840)
+   Total Time: 474.01s
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ✅ QWEN-30B completed in 474.0s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+
+=== Testing GROK1-IN4 on mi30x ===
+🚀 Starting server for GROK1-IN4...
+   ⏳ Kernel compilation in progress... (138s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+✅ Server ready in 184.84s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.812, Time: 34.03s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+    ⏳ Trial 2 still running... (45s elapsed)
+    ⏳ Trial 2 still running... (60s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.804, Time: 68.07s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.820, Time: 32.03s)
+🛑 Stopping server...
+📋 Result for GROK1-IN4 on mi30x: PASS [OK]
+   Accuracies: [0.812, 0.804, 0.82]
+   Highest Accuracy: 0.820 (Required: 0.800)
+   Total Time: 319.48s
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ✅ GROK1-IN4 completed in 319.5s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+
+=== Testing GROK1-FP8 on mi30x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+✅ Server ready in 177.73s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.824, Time: 34.03s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.825, Time: 32.03s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.823, Time: 32.03s)
+🛑 Stopping server...
+📋 Result for GROK1-FP8 on mi30x: PASS [OK]
+   Accuracies: [0.824, 0.825, 0.823]
+   Highest Accuracy: 0.825 (Required: 0.800)
+   Total Time: 276.32s
+Progress: [████████████████████████████░░░░░░░░░░░░] 5/7 (71.4%) ✅ GROK1-FP8 completed in 276.3s
+
+🚀 [6/7] Starting GROK2.5...
+============================================================
+Progress: [████████████████████████████░░░░░░░░░░░░] 6/7 (71.4%)
+
+=== Testing GROK2.5 on mi30x ===
+🚀 Starting server for GROK2.5...
+✅ Server ready in 180.72s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.926, Time: 38.04s)
+  📊 Trial 2/3 starting...
+    ⏳ Trial 2 still running... (30s elapsed)
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.928, Time: 34.03s)
+  📊 Trial 3/3 starting...
+    ⏳ Trial 3 still running... (30s elapsed)
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.929, Time: 34.03s)
+🛑 Stopping server...
+📋 Result for GROK2.5 on mi30x: PASS [OK]
+   Accuracies: [0.926, 0.928, 0.929]
+   Highest Accuracy: 0.929 (Required: 0.915)
+   Total Time: 287.34s
+Progress: [██████████████████████████████████░░░░░░] 6/7 (85.7%) ✅ GROK2.5 completed in 287.3s
+
+🚀 [7/7] Starting llama4...
+============================================================
+Progress: [██████████████████████████████████░░░░░░] 7/7 (85.7%)
+
+=== Testing llama4 on mi30x ===
+🚀 Starting server for llama4...
+✅ Server ready in 213.27s
+🧪 Running 3 benchmark trials...
+  📊 Trial 1/3 starting...
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.933, Time: 29.03s)
+  📊 Trial 2/3 starting...
+  ✅ Trial 2: PASS [OK] (Accuracy: 0.937, Time: 28.03s)
+  📊 Trial 3/3 starting...
+  ✅ Trial 3: PASS [OK] (Accuracy: 0.930, Time: 28.03s)
+🛑 Stopping server...
+📋 Result for llama4 on mi30x: PASS [OK]
+   Accuracies: [0.933, 0.937, 0.93]
+   Highest Accuracy: 0.937 (Required: 0.900)
+   Total Time: 298.86s
+Progress: [████████████████████████████████████████] 7/7 (100.0%) ✅ llama4 completed in 298.9s
+
+🎯 All tests completed!
+📊 Total execution time: 2577.98s (43.0 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251128/timing_summary_20251128_084300.log
+
+=== Final Summary ===
+✅ GPT-OSS-120B: PASS [OK]
+✅ GPT-OSS-20B: PASS [OK]
+✅ QWEN-30B: PASS [OK]
+✅ GROK1-IN4: PASS [OK]
+✅ GROK1-FP8: PASS [OK]
+✅ GROK2.5: PASS [OK]
+✅ llama4: PASS [OK]
+
+📈 Overall: 7/7 models passed (100.0%)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Sending Teams notification for sanity check results...
+🔍 Sanity check mode: Processing sanity check results
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251128/timing_summary_20251128_084300.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251128/timing_summary_20251128_084300.log
+✅ Successfully sent sanity check pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[nightly] Teams notification sent successfully for sanity check
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251128
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251128 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
