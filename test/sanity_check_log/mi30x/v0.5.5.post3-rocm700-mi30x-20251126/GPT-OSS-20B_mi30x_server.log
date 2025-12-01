@@ -1,0 +1,281 @@
+INFO 11-26 08:45:51 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+[2025-11-26 08:45:58] WARNING server_args.py:1109: Detected GPT-OSS model, enabling triton_kernels MOE kernel.
+[2025-11-26 08:45:58] server_args=ServerArgs(model_path='/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16', tokenizer_path='/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16', tokenizer_mode='auto', tokenizer_worker_num=1, skip_tokenizer_init=False, load_format='auto', model_loader_extra_config='{}', trust_remote_code=True, context_length=None, is_embedding=False, enable_multimodal=None, revision=None, model_impl='auto', dllm_algorithm=None, dllm_block_size=None, host='127.0.0.1', port=30000, fastapi_root_path='', grpc_mode=False, skip_server_warmup=False, warmups=None, nccl_port=None, checkpoint_engine_wait_weights_before_ready=False, dtype='auto', quantization=None, quantization_param_path=None, kv_cache_dtype='auto', enable_fp32_lm_head=False, modelopt_quant=None, modelopt_checkpoint_restore_path=None, modelopt_checkpoint_save_path=None, modelopt_export_path=None, quantize_and_serve=False, mem_fraction_static=0.85, max_running_requests=128, max_queued_requests=None, max_total_tokens=None, chunked_prefill_size=130172, max_prefill_tokens=16384, schedule_policy='fcfs', enable_priority_scheduling=False, abort_on_priority_when_disabled=False, schedule_low_priority_values_first=False, priority_scheduling_preemption_threshold=10, schedule_conservativeness=1.0, page_size=1, hybrid_kvcache_ratio=None, swa_full_tokens_ratio=0.8, disable_hybrid_swa_memory=True, radix_eviction_policy='lru', device='cuda', tp_size=8, pp_size=1, pp_max_micro_batch_size=None, stream_interval=1, stream_output=False, random_seed=168905677, constrained_json_whitespace_pattern=None, constrained_json_disable_any_whitespace=False, watchdog_timeout=300, dist_timeout=None, download_dir=None, base_gpu_id=0, gpu_id_step=1, sleep_on_idle=False, mm_process_config={}, log_level='info', log_level_http=None, log_requests=False, log_requests_level=2, crash_dump_folder=None, show_time_cost=False, enable_metrics=False, enable_metrics_for_all_schedulers=False, tokenizer_metrics_custom_labels_header='x-custom-labels', tokenizer_metrics_allowed_custom_labels=None, bucket_time_to_first_token=None, bucket_inter_token_latency=None, bucket_e2e_request_latency=None, collect_tokens_histogram=False, prompt_tokens_buckets=None, generation_tokens_buckets=None, gc_warning_threshold_secs=0.0, decode_log_interval=40, enable_request_time_stats_logging=False, kv_events_config=None, enable_trace=False, otlp_traces_endpoint='localhost:4317', export_metrics_to_file=False, export_metrics_to_file_dir=None, api_key=None, served_model_name='/mnt/raid/models/huggingface/lmsys/gpt-oss-20b-bf16', weight_version='default', chat_template=None, completion_template=None, file_storage_path='sglang_storage', enable_cache_report=False, reasoning_parser=None, tool_call_parser=None, tool_server=None, sampling_defaults='model', dp_size=1, load_balance_method='round_robin', load_watch_interval=0.1, prefill_round_robin_balance=False, dist_init_addr=None, nnodes=1, node_rank=0, json_model_override_args='{}', preferred_sampling_params=None, enable_lora=None, max_lora_rank=None, lora_target_modules=None, lora_paths=None, max_loaded_loras=None, max_loras_per_batch=8, lora_eviction_policy='lru', lora_backend='csgmv', max_lora_chunk_size=16, attention_backend='triton', decode_attention_backend=None, prefill_attention_backend=None, sampling_backend='pytorch', grammar_backend='xgrammar', mm_attention_backend=None, nsa_prefill_backend='flashmla_sparse', nsa_decode_backend='fa3', speculative_algorithm=None, speculative_draft_model_path=None, speculative_draft_model_revision=None, speculative_draft_load_format=None, speculative_num_steps=None, speculative_eagle_topk=None, speculative_num_draft_tokens=None, speculative_accept_threshold_single=1.0, speculative_accept_threshold_acc=1.0, speculative_token_map=None, speculative_attention_mode='prefill', speculative_moe_runner_backend=None, speculative_ngram_min_match_window_size=1, speculative_ngram_max_match_window_size=12, speculative_ngram_min_bfs_breadth=1, speculative_ngram_max_bfs_breadth=10, speculative_ngram_match_type='BFS', speculative_ngram_branch_length=18, speculative_ngram_capacity=10000000, ep_size=1, moe_a2a_backend='none', moe_runner_backend='triton_kernel', flashinfer_mxfp4_moe_precision='default', enable_flashinfer_allreduce_fusion=False, deepep_mode='auto', ep_num_redundant_experts=0, ep_dispatch_algorithm=None, init_expert_location='trivial', enable_eplb=False, eplb_algorithm='auto', eplb_rebalance_num_iterations=1000, eplb_rebalance_layers_per_chunk=None, eplb_min_rebalancing_utilization_threshold=1.0, expert_distribution_recorder_mode=None, expert_distribution_recorder_buffer_size=1000, enable_expert_distribution_metrics=False, deepep_config=None, moe_dense_tp_size=None, elastic_ep_backend=None, mooncake_ib_device=None, max_mamba_cache_size=None, mamba_ssm_dtype='float32', mamba_full_memory_ratio=0.9, enable_hierarchical_cache=False, hicache_ratio=2.0, hicache_size=0, hicache_write_policy='write_through', hicache_io_backend='kernel', hicache_mem_layout='layer_first', hicache_storage_backend=None, hicache_storage_prefetch_policy='best_effort', hicache_storage_backend_extra_config=None, enable_lmcache=False, kt_weight_path=None, kt_method='AMXINT4', kt_cpuinfer=None, kt_threadpool_count=2, kt_num_gpu_experts=None, kt_max_deferred_experts_per_token=None, enable_double_sparsity=False, ds_channel_config_path=None, ds_heavy_channel_num=32, ds_heavy_token_num=256, ds_heavy_channel_type='qk', ds_sparse_decode_threshold=4096, cpu_offload_gb=0, offload_group_size=-1, offload_num_in_group=1, offload_prefetch_step=1, offload_mode='cpu', multi_item_scoring_delimiter=None, disable_radix_cache=False, cuda_graph_max_bs=512, cuda_graph_bs=[1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], disable_cuda_graph=False, disable_cuda_graph_padding=False, enable_profile_cuda_graph=False, enable_cudagraph_gc=False, enable_layerwise_nvtx_marker=False, enable_nccl_nvls=False, enable_symm_mem=False, disable_flashinfer_cutlass_moe_fp4_allgather=False, enable_tokenizer_batch_encode=False, disable_tokenizer_batch_decode=False, disable_outlines_disk_cache=False, disable_custom_all_reduce=False, enable_mscclpp=False, enable_torch_symm_mem=False, disable_overlap_schedule=False, enable_mixed_chunk=False, enable_dp_attention=False, enable_dp_lm_head=False, enable_two_batch_overlap=False, enable_single_batch_overlap=False, tbo_token_distribution_threshold=0.48, enable_torch_compile=False, enable_piecewise_cuda_graph=False, enable_torch_compile_debug_mode=False, torch_compile_max_bs=32, piecewise_cuda_graph_max_tokens=4096, piecewise_cuda_graph_tokens=[4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 288, 320, 352, 384, 416, 448, 480, 512, 640, 768, 896, 1024, 1152, 1280, 1408, 1536, 1664, 1792, 1920, 2048, 2176, 2304, 2432, 2560, 2688, 2816, 2944, 3072, 3200, 3328, 3456, 3584, 3712, 3840, 3968, 4096], piecewise_cuda_graph_compiler='eager', torchao_config='', enable_nan_detection=False, enable_p2p_check=False, triton_attention_reduce_in_fp32=False, triton_attention_num_kv_splits=16, triton_attention_split_tile_size=None, num_continuous_decode_steps=1, delete_ckpt_after_loading=False, enable_memory_saver=False, enable_weights_cpu_backup=False, enable_draft_weights_cpu_backup=False, allow_auto_truncate=False, enable_custom_logit_processor=False, flashinfer_mla_disable_ragged=False, disable_shared_experts_fusion=False, disable_chunked_prefix_cache=False, disable_fast_image_processor=False, keep_mm_feature_on_device=False, enable_return_hidden_states=False, scheduler_recv_interval=1, numa_node=None, enable_deterministic_inference=False, rl_on_policy_target=None, enable_attn_tp_input_scattered=False, enable_nsa_prefill_context_parallel=False, enable_dynamic_batch_tokenizer=False, dynamic_batch_tokenizer_batch_size=32, dynamic_batch_tokenizer_batch_timeout=0.002, debug_tensor_dump_output_folder=None, debug_tensor_dump_layers=None, debug_tensor_dump_input_file=None, debug_tensor_dump_inject=False, disaggregation_mode='null', disaggregation_transfer_backend='mooncake', disaggregation_bootstrap_port=8998, disaggregation_decode_tp=None, disaggregation_decode_dp=None, disaggregation_prefill_pp=1, disaggregation_ib_device=None, disaggregation_decode_enable_offload_kvcache=False, num_reserved_decode_tokens=512, disaggregation_decode_polling_interval=1, custom_weight_loader=[], weight_loader_disable_mmap=False, remote_instance_weight_loader_seed_instance_ip=None, remote_instance_weight_loader_seed_instance_service_port=None, remote_instance_weight_loader_send_weights_group_ports=None, enable_pdmux=False, pdmux_config_path=None, sm_group_num=8, mm_max_concurrent_calls=32, mm_per_request_timeout=10.0, enable_broadcast_mm_inputs_process=False, decrypted_config_file=None, decrypted_draft_config_file=None, mm_enable_dp_encoder=False, forward_hooks=None)
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[2025-11-26 08:45:59] Using default HuggingFace chat template with detected content format: string
+INFO 11-26 08:46:05 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:05 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:05 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:05 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+INFO 11-26 08:46:06 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:06 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:06 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:06 [__init__.py:241] Automatically detected platform rocm.
+INFO 11-26 08:46:06 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+[2025-11-26 08:46:11 TP7] Process 2794 gpu_id 7 is running on CPUs: [84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]
+[2025-11-26 08:46:11 TP5] Process 2792 gpu_id 5 is running on CPUs: [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+[2025-11-26 08:46:12 TP7] Init torch distributed begin.
+[2025-11-26 08:46:12 TP5] Init torch distributed begin.
+[2025-11-26 08:46:12 TP4] Process 2791 gpu_id 4 is running on CPUs: [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+[2025-11-26 08:46:12 TP2] Process 2789 gpu_id 2 is running on CPUs: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+[2025-11-26 08:46:12 TP1] Process 2788 gpu_id 1 is running on CPUs: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+[2025-11-26 08:46:12 TP3] Process 2790 gpu_id 3 is running on CPUs: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
+[2025-11-26 08:46:13 TP6] Process 2793 gpu_id 6 is running on CPUs: [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83]
+[2025-11-26 08:46:13 TP0] Process 2787 gpu_id 0 is running on CPUs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+[2025-11-26 08:46:13 TP4] Init torch distributed begin.
+[2025-11-26 08:46:13 TP2] Init torch distributed begin.
+[2025-11-26 08:46:13 TP1] Init torch distributed begin.
+[2025-11-26 08:46:13 TP3] Init torch distributed begin.
+[2025-11-26 08:46:13 TP6] Init torch distributed begin.
+[2025-11-26 08:46:13 TP0] Init torch distributed begin.
+[Gloo] Rank 7 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 1 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 2 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 4 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 6 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 5 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 1 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 2 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 4 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 6 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 5 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 7 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[2025-11-26 08:46:15 TP0] sglang is using nccl==2.26.6
+[2025-11-26 08:46:22 TP3] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP0] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP2] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP7] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP1] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP5] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP6] Using AiterCustomAllreduce for ROCm.
+[2025-11-26 08:46:22 TP4] Using AiterCustomAllreduce for ROCm.
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 1 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 2 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 4 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 5 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 7 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[Gloo] Rank 6 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[2025-11-26 08:46:22 TP0] Init torch distributed ends. mem usage=2.95 GB
+[2025-11-26 08:46:22 TP6] Init torch distributed ends. mem usage=3.24 GB
+[2025-11-26 08:46:22 TP5] Init torch distributed ends. mem usage=3.22 GB
+[2025-11-26 08:46:22 TP4] Init torch distributed ends. mem usage=3.31 GB
+[2025-11-26 08:46:22 TP7] Init torch distributed ends. mem usage=3.23 GB
+[2025-11-26 08:46:22 TP3] Init torch distributed ends. mem usage=3.36 GB
+[2025-11-26 08:46:22 TP2] Init torch distributed ends. mem usage=3.37 GB
+[2025-11-26 08:46:22 TP1] Init torch distributed ends. mem usage=3.37 GB
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+/opt/venv/lib/python3.10/site-packages/apex/transformer/functional/fused_rope.py:49: UserWarning: Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0
+  warnings.warn("Aiter backend is selected for fused RoPE. This has lower precision. To disable aiter, export USE_ROCM_AITER_ROPE_BACKEND=0", UserWarning)
+[2025-11-26 08:46:23 TP7] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP4] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP5] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP6] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP3] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP0] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP1] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP2] Ignore import error when loading sglang.srt.models.mindspore: name 'ms' is not defined
+[2025-11-26 08:46:23 TP7] Load weight begin. avail mem=188.23 GB
+[2025-11-26 08:46:23 TP6] Load weight begin. avail mem=188.22 GB
+[2025-11-26 08:46:23 TP5] Load weight begin. avail mem=188.24 GB
+[2025-11-26 08:46:23 TP4] Load weight begin. avail mem=188.15 GB
+[2025-11-26 08:46:23 TP3] Load weight begin. avail mem=188.10 GB
+[2025-11-26 08:46:23 TP2] Load weight begin. avail mem=188.09 GB
+[2025-11-26 08:46:23 TP0] Load weight begin. avail mem=188.51 GB
+[2025-11-26 08:46:23 TP1] Load weight begin. avail mem=188.10 GB
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+Loading safetensors checkpoint shards:   0% Completed | 0/5 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  60% Completed | 3/5 [00:00<00:00, 14.16it/s]
+Loading safetensors checkpoint shards: 100% Completed | 5/5 [00:00<00:00, 11.63it/s]
+Loading safetensors checkpoint shards: 100% Completed | 5/5 [00:00<00:00, 12.02it/s]
+
+[2025-11-26 08:46:33 TP6] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.22 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP7] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.23 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP3] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.11 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP5] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.24 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP4] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.15 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP0] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.52 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP2] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.09 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP1] Load weight end. type=GptOssForCausalLM, dtype=torch.bfloat16, avail mem=183.10 GB, mem usage=5.00 GB.
+[2025-11-26 08:46:34 TP0] Using KV cache dtype: torch.bfloat16
+[2025-11-26 08:46:34 TP0] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP2] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP5] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP4] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP0] Memory pool end. avail mem=28.28 GB
+[2025-11-26 08:46:34 TP2] Memory pool end. avail mem=27.86 GB
+[2025-11-26 08:46:34 TP5] Memory pool end. avail mem=28.00 GB
+[2025-11-26 08:46:34 TP4] Memory pool end. avail mem=27.92 GB
+[2025-11-26 08:46:34 TP3] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP1] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP7] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP3] Memory pool end. avail mem=27.87 GB
+[2025-11-26 08:46:34 TP6] KV Cache is allocated. #tokens: 27066589, K size: 77.44 GB, V size: 77.44 GB
+[2025-11-26 08:46:34 TP1] Memory pool end. avail mem=27.86 GB
+[2025-11-26 08:46:34 TP7] Memory pool end. avail mem=27.99 GB
+[2025-11-26 08:46:34 TP6] Memory pool end. avail mem=27.98 GB
+[2025-11-26 08:46:37 TP0] Capture cuda graph begin. This can take up to several minutes. avail mem=27.96 GB
+[2025-11-26 08:46:37 TP0] Capture cuda graph bs [1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128]
+[2025-11-26 08:46:37 TP2] Capture cuda graph begin. This can take up to several minutes. avail mem=27.54 GB
+[2025-11-26 08:46:37 TP1] Capture cuda graph begin. This can take up to several minutes. avail mem=27.54 GB
+[2025-11-26 08:46:37 TP5] Capture cuda graph begin. This can take up to several minutes. avail mem=27.68 GB
+[2025-11-26 08:46:37 TP3] Capture cuda graph begin. This can take up to several minutes. avail mem=27.55 GB
+[2025-11-26 08:46:37 TP7] Capture cuda graph begin. This can take up to several minutes. avail mem=27.67 GB
+[2025-11-26 08:46:37 TP4] Capture cuda graph begin. This can take up to several minutes. avail mem=27.60 GB
+[2025-11-26 08:46:37 TP6] Capture cuda graph begin. This can take up to several minutes. avail mem=27.66 GB
+  0%|          | 0/20 [00:00<?, ?it/s]Capturing batches (bs=128 avail_mem=27.71 GB):   0%|          | 0/20 [00:00<?, ?it/s]Capturing batches (bs=128 avail_mem=27.71 GB):   0%|          | 0/20 [00:10<?, ?it/s]
+[aiter] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP7] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP3] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP1] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP2] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP0] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP4] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP5] Registering 0 cuda graph addresses
+[aiter] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP6] Registering 0 cuda graph addresses
+[2025-11-26 08:46:56 TP7] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 2628, in run_scheduler_process
+    scheduler = Scheduler(
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 314, in __init__
+    self.tp_worker = TpModelWorker(
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 241, in __init__
+    self._model_runner = ModelRunner(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 339, in __init__
+    self.initialize(min_per_gpu_memory)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 529, in initialize
+    self.init_device_graphs()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 2124, in init_device_graphs
+    self.graph_runner = graph_runners[self.device](self)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 344, in __init__
+    self.capture()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 502, in capture
+    _capture_one_stream()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 486, in _capture_one_stream
+    ) = self.capture_one_batch_size(bs, forward, stream_idx)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 693, in capture_one_batch_size
+    run_once()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 680, in run_once
+    logits_output_or_pp_proxy_tensors = forward(
+  File "/opt/venv/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/models/gpt_oss.py", line 611, in forward
+    hidden_states = self.model(
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/models/gpt_oss.py", line 542, in forward
+    hidden_states, residual = layer(
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/models/gpt_oss.py", line 450, in forward
+    hidden_states, residual = self.layer_communicator.prepare_mlp(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/communicator.py", line 497, in prepare_mlp
+    return self._communicate_with_all_reduce_and_layer_norm_fn(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/communicator.py", line 781, in _gather_hidden_states_and_residual
+    hidden_states, residual = layernorm(hidden_states, residual)
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/custom_op.py", line 67, in forward
+    return self._forward_method(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/layernorm.py", line 168, in forward_hip
+    fused_add_rms_norm(x, residual, self.weight.data, self.variance_epsilon)
+TypeError: fused_add_rms_norm() missing 2 required positional arguments: 'weight' and 'epsilon'
+
+[2025-11-26 08:46:56] Received sigquit from a child process. It usually means the child failed.
+Killed
