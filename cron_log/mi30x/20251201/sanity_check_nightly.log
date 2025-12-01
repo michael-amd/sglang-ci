@@ -1,0 +1,250 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-12-01 08:40:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3354288
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: b2587cc78fbd
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251201...
+[nightly] Found candidate tag for day -0: v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201...
+v0.5.5.post3-rocm700-mi30x-20251201: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+ef694c84247b: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+87c707d79ba1: Pulling fs layer
+642a026b9f9a: Pulling fs layer
+a955c65b8d3c: Pulling fs layer
+d7a221f0e75f: Pulling fs layer
+a6bd6c911983: Pulling fs layer
+642a026b9f9a: Waiting
+a955c65b8d3c: Waiting
+7f604371fde3: Pulling fs layer
+3ac8ac8963fa: Pulling fs layer
+a6bd6c911983: Waiting
+3ac8ac8963fa: Waiting
+0e137b6ff69e: Pulling fs layer
+4a96c87ebdfa: Pulling fs layer
+7aca84847f72: Pulling fs layer
+e6534e896da2: Pulling fs layer
+0e137b6ff69e: Waiting
+38eaef4d0058: Pulling fs layer
+4a96c87ebdfa: Waiting
+f613ba629b12: Pulling fs layer
+e6534e896da2: Waiting
+f57b7856b2f9: Pulling fs layer
+38eaef4d0058: Waiting
+7aca84847f72: Waiting
+f613ba629b12: Waiting
+f57b7856b2f9: Waiting
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+87c707d79ba1: Verifying Checksum
+87c707d79ba1: Download complete
+ef694c84247b: Verifying Checksum
+ef694c84247b: Download complete
+642a026b9f9a: Verifying Checksum
+642a026b9f9a: Download complete
+ef694c84247b: Pull complete
+4f4fb700ef54: Pull complete
+87c707d79ba1: Pull complete
+642a026b9f9a: Pull complete
+d7a221f0e75f: Verifying Checksum
+d7a221f0e75f: Download complete
+7f604371fde3: Verifying Checksum
+7f604371fde3: Download complete
+a955c65b8d3c: Download complete
+0e137b6ff69e: Download complete
+4a96c87ebdfa: Download complete
+a955c65b8d3c: Pull complete
+3ac8ac8963fa: Verifying Checksum
+3ac8ac8963fa: Download complete
+7aca84847f72: Verifying Checksum
+7aca84847f72: Download complete
+f613ba629b12: Verifying Checksum
+f613ba629b12: Download complete
+f57b7856b2f9: Verifying Checksum
+f57b7856b2f9: Download complete
+d7a221f0e75f: Pull complete
+e6534e896da2: Verifying Checksum
+e6534e896da2: Download complete
+a6bd6c911983: Verifying Checksum
+a6bd6c911983: Download complete
+a6bd6c911983: Pull complete
+7f604371fde3: Pull complete
+3ac8ac8963fa: Pull complete
+0e137b6ff69e: Pull complete
+4a96c87ebdfa: Pull complete
+7aca84847f72: Pull complete
+e6534e896da2: Pull complete
+38eaef4d0058: Pull complete
+f613ba629b12: Pull complete
+f57b7856b2f9: Pull complete
+Digest: sha256:3f33ea460c1be113c0f9bb9eb5ff2367cb6b9c1bbe8f6af6f549dbd290e3e3bf
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+docker.io/rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Successfully obtained image for date 20251201: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 7fedda370702
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Creating container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251201
+de5015087b780ace7a0d3cdc53f9d8ec3460261de58a554318ff0e8ed5dafece
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+🔧 Testing on platform: mi30x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251201
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+⏭️  GPT-OSS-120B: SKIPPED (Model path does not exist: /data/lmsys/gpt-oss-120b-bf16)
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ⏭️ GPT-OSS-120B skipped in 0.0s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+⏭️  GPT-OSS-20B: SKIPPED (Model path does not exist: /data/lmsys/gpt-oss-20b-bf16)
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ⏭️ GPT-OSS-20B skipped in 0.0s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+⏭️  QWEN-30B: SKIPPED (Model path does not exist: /data/Qwen/Qwen3-30B-A3B-Thinking-2507)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ⏭️ QWEN-30B skipped in 0.0s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+⏭️  GROK1-IN4: SKIPPED (Model path does not exist: /data/amd--grok-1-W4A8KV8)
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ⏭️ GROK1-IN4 skipped in 0.0s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+⏭️  GROK1-FP8: SKIPPED (Model path does not exist: /data/lmzheng-grok-1)
+Progress: [████████████████████████████░░░░░░░░░░░░] 5/7 (71.4%) ⏭️ GROK1-FP8 skipped in 0.0s
+
+🚀 [6/7] Starting GROK2.5...
+============================================================
+Progress: [████████████████████████████░░░░░░░░░░░░] 6/7 (71.4%)
+⏭️  GROK2.5: SKIPPED (Model path does not exist: /data/grok-2)
+Progress: [██████████████████████████████████░░░░░░] 6/7 (85.7%) ⏭️ GROK2.5 skipped in 0.0s
+
+🚀 [7/7] Starting llama4...
+============================================================
+Progress: [██████████████████████████████████░░░░░░] 7/7 (85.7%)
+⏭️  llama4: SKIPPED (Model path does not exist: /data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8)
+Progress: [████████████████████████████████████████] 7/7 (100.0%) ⏭️ llama4 skipped in 0.0s
+
+🎯 All tests completed!
+📊 Total execution time: 0.00s (0.0 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251201/timing_summary_20251201_084251.log
+
+=== Final Summary ===
+⏭️ GPT-OSS-120B: SKIPPED (model/tokenizer not available)
+⏭️ GPT-OSS-20B: SKIPPED (model/tokenizer not available)
+⏭️ QWEN-30B: SKIPPED (model/tokenizer not available)
+⏭️ GROK1-IN4: SKIPPED (model/tokenizer not available)
+⏭️ GROK1-FP8: SKIPPED (model/tokenizer not available)
+⏭️ GROK2.5: SKIPPED (model/tokenizer not available)
+⏭️ llama4: SKIPPED (model/tokenizer not available)
+
+⚠️  No models were tested (all 7 models skipped)
+⏭️  Skipped: 7/7 models (not counted in pass/fail statistics)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Sending Teams notification for sanity check results...
+🔍 Sanity check mode: Processing sanity check results
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251201/timing_summary_20251201_084251.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.5.post3-rocm700-mi30x-20251201/timing_summary_20251201_084251.log
+✅ Successfully sent sanity check unknown alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[nightly] Teams notification sent successfully for sanity check
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251201
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251201 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...

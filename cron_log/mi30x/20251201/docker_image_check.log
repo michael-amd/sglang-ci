@@ -1,0 +1,44 @@
+[check] ==========================================
+[check] SGL Nightly Docker Image Availability Check
+[check] ==========================================
+[check] Run Date/Time: 2025-12-01 08:00:01 PST
+[check] Machine: dell300x-pla-t10-23
+[check] Repository: rocm/sgl-dev
+[check] Hardware types: mi30x mi35x
+[check] Checking images for date: 20251201
+
+[check] Searching for mi30x image (discovering ROCM version)... ✗ NOT FOUND
+[check] Searching for mi35x image (discovering ROCM version)... ✗ NOT FOUND
+
+[check] ==========================================
+[check] Summary
+[check] ==========================================
+[check] Total images checked: 2
+[check] Available images: 0
+[check] Missing images: 2
+
+[check] ✗ Missing or problematic images:
+[check]   - mi30x (20251201): no image found for any available ROCM version
+[check]   - mi35x (20251201): no image found for any available ROCM version
+
+[check] ==========================================
+[check] Troubleshooting
+[check] ==========================================
+[check] Some images are missing or not accessible.
+[check] This could indicate build failures in the nightly pipeline.
+
+[check] To investigate build errors, check the GitHub workflow:
+[check] https://github.com/sgl-project/sglang/actions/workflows/release-docker-amd-nightly.yml
+
+[check] Look for recent workflow runs around the missing dates.
+[check] Check for:
+[check]   - Build failures in the workflow logs
+[check]   - Docker registry push errors
+[check]   - Resource or timeout issues
+[check]   - AMD-specific build problems
+
+[check] ==========================================
+[check] Sending Teams Notification
+[check] ==========================================
+❌ Error sending Teams notification: HTTPSConnectionPool(host='default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com', port=443): Max retries exceeded with url: /powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f3d0efc2170>: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution'))
+[check] Failed to send Teams notification

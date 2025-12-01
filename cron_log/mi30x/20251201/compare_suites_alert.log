@@ -1,0 +1,7 @@
+📊 Generating SGLang CI comparison report
+📁 Base directory: /mnt/raid/michael/sglang-ci
+🔄 Running compare_suites.py...
+❌ Error running compare_suites.py:
+Error fetching or parsing run_suite.py: HTTPSConnectionPool(host='raw.githubusercontent.com', port=443): Max retries exceeded with url: /sgl-project/sglang/main/test/srt/run_suite.py (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f09b2a39780>: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution'))
+
+❌ Failed to run compare_suites.py
