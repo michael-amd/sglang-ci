@@ -1,0 +1,33 @@
+[aiter] start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+[2025-11-30 16:15:53] INFO core.py:461: start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[aiter] [32mfinish build [module_aiter_enum], cost 6.7s [0m
+[2025-11-30 16:16:00] INFO core.py:632: [32mfinish build [module_aiter_enum], cost 6.7s [0m
+[aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[2025-11-30 16:16:00] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+INFO 11-30 16:16:00 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+[2025-11-30 16:16:01] WARNING server_args.py:1827: Cuda graph is disabled for prefill server when piecewise cuda graph is not enabled.
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 27, in <module>
+    run_server(server_args)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 18, in run_server
+    from sglang.srt.entrypoints.http_server import launch_server
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 50, in <module>
+    from sglang.srt.entrypoints.engine import _launch_subprocesses
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 41, in <module>
+    from sglang.srt.managers.data_parallel_controller import (
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py", line 52, in <module>
+    from sglang.srt.utils import numa_utils
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/numa_utils.py", line 9, in <module>
+    from sglang import ServerArgs
+ImportError: cannot import name 'ServerArgs' from 'sglang' (unknown location)
