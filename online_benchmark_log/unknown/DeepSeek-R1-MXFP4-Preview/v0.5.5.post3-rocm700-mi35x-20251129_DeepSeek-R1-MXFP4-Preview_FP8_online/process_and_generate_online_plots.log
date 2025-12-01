@@ -1,0 +1,245 @@
+=== CONFIGURATION ===
+Model: deepseek (variant: DeepSeek-V3)
+Data directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview
+Output prefix: DeepSeek-R1-MXFP4-Preview_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-R1-MXFP4-Preview/online
+Model name: DeepSeek-R1-MXFP4-Preview
+Mode filter: aiter
+Variant filter: all variants
+Load metric: concurrency
+Expected concurrencys: [1, 4, 16, 64, 128]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.944
+Mapped default GSM8K accuracy to mode aiter: 0.944
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.946
+Mapped default GSM8K accuracy to mode aiter: 0.946
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.953
+Mapped default GSM8K accuracy to mode aiter: 0.953
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.934
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.934
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.947
+Mapped default GSM8K accuracy to mode aiter: 0.947
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.934
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.934
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.94
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.94
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.93
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.93
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.929
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.929
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.942
+Mapped default GSM8K accuracy to mode aiter: 0.942
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.942
+Mapped default GSM8K accuracy to mode aiter: 0.942
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.943
+Mapped default GSM8K accuracy to mode aiter: 0.943
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.945
+Mapped default GSM8K accuracy to mode aiter: 0.945
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.943
+Mapped default GSM8K accuracy to mode aiter: 0.943
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.931
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.931
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.945
+Mapped default GSM8K accuracy to mode aiter: 0.945
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.928
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.928
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.942
+Mapped default GSM8K accuracy to mode aiter: 0.942
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.945
+Mapped default GSM8K accuracy to mode aiter: 0.945
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.95
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.95
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.947
+Mapped default GSM8K accuracy to mode aiter: 0.947
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.931
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.931
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.931
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.931
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.945
+Mapped default GSM8K accuracy to mode aiter: 0.945
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.948
+Mapped default GSM8K accuracy to mode aiter: 0.948
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Mapped default GSM8K accuracy to mode aiter: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.939
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.957
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 1
+Warning: Missing data for aiter, TTFT_ms, concurrency 1
+Warning: Missing data for aiter, ITL_ms, concurrency 1
+Mapped default GSM8K accuracy to mode aiter: 0.957
+Date 20251119, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251119, Variant dp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251119, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251119, Variant mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251117, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251117, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251117, Variant dp_mtp: Complete and valid data for all modes and concurrencys
+Date 20251103, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251103, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251103, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251107, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251107, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251114, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251114, Variant dp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251114, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251114, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251104, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251104, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251101, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251101, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251101, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251101, Variant dp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251105, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251105, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251105, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251118, Variant dp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251118, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251118, Variant mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251118, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251110, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251031, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251031, Variant dp_mtp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251031, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251108, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251108, Variant mtp: Complete and valid data for all modes and concurrencys
+Date 20251111, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251109, Variant dp, Mode aiter, Concurrency 1: Missing valid data for one or more performance metrics
+Date 20251109, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251109, Variant mtp: Complete and valid data for all modes and concurrencys
+
+Kept 25 date+variant combinations with complete and valid data: [('20251031', 'mtp'), ('20251031', 'standard'), ('20251101', 'mtp'), ('20251101', 'standard'), ('20251103', 'mtp'), ('20251103', 'standard'), ('20251104', 'mtp'), ('20251104', 'standard'), ('20251105', 'mtp'), ('20251105', 'standard'), ('20251107', 'mtp'), ('20251107', 'standard'), ('20251108', 'mtp'), ('20251108', 'standard'), ('20251109', 'mtp'), ('20251109', 'standard'), ('20251110', 'standard'), ('20251111', 'standard'), ('20251114', 'mtp'), ('20251114', 'standard'), ('20251117', 'dp_mtp'), ('20251117', 'mtp'), ('20251117', 'standard'), ('20251118', 'standard'), ('20251119', 'standard')]
+Total records after filtering: 125
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/DeepSeek-R1-MXFP4-Preview_FP8_online_all_variants_aiter_summary_smci355-ccs-aus-m12-33.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: dp_mtp, mtp, standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20251031: Complete and valid data for all modes and concurrencys
+Date 20251101: Complete and valid data for all modes and concurrencys
+Date 20251103: Complete and valid data for all modes and concurrencys
+Date 20251104: Complete and valid data for all modes and concurrencys
+Date 20251105: Complete and valid data for all modes and concurrencys
+Date 20251107: Complete and valid data for all modes and concurrencys
+Date 20251108: Complete and valid data for all modes and concurrencys
+Date 20251109: Complete and valid data for all modes and concurrencys
+Date 20251110: Complete and valid data for all modes and concurrencys
+Date 20251111: Complete and valid data for all modes and concurrencys
+Date 20251114: Complete and valid data for all modes and concurrencys
+Date 20251117: Complete and valid data for all modes and concurrencys
+Date 20251118: Complete and valid data for all modes and concurrencys
+Date 20251119: Complete and valid data for all modes and concurrencys
+
+Kept 14 dates with complete and valid data for plotting
+Total records after filtering: 125
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-R1-MXFP4-Preview/online/20251129_DeepSeek-R1-MXFP4-Preview_online_all.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
