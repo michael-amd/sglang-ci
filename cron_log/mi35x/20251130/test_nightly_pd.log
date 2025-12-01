@@ -1,0 +1,163 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --model-path=/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview --test-type=pd --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[test] Start time: 2025-11-30 10:15:01 CST
+[test] Machine: smci355-ccs-aus-m12-33
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 347312
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: michaezh | Groups: michaezh sudo docker... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi35x, ROCM Version: rocm700 (PD test - using rocm700)
+[test] Test Type: pd
+[test] Created process lock: /tmp/test_nightly_pd.lock
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: d61bd9537302
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi35x image (rocm700) in 'rocm/sgl-dev' for date 20251130...
+[test] Found candidate tag for today: v0.5.5.post3-rocm700-mi35x-20251130
+[test] Attempting to pull rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130...
+v0.5.5.post3-rocm700-mi35x-20251130: Pulling from rocm/sgl-dev
+Digest: sha256:bd1e16a08a343d4b718be066e562aa2dcadca95c4616e8ad50af253ba69708ab
+Status: Image is up to date for rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+docker.io/rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[test] Test type: pd
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130...
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 965c8693409b
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[test] Container name: sgl-dev_v0.5.5.post3-rocm700-mi35x-20251130
+[test] ==========================================
+[test] Running PD Disaggregation Test
+[test] ==========================================
+[test] Hardware type: mi35x
+[test] Model path: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+[test] Model name: DeepSeek-R1-MXFP4-Preview
+[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
+[test] Model: DeepSeek-R1-MXFP4-Preview (/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview)
+[test] Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.5.post3-rocm700-mi35x-20251130
+===================================================
+PD Test Execution Started: Sun Nov 30 10:15:35 AM CST 2025
+===================================================
+[pd-test] ==========================================
+[pd-test] SGLang PD Docker-based Test Runner
+[pd-test] ==========================================
+[pd-test] Model: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+[pd-test] Model Name: DeepSeek-R1-MXFP4-Preview
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[pd-test] Hardware: mi35x
+[pd-test] Docker Tag: v0.5.5.post3-rocm700-mi35x-20251130
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.5.post3-rocm700-mi35x-20251130
+[pd-test] IP: 10.235.26.245
+[pd-test]
+[pd-test] Checking for existing containers...
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Sun Nov 30 10:15:38 AM CST 2025 (Exit Code: 0)
+===================================================
+[pd-test] ==========================================
+[pd-test] Step 1: Starting Load Balancer/Router...
+[pd-test] ==========================================
+[pd-test] Router container started (ID: eacb90c2e567)
+[pd-test] Waiting 10 seconds for router to initialize...
+[pd-test] ✓ Router started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)...
+[pd-test] ==========================================
+[pd-test] Prefill Server container started (ID: 7aed910b84a3)
+[pd-test] Waiting 150 seconds for prefill server to initialize...
+[pd-test] ERROR: Prefill Server container stopped
+[pd-test] Prefill container exit code:
+1
+[pd-test] Last 50 lines of prefill log:
+[aiter] start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+[2025-11-30 16:15:53] INFO core.py:461: start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[aiter] [32mfinish build [module_aiter_enum], cost 6.7s [0m
+[2025-11-30 16:16:00] INFO core.py:632: [32mfinish build [module_aiter_enum], cost 6.7s [0m
+[aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[2025-11-30 16:16:00] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+INFO 11-30 16:16:00 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:63: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF q uantization currently.
+  warnings.warn(f"Only CUDA support GGUF q uantization currently.")
+[2025-11-30 16:16:01] WARNING server_args.py:1827: Cuda graph is disabled for prefill server when piecewise cuda graph is not enabled.
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 27, in <module>
+    run_server(server_args)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 18, in run_server
+    from sglang.srt.entrypoints.http_server import launch_server
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 50, in <module>
+    from sglang.srt.entrypoints.engine import _launch_subprocesses
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 41, in <module>
+    from sglang.srt.managers.data_parallel_controller import (
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py", line 52, in <module>
+    from sglang.srt.utils import numa_utils
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/numa_utils.py", line 9, in <module>
+    from sglang import ServerArgs
+ImportError: cannot import name 'ServerArgs' from 'sglang' (unknown location)
+[pd-test] Checking for common errors:
+Traceback (most recent call last):
+ImportError: cannot import name 'ServerArgs' from 'sglang' (unknown location)
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Collecting final router logs...
+[pd-test] Collecting final prefill logs...
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-router
+sglang-pd-prefill
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Sun Nov 30 10:18:27 AM CST 2025 (Exit Code: 1)
+===================================================
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.5.post3-rocm700-mi35x-20251130
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.5.post3-rocm700-mi35x-20251130
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi35x/v0.5.5.post3-rocm700-mi35x-20251130/test_summary.txt
+✅ Docker image date matches expected date (20251130) - proceeding with alert
+✅ Successfully sent PD test fail alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251130
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
