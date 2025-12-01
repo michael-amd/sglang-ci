@@ -1,0 +1,53 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251130
+🖥️  Hardware: mi35x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251130...
+✅ Docker image date matches expected date (20251130) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-11-30 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-11-30 at 17:30:02 PST
+Hostname: smci355-ccs-aus-m12-33
+Hardware: mi35x
+Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251130
+
+Overall Status:
+• Tasks run: 15/15
+• Passed: 10, Failed: 4, Unknown: 1
+
+Task Results:
+
+Validation & Checks:
+  ✅ Unit Tests: Pass
+  ❌ PD Disaggregation Tests: Failed
+    Error: Prefill Server container stopped
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 81.4%) [29m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 92.5%) [31m]
+  ❌ DeepSeek Online Benchmark: Failed
+    Error: Test failed or did not complete
+
+Integration Tests:
+  ❌ DeepSeek DP Attention Test: Failed
+    Error: Test failed or did not complete
+  ❌ DeepSeek Torch Compile Test: Failed
+    Error: Test failed or did not complete
+  ✅ DeepSeek MTP Test: Pass
+  ✅ DeepSeek DP+MTP Test: Pass
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ GROK1-FP8 - GSM8K: 82.1% (threshold ≥ 80.0%)
+  ✅ GROK1-IN4 - GSM8K: 82.0% (threshold ≥ 80.0%)
+  ✅ GROK2.5 - GSM8K: 92.4% (threshold ≥ 91.5%)
+  ✅ Qwen3-30B-A3B-Thinking-2507 - GSM8K: 85.4% (threshold ≥ 84.0%)
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251130_mi35x_20251130_173002.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
