@@ -1,0 +1,13 @@
+Online mode - GROK2 (v0.5.5.post3-rocm700-mi35x-20251130)
+
+Median E2E Latency (ms, lower better)
+request rate	1	2	4	8
+MI300x-aiter, smci355-ccs-aus-m12-33	24661.17	27090.74	55133.03	174500.44
+
+Median TTFT (ms, lower better)
+request rate	1	2	4	8
+MI300x-aiter, smci355-ccs-aus-m12-33	225.46	146.31	216.06	399.75
+
+Median ITL (ms, lower better)
+request rate	1	2	4	8
+MI300x-aiter, smci355-ccs-aus-m12-33	39.68	43.02	92.39	248.67
