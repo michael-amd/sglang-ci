@@ -1,0 +1,48 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251202
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251202...
+✅ Docker image date matches expected date (20251202) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-12-02 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-12-02 at 10:30:01 PST
+Hostname: dell300x-pla-t12-38
+Hardware: mi30x
+Docker Image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+
+Overall Status:
+• Tasks run: 11/14
+• Passed: 7, Failed: 1, Unknown: 3
+
+Task Results:
+
+Validation & Checks:
+  ❌ Unit Tests: Failed
+  ⏭️ PD Disaggregation Tests: Not run
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ❓ Grok Online Benchmark: Unknown
+  ❓ Grok 2 Online Benchmark: Unknown
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 0.0%)
+
+Integration Tests:
+  ⏭️ DeepSeek DP Attention Test: Not run
+  ⏭️ DeepSeek Torch Compile Test: Not run
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ gpt-oss-120b-bf16 - GSM8K: 85.4% (threshold ≥ 82.0%)
+  ✅ gpt-oss-20b-bf16 - GSM8K: 53.9% (threshold ≥ 50.0%)
+  ✅ Qwen3-30B-A3B-Thinking-2507 - GSM8K: 85.9% (threshold ≥ 84.0%)
+  ✅ GROK1-IN4 - GSM8K: 81.7% (threshold ≥ 80.0%)
+  ✅ GROK1-FP8 - GSM8K: 82.1% (threshold ≥ 80.0%)
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251202_mi30x_20251202_103001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
