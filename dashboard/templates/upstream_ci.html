@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Upstream CI Test Coverage{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">
+            <i class="bi bi-git"></i> Upstream CI Test Coverage
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active">Upstream CI</li>
+            </ol>
+        </nav>
+        <p class="text-muted">Compare AMD vs NVIDIA test coverage in SGLang upstream CI</p>
+    </div>
+</div>
+
+<!-- Date Selector -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label for="dateSelect" class="form-label fw-bold">Select Report Date:</label>
+                <input type="date" class="form-control" id="dateSelect" value="">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <label class="form-label fw-bold">Quick Links:</label>
+                <div class="btn-group d-block" role="group">
+                    <a href="https://github.com/sgl-project/sglang" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-github"></i> SGLang Repo
+                    </a>
+                    <a href="https://github.com/ROCm/sglang-ci/tree/log/upstream_ci/ci_report" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-folder2-open"></i> CI Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coverage Summary Cards -->
+<div class="row mb-4" id="summary-cards">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Overall Coverage</h6>
+                <h2 class="card-title" id="overall-coverage">-</h2>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-primary" id="overall-progress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100 border-success">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">AMD Tests</h6>
+                <h2 class="card-title text-success" id="amd-tests">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100 border-warning">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">NVIDIA Tests</h6>
+                <h2 class="card-title text-warning" id="nvidia-tests">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100 border-info">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Report Date</h6>
+                <h5 class="card-title text-info" id="report-date">-</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CI Category Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> CI Category Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="category-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading report data...</p>
+                </div>
+                <div id="category-summary" style="display: none;">
+                    <canvas id="categoryChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Breakdown -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Detailed Test Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div id="breakdown-loading" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                </div>
+                <div id="breakdown-table" style="display: none;">
+                    <table class="table table-striped table-hover" id="testTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Test Category</th>
+                                <th class="text-center">AMD Tests</th>
+                                <th class="text-center">NVIDIA Tests</th>
+                                <th class="text-center">Coverage</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="test-rows">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coverage Trends -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Coverage Trends (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div id="trends-loading" class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="trends-chart" style="display: none;">
+                    <canvas id="trendsChart" height="80"></canvas>
+                </div>
+                <div id="trends-empty" style="display: none;">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> Not enough historical data for trends. More reports needed.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const githubRepo = '{{ github_repo }}';
+    let categoryChart = null;
+    let trendsChart = null;
+
+    // Load available dates and initialize
+    fetch('/api/upstream-ci/available-dates')
+        .then(response => response.json())
+        .then(data => {
+            const availableDates = data.dates || [];
+            console.log(`Loaded ${availableDates.length} available dates`);
+
+            if (availableDates.length === 0) {
+                showNoDataMessage();
+                return;
+            }
+
+            const { sortedDates } = computeAvailableDashboardDates(availableDates);
+
+            const datePicker = initializeDashboardDatePicker({
+                selector: '#dateSelect',
+                rawDates: sortedDates,
+                defaultDate: null,
+                onDateChange: loadReport,
+            });
+
+            // Load initial data
+            loadReport(datePicker.defaultDate);
+            loadTrends();
+        })
+        .catch(error => {
+            console.error('Error loading available dates:', error);
+            showNoDataMessage();
+        });
+
+    function showNoDataMessage() {
+        document.getElementById('category-loading').innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> No upstream CI reports available yet.
+                <br><small>Reports are generated daily. Check back later.</small>
+            </div>
+        `;
+        document.getElementById('breakdown-loading').style.display = 'none';
+        document.getElementById('trends-loading').style.display = 'none';
+    }
+
+    function formatDateApi(dateStr) {
+        return dateStr.replace(/-/g, '');
+    }
+
+    function formatDateDisplay(dateStr) {
+        if (dateStr.length === 8) {
+            return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+        }
+        return dateStr;
+    }
+
+    function loadReport(dateStr) {
+        const dateFormatted = formatDateApi(dateStr);
+        document.getElementById('report-date').textContent = formatDateDisplay(dateFormatted);
+
+        fetch(`/api/upstream-ci/report/${dateFormatted}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Report not found');
+                return response.json();
+            })
+            .then(data => {
+                renderReport(data);
+            })
+            .catch(error => {
+                console.error('Error loading report:', error);
+                document.getElementById('category-loading').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error loading report: ${error.message}
+                    </div>
+                `;
+            });
+    }
+
+    function renderReport(data) {
+        const rows = data.data || [];
+        
+        // Parse the CSV data
+        let totalAmd = 0, totalNvidia = 0;
+        let categories = [];
+        let details = [];
+        let inDetails = false;
+
+        rows.forEach(row => {
+            const category = row['Test Category'] || '';
+            const amd = parseInt(row['AMD # of Tests']) || 0;
+            const nvidia = parseInt(row['Nvidia # of Tests']) || 0;
+            const coverage = row['AMD Coverage (%)'] || 'N/A';
+
+            // Skip comment/header rows
+            if (category.startsWith('#') || category.startsWith('##')) {
+                if (category.includes('Detailed')) inDetails = true;
+                return;
+            }
+
+            if (category === 'Total') {
+                totalAmd = amd;
+                totalNvidia = nvidia;
+                return;
+            }
+
+            if (category.includes('CI (total')) {
+                categories.push({ category, amd, nvidia, coverage });
+            } else if (category && !category.startsWith('#')) {
+                details.push({ category, amd, nvidia, coverage });
+            }
+        });
+
+        // Update summary cards
+        const overallCoverage = totalNvidia > 0 ? Math.round((totalAmd / totalNvidia) * 100) : 0;
+        document.getElementById('overall-coverage').textContent = `${overallCoverage}%`;
+        document.getElementById('overall-progress').style.width = `${Math.min(overallCoverage, 100)}%`;
+        document.getElementById('amd-tests').textContent = totalAmd;
+        document.getElementById('nvidia-tests').textContent = totalNvidia;
+
+        // Render category chart
+        renderCategoryChart(categories);
+
+        // Render details table
+        renderDetailsTable(details);
+    }
+
+    function renderCategoryChart(categories) {
+        document.getElementById('category-loading').style.display = 'none';
+        document.getElementById('category-summary').style.display = 'block';
+
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
+
+        const labels = categories.map(c => c.category.replace(' (total test count)', ''));
+        const amdData = categories.map(c => c.amd);
+        const nvidiaData = categories.map(c => c.nvidia);
+
+        categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'AMD Tests',
+                        data: amdData,
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'NVIDIA Tests',
+                        data: nvidiaData,
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Tests' }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderDetailsTable(details) {
+        document.getElementById('breakdown-loading').style.display = 'none';
+        document.getElementById('breakdown-table').style.display = 'block';
+
+        const tbody = document.getElementById('test-rows');
+        tbody.innerHTML = '';
+
+        details.forEach(row => {
+            const coverage = row.coverage;
+            let coverageNum = parseInt(coverage) || 0;
+            let statusBadge = '';
+            let rowClass = '';
+
+            if (coverage === 'N/A' || (row.amd === 0 && row.nvidia === 0)) {
+                statusBadge = '<span class="badge bg-secondary">N/A</span>';
+                rowClass = '';
+            } else if (coverageNum >= 100) {
+                statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Covered</span>';
+                rowClass = 'table-success';
+            } else if (coverageNum >= 50) {
+                statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-dash-circle"></i> Partial</span>';
+                rowClass = 'table-warning';
+            } else if (coverageNum > 0) {
+                statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Low</span>';
+                rowClass = 'table-danger';
+            } else {
+                statusBadge = '<span class="badge bg-dark"><i class="bi bi-x-circle"></i> Missing</span>';
+                rowClass = 'table-danger';
+            }
+
+            tbody.innerHTML += `
+                <tr class="${rowClass}">
+                    <td><strong>${row.category}</strong></td>
+                    <td class="text-center">${row.amd}</td>
+                    <td class="text-center">${row.nvidia}</td>
+                    <td class="text-center">
+                        <div class="progress" style="height: 20px; min-width: 80px;">
+                            <div class="progress-bar ${coverageNum >= 100 ? 'bg-success' : coverageNum >= 50 ? 'bg-warning' : 'bg-danger'}" 
+                                 role="progressbar" style="width: ${Math.min(coverageNum, 100)}%">
+                                ${coverage}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">${statusBadge}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function loadTrends() {
+        fetch('/api/upstream-ci/trends?days=30')
+            .then(response => response.json())
+            .then(data => {
+                const trends = data.trends || [];
+                
+                document.getElementById('trends-loading').style.display = 'none';
+                
+                if (trends.length < 2) {
+                    document.getElementById('trends-empty').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('trends-chart').style.display = 'block';
+                renderTrendsChart(trends);
+            })
+            .catch(error => {
+                console.error('Error loading trends:', error);
+                document.getElementById('trends-loading').style.display = 'none';
+                document.getElementById('trends-empty').style.display = 'block';
+            });
+    }
+
+    function renderTrendsChart(trends) {
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+
+        if (trendsChart) {
+            trendsChart.destroy();
+        }
+
+        const labels = trends.map(t => formatDateDisplay(t.date));
+        const coverageData = trends.map(t => t.coverage || 0);
+
+        trendsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'AMD Coverage (%)',
+                    data: coverageData,
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Coverage (%)' }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+
