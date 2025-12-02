@@ -1,0 +1,99 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-02 09:00:54 PST
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi35x-20251202
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-02 09:00:54 PST
+Server startup: FAILED after 300.46s
+Error: Out of memory (current mem_fraction_static=0.9)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-02 09:05:55 PST
+Server startup: FAILED after 300.07s
+Error: Out of memory (current mem_fraction_static=0.9)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-02 09:10:56 PST
+Server startup: 84.14s
+Trial 1: PASS [OK] (Accuracy: 0.853, Time: 115.11s)
+Trial 2: PASS [OK] (Accuracy: 0.853, Time: 139.15s)
+Trial 3: PASS [OK] (Accuracy: 0.850, Time: 114.12s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.853, 0.853, 0.85]
+Highest accuracy: 0.853 (Required: 0.840)
+Total time: 453.02s
+End time: 2025-12-02 09:18:29 PST
+==================================================
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-02 09:18:29 PST
+Server startup: 204.52s
+Trial 1: PASS [OK] (Accuracy: 0.816, Time: 58.06s)
+Trial 2: PASS [OK] (Accuracy: 0.817, Time: 77.08s)
+Trial 3: PASS [OK] (Accuracy: 0.816, Time: 51.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.816, 0.817, 0.816]
+Highest accuracy: 0.817 (Required: 0.800)
+Total time: 391.22s
+End time: 2025-12-02 09:25:00 PST
+==================================================
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-02 09:25:00 PST
+Server startup: 227.91s
+Trial 1: PASS [OK] (Accuracy: 0.824, Time: 56.06s)
+Trial 2: PASS [OK] (Accuracy: 0.823, Time: 50.05s)
+Trial 3: PASS [OK] (Accuracy: 0.821, Time: 50.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.824, 0.823, 0.821]
+Highest accuracy: 0.824 (Required: 0.800)
+Total time: 384.58s
+End time: 2025-12-02 09:31:25 PST
+==================================================
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-02 09:31:25 PST
+Server startup: 174.30s
+Trial 1: PASS [OK] (Accuracy: 0.931, Time: 64.07s)
+Trial 2: PASS [OK] (Accuracy: 0.926, Time: 57.06s)
+Trial 3: PASS [OK] (Accuracy: 0.925, Time: 56.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.931, 0.926, 0.925]
+Highest accuracy: 0.931 (Required: 0.915)
+Total time: 352.00s
+End time: 2025-12-02 09:37:17 PST
+==================================================
+
+=== llama4 on mi35x ===
+Start time: 2025-12-02 09:37:17 PST
+Server startup: FAILED after 300.04s
+Error: Out of memory (current mem_fraction_static=0.7718)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-02 09:42:18 PST
+Total execution time: 2484.42s (41.4 minutes)
+Average time per model: 354.92s
+Models tested: 7/7
+Models passed: 4/7
+Models failed: 3/7
+Models skipped: 0/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: FAIL
