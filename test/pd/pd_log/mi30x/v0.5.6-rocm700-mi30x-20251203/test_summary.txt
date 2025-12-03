@@ -1,0 +1,46 @@
+SGLang PD Disaggregation Test Summary
+======================================
+
+Docker Tag: v0.5.6-rocm700-mi30x-20251203
+Hardware: mi30x
+Model: DeepSeek-V3-0324
+Model Path: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+Hostname: dell300x-pla-t10-23
+
+Configuration:
+- IP Address: 10.194.129.138
+- Prefill Server: Port 30025, GPUs 0-3, TP=4
+- Decode Server: Port 30026, GPUs 4-7, TP=4
+- Load Balancer: Port 30028
+- Network: Loopback (lo)
+- Execution: Docker containers
+
+Setup Steps (with runtime):
+- Step 1 - Router Startup: 10s
+- Step 2 - Prefill Server Startup: 0s
+- Step 3 - Decode Server Startup: 0s
+- Step 4 - Health Check Wait: 0s
+
+Test Results (with runtime):
+- Test 1 - Health Check: PENDING (0s)
+- Test 2 - Model Info: PENDING (0s)
+- Test 3 - Simple Completion: PENDING (0s)
+- Test 4 - Code Generation: PENDING (0s)
+- Test 6 - GSM8K Accuracy: PENDING [PENDING] (0s)
+
+Timing Summary:
+- Total Time (Setup + Tests): 10s
+- Setup Time (Steps 1-4): 10s
+- GSM8K Test Duration: 0s
+- GSM8K Questions per Second: N/A
+- GSM8K Parallelism: 16 concurrent requests
+- GSM8K Timeout: 600s per request
+
+Log Files:
+- Load Balancer: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/load_balance.log
+- Prefill Server: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/prefill.log
+- Decode Server: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/decode.log
+- GSM8K Results: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/test_gsm8k.log
+
+Test completed in nightly mode (Docker-based).

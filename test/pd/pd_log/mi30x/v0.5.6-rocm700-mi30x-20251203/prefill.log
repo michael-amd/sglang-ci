@@ -1,0 +1,21 @@
+/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
+  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 24, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4371, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3924, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 290, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 607, in __post_init__
+    self._handle_missing_default_values()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 695, in _handle_missing_default_values
+    self.device = get_device()
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 1897, in get_device
+    raise RuntimeError("No accelerator (CUDA, XPU, HPU) is available.")
+RuntimeError: No accelerator (CUDA, XPU, HPU) is available.
