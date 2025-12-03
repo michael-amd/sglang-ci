@@ -1,160 +1,35 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --test-type=pd --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[test] Start time: 2025-12-03 10:15:01 CST
-[test] Machine: dell300x-pla-t10-23
+[test] Command: scripts/test_nightly.sh --test-type=pd --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+[test] Start time: 2025-12-03 05:15:01 CST
+[test] Machine: dell300x-pla-t12-38
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 7848
+[test] Process ID: 3270622
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700 (PD test - using rocm700)
 [test] Test Type: pd
 [test] Created process lock: /tmp/test_nightly_pd.lock
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: 6086a7e93308
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
-cat: /sys/module/amdgpu/initstate: No such file or directory
-ERROR:root:Driver not initialized (amdgpu not found in modules)
-cat: /sys/module/amdgpu/initstate: No such file or directory
-ERROR:root:Driver not initialized (amdgpu not found in modules)
-[test] GPU is idle. Proceeding...
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
 [test] Searching for latest non-SRT image...
 [test] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251203...
-[test] Found candidate tag for today: v0.5.6-rocm700-mi30x-20251203
-[test] Attempting to pull rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203...
-v0.5.6-rocm700-mi30x-20251203: Pulling from rocm/sgl-dev
-Digest: sha256:3bc5538b208640802b275a3601f3042f683a761e183ee79a3ff6356f5d4e4412
-Status: Image is up to date for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[test] Selected image to run tests on: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-
-[test] ==========================================
-[test] Starting tests for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[test] Test type: pd
-[test] ==========================================
-[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203...
-[test] Cleaning up Docker containers...
-[test] Stopping running containers: 349d4e6a828c
-[test] Docker container cleanup complete.
-[test] Checking for conflicting SGLang processes...
-[test] No conflicting SGLang processes found.
-cat: /sys/module/amdgpu/initstate: No such file or directory
-ERROR:root:Driver not initialized (amdgpu not found in modules)
-cat: /sys/module/amdgpu/initstate: No such file or directory
-ERROR:root:Driver not initialized (amdgpu not found in modules)
-[test] GPU is idle. Proceeding...
-[test] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[test] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251203
-[test] ==========================================
-[test] Running PD Disaggregation Test
-[test] ==========================================
-[test] Hardware type: mi30x
-[test] Model path: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
-[test] Model name: DeepSeek-V3-0324
-[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
-[test] Model: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)
-[test] Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
-===================================================
-PD Test Execution Started: Wed Dec  3 10:15:03 AM CST 2025
-===================================================
-[pd-test] ==========================================
-[pd-test] SGLang PD Docker-based Test Runner
-[pd-test] ==========================================
-[pd-test] Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
-[pd-test] Model Name: DeepSeek-V3-0324
-[pd-test] Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[pd-test] Hardware: mi30x
-[pd-test] Docker Tag: v0.5.6-rocm700-mi30x-20251203
-[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
-[pd-test] IP: 10.194.129.138
-[pd-test]
-[pd-test] Checking for existing containers...
-
-[pd-test] ==========================================
-[pd-test] Cleaning up Docker containers...
-[pd-test] ==========================================
-[pd-test] Cleanup complete.
-===================================================
-PD Test Execution Ended: Wed Dec  3 10:15:06 AM CST 2025 (Exit Code: 0)
-===================================================
-[pd-test] ==========================================
-[pd-test] Step 1: Starting Load Balancer/Router...
-[pd-test] ==========================================
-[pd-test] Router container started (ID: a61f5a56cfe8)
-[pd-test] Waiting 10 seconds for router to initialize...
-[pd-test] ✓ Router started successfully
-
-[pd-test] ==========================================
-[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)...
-[pd-test] ==========================================
-[pd-test] Prefill Server container started (ID: 9fc20e7feccd)
-[pd-test] Waiting 150 seconds for prefill server to initialize...
-[pd-test] ERROR: Prefill Server container stopped
-[pd-test] Prefill container exit code:
-1
-[pd-test] Last 50 lines of prefill log:
-/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
-  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
-Traceback (most recent call last):
-  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
-    exec(code, run_globals)
-  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 24, in <module>
-    server_args = prepare_server_args(sys.argv[1:])
-  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4371, in prepare_server_args
-    return ServerArgs.from_cli_args(raw_args)
-  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3924, in from_cli_args
-    return cls(**{attr: getattr(args, attr) for attr in attrs})
-  File "<string>", line 290, in __init__
-  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 607, in __post_init__
-    self._handle_missing_default_values()
-  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 695, in _handle_missing_default_values
-    self.device = get_device()
-  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 1897, in get_device
-    raise RuntimeError("No accelerator (CUDA, XPU, HPU) is available.")
-RuntimeError: No accelerator (CUDA, XPU, HPU) is available.
-[pd-test] Checking for common errors:
-/opt/venv/lib/python3.10/site-packages/torch/cuda/__init__.py:814: UserWarning: Can't initialize amdsmi - Error code: 34
-  warnings.warn(f"Can't initialize amdsmi - Error code: {e.err_code}")
-Traceback (most recent call last):
-    raise RuntimeError("No accelerator (CUDA, XPU, HPU) is available.")
-RuntimeError: No accelerator (CUDA, XPU, HPU) is available.
-
-[pd-test] ==========================================
-[pd-test] Cleaning up Docker containers...
-[pd-test] ==========================================
-[pd-test] Collecting final router logs...
-[pd-test] Collecting final prefill logs...
-sglang-pd-router
-sglang-pd-prefill
-sglang-pd-router
-sglang-pd-prefill
-[pd-test] Cleanup complete.
-===================================================
-PD Test Execution Ended: Wed Dec  3 10:17:55 AM CST 2025 (Exit Code: 1)
-===================================================
-[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
-[test] === PD test FAILED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203 (exit code: 1) ===
-[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
-[test] Check the log directory for detailed error information
-[test] Sending Teams notification...
-📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/test_summary.txt
-✅ Docker image date matches expected date (20251203) - proceeding with alert
-✅ Successfully sent PD test fail alert to Teams
-   (Power Automate flow accepted - message processing asynchronously)
-[test] ==========================================
-[test] Test completed for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[test] Test type: pd
-[test] ==========================================
+[test] Primary version (rocm700) not found, trying fallback (rocm630)...
+[test] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251203...
+[test] No image found for today. Checking if yesterday's image should be used as fallback...
+[test] Yesterday's run completed successfully
+[test] Skipping yesterday's image fallback - yesterday's run was successful
+[test] Status: SKIPPED (prerequisites not met)
+[test] ERROR: Could not find and pull any valid non-SRT images for today or yesterday.
 [test] Cleaning up process lock...
