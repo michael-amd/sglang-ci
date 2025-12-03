@@ -443,6 +443,7 @@ create_container() {
     docker run -d --name "${container_name}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+        -e HSA_ENABLE_COREDUMP=0 \
         ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
 }

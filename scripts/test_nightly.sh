@@ -690,6 +690,7 @@ else
     "${DOCKER_CMD[@]}" run -d --name "${CONTAINER_NAME}" \
       --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
       --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+      -e HSA_ENABLE_COREDUMP=0 \
       ${mount_args} --group-add video --privileged \
       -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
   fi
