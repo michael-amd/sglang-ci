@@ -1,0 +1,197 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+[nightly] Start time: 2025-12-03 04:30:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3361030
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /data/models/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251203...
+[nightly] Primary version (rocm700) not found, trying fallback (rocm630)...
+[nightly] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251203...
+[nightly] No image found for today. Checking if yesterday's image should be used as fallback...
+[nightly] Yesterday's run failed or did not complete
+[nightly] Proceeding with yesterday's image fallback...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251202...
+[nightly] Fallback found candidate tag: v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Found local image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Successfully obtained fallback image for date 20251202: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251202_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Container name: sgl-dev_v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Reusing container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-12-03 04:30:39 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Empty: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251202_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+DP attention mode - skipping serving benchmark log checks (GSM8K only)
+Scan complete: 0 total runs needed, 0 missing/incomplete
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image
+Waiting for SGLang server (PID: 42) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251202_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log
+......................................
+SGLang server started successfully after 190 seconds.
+=== Online GSM8K Benchmark: TP=8, Questions=2000, Parallel=2000, Shots=5 ===
+[progress] Total benchmark runs to execute: 5 (GSM8K only - DP attention mode)
+[progress] [--------------------------------------------------] 0/5 (0%) 
+Starting GSM8K Online Benchmark...
+Running 5 test iterations...
+Executing GSM8K test Run 1 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [01:18<28:52:58, 78.89s/it] 13%|█▎        | 166/1319 [01:18<06:24,  3.00it/s]  25%|██▌       | 331/1319 [01:19<02:16,  7.24it/s] 38%|███▊      | 496/1319 [01:19<01:02, 13.26it/s] 50%|█████     | 661/1319 [01:19<00:30, 21.78it/s] 63%|██████▎   | 826/1319 [01:19<00:14, 33.78it/s] 75%|███████▌  | 991/1319 [01:19<00:06, 50.63it/s] 88%|████████▊ | 1156/1319 [01:19<00:02, 74.10it/s]100%|██████████| 1319/1319 [01:19<00:00, 16.55it/s]
+Accuracy: 0.000
+Invalid: 0.879
+Latency: 130.831 s
+Output throughput: 5161.829 token/s
+Run 1 completed in 137 seconds
+Run 1: Accuracy: 0.000
+  ✗ Run 1 excluded from average (accuracy: 0.000 < 0.1 - likely failed/crashed)
+[progress] [==========----------------------------------------] 1/5 (20%)  | GSM8K: Run 1
+
+Checking server health before Run 2...
+✅ Server is healthy
+Executing GSM8K test Run 2 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [01:22<30:19:34, 82.83s/it] 13%|█▎        | 166/1319 [01:22<06:44,  2.85it/s]  23%|██▎       | 303/1319 [01:22<00:00, 1803.88it/s] 24%|██▍       | 315/1319 [01:22<00:00, 1803.88it/s] 25%|██▍       | 326/1319 [01:22<00:00, 1803.88it/s] 25%|██▍       | 328/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 25%|██▌       | 330/1319 [01:22<00:00, 1803.88it/s] 39%|███▊      | 511/1319 [01:23<00:00, 1488.15it/s] 51%|█████     | 667/1319 [01:23<00:00, 1493.92it/s] 63%|██████▎   | 825/1319 [01:23<00:00, 1499.55it/s] 75%|███████▌  | 990/1319 [01:23<00:00, 1191.32it/s] 97%|█████████▋| 1280/1319 [01:23<00:00, 1566.97it/s]100%|██████████| 1319/1319 [01:23<00:00, 15.76it/s]  
+Accuracy: 0.000
+Invalid: 0.877
+Latency: 84.807 s
+Output throughput: 7963.124 token/s
+Run 2 completed in 90 seconds
+Run 2: Accuracy: 0.000
+  ✗ Run 2 excluded from average (accuracy: 0.000 < 0.1 - likely failed/crashed)
+[progress] [====================------------------------------] 2/5 (40%)  | GSM8K: Run 2
+
+Checking server health before Run 3...
+✅ Server is healthy
+Executing GSM8K test Run 3 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [02:36<57:07:57, 156.05s/it] 13%|█▎        | 166/1319 [02:36<12:40,  1.52it/s]   21%|██        | 279/1319 [02:36<00:00, 1657.74it/s] 22%|██▏       | 293/1319 [02:36<00:00, 1657.74it/s] 25%|██▍       | 324/1319 [02:36<00:00, 1657.74it/s] 25%|██▍       | 329/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 25%|██▌       | 330/1319 [02:36<00:00, 1657.74it/s] 38%|███▊      | 497/1319 [02:36<00:00, 1335.01it/s] 50%|█████     | 661/1319 [02:36<00:00, 1394.89it/s] 63%|██████▎   | 826/1319 [02:36<00:00, 1418.23it/s] 75%|███████▌  | 990/1319 [02:36<00:00, 1126.35it/s] 98%|█████████▊| 1290/1319 [02:36<00:00, 1534.75it/s]100%|██████████| 1319/1319 [02:36<00:00,  8.40it/s]  
+Accuracy: 0.000
+Invalid: 0.877
+Latency: 157.085 s
+Output throughput: 4299.127 token/s
+Run 3 completed in 163 seconds
+Run 3: Accuracy: 0.000
+  ✗ Run 3 excluded from average (accuracy: 0.000 < 0.1 - likely failed/crashed)
+[progress] [==============================--------------------] 3/5 (60%)  | GSM8K: Run 3
+
+Checking server health before Run 4...
+✅ Server is healthy
+Executing GSM8K test Run 4 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [01:23<30:38:06, 83.68s/it]  2%|▏         | 24/1319 [01:23<4:53:23, 13.59s/it]  3%|▎         | 35/1319 [01:23<4:50:53, 13.59s/it]  5%|▌         | 66/1319 [01:23<4:43:52, 13.59s/it]  6%|▋         | 83/1319 [01:23<4:40:01, 13.59s/it]  8%|▊         | 101/1319 [01:23<4:35:56, 13.59s/it] 12%|█▏        | 162/1319 [01:23<4:22:07, 13.59s/it] 13%|█▎        | 165/1319 [01:23<4:21:26, 13.59s/it] 13%|█▎        | 166/1319 [01:23<4:03:22, 12.67s/it] 25%|██▌       | 331/1319 [01:23<12:07,  1.36it/s]   38%|███▊      | 496/1319 [01:23<04:18,  3.18it/s] 50%|█████     | 661/1319 [01:24<01:53,  5.78it/s] 63%|██████▎   | 826/1319 [01:24<00:52,  9.48it/s] 75%|███████▌  | 991/1319 [01:24<00:22, 14.67it/s] 98%|█████████▊| 1292/1319 [01:24<00:00, 28.26it/s]100%|██████████| 1319/1319 [01:24<00:00, 15.60it/s]
+Accuracy: 0.000
+Invalid: 0.879
+Latency: 84.708 s
+Output throughput: 7972.438 token/s
+Run 4 completed in 91 seconds
+Run 4: Accuracy: 0.000
+  ✗ Run 4 excluded from average (accuracy: 0.000 < 0.1 - likely failed/crashed)
+[progress] [========================================----------] 4/5 (80%)  | GSM8K: Run 4
+
+Checking server health before Run 5...
+✅ Server is healthy
+Executing GSM8K test Run 5 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [02:35<56:45:37, 155.04s/it] 13%|█▎        | 166/1319 [02:35<12:35,  1.53it/s]   25%|██▌       | 331/1319 [02:35<04:27,  3.69it/s] 38%|███▊      | 496/1319 [02:35<02:01,  6.77it/s] 50%|█████     | 661/1319 [02:35<00:58, 11.16it/s] 60%|█████▉    | 788/1319 [02:35<00:00, 1514.78it/s] 62%|██████▏   | 824/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 63%|██████▎   | 825/1319 [02:35<00:00, 1514.78it/s] 75%|███████▍  | 989/1319 [02:35<00:00, 1355.47it/s] 86%|████████▌ | 1136/1319 [02:35<00:00, 1055.96it/s]100%|██████████| 1319/1319 [02:35<00:00,  8.46it/s]  
+Accuracy: 0.000
+Invalid: 0.876
+Latency: 156.064 s
+Output throughput: 4327.244 token/s
+Run 5 completed in 162 seconds
+Run 5: Accuracy: 0.000
+  ✗ Run 5 excluded from average (accuracy: 0.000 < 0.1 - likely failed/crashed)
+[progress] [==================================================] 5/5 (100%) ✅ Complete!
+ | GSM8K: Run 5
+⚠️  Warning: No valid runs found (all runs had accuracy < 0.1)
+GSM8K test completed in 643 seconds
+Total runs: 5, Valid runs: 0, Excluded runs: 5
+Average Accuracy over 0 valid runs: 0
+Average accuracy (0) is below threshold (0.93).
+❌ GSM8K benchmark failed or accuracy below threshold.
+Cleaning up...
+Killing background SGLang server (PID: 42)...
+Server process 42 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.5.post3-rocm700-mi30x-20251202 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.5.post3-rocm700-mi30x-20251202_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251202
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251202
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+   🔍 Uploading 20251202_DeepSeek-V3-0324_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📝 Updating existing file: plot/mi30x/DeepSeek-V3-0324/online/20251202_DeepSeek-V3-0324_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251202_DeepSeek-V3-0324_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251202_DeepSeek-V3-0324_online_standard.png
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251202_DeepSeek-V3-0324_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251202: timing_summary_20251203_043039.log
+   Found timing_summary log for deepseek online on 20251202: timing_summary_20251203_043039.log
+   Found timing_summary log for deepseek online on 20251202: timing_summary_20251203_043039.log
+   Found timing_summary log for deepseek online on 20251202: timing_summary_20251203_043039.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/DeepSeek-V3-0324/online/20251202_DeepSeek-V3-0324_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+[nightly] Stopping container sgl-dev_v0.5.5.post3-rocm700-mi30x-20251202 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
