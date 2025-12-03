@@ -153,3 +153,36 @@ From https://github.com/ROCm/sglang-ci
    ec7aad7..c726e98  log        -> origin/log
 [github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251202
 [github_log_upload] Destination in repo: cron_log/mi30x/20251202
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+remote: 
+remote: GitHub found 8 vulnerabilities on ROCm/sglang-ci's default branch (3 high, 5 moderate). To find out more, visit:        
+remote:      https://github.com/ROCm/sglang-ci/security/dependabot        
+remote: 
+[github_log_upload] ✅  Logs uploaded successfully: cron_log/mi30x/20251202
+[github_database_upload] Lock acquired – proceeding with database upload
+[github_database_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   c726e98..4109b9c  log        -> origin/log
+[github_database_upload] Uploading database from: /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[github_database_upload] Destination in repo: database/ci_dashboard.db
+[github_database_upload] No database changes – nothing to commit.
+[Tue Dec  2 10:20:16 PM CST 2025] Job 6 completed. Sleeping 10 minutes...
+
+[Tue Dec  2 10:30:16 PM CST 2025] [7/7] Running DeepSeek Nightly Online...
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   cdf1709..17cbf4d  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251202
+[github_log_upload] Destination in repo: cron_log/mi30x/20251202
