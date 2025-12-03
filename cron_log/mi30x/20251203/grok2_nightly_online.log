@@ -1,0 +1,25 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/data/models/grok-2 --tokenizer-path=/data/models/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+[nightly] Start time: 2025-12-03 07:30:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3468831
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /data/models/grok-2
+[nightly] Custom tokenizer path provided: /data/models/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi30x hardware
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 649744c50c30
+[nightly] Waiting 15s for GPU to become idle...
