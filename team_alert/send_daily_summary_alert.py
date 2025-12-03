@@ -391,12 +391,20 @@ class DailySummaryReporter:
 
         # MTP tests only run on mi35x hardware
         if self.hardware != "mi30x":
-            tests.extend(
-                [
-                    "DeepSeek MTP Test",
-                    "DeepSeek DP+MTP Test",
-                ]
+            tests.append("DeepSeek MTP Test")
+
+            # Only show DP+MTP if both DP and MTP tests passed/exist
+            mtp_result = task_results.get("DeepSeek MTP Test", {})
+            dp_attention_result = task_results.get("DeepSeek DP Attention Test", {})
+            show_dp_mtp_combo = (
+                mtp_result.get("exists")
+                and mtp_result.get("status") != "fail"
+                and dp_attention_result.get("exists")
+                and dp_attention_result.get("status") != "fail"
             )
+            if show_dp_mtp_combo:
+                tests.append("DeepSeek DP+MTP Test")
+
         validation = [
             "Unit Tests",
             "PD Disaggregation Tests",
@@ -778,12 +786,19 @@ class DailySummaryReporter:
 
         # MTP tests only run on mi35x hardware
         if self.hardware != "mi30x":
-            tests.extend(
-                [
-                    "DeepSeek MTP Test",
-                    "DeepSeek DP+MTP Test",
-                ]
+            tests.append("DeepSeek MTP Test")
+
+            # Only show DP+MTP if both DP and MTP tests passed/exist
+            mtp_result = task_results.get("DeepSeek MTP Test", {})
+            dp_attention_result = task_results.get("DeepSeek DP Attention Test", {})
+            show_dp_mtp_combo = (
+                mtp_result.get("exists")
+                and mtp_result.get("status") != "fail"
+                and dp_attention_result.get("exists")
+                and dp_attention_result.get("status") != "fail"
             )
+            if show_dp_mtp_combo:
+                tests.append("DeepSeek DP+MTP Test")
 
         # Print Validation & Checks first
         for category, task_list in [
