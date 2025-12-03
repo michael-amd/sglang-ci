@@ -1,0 +1,105 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-03 03:40:39 PST
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-03 03:40:39 PST
+Server startup: 171.70s
+Trial 1: PASS [OK] (Accuracy: 0.858, Time: 146.15s)
+Trial 2: PASS [OK] (Accuracy: 0.856, Time: 134.13s)
+Trial 3: PASS [OK] (Accuracy: 0.841, Time: 133.13s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.858, 0.856, 0.841]
+Highest accuracy: 0.858 (Required: 0.820)
+Total time: 585.62s
+End time: 2025-12-03 03:50:25 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-03 03:50:25 PST
+Server startup: 89.10s
+Trial 1: PASS [OK] (Accuracy: 0.521, Time: 94.10s)
+Trial 2: PASS [OK] (Accuracy: 0.530, Time: 82.08s)
+Trial 3: PASS [OK] (Accuracy: 0.522, Time: 83.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.521, 0.53, 0.522]
+Highest accuracy: 0.530 (Required: 0.500)
+Total time: 348.87s
+End time: 2025-12-03 03:56:14 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-03 03:56:14 PST
+Server startup: 163.69s
+Trial 1: PASS [OK] (Accuracy: 0.858, Time: 92.09s)
+Trial 2: PASS [OK] (Accuracy: 0.862, Time: 133.13s)
+Trial 3: PASS [OK] (Accuracy: 0.856, Time: 94.10s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.858, 0.862, 0.856]
+Highest accuracy: 0.862 (Required: 0.840)
+Total time: 483.52s
+End time: 2025-12-03 04:04:17 PST
+==================================================
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-03 04:04:17 PST
+Server startup: 151.28s
+Trial 1: PASS [OK] (Accuracy: 0.810, Time: 33.03s)
+Trial 2: PASS [OK] (Accuracy: 0.820, Time: 74.07s)
+Trial 3: PASS [OK] (Accuracy: 0.810, Time: 31.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.81, 0.82, 0.81]
+Highest accuracy: 0.820 (Required: 0.800)
+Total time: 289.92s
+End time: 2025-12-03 04:09:07 PST
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-03 04:09:07 PST
+Server startup: 187.74s
+Trial 1: PASS [OK] (Accuracy: 0.820, Time: 34.03s)
+Trial 2: PASS [OK] (Accuracy: 0.823, Time: 32.03s)
+Trial 3: PASS [OK] (Accuracy: 0.814, Time: 32.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.82, 0.823, 0.814]
+Highest accuracy: 0.823 (Required: 0.800)
+Total time: 286.34s
+End time: 2025-12-03 04:13:54 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-03 04:13:54 PST
+Server startup: FAILED after 300.31s
+
+=== llama4 on mi30x ===
+Start time: 2025-12-03 04:18:55 PST
+Server startup: FAILED after 300.36s
+Error: Out of memory (current mem_fraction_static=0.7327)
+💡 Suggestion: Increase --mem-fraction-static in launch command
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-03 04:23:56 PST
+Total execution time: 2596.96s (43.3 minutes)
+Average time per model: 370.99s
+Models tested: 7/7
+Models passed: 5/7
+Models failed: 2/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: FAIL
+  llama4: FAIL
