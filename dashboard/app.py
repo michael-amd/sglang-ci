@@ -547,7 +547,7 @@ def api_database_overview():
         cursor.execute(
             """
             SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                   total_tasks, docker_image, not_run, run_datetime_pt,
+                   total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
                    github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
             FROM test_runs
             WHERE hardware = ? AND run_date BETWEEN ? AND ?
@@ -575,6 +575,7 @@ def api_database_overview():
                     "not_run": not_run,
                     "docker_image": row["docker_image"],
                     "run_datetime_pt": row["run_datetime_pt"],
+                    "machine_name": row["machine_name"],
                     "github_log_url": row["github_log_url"],
                     "github_cron_log_url": row["github_cron_log_url"],
                     "github_detail_log_url": row["github_detail_log_url"],
@@ -623,6 +624,7 @@ def api_database_overview():
             "hardware": selected_row["hardware"],
             "overall_status": selected_row["overall_status"],
             "docker_image": selected_row["docker_image"],
+            "machine_name": selected_row["machine_name"],
             "total_tasks": selected_row["total_tasks"] or 0,
             "passed_tasks": selected_row["passed_tasks"] or 0,
             "failed_tasks": selected_row["failed_tasks"] or 0,

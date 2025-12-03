@@ -78,6 +78,7 @@ class DashboardDatabase:
                     unknown_tasks INTEGER DEFAULT 0,
                     not_run INTEGER DEFAULT 0,
                     run_datetime_pt TEXT,
+                    machine_name TEXT,
                     github_log_url TEXT,
                     github_cron_log_url TEXT,
                     github_detail_log_url TEXT,
@@ -88,6 +89,12 @@ class DashboardDatabase:
                 )
             """
             )
+
+            # Add machine_name column if it doesn't exist (migration for existing databases)
+            try:
+                cursor.execute("ALTER TABLE test_runs ADD COLUMN machine_name TEXT")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
 
             # Benchmark Results table
             cursor.execute(
@@ -195,6 +202,7 @@ class DashboardDatabase:
         unknown_tasks: int = 0,
         not_run: int = 0,
         run_datetime_pt: Optional[str] = None,
+        machine_name: Optional[str] = None,
         github_log_url: Optional[str] = None,
         github_cron_log_url: Optional[str] = None,
         github_detail_log_url: Optional[str] = None,
@@ -213,6 +221,7 @@ class DashboardDatabase:
             failed_tasks: Number of failed tasks
             unknown_tasks: Number of unknown tasks
             not_run: Number of tasks not run
+            machine_name: Hostname of the machine that ran the test
 
         Returns:
             Test run ID
@@ -225,11 +234,11 @@ class DashboardDatabase:
                 INSERT INTO test_runs (
                     run_date, hardware, docker_image, overall_status,
                     total_tasks, passed_tasks, failed_tasks, unknown_tasks, not_run,
-                    run_datetime_pt, github_log_url, github_cron_log_url,
+                    run_datetime_pt, machine_name, github_log_url, github_cron_log_url,
                     github_detail_log_url, plot_github_url,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(run_date, hardware) DO UPDATE SET
                     docker_image = excluded.docker_image,
                     overall_status = excluded.overall_status,
@@ -239,6 +248,7 @@ class DashboardDatabase:
                     unknown_tasks = excluded.unknown_tasks,
                     not_run = excluded.not_run,
                     run_datetime_pt = excluded.run_datetime_pt,
+                    machine_name = excluded.machine_name,
                     github_log_url = excluded.github_log_url,
                     github_cron_log_url = excluded.github_cron_log_url,
                     github_detail_log_url = excluded.github_detail_log_url,
@@ -256,6 +266,7 @@ class DashboardDatabase:
                     unknown_tasks,
                     not_run,
                     run_datetime_pt,
+                    machine_name,
                     github_log_url,
                     github_cron_log_url,
                     github_detail_log_url,

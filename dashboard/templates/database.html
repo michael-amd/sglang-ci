@@ -207,6 +207,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Date</th>
+                                    <th>Machine</th>
                                     <th>Tasks Run</th>
                                     <th>Passed</th>
                                     <th>Failed</th>
@@ -303,6 +304,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Run Date/Time (PT)</th>
+                            <th>Machine</th>
                             <th>Benchmark Name</th>
                             <th>Status</th>
                             <th>GSM8K Accuracy (%)</th>
@@ -639,13 +641,15 @@ function renderDailyRuns(runs) {
     tableBody.innerHTML = '';
 
     if (!runs.length) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No data available</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No data available</td></tr>';
     } else {
         runs.forEach((run) => {
             const tasksRun = (run.total_tasks || 0) - (run.not_run || 0);
+            const machineName = run.machine_name || '—';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${formatDateDisplay(run.run_date)}</td>
+                <td><small class="text-muted">${machineName}</small></td>
                 <td><strong>${tasksRun}</strong></td>
                 <td><span class="text-success">${run.passed_tasks || 0}</span></td>
                 <td><span class="text-danger">${run.failed_tasks || 0}</span></td>
@@ -704,6 +708,7 @@ function renderSelectedRun(selectedRun) {
 
     if (summaryContainer) {
         const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
+        const machineName = selectedRun.machine_name || '—';
         summaryContainer.innerHTML = `
             <div class="row g-2 mb-3">
                 <div class="col-3">
@@ -724,11 +729,15 @@ function renderSelectedRun(selectedRun) {
                 </div>
             </div>
             <div class="row g-2 mb-3">
-                <div class="col-6">
+                <div class="col-4">
                     <div class="text-muted small">Pass Rate</div>
                     <strong class="text-primary">${selectedRun.pass_rate || 0}%</strong>
                 </div>
-                <div class="col-6">
+                <div class="col-4">
+                    <div class="text-muted small">Machine</div>
+                    <strong>${machineName}</strong>
+                </div>
+                <div class="col-4">
                     <div class="text-muted small">Docker Image</div>
                     <div class="text-truncate" title="${selectedRun.docker_image || '—'}"><small>${selectedRun.docker_image || '—'}</small></div>
                 </div>
@@ -820,12 +829,13 @@ function renderBenchmarkRange(data) {
     const benchmarks = data.benchmarks_range || [];
     const dailyRuns = data.daily_runs || [];
 
-    // Create lookup for docker images, datetime, and URLs by date
+    // Create lookup for docker images, datetime, machine, and URLs by date
     const metadataByDate = {};
     dailyRuns.forEach((run) => {
         metadataByDate[run.run_date] = {
             dockerImage: run.docker_image || '—',
             datetimePt: run.run_datetime_pt || formatDateDisplay(run.run_date),
+            machineName: run.machine_name || '—',
             githubCronLogUrl: run.github_cron_log_url,
             githubDetailLogUrl: run.github_detail_log_url,
         };
@@ -844,7 +854,7 @@ function renderBenchmarkRange(data) {
     tableBody.innerHTML = '';
 
     if (!benchmarks.length) {
-        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No test data for selected range.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No test data for selected range.</td></tr>';
     } else {
         tableBody.innerHTML = benchmarks.map((bench) => {
             const meta = metadataByDate[bench.run_date] || {};
@@ -853,6 +863,7 @@ function renderBenchmarkRange(data) {
             const errorText = bench.error_message || '—';
             const errorShort = errorText.length > 50 ? errorText.substring(0, 50) + '...' : errorText;
             const datetimePt = meta.datetimePt || formatDateDisplay(bench.run_date);
+            const machineName = meta.machineName || '—';
 
             const cronLogLink = meta.githubCronLogUrl ?
                 `<a href="${meta.githubCronLogUrl}" target="_blank" class="text-decoration-none" title="Cron log file"><i class="bi bi-file-earmark-code"></i></a>` :
@@ -872,6 +883,7 @@ function renderBenchmarkRange(data) {
             return `
             <tr>
                 <td><small>${datetimePt}</small></td>
+                <td><small class="text-muted">${machineName}</small></td>
                 <td>${bench.benchmark_name}</td>
                 <td>${statusBadge(bench.status)}</td>
                 <td class="text-end">${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>

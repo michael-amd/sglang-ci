@@ -25,6 +25,7 @@ USAGE:
 import argparse
 import os
 import re
+import socket
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -465,6 +466,12 @@ class DataIngester:
             plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
             plot_github_url = f"https://github.com/{self.github_repo}/blob/log/plot/{hardware}/{model_dir}/online/{plot_filename}"
 
+            # Get the machine hostname
+            try:
+                machine_name = socket.gethostname()
+            except Exception:
+                machine_name = None
+
             # Create or update test run
             test_run_id = self.db.upsert_test_run(
                 run_date=date_str,
@@ -477,6 +484,7 @@ class DataIngester:
                 unknown_tasks=stats["unknown_tasks"],
                 not_run=stats["not_run"],
                 run_datetime_pt=run_datetime_pt,
+                machine_name=machine_name,
                 github_log_url=github_log_url,
                 github_cron_log_url=github_cron_log_url,
                 github_detail_log_url=github_detail_log_url,
