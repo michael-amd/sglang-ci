@@ -1,0 +1,23 @@
+==========================================
+Running ALL nightly tasks for mi30x on 20251202
+Logs will be saved to: cron/cron_log/mi30x/20251202/
+Delays: 10 minutes between jobs
+==========================================
+
+[Tue Dec  2 07:58:36 PM CST 2025] [2/7] Running DeepSeek DP Attention...
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   5110052..91a7b5e  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi30x/20251202
+[github_log_upload] Destination in repo: cron_log/mi30x/20251202
