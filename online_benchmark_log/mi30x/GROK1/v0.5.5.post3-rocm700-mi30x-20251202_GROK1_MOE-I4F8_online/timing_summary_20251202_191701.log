@@ -1,0 +1,35 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-02 19:17:01 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/models/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm700-mi30x-20251202
+Model: /data/models/amd--grok-1-W4A8KV8
+Hostname: dell300x-pla-t12-38
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 112 seconds
+
+GSM8K Test Results:
+  Total duration: 158 seconds
+  Average accuracy: 0.822
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.822
+
+Client Benchmark Results:
+  Start time: 2025-12-02 19:21:32 PST
+  Rate 1, Run 1: 347 seconds
+Completed rate 1 - Total time: 347 seconds
+  Rate 2, Run 1: 364 seconds
+Completed rate 2 - Total time: 364 seconds
+  Rate 4, Run 1: 348 seconds
+Completed rate 4 - Total time: 348 seconds
+  Rate 8, Run 1: 383 seconds
+Completed rate 8 - Total time: 383 seconds
