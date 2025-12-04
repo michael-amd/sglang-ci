@@ -1,0 +1,94 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --test-type=pd --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+[test] Start time: 2025-12-04 05:15:01 CST
+[test] Machine: dell300x-pla-t12-38
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 3700752
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi30x, ROCM Version: rocm700 (PD test - using rocm700)
+[test] Test Type: pd
+[test] Created process lock: /tmp/test_nightly_pd.lock
+[test] Cleaning up Docker containers...
+[test] No running containers to stop.
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251204...
+[test] Primary version (rocm700) not found, trying fallback (rocm630)...
+[test] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251204...
+[test] No image found for today. Checking if yesterday's image should be used as fallback...
+[test] Yesterday's run failed or did not complete
+[test] Proceeding with yesterday's image fallback...
+[test] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251203...
+[test] Fallback found candidate tag: v0.5.6-rocm700-mi30x-20251203
+[test] Attempting to pull rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203...
+v0.5.6-rocm700-mi30x-20251203: Pulling from rocm/sgl-dev
+Digest: sha256:3bc5538b208640802b275a3601f3042f683a761e183ee79a3ff6356f5d4e4412
+Status: Image is up to date for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[test] Successfully pulled fallback image for yesterday: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[test] Test type: pd
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203...
+[test] Cleaning up Docker containers...
+[test] No running containers to stop.
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[test] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251203
+[test] ==========================================
+[test] Running PD Disaggregation Test
+[test] ==========================================
+[test] Hardware type: mi30x
+[test] Model path: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[test] Model name: DeepSeek-V3-0324
+[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
+[test] Model: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)
+[test] Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
+===================================================
+PD Test Execution Started: Thu Dec  4 05:15:38 AM CST 2025
+===================================================
+[pd-test] ==========================================
+[pd-test] SGLang PD Docker-based Test Runner
+[pd-test] ==========================================
+[pd-test] Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[pd-test] Model Name: DeepSeek-V3-0324
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[pd-test] Hardware: mi30x
+[pd-test] Docker Tag: v0.5.6-rocm700-mi30x-20251203
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
+[pd-test] IP: 10.194.129.117
+[pd-test]
+[pd-test] ERROR: Model path does not exist: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203 (exit code: 1) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/test_summary.txt
+❌ Error: Summary file not found: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6-rocm700-mi30x-20251203/test_summary.txt
+[test] WARN: Failed to send Teams notification (script error)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
