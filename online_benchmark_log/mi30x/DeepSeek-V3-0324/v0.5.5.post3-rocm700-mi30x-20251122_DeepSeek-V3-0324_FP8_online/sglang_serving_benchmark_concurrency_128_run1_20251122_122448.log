@@ -1,0 +1,47 @@
+Run started at: 2025-11-22 12:24:48 PST
+Using 500 prompts for concurrency 128
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model=None, served_model_name=None, tokenizer=None, num_prompts=500, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, profile_activities=['CPU', 'GPU'], lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None)
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=30000, dataset_name='random', dataset_path='', model='/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324', served_model_name=None, tokenizer=None, num_prompts=500, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=3200, random_output_len=800, random_range_ratio=1.0, image_count=1, image_resolution='1080p', image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file=None, output_details=False, disable_tqdm=False, disable_stream=False, return_logprob=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, profile_activities=['CPU', 'GPU'], lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None)
+
+#Input tokens: 1600000
+#Output tokens: 400000
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+  0%|          | 0/500 [00:00<?, ?it/s]  0%|          | 1/500 [01:13<10:12:35, 73.66s/it] 26%|██▌       | 129/500 [02:28<06:05,  1.02it/s]  51%|█████▏    | 257/500 [03:38<02:56,  1.38it/s] 77%|███████▋  | 385/500 [04:46<01:13,  1.57it/s]100%|██████████| 500/500 [04:46<00:00,  1.75it/s]
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 128       
+Successful requests:                     500       
+Benchmark duration (s):                  286.36    
+Total input tokens:                      1600000   
+Total input text tokens:                 1600000   
+Total input vision tokens:               0         
+Total generated tokens:                  400000    
+Total generated tokens (retokenized):    397802    
+Request throughput (req/s):              1.75      
+Input token throughput (tok/s):          5587.45   
+Output token throughput (tok/s):         1396.86   
+Total token throughput (tok/s):          6984.31   
+Concurrency:                             125.09    
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   71639.63  
+Median E2E Latency (ms):                 73570.97  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          13160.09  
+Median TTFT (ms):                        13023.79  
+P99 TTFT (ms):                           27868.49  
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          73.19     
+Median TPOT (ms):                        73.23     
+P99 TPOT (ms):                           89.78     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           73.20     
+Median ITL (ms):                         58.97     
+P95 ITL (ms):                            60.24     
+P99 ITL (ms):                            62.35     
+Max ITL (ms):                            25394.56  
+==================================================
+Run completed at: 2025-11-22 12:29:51 PST
+Run duration: 303 seconds
