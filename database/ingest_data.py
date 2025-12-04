@@ -93,14 +93,21 @@ class DataIngester:
                 with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
 
-                    # Look for docker image pattern
+                    # Look for docker image matching the specific hardware type
+                    # Pattern: Image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251203
+                    pattern = rf"Image:\s*([\w\.\-:/]*{hardware}[\w\.\-:/]*)"
+                    match = re.search(pattern, content, re.IGNORECASE)
+                    if match:
+                        return match.group(1)
+
+                    # Fallback: Look for generic docker image pattern
                     match = re.search(
                         r"Docker image:\s*([\w\.\-:/]+)", content, re.IGNORECASE
                     )
                     if match:
                         return match.group(1)
 
-                    # Try another pattern
+                    # Try another pattern (generic, first match)
                     match = re.search(r"Image:\s*([\w\.\-:/]+)", content, re.IGNORECASE)
                     if match:
                         return match.group(1)
