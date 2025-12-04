@@ -1,3 +1,5 @@
+# Explicitly set timezone for cron (fixes issue where cron daemon uses UTC)
+TZ=America/Chicago
 # machine is at CT time
 #
 # RETRY MECHANISM FOR DOCKER IMAGE UNAVAILABILITY:
