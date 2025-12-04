@@ -1,0 +1,150 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi30x --sanity-trials=3 --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c8c6cfd045c8452a8df5f8922ab5e540/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hsr-c64Xxhev7ECv6rchSO1bQswM-cNEc5895jX5JpQ
+[nightly] Start time: 2025-12-04 03:40:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3701746
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Using rocm700 for sanity check on mi30x hardware (improved FP8 accuracy)
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251204...
+[nightly] Primary version (rocm700) not found, trying fallback (rocm630)...
+[nightly] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251204...
+[nightly] No image found for today. Checking if yesterday's image should be used as fallback...
+[nightly] Yesterday's run failed or did not complete
+[nightly] Proceeding with yesterday's image fallback...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251203...
+[nightly] Fallback found candidate tag: v0.5.6-rocm700-mi30x-20251203
+[nightly] Found local image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[nightly] Successfully obtained fallback image for date 20251203: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[nightly] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251203
+[nightly] Reusing container sgl-dev_v0.5.6-rocm700-mi30x-20251203
+[nightly] Models directory not accessible in existing container. Recreating container...
+[nightly] Creating container sgl-dev_v0.5.6-rocm700-mi30x-20251203
+60c79d294757182c8afbd68afab07f5e886abec7f4af18d2dfbd3fae26986630
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.6-rocm700-mi30x-20251203
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x'
+🔧 Testing on platform: mi30x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.6-rocm700-mi30x-20251203
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+⏭️  GPT-OSS-120B: SKIPPED (Model path does not exist: /data/lmsys/gpt-oss-120b-bf16)
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ⏭️ GPT-OSS-120B skipped in 0.0s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+⏭️  GPT-OSS-20B: SKIPPED (Model path does not exist: /data/lmsys/gpt-oss-20b-bf16)
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ⏭️ GPT-OSS-20B skipped in 0.0s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+⏭️  QWEN-30B: SKIPPED (Model path does not exist: /data/Qwen/Qwen3-30B-A3B-Thinking-2507)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ⏭️ QWEN-30B skipped in 0.0s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+⏭️  GROK1-IN4: SKIPPED (Model path does not exist: /data/amd--grok-1-W4A8KV8)
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ⏭️ GROK1-IN4 skipped in 0.0s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+⏭️  GROK1-FP8: SKIPPED (Model path does not exist: /data/lmzheng-grok-1)
+Progress: [████████████████████████████░░░░░░░░░░░░] 5/7 (71.4%) ⏭️ GROK1-FP8 skipped in 0.0s
+
+🚀 [6/7] Starting GROK2.5...
+============================================================
+Progress: [████████████████████████████░░░░░░░░░░░░] 6/7 (71.4%)
+⏭️  GROK2.5: SKIPPED (Model path does not exist: /data/grok-2)
+Progress: [██████████████████████████████████░░░░░░] 6/7 (85.7%) ⏭️ GROK2.5 skipped in 0.0s
+
+🚀 [7/7] Starting llama4...
+============================================================
+Progress: [██████████████████████████████████░░░░░░] 7/7 (85.7%)
+⏭️  llama4: SKIPPED (Model path does not exist: /data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8)
+Progress: [████████████████████████████████████████] 7/7 (100.0%) ⏭️ llama4 skipped in 0.0s
+
+🎯 All tests completed!
+📊 Total execution time: 0.00s (0.0 minutes)
+📝 Timing log saved to: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.6-rocm700-mi30x-20251203/timing_summary_20251204_034049.log
+
+=== Final Summary ===
+⏭️ GPT-OSS-120B: SKIPPED (model/tokenizer not available)
+⏭️ GPT-OSS-20B: SKIPPED (model/tokenizer not available)
+⏭️ QWEN-30B: SKIPPED (model/tokenizer not available)
+⏭️ GROK1-IN4: SKIPPED (model/tokenizer not available)
+⏭️ GROK1-FP8: SKIPPED (model/tokenizer not available)
+⏭️ GROK2.5: SKIPPED (model/tokenizer not available)
+⏭️ llama4: SKIPPED (model/tokenizer not available)
+
+⚠️  No models were tested (all 7 models skipped)
+⏭️  Skipped: 7/7 models (not counted in pass/fail statistics)
+
+🧹 Final cleanup...
+✅ All processes cleaned up successfully!
+[nightly] === Sanity check completed successfully ===
+[nightly] Sending Teams notification for sanity check results...
+🔍 Sanity check mode: Processing sanity check results
+📋 Found sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.6-rocm700-mi30x-20251203/timing_summary_20251204_034049.log
+📋 Parsing sanity check log: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.6-rocm700-mi30x-20251203/timing_summary_20251204_034049.log
+✅ Successfully sent sanity check unknown alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[nightly] Teams notification sent successfully for sanity check
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
+[nightly] Stopping container sgl-dev_v0.5.6-rocm700-mi30x-20251203 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
