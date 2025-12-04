@@ -1,0 +1,18 @@
+=== CONFIGURATION ===
+Model: grok2 (variant: GROK2)
+Data directory: /mnt/raid/michael/sglang-ci/online/GROK2
+Output prefix: GROK2_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online
+Model name: GROK2
+Mode filter: aiter
+Variant filter: all variants
+Load metric: request_rate
+Expected request_rates: [1, 2, 4, 8, 16]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+No data processed. Skipping CSV generation.
+ERROR: Failed to generate summary CSV. Exiting.
