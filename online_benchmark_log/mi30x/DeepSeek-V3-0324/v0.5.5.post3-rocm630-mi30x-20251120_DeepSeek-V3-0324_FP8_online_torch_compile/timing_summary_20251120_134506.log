@@ -1,0 +1,74 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-20 13:45:06 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --enable-torch-compile --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.5.post3-rocm630-mi30x-20251120
+Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t10-23
+Mode: online
+DP Attention: false
+Torch Compile: true
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 647 seconds
+
+GSM8K Test Results:
+  Total duration: 548 seconds
+  Average accuracy: 0.933
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.933
+GSM8K benchmark completed. Serving benchmarks skipped in torch compile mode.
+  End time: 2025-11-20 14:05:01 PST
+  Total duration: 0 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 64:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 16:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 4:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+Concurrency 1:
+  E2E Latency: NA ms
+  TTFT: NA ms
+  ITL: NA ms
+  Output throughput: NA tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-11-20 14:05:01 PST
+Total execution time: 1195 seconds (19 minutes)
+========================================
