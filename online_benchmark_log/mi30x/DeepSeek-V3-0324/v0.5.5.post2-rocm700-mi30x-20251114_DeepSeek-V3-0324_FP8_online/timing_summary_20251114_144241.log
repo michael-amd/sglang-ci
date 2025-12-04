@@ -1,0 +1,44 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-11-14 14:42:41 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114
+Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t10-23
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 125 seconds
+  Connection error: YES (Run 1)
+
+Server Health Check (before Run 2):
+  Status: FAILED - server crashed or became unresponsive
+Server startup time: 125 seconds
+  Restart attempt: SUCCESS
+
+GSM8K Test Results:
+  Total duration: 730 seconds
+  Average accuracy: 0.940
+  Total runs: 5
+  Valid runs: 4
+  Excluded runs: 1
+  GSM8K accuracy: 0.940
+
+Serving Benchmark Results:
+  Start time: 2025-11-14 14:56:56 PST
+  Concurrency 128, Run 1: 258 seconds
+Completed concurrency 128 - Total time: 260 seconds
+  Concurrency 64, Run 1: 353 seconds
+Completed concurrency 64 - Total time: 355 seconds
+  Concurrency 16, Run 1: 189 seconds
+Completed concurrency 16 - Total time: 191 seconds
+  Concurrency 4, Run 1: 493 seconds
+Completed concurrency 4 - Total time: 495 seconds
+  Concurrency 1, Run 1: 1804 seconds
+Completed concurrency 1 - Total time: 1806 seconds
