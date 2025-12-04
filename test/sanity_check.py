@@ -55,7 +55,7 @@ DEFAULT_MODELS = {
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
+            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.90 --attention-backend triton",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.820},
@@ -71,7 +71,7 @@ DEFAULT_MODELS = {
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
+            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.90 --attention-backend triton",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.500},
@@ -185,11 +185,11 @@ DEFAULT_MODELS = {
     "llama4": {
         "model_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "tokenizer_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
@@ -669,15 +669,50 @@ def wait_for_server_ready(server_log_path, timeout=300):
                 with open(server_log_path, "r") as f:
                     content = f.read()
 
-                # Check for memory errors
-                if "Not enough memory" in content or "mem_fraction_static" in content:
+                # Check for kernel compilation deadlock (aiter JIT lock issue)
+                if "waiting for baton release" in content:
+                    # Count how many workers are waiting
+                    waiting_count = content.count("waiting for baton release")
+                    lock_match = re.search(r"lock_(\w+)", content)
+                    lock_name = lock_match.group(1) if lock_match else "unknown"
+                    return (
+                        False,
+                        "kernel_deadlock",
+                        f"{lock_name} ({waiting_count} workers waiting)",
+                    )
+
+                # Check for actual memory errors (OOM)
+                # Note: "mem_fraction_static" appears in ALL server logs as part of args,
+                # so we should NOT use it as an error indicator
+                if (
+                    "Not enough memory" in content
+                    or "OutOfMemoryError" in content
+                    or "CUDA out of memory" in content
+                ):
                     mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
                     current_mem = mem_match.group(1) if mem_match else "unknown"
                     return False, "memory_error", current_mem
 
-                # Check for timeout during compilation
+                # Check for Python AttributeError (like llama4 bug)
+                if "AttributeError:" in content:
+                    attr_match = re.search(
+                        r"AttributeError: (.+?)$", content, re.MULTILINE
+                    )
+                    error_msg = (
+                        attr_match.group(1) if attr_match else "unknown attribute error"
+                    )
+                    return False, "attribute_error", error_msg
+
+                # Check for timeout during compilation (build started but not finished)
                 if "start build" in content and "finish build" not in content:
                     return False, "compilation_timeout", None
+
+                # Check for sigquit/child process failure
+                if (
+                    "Received sigquit from a child process" in content
+                    or "child failed" in content
+                ):
+                    return False, "child_process_crash", None
 
             except:
                 pass
@@ -690,8 +725,12 @@ def wait_for_server_ready(server_log_path, timeout=300):
                 if ready_msg in content:
                     return True, None, None
 
-                # Check for memory errors early
-                if "Not enough memory" in content:
+                # Check for actual memory errors early (NOT just presence of mem_fraction_static)
+                if (
+                    "Not enough memory" in content
+                    or "OutOfMemoryError" in content
+                    or "CUDA out of memory" in content
+                ):
                     mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
                     current_mem = mem_match.group(1) if mem_match else "unknown"
                     print(
@@ -699,6 +738,36 @@ def wait_for_server_ready(server_log_path, timeout=300):
                     )
                     print(f"   Suggestion: Increase --mem-fraction-static value")
                     return False, "memory_error", current_mem
+
+                # Check for kernel compilation deadlock early
+                if "waiting for baton release" in content:
+                    waiting_count = content.count("waiting for baton release")
+                    if waiting_count >= 4:  # Multiple workers waiting = likely deadlock
+                        lock_match = re.search(r"lock_(\w+)", content)
+                        lock_name = lock_match.group(1) if lock_match else "unknown"
+                        print(
+                            f"❌ Kernel compilation deadlock detected! {waiting_count} workers waiting for {lock_name}"
+                        )
+                        print(
+                            f"   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
+                        )
+                        return (
+                            False,
+                            "kernel_deadlock",
+                            f"{lock_name} ({waiting_count} workers waiting)",
+                        )
+
+                # Check for Python errors (AttributeError, etc.)
+                if "AttributeError:" in content:
+                    attr_match = re.search(
+                        r"AttributeError: (.+?)$", content, re.MULTILINE
+                    )
+                    error_msg = attr_match.group(1) if attr_match else "unknown"
+                    print(f"❌ Python AttributeError detected: {error_msg}")
+                    print(
+                        f"   💡 Suggestion: This is a code bug - check the server log for traceback"
+                    )
+                    return False, "attribute_error", error_msg
 
                 # Log errors periodically to help with debugging
                 if elapsed - last_error_logged > 30:  # Every 30 seconds
@@ -944,6 +1013,42 @@ def sanity_check(
             suggestion = (
                 f"💡 Suggestion: Increase --mem-fraction-static in launch command"
             )
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "kernel_deadlock":
+            error_msg = f"Kernel compilation deadlock ({error_details})"
+            suggestion = f"💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "attribute_error":
+            error_msg = f"Code bug - AttributeError: {error_details}"
+            suggestion = f"💡 Suggestion: Check server log for full traceback - this is a SGLang code bug"
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "child_process_crash":
+            error_msg = "Child process crashed during startup"
+            suggestion = f"💡 Suggestion: Check server log for crash details"
             print(f"{model_name}: {FAIL_MARK} ({error_msg})")
             print(f"   {suggestion}")
             if timing_log:
