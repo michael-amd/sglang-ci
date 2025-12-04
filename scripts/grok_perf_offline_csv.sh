@@ -322,6 +322,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
     docker exec \
       -e INSIDE_CONTAINER=1 \
       -e LATEST_TAG="${LATEST_TAG}" \
+      -e HSA_ENABLE_COREDUMP=0 \
       "${CONTAINER_NAME}" \
       bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \

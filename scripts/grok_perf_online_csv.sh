@@ -335,7 +335,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       CONTAINER_ARGS="${CONTAINER_ARGS} --current-dir=\"${CURRENT_DIR}\""
     fi
 
-    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
+    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' -e HSA_ENABLE_COREDUMP=0 \
       "${CONTAINER_NAME}" \
       bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \

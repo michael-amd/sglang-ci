@@ -301,6 +301,7 @@ manage_container() {
             -e INSIDE_CONTAINER=1 \
             -e LATEST_TAG="${LATEST_TAG}" \
             -e TZ='America/Los_Angeles' \
+            -e HSA_ENABLE_COREDUMP=0 \
             $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
             $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
             $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
