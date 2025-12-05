@@ -300,8 +300,17 @@ echo "[github_log_upload] Destination in repo: $DEST_PATH"
 
 # rsync keeps timestamps and only updates changed files; falls back to cp when
 # rsync is unavailable.
+# NOTE: Only cron logs use --delete (mirror mode) since they are machine-specific.
+# All other log types (sanity, pd, unit-test, upstream-ci, online) use append mode
+# because multiple machines (mi30x, mi35x) upload to the same directories.
 if command -v rsync &>/dev/null; then
-  rsync -a --delete "$SRC_LOG_DIR/" "$DEST_PATH/"
+  if [[ "$LOG_TYPE" == "cron" ]]; then
+    # Mirror mode: sync source to destination (cron logs are machine-specific)
+    rsync -a --delete "$SRC_LOG_DIR/" "$DEST_PATH/"
+  else
+    # Append mode: don't delete existing files (sanity/pd/unit-test/upstream-ci/online)
+    rsync -a "$SRC_LOG_DIR/" "$DEST_PATH/"
+  fi
 else
   cp -a "$SRC_LOG_DIR/." "$DEST_PATH/"
 fi
