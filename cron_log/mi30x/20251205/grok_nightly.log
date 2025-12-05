@@ -1,0 +1,196 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=
+[nightly] Start time: 2025-12-05 05:45:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 4111990
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251205...
+[nightly] Primary version (rocm700) not found, trying fallback (rocm630)...
+[nightly] Searching for non-SRT mi30x image (rocm630) in 'rocm/sgl-dev' for date 20251205...
+[nightly] No image found for today. Checking if yesterday's image should be used as fallback...
+[nightly] Yesterday's run failed or did not complete
+[nightly] Proceeding with yesterday's image fallback...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251204...
+[nightly] Fallback found candidate tag: v0.5.6-rocm700-mi30x-20251204
+[nightly] Found local image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+[nightly] Successfully obtained fallback image for date 20251204: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+[nightly] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251204
+[nightly] Reusing container sgl-dev_v0.5.6-rocm700-mi30x-20251204
+[nightly] Custom model path not accessible in existing container. Recreating container...
+[nightly] Creating container sgl-dev_v0.5.6-rocm700-mi30x-20251204
+da57dec108f28340e9ab96d26543cf1cfb1cd5c7dc738027de29372e0e860dbd
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6-rocm700-mi30x-20251204
+[online] Auto-detected model type: grok1 from path: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Script started at: 2025-12-05 05:45:49 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6-rocm700-mi30x-20251204_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Using Grok1 environment: SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 721, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 531, in cached_files
+    resolved_files = [
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 532, in <listcomp>
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/opt/venv/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 24, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4369, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3922, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 290, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 622, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 945, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3932, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 3173, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 255, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1332, in from_pretrained
+    config_dict, unused_kwargs = PretrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 662, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/transformers/configuration_utils.py", line 744, in _get_config_dict
+    raise OSError(
+OSError: Can't load the configuration of '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure '/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8' is the correct path to a directory containing a config.json file
+[nightly] === Online benchmark dispatched for GROK; check logs in sgl-dev_v0.5.6-rocm700-mi30x-20251204 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6-rocm700-mi30x-20251204_GROK1_MOE-I4F8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251204
+[nightly] Teams notifications skipped - --teams-webhook-url not provided
+[nightly] === Online post-processing completed for GROK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251204
+[nightly] Stopping container sgl-dev_v0.5.6-rocm700-mi30x-20251204 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
