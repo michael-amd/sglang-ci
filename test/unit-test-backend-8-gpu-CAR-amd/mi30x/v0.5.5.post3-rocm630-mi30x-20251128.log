@@ -1,0 +1,1253 @@
+==========================================
+SGL Unit Test Log
+==========================================
+Test: test_custom_allreduce.TestCustomAllReduce
+Image: rocm/sgl-dev:v0.5.5.post3-rocm630-mi30x-20251128
+Container: sgl-dev_v0.5.5.post3-rocm630-mi30x-20251128
+Hardware: mi30x
+Start time: 2025-11-28 10:05:48 CST
+Test directory: /sgl-workspace/sglang/test/manual
+Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+==========================================
+
+[2025-11-28 16:05:57] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/utils.py:505: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='utf-8'>
+  max_file = open(cpu_max_file_name).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-05-57_962315_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:05:59,165	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(eager_allreduce pid=470)[0m [2025-11-28 16:06:08] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(eager_allreduce pid=471)[0m [2025-11-28 16:06:09] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(eager_allreduce pid=471)[0m [2025-11-28 16:06:10] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(eager_allreduce pid=471)[0m [2025-11-28 16:06:08] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(eager_allreduce pid=470)[0m [2025-11-28 16:06:10] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 290 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-13_073445_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:06:14,037	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(eager_allreduce pid=6418)[0m [2025-11-28 16:06:22] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(eager_allreduce pid=6420)[0m [2025-11-28 16:06:23] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(eager_allreduce pid=6416)[0m [2025-11-28 16:06:25] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(eager_allreduce pid=6420)[0m [2025-11-28 16:06:22] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 3x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(eager_allreduce pid=6419)[0m [2025-11-28 16:06:25] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 3x across cluster][0m
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 6237 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-27_596679_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:06:28,585	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(eager_allreduce pid=12541)[0m [2025-11-28 16:06:37] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(eager_allreduce pid=12541)[0m [2025-11-28 16:06:37] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(eager_allreduce pid=12546)[0m [2025-11-28 16:06:39] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(eager_allreduce pid=12549)[0m [2025-11-28 16:06:39] WARNING quick_all_reduce.py:134: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(eager_allreduce pid=12552)[0m [2025-11-28 16:06:37] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12547)[0m [2025-11-28 16:06:39] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12552)[0m [2025-11-28 16:06:39] WARNING quick_all_reduce.py:134: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 12361 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-06-42_398535_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:06:43,385	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(eager_allreduce pid=18809)[0m [2025-11-28 16:06:52] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(eager_allreduce pid=18809)[0m [2025-11-28 16:06:53] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(eager_allreduce pid=18806)[0m [2025-11-28 16:06:55] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(eager_allreduce pid=18824)[0m [2025-11-28 16:06:52] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=18824)[0m [2025-11-28 16:06:56] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 7x across cluster][0m
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 18627 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-00_598280_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:07:01,589	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:10] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:10] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(graph_allreduce pid=25246)[0m [2025-11-28 16:07:12] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25246)[0m [2025-11-28 16:07:10] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:12] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=25237)[0m [2025-11-28 16:07:55] INFO common.py:2776: Registering 0 cuda graph addresses
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 25055 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-07-57_078637_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:07:58,065	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:06] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:07] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(graph_allreduce pid=31186)[0m [2025-11-28 16:08:08] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31188)[0m [2025-11-28 16:08:06] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:08] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:08:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:04] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:04] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:04] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:04] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:05] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:05] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:05] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:05] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:07] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:07] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=31187)[0m [2025-11-28 16:09:07] INFO common.py:2776: Registering 0 cuda graph addresses
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 31006 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-09-09_111264_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:09:10,105	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(graph_allreduce pid=37314)[0m [2025-11-28 16:09:18] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:19] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(graph_allreduce pid=37320)[0m [2025-11-28 16:09:21] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(graph_allreduce pid=37318)[0m [2025-11-28 16:09:21] WARNING quick_all_reduce.py:134: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37319)[0m [2025-11-28 16:09:19] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37314)[0m [2025-11-28 16:09:21] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37320)[0m [2025-11-28 16:09:21] WARNING quick_all_reduce.py:134: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:37] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:38] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:39] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:40] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:41] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:42] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:43] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:44] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:45] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:46] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:46] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:46] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:46] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:47] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:47] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:47] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:48] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:48] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:48] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:49] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:49] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:49] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:49] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:09:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:05] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:06] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:07] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:07] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:07] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:08] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:08] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:08] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:09] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:09] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:09] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:09] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:10] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:10] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:10] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:11] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:11] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:11] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:12] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:12] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:12] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:12] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:13] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:13] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:13] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:14] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:14] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:14] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:15] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:15] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:15] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:16] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:16] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:16] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:16] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:17] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:17] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:17] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:18] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:18] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:18] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:19] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:19] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:19] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:20] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:20] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:20] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:20] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:21] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:21] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:21] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:22] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:22] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:22] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:23] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:23] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:23] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:24] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:24] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:24] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:25] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:25] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:25] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:26] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:26] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:26] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:27] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:27] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:27] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:28] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:28] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:28] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:28] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:29] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:29] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:29] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:30] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:30] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:30] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:31] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:31] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:31] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:32] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:32] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:32] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=37317)[0m [2025-11-28 16:10:33] INFO common.py:2776: Registering 0 cuda graph addresses
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 37129 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-28_16-10-34_761643_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-28 16:10:35,737	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(graph_allreduce pid=43588)[0m [2025-11-28 16:10:44] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:45] INFO pynccl.py:83: sglang is using nccl==2.21.5
+[36m(graph_allreduce pid=43588)[0m [2025-11-28 16:10:48] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43596)[0m [2025-11-28 16:10:45] INFO config.py:54: PyTorch version 2.6.0a0+git8d4926e available.[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:50] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:51] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:52] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43587)[0m [2025-11-28 16:10:48] WARNING custom_all_reduce.py:432: Aiter custom all-reduce not available (optional dependency missing); falling back to sglang CustomAllreduce. Details: No module named 'aiter.dist.device_communicators'[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:53] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:54] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:55] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:56] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:57] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:58] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:10:59] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:00] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:01] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:02] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:03] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:04] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:05] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:06] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:06] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:06] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:07] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:07] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:07] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:08] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:08] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:08] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:09] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:10] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:11] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:12] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:13] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:14] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:15] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:16] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:17] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:18] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:19] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:20] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:21] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:22] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:23] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:24] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:25] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:26] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:27] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:28] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:29] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:30] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:31] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:32] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:33] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:34] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:35] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:36] INFO common.py:2776: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:36] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:36] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:37] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:37] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:37] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:38] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:38] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:38] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:39] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:39] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:39] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:39] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:40] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:40] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:40] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:41] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:42] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:43] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:44] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:45] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:46] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:47] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:48] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:49] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:50] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:51] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:52] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:53] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:54] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:55] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:56] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:57] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:58] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:11:59] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:00] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:01] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:02] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:03] INFO common.py:2776: Registering 0 cuda graph addresses
+[36m(graph_allreduce pid=43590)[0m [2025-11-28 16:12:03] INFO common.py:2776: Registering 0 cuda graph addresses
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 43407 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.
+----------------------------------------------------------------------
+Ran 2 tests in 367.344s
+
+OK
+[CI Test Method] TestCustomAllReduce.test_eager_allreduce
+[CI Test Method] TestCustomAllReduce.test_graph_allreduce
+
+==========================================
+End time: 2025-11-28 10:12:11 CST
+Exit code: 0
+Result: PASSED
+==========================================
