@@ -5,7 +5,7 @@ Test: test_custom_allreduce.TestCustomAllReduce
 Image: rocm/sgl-dev:v0.5.3rc0-rocm700-mi35x-20251004
 Container: sgl-dev_v0.5.3rc0-rocm700-mi35x-20251004
 Hardware: mi35x
-Start time: 2025-10-05 10:05:39 CDT
+Start time: 2025-10-05 10:05:37 CDT
 Test directory: /sgl-workspace/sglang/test/srt
 Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
 ==========================================
@@ -13,13 +13,13 @@ Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_al
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_gcs_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-42_125005_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-40_312577_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-42_125005_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-40_312577_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-42_125005_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-40_312577_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/utils.py:521: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='UTF-8'>
@@ -28,160 +28,173 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1247: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_raylet(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-42_125005_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-40_312577_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:05:43,246	INFO worker.py:1852 -- Started a local Ray instance.
+2025-10-05 15:05:41,408	INFO worker.py:1852 -- Started a local Ray instance.
 /usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 416 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_gcs_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-56_172172_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-53_239422_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-56_172172_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-53_239422_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-56_172172_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-53_239422_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-56_172172_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-05-53_239422_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:05:57,018	INFO worker.py:1852 -- Started a local Ray instance.
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 15547 is still running
+2025-10-05 15:05:54,092	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:06:04,070 E 15609 15639] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-05-53_239422_19 is over 95% full, available space: 173.542 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 15544 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-12_743218_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-08_709518_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-12_743218_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-08_709518_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-12_743218_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-08_709518_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-12_743218_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-08_709518_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:06:13,590	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(eager_allreduce pid=31091)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
-[36m(eager_allreduce pid=31090)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 30869 is still running
+2025-10-05 15:06:09,556	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:06:19,529 E 30941 30970] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-06-08_709518_19 is over 95% full, available space: 173.54 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+[36m(eager_allreduce pid=31109)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(eager_allreduce pid=31138)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 30876 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-27_018638_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-23_584527_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-27_018638_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-23_584527_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-27_018638_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-23_584527_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-27_018638_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-23_584527_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:06:27,746	INFO worker.py:1852 -- Started a local Ray instance.
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 46392 is still running
+2025-10-05 15:06:24,412	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:06:34,381 E 46473 46502] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-06-23_584527_19 is over 95% full, available space: 173.537 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+[33m(raylet)[0m [2025-10-05 15:06:44,397 E 46473 46502] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-06-23_584527_19 is over 95% full, available space: 173.537 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 46408 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-./opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-46_674338_19/logs/monitor.out' mode='a' encoding='utf-8'>
+./opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-51_245656_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-46_674338_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-51_245656_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-46_674338_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-51_245656_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-46_674338_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-06-51_245656_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:06:47,558	INFO worker.py:1852 -- Started a local Ray instance.
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 62126 is still running
+2025-10-05 15:06:52,088	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:07:02,057 E 62215 62245] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-06-51_245656_19 is over 95% full, available space: 173.535 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 62150 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-02_345630_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-06_407889_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-02_345630_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-06_407889_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-02_345630_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-06_407889_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-02_345630_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-06_407889_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:07:03,202	INFO worker.py:1852 -- Started a local Ray instance.
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 77281 is still running
+2025-10-05 15:07:07,328	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:07:17,210 E 77350 77380] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-07-06_407889_19 is over 95% full, available space: 173.533 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 77285 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-19_339568_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-24_248882_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-19_339568_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-24_248882_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-19_339568_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-24_248882_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-19_339568_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-24_248882_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:07:20,066	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(graph_allreduce pid=92845)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
-[36m(graph_allreduce pid=92866)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 92623 is still running
+2025-10-05 15:07:25,104	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:07:35,081 E 92670 92700] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-07-24_248882_19 is over 95% full, available space: 173.53 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+[36m(graph_allreduce pid=92830)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(graph_allreduce pid=92840)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 92605 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-36_701301_19/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-41_532438_19/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-36_701301_19/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-41_532438_19/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-36_701301_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-41_532438_19/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-36_701301_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-10-05_15-07-41_532438_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-10-05 15:07:37,527	INFO worker.py:1852 -- Started a local Ray instance.
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 108149 is still running
+2025-10-05 15:07:42,256	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-10-05 15:07:52,230 E 108191 108220] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-07-41_532438_19 is over 95% full, available space: 173.528 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+[33m(raylet)[0m [2025-10-05 15:08:02,236 E 108191 108220] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-10-05_15-07-41_532438_19 is over 95% full, available space: 173.528 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 108126 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 .
 ----------------------------------------------------------------------
-Ran 2 tests in 137.922s
+Ran 2 tests in 151.082s
 
 OK
-[36m(eager_allreduce pid=659)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
-[36m(eager_allreduce pid=646)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
-[36m(eager_allreduce pid=15770)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-[36m(eager_allreduce pid=15769)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 8x across cluster][0m
-[36m(eager_allreduce pid=15774)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=31097)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
-[36m(eager_allreduce pid=31100)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 23x across cluster][0m
-[36m(eager_allreduce pid=46620)[0m [Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
-[36m(eager_allreduce pid=46620)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
-[36m(eager_allreduce pid=46628)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
-[36m(graph_allreduce pid=62358)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
-[36m(graph_allreduce pid=62369)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=77501)[0m [Gloo] Rank 0 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-[36m(graph_allreduce pid=77501)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 8x across cluster][0m
-[36m(graph_allreduce pid=77515)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=92850)[0m [Gloo] Rank 4 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
-[36m(graph_allreduce pid=92866)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 23x across cluster][0m
-[36m(graph_allreduce pid=108387)[0m [Gloo] Rank 2 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
-[36m(graph_allreduce pid=108387)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 16x across cluster][0m
-[36m(graph_allreduce pid=108388)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 15x across cluster][0m
+[36m(eager_allreduce pid=647)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(eager_allreduce pid=647)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(eager_allreduce pid=666)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 6x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(eager_allreduce pid=15772)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(eager_allreduce pid=15772)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(eager_allreduce pid=15774)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
+[36m(eager_allreduce pid=31109)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(eager_allreduce pid=31109)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(eager_allreduce pid=31138)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 22x across cluster][0m
+[36m(eager_allreduce pid=46636)[0m [Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(eager_allreduce pid=46636)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
+[36m(eager_allreduce pid=46645)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
+[36m(graph_allreduce pid=62379)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(graph_allreduce pid=62370)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=77518)[0m [Gloo] Rank 0 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(graph_allreduce pid=77518)[0m [Gloo] Rank 0 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(graph_allreduce pid=77522)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
+[36m(graph_allreduce pid=92830)[0m [Gloo] Rank 2 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(graph_allreduce pid=92830)[0m [Gloo] Rank 2 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(graph_allreduce pid=92840)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 22x across cluster][0m
+[36m(graph_allreduce pid=108356)[0m [Gloo] Rank 1 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(graph_allreduce pid=108356)[0m [Gloo] Rank 1 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(graph_allreduce pid=108356)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 16x across cluster][0m
+[36m(graph_allreduce pid=108367)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
 
 ==========================================
-End time: 2025-10-05 10:08:00 CDT
+End time: 2025-10-05 10:08:12 CDT
 Exit code: 0
 Result: PASSED
 ==========================================
