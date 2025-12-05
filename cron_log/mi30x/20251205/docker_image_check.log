@@ -1,38 +1,29 @@
 [check] ==========================================
 [check] SGL Nightly Docker Image Availability Check
 [check] ==========================================
-[check] Run Date/Time: 2025-12-05 03:00:01 PST
-[check] Machine: dell300x-pla-t12-38
+[check] Run Date/Time: 2025-12-05 08:00:01 PST
+[check] Machine: dell300x-pla-t10-23
 [check] Repository: rocm/sgl-dev
 [check] Hardware types: mi30x mi35x
 [check] Checking images for date: 20251205
 
-[check] Searching for mi30x image (discovering ROCM version)... ✗ NOT FOUND
-[check] Searching for mi35x image (discovering ROCM version)... ✗ NOT FOUND
+[check] Searching for mi30x image (discovering ROCM version)... found, verifying... ✓ AVAILABLE
+[check]   Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251205
+[check] Searching for mi35x image (discovering ROCM version)... found, verifying... ✓ AVAILABLE
+[check]   Image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251205
 
 [check] ==========================================
 [check] Summary
 [check] ==========================================
 [check] Total images checked: 2
-[check] Available images: 0
-[check] Missing images: 2
+[check] Available images: 2
+[check] Missing images: 0
 
-[check] ✗ Missing or problematic images:
-[check]   - mi30x (20251205): no image found for any available ROCM version
-[check]   - mi35x (20251205): no image found for any available ROCM version
+[check] ✓ All expected images are available!
 
 [check] ==========================================
-[check] Troubleshooting
+[check] Sending Teams Notification
 [check] ==========================================
-[check] Some images are missing or not accessible.
-[check] This could indicate build failures in the nightly pipeline.
-
-[check] To investigate build errors, check the GitHub workflow:
-[check] https://github.com/sgl-project/sglang/actions/workflows/release-docker-amd-nightly.yml
-
-[check] Look for recent workflow runs around the missing dates.
-[check] Check for:
-[check]   - Build failures in the workflow logs
-[check]   - Docker registry push errors
-[check]   - Resource or timeout issues
-[check]   - AMD-specific build problems
+✅ Successfully sent Docker image success alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[check] Teams notification sent successfully
