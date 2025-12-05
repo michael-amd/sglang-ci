@@ -1,0 +1,182 @@
+==========================================
+SGL Unit Test Log
+==========================================
+Test: test_custom_allreduce.TestCustomAllReduce
+Image: rocm/sgl-dev:v0.5.5-rocm700-mi35x-20251109
+Container: sgl-dev_v0.5.5-rocm700-mi35x-20251109
+Hardware: mi35x
+Start time: 2025-11-10 11:01:50 CST
+Test directory: /sgl-workspace/sglang/test/srt
+Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+==========================================
+
+[Test Method] test_eager_allreduce
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
+  process_info = ray._private.services.start_gcs_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-10_17-01-54_111891_19/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-10_17-01-54_111891_19/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-10_17-01-54_111891_19/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/utils.py:521: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='UTF-8'>
+  max_file = open(cpu_max_file_name).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1247: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
+  process_info = ray._private.services.start_raylet(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-11-10_17-01-54_111891_19/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-11-10 17:01:55,141	INFO worker.py:1852 -- Started a local Ray instance.
+[33m(raylet)[0m [2025-11-10 17:02:05,019 E 481 511] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-11-10_17-01-54_111891_19 is over 95% full, available space: 139.929 GB; capacity: 3519.29 GB. Object creation will fail if spilling is required.
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2466, in retry
+    return fn()
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1683, in <lambda>
+    lambda: super(CustomTestCase, self)._callTestMethod(method),
+  File "/usr/lib/python3.10/unittest/case.py", line 549, in _callTestMethod
+    method()
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 85, in test_eager_allreduce
+    multi_process_parallel(world_size, self, self.eager_allreduce)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 53, in multi_process_parallel
+    ray.get(refs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 2782, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 929, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ValueError): [36mray::eager_allreduce()[39m (pid=646, ip=10.235.26.245)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 168, in eager_allreduce
+    out1 = tensor_model_parallel_all_reduce(inp1)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/communication_op.py", line 13, in tensor_model_parallel_all_reduce
+    return get_tp_group().all_reduce(input_)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/parallel_state.py", line 582, in all_reduce
+    if self.pynccl_comm is not None and self.is_symmetric_memory_enabled():
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/device_communicators/pynccl_allocator.py", line 69, in is_symmetric_memory_enabled
+    return get_global_server_args().enable_symm_mem
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3991, in get_global_server_args
+    raise ValueError("Global server args is not set yet!")
+ValueError: Global server args is not set yet!
+E[36m(eager_allreduce pid=646)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[Test Method] test_graph_allreduce
+2025-11-10 17:02:05,344	ERROR worker.py:420 -- Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): [36mray::eager_allreduce()[39m (pid=666, ip=10.235.26.245)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 168, in eager_allreduce
+    out1 = tensor_model_parallel_all_reduce(inp1)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/communication_op.py", line 13, in tensor_model_parallel_all_reduce
+    return get_tp_group().all_reduce(input_)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/parallel_state.py", line 582, in all_reduce
+    if self.pynccl_comm is not None and self.is_symmetric_memory_enabled():
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/device_communicators/pynccl_allocator.py", line 69, in is_symmetric_memory_enabled
+    return get_global_server_args().enable_symm_mem
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3991, in get_global_server_args
+    raise ValueError("Global server args is not set yet!")
+ValueError: Global server args is not set yet!
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2466, in retry
+    return fn()
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1683, in <lambda>
+    lambda: super(CustomTestCase, self)._callTestMethod(method),
+  File "/usr/lib/python3.10/unittest/case.py", line 549, in _callTestMethod
+    method()
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 79, in test_graph_allreduce
+    multi_process_parallel(world_size, self, self.graph_allreduce)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 47, in multi_process_parallel
+    ray.init(log_to_driver=True)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 1688, in init
+    raise RuntimeError(
+RuntimeError: Maybe you called ray.init twice by accident? This error can be suppressed by passing in 'ignore_reinit_error=True' or by calling 'ray.shutdown()' prior to 'ray.init()'.
+E
+======================================================================
+ERROR: test_eager_allreduce (test_custom_allreduce.TestCustomAllReduce)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2466, in retry
+    return fn()
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1683, in <lambda>
+    lambda: super(CustomTestCase, self)._callTestMethod(method),
+  File "/usr/lib/python3.10/unittest/case.py", line 549, in _callTestMethod
+    method()
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 85, in test_eager_allreduce
+    multi_process_parallel(world_size, self, self.eager_allreduce)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 53, in multi_process_parallel
+    ray.get(refs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 2782, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 929, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ValueError): [36mray::eager_allreduce()[39m (pid=646, ip=10.235.26.245)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 168, in eager_allreduce
+    out1 = tensor_model_parallel_all_reduce(inp1)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/communication_op.py", line 13, in tensor_model_parallel_all_reduce
+    return get_tp_group().all_reduce(input_)
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/parallel_state.py", line 582, in all_reduce
+    if self.pynccl_comm is not None and self.is_symmetric_memory_enabled():
+  File "/sgl-workspace/sglang/python/sglang/srt/distributed/device_communicators/pynccl_allocator.py", line 69, in is_symmetric_memory_enabled
+    return get_global_server_args().enable_symm_mem
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3991, in get_global_server_args
+    raise ValueError("Global server args is not set yet!")
+ValueError: Global server args is not set yet!
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1682, in _callTestMethod
+    retry(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2471, in retry
+    raise Exception(f"retry() exceed maximum number of retries.")
+Exception: retry() exceed maximum number of retries.
+
+======================================================================
+ERROR: test_graph_allreduce (test_custom_allreduce.TestCustomAllReduce)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2466, in retry
+    return fn()
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1683, in <lambda>
+    lambda: super(CustomTestCase, self)._callTestMethod(method),
+  File "/usr/lib/python3.10/unittest/case.py", line 549, in _callTestMethod
+    method()
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 79, in test_graph_allreduce
+    multi_process_parallel(world_size, self, self.graph_allreduce)
+  File "/sgl-workspace/sglang/test/srt/test_custom_allreduce.py", line 47, in multi_process_parallel
+    ray.init(log_to_driver=True)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/opt/venv/lib/python3.10/site-packages/ray/_private/worker.py", line 1688, in init
+    raise RuntimeError(
+RuntimeError: Maybe you called ray.init twice by accident? This error can be suppressed by passing in 'ignore_reinit_error=True' or by calling 'ray.shutdown()' prior to 'ray.init()'.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/test/test_utils.py", line 1682, in _callTestMethod
+    retry(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2471, in retry
+    raise Exception(f"retry() exceed maximum number of retries.")
+Exception: retry() exceed maximum number of retries.
+
+----------------------------------------------------------------------
+Ran 2 tests in 11.261s
+
+FAILED (errors=2)
+[36m(eager_allreduce pid=666)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+
+==========================================
+End time: 2025-11-10 11:02:08 CST
+Exit code: 1
+Result: FAILED
+==========================================
