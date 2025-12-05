@@ -695,8 +695,8 @@ else
       -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
   fi
 
-  # Create log file name with image tag only (will overwrite existing)
-  LOG_FILE="${TEST_LOG_BASE_DIR}/${SELECTED_TAG}.log"
+  # Create log file name with image tag in hardware-specific subdirectory
+  LOG_FILE="${TEST_LOG_BASE_DIR}/${HARDWARE_TYPE}/${SELECTED_TAG}.log"
 
   # Ensure log directory exists both locally and in container
   LOG_DIR=$(dirname "$LOG_FILE")
@@ -722,6 +722,7 @@ else
     echo "Image: ${DOCKER_IMAGE}"
     echo "Container: ${CONTAINER_NAME}"
     echo "Hardware: ${HARDWARE_TYPE}"
+    echo "Machine: $(hostname)"
     echo "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
     echo "Test directory: ${TEST_DIR}"
     echo "Command: ${TEST_COMMAND}"

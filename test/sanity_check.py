@@ -32,6 +32,7 @@ import atexit
 import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -1427,6 +1428,7 @@ if __name__ == "__main__":
         timing_log.write("SGLang Sanity Check Timing Summary\n")
         timing_log.write("=" * 50 + "\n")
         timing_log.write(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
+        timing_log.write(f"Machine: {socket.gethostname()}\n")
         timing_log.write(f"Platform: {platform}\n")
         timing_log.write(f"Models: {', '.join(models_to_test.keys())}\n")
         timing_log.write(f"Trials per model: {args.trials}\n")
