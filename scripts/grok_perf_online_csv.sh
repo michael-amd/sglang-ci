@@ -402,15 +402,15 @@ get_model_env_vars() {
 
   if [[ "${model_type}" == "grok2" ]]; then
     if [[ "${prefix_only}" == "true" ]]; then
-      echo "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+      echo "HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
     else
-      echo "env RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+      echo "env HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
     fi
   else
     if [[ "${prefix_only}" == "true" ]]; then
-      echo "SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+      echo "HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
     else
-      echo "env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+      echo "env HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
     fi
   fi
 }
