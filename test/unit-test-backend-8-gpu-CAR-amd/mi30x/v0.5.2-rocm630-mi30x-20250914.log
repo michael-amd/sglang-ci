@@ -1,0 +1,254 @@
+==========================================
+SGL Unit Test Log
+==========================================
+Test: test_custom_allreduce.TestCustomAllReduce
+Image: rocm/sgl-dev:v0.5.2-rocm630-mi30x-20250914
+Container: test_v0_5_2-rocm630-mi30x-20250914
+Hardware: mi30x
+Start time: 2025-09-15 09:00:40 CDT
+Test directory: /sgl-workspace/sglang/test/srt
+Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+==========================================
+
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/utils.py:505: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='utf-8'>
+  max_file = open(cpu_max_file_name).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-44_623756_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:00:45,721	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 224 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-00-56_726804_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:00:57,729	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 6141 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-08_935834_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:01:09,937	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(eager_allreduce pid=12370)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(eager_allreduce pid=12369)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 12185 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-21_645569_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:01:22,665	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 18360 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-01-36_626626_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:01:37,649	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 24647 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-02-15_724771_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:02:16,741	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 30573 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-03-05_223636_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:03:06,245	INFO worker.py:1821 -- Started a local Ray instance.
+[36m(graph_allreduce pid=36807)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(graph_allreduce pid=36810)[0m Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 36620 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/gcs_server.out' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1362: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/gcs_server.err' mode='a' encoding='utf-8'>
+  self.start_gcs_server()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1367: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1378: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/raylet.out' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1420: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/raylet.err' mode='a' encoding='utf-8'>
+  self.start_raylet(plasma_directory, object_store_memory)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.12/dist-packages/ray/_private/node.py:1422: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-09-15_14-04-00_432836_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-09-15 14:04:01,433	INFO worker.py:1821 -- Started a local Ray instance.
+/usr/lib/python3.12/subprocess.py:1127: ResourceWarning: subprocess 42797 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.
+----------------------------------------------------------------------
+Ran 2 tests in 251.791s
+
+OK
+
+==========================================
+End time: 2025-09-15 09:05:02 CDT
+Exit code: 0
+Result: PASSED
+==========================================
