@@ -7,6 +7,9 @@ test/sanity_check_log/*
 test/pd/pd_log/*
 test/unit-test-backend-8-gpu-CAR-amd/*
 
+# AMD GPU core dumps (can be 50GB+ each!)
+gpucore.*
+
 *.jsonl
 *.csv
 *.html

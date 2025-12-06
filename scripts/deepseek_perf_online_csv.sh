@@ -590,6 +590,25 @@ get_sglang_env_var() {
     echo "$aiter_env_var"
 }
 
+# Clean up stale aiter JIT lock files to prevent deadlock
+# This is necessary when a previous run crashed/timed out and left locks behind
+cleanup_aiter_locks() {
+  echo "[csv] Cleaning up stale aiter JIT lock files..."
+
+  # Remove all lock files in the aiter build cache
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count
+  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+
+  if [[ "$lock_count" -gt 0 ]]; then
+    echo "[csv] Found $lock_count stale aiter lock file(s), removing..."
+    find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
+    echo "[csv] Aiter lock cleanup complete"
+  else
+    echo "[csv] No stale aiter lock files found"
+  fi
+}
+
 # Function to start SGLang server and wait for it to be ready
 #
 # This function:
@@ -604,6 +623,9 @@ get_sglang_env_var() {
 # - Memory fraction and request limits
 # - Proper port and trust settings
 start_sglang_server() {
+    # Clean up stale aiter locks before starting the server to prevent deadlock
+    cleanup_aiter_locks
+
     # Build torch compile flag if enabled
     local torch_compile_flag=""
     if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then

@@ -421,9 +421,31 @@ get_model_env_vars() {
 # Global variable to store the actual attention backend being used
 ATTENTION_BACKEND=""
 
+# Clean up stale aiter JIT lock files to prevent deadlock
+# This is necessary when a previous run crashed/timed out and left locks behind
+cleanup_aiter_locks() {
+  echo "[online] Cleaning up stale aiter JIT lock files..."
+
+  # Remove all lock files in the aiter build cache
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count
+  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+
+  if [[ "$lock_count" -gt 0 ]]; then
+    echo "[online] Found $lock_count stale aiter lock file(s), removing..."
+    find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
+    echo "[online] Aiter lock cleanup complete"
+  else
+    echo "[online] No stale aiter lock files found"
+  fi
+}
+
 launch_server() {
   SERVER_LOG="${folder}/server_output_aiter.log"
   rm -f "$SERVER_LOG"
+
+  # Clean up stale aiter locks before starting the server to prevent deadlock
+  cleanup_aiter_locks
 
   # All supported images use aiter backend with SGLANG_USE_AITER
   attn_backend="aiter"

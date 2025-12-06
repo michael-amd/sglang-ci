@@ -372,6 +372,28 @@ if [ ! -s "$OUTPUT_CSV" ]; then
   echo "TP,batch_size,IL,OL,Prefill_latency(s),Median_decode_latency(s),E2E_Latency(s),Prefill_Throughput(token/s),Median_Decode_Throughput(token/s),E2E_Throughput(token/s)" > "$OUTPUT_CSV"
 fi
 
+# Clean up stale aiter JIT lock files to prevent deadlock
+# This is necessary when a previous run crashed/timed out and left locks behind
+cleanup_aiter_locks() {
+  echo "[csv] Cleaning up stale aiter JIT lock files..."
+
+  # Remove all lock files in the aiter build cache
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count
+  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+
+  if [[ "$lock_count" -gt 0 ]]; then
+    echo "[csv] Found $lock_count stale aiter lock file(s), removing..."
+    find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
+    echo "[csv] Aiter lock cleanup complete"
+  else
+    echo "[csv] No stale aiter lock files found"
+  fi
+}
+
+# Run aiter lock cleanup before starting benchmarks
+cleanup_aiter_locks
+
 ## 4.  Single-run benchmark -----------------------------------------------------
 echo "=== TP=${TP}, BS=${BS} ==="
 
