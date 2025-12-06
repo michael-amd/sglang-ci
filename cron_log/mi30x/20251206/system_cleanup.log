@@ -1,43 +1,34 @@
 [system-cleanup] ==========================================
 [system-cleanup] Docker & GPU Core Cleanup Script Started
-[system-cleanup] Date: 2025-12-06 09:30:01 CST
+[system-cleanup] Date: 2025-12-06 10:30:01 CST
 [system-cleanup] Cleanup Docker images older than: 7 days
 [system-cleanup] Cleanup GPU core dumps: ALL files
 [system-cleanup] GPU core search directory: /mnt/raid/michael/sglang-ci
 [system-cleanup] Critical space threshold: 200 GB
 [system-cleanup] Dry run mode: false
 [system-cleanup] ==========================================
-[system-cleanup] Initial disk usage: 55% (192G free)
-[system-cleanup] Initial free space: 192 GB
-[system-cleanup] ❌ CRITICAL: Free space (192 GB) is below threshold (200 GB)!
-[system-cleanup] ⚠️  Switching to AGGRESSIVE cleanup mode
+[system-cleanup] Initial disk usage: 75% (337G free)
+[system-cleanup] Initial free space: 337 GB
+[system-cleanup] Disk space is healthy (337 GB available)
 [system-cleanup] Step 1: Removing stopped Docker containers...
-[system-cleanup] Found 1 stopped container(s)
+[system-cleanup] Found 2 stopped container(s)
 [system-cleanup] ✅ Removed stopped containers
-[system-cleanup] ⚠️  Using aggressive cleanup: removing images older than 3 days
-[system-cleanup] Step 2: Removing old sgl-dev images (older than 3 days)...
-[system-cleanup] ✅ Removed: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251203
-[system-cleanup] Processed old sgl-dev images: 1 removed, 2 kept/skipped
+[system-cleanup] Step 2: Removing old sgl-dev images (older than 7 days)...
+[system-cleanup] Processed old sgl-dev images: 0 removed, 6 kept/skipped
 [system-cleanup] Step 3: Removing dangling images and unused data...
 [system-cleanup] ✅ Cleaned up dangling images
 [system-cleanup] Step 4: Removing old GPU core dump files (gpucore.*)...
-[system-cleanup] ⚠️  Using aggressive cleanup: removing ALL GPU core dumps
 [system-cleanup] No old GPU core dump files found
-[system-cleanup] ⚠️  Additional cleanup needed - Free: 192 GB, Usage: 55%
-[system-cleanup] Removing all unused Docker images older than 3 days...
-[system-cleanup] ✅ Pruned additional images: Total reclaimed space: 0B
-[system-cleanup] ❌ WARNING: Space still critically low after cleanup (192 GB free)
 [system-cleanup] ==========================================
 [system-cleanup] ✅ Docker Cleanup Complete
-[system-cleanup] Initial disk usage: 55% (192G free) (192 GB free)
-[system-cleanup] Final disk usage: 55% (192G free) (192 GB free)
+[system-cleanup] Initial disk usage: 75% (337G free) (337 GB free)
+[system-cleanup] Final disk usage: 75% (337G free) (337 GB free)
 [system-cleanup] Space freed: 0 GB
-[system-cleanup] Date: 2025-12-06 09:30:10 CST
+[system-cleanup] Date: 2025-12-06 10:30:01 CST
 [system-cleanup] ==========================================
 [system-cleanup] Docker disk usage summary:
 TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
-Images          3         1         69.91GB   69.88GB (99%)
-Containers      1         1         0B        0B
-Local Volumes   4         0         0B        0B
+Images          7         0         210.2GB   210.2GB (100%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
 Build Cache     0         0         0B        0B
-[system-cleanup] ⚠️  Cleanup completed but space is still below threshold
