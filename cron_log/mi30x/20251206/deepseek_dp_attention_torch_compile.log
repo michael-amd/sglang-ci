@@ -1,12 +1,12 @@
 [nightly] ==========================================
 [nightly] SGL Nightly Benchmark Started
 [nightly] ==========================================
-[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=
-[nightly] Start time: 2025-12-06 10:30:01 PST
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --enable-torch-compile --teams-webhook-url=
+[nightly] Start time: 2025-12-06 11:15:01 PST
 [nightly] Machine: dell300x-pla-t12-38
 [nightly] Working directory: /mnt/raid/michael/sglang-ci
 [nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
-[nightly] Process ID: 168823
+[nightly] Process ID: 171666
 [nightly] ==========================================
 
 [nightly] Runtime Environment:
@@ -15,6 +15,7 @@
 [nightly] Docker daemon accessible - proceeding...
 [nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
 [nightly] DP attention mode enabled via command line
+[nightly] Torch compile mode enabled via command line
 [nightly] Custom model path provided: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
 [nightly] Hardware: mi30x, ROCM Version: rocm700
 [nightly] Model: deepseek, Mode(s): online
@@ -39,18 +40,22 @@
 [nightly] No running containers to stop.
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6-rocm700-mi30x-20251206_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
 [nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206 (online). Proceeding with benchmarks.
 [nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 [nightly] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251206
 [nightly] Reusing container sgl-dev_v0.5.6-rocm700-mi30x-20251206
 [nightly] Custom model path not accessible in existing container. Recreating container...
 [nightly] Creating container sgl-dev_v0.5.6-rocm700-mi30x-20251206
-f5138967b6d974371957309c2f13bf7bbf9437b2b5010c7977c2892ee4dcd34b
+1cbb0d8f2f654888850c2209f0a095725bd5bdbb8560e386bf1f87fd07219883
 [nightly] === Starting benchmark execution ===
 [nightly] === Starting nightly DEEPSEEK online benchmark ===
 [nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.6-rocm700-mi30x-20251206
 [nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
 [nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+[config] DP attention + torch compile detected - increased server timeout to 2700s (45 minutes)
 ERROR: Model directory not found at: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
        Use --download-model to download the model or provide correct path with --model
 ERROR: Found 1 validation error(s). Please fix them and try again.
