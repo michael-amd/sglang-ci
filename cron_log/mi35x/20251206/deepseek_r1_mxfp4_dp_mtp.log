@@ -1,0 +1,253 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview --model-name=DeepSeek-R1-MXFP4-Preview --mode=online --hardware=mi35x --enable-dp-test --enable-mtp-test --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-12-06 13:00:01 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 1108876
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo docker... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] DeepSeek MTP test enabled via command line
+[nightly] DeepSeek DP test enabled via command line
+[nightly] DP test implies DP attention checks
+[nightly] Custom model path provided: /mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Custom model name provided: DeepSeek-R1-MXFP4-Preview
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek_dp_mtp.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 6f1a4c105061
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi35x image (rocm700) in 'rocm/sgl-dev' for date 20251206...
+[nightly] Found candidate tag for day -0: v0.5.6-rocm700-mi35x-20251206
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206...
+v0.5.6-rocm700-mi35x-20251206: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+bbf311c4dbab: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+37e8e21d8db8: Pulling fs layer
+e60a3a0372f3: Pulling fs layer
+765aa3085d0b: Pulling fs layer
+b70f3e4ae779: Pulling fs layer
+e60a3a0372f3: Waiting
+765aa3085d0b: Waiting
+b70f3e4ae779: Waiting
+3e1656c88704: Pulling fs layer
+78cf6bef2f6a: Pulling fs layer
+b75626a42e09: Pulling fs layer
+eaf86ce26709: Pulling fs layer
+79e97fd86e11: Pulling fs layer
+3e1656c88704: Waiting
+78cf6bef2f6a: Waiting
+00c8b0feb8cf: Pulling fs layer
+2d574fcc8172: Pulling fs layer
+b75626a42e09: Waiting
+79e97fd86e11: Waiting
+eaf86ce26709: Waiting
+d562e5df2abc: Pulling fs layer
+00c8b0feb8cf: Waiting
+e7aeae3353d3: Pulling fs layer
+2d574fcc8172: Waiting
+767bcbd6c997: Pulling fs layer
+bc0a7decf265: Pulling fs layer
+d562e5df2abc: Waiting
+767bcbd6c997: Waiting
+bc0a7decf265: Waiting
+e7aeae3353d3: Waiting
+37e8e21d8db8: Download complete
+4f4fb700ef54: Download complete
+bbf311c4dbab: Verifying Checksum
+bbf311c4dbab: Download complete
+e60a3a0372f3: Verifying Checksum
+e60a3a0372f3: Download complete
+bbf311c4dbab: Pull complete
+4f4fb700ef54: Pull complete
+37e8e21d8db8: Pull complete
+e60a3a0372f3: Pull complete
+b70f3e4ae779: Verifying Checksum
+b70f3e4ae779: Download complete
+78cf6bef2f6a: Verifying Checksum
+78cf6bef2f6a: Download complete
+b75626a42e09: Verifying Checksum
+b75626a42e09: Download complete
+eaf86ce26709: Verifying Checksum
+eaf86ce26709: Download complete
+79e97fd86e11: Download complete
+765aa3085d0b: Verifying Checksum
+765aa3085d0b: Download complete
+00c8b0feb8cf: Verifying Checksum
+00c8b0feb8cf: Download complete
+d562e5df2abc: Download complete
+765aa3085d0b: Pull complete
+b70f3e4ae779: Pull complete
+3e1656c88704: Verifying Checksum
+3e1656c88704: Download complete
+767bcbd6c997: Verifying Checksum
+767bcbd6c997: Download complete
+bc0a7decf265: Verifying Checksum
+bc0a7decf265: Download complete
+e7aeae3353d3: Verifying Checksum
+e7aeae3353d3: Download complete
+2d574fcc8172: Verifying Checksum
+2d574fcc8172: Download complete
+3e1656c88704: Pull complete
+78cf6bef2f6a: Pull complete
+b75626a42e09: Pull complete
+eaf86ce26709: Pull complete
+79e97fd86e11: Pull complete
+00c8b0feb8cf: Pull complete
+2d574fcc8172: Pull complete
+d562e5df2abc: Pull complete
+e7aeae3353d3: Pull complete
+767bcbd6c997: Pull complete
+bc0a7decf265: Pull complete
+Digest: sha256:9735158ac2802b7a264442c55947296ab155c9674e5c43fc61d96984b307f9e1
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] Successfully obtained image for date 20251206: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 17c67816219a
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] Container name: sgl-dev_v0.5.6-rocm700-mi35x-20251206
+[nightly] Creating container sgl-dev_v0.5.6-rocm700-mi35x-20251206
+c1da2310f8bc3fbb4d3299b35994ebde81db9d115ef633af667eb108cffafcef
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.6-rocm700-mi35x-20251206
+[nightly] Passing --model-name='DeepSeek-R1-MXFP4-Preview' to DeepSeek benchmark
+[nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-dp-test flag for DeepSeek online benchmark
+[nightly] Adding --enable-mtp-test flag for DeepSeek online benchmark
+[mtp] MTP test enabled - setting runs per concurrency to 1
+✅ Parameter validation passed
+[online] Script started at: 2025-12-06 13:02:30 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6-rocm700-mi35x-20251206_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_client_log_DeepSeek-R1-MXFP4-Preview_gsm8k.log)
+Checking serving benchmark logs...
+Missing: Concurrency 128, Run 1
+Missing: Concurrency 64, Run 1
+Missing: Concurrency 16, Run 1
+Missing: Concurrency 4, Run 1
+Missing: Concurrency 1, Run 1
+Scan complete: 5 total runs needed, 5 missing/incomplete
+❌ Missing 5 serving benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
+[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image
+Waiting for SGLang server (PID: 28) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6-rocm700-mi35x-20251206_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_server.log
+....................................................................................................................................................................................
+SGLang server failed to start in time (900 seconds timeout reached).
+Check /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6-rocm700-mi35x-20251206_DeepSeek-R1-MXFP4-Preview_FP8_online_dp_attention_mtp_test/sglang_server.log for details. Killing server (if any) and exiting.
+Cleaning up...
+Killing background SGLang server (PID: 28)...
+Server process 28 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.6-rocm700-mi35x-20251206 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6-rocm700-mi35x-20251206_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251206
+[nightly] Sending Teams notification for deepseek online plots...
+[nightly] Adding benchmark date to Teams notification: 20251206
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi35x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+[nightly] Adding --check-dp-attention flag for Teams notification
+[nightly] Adding --enable-dp-test flag for Teams notification
+[nightly] Adding --enable-mtp-test flag for Teams notification
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+🔍 DP attention mode: Checking for RuntimeError and critical errors in server logs
+🧬 DP test mode: Highlighting DP throughput benchmark and serving logs
+🚀 MTP mode: Including DeepSeek R1 throughput artifacts
+   🔍 Uploading 20251206_DeepSeek-R1-MXFP4-Preview_online_all.png to GitHub...
+   📋 Log branch already exists
+   📄 Creating new file: plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251206_DeepSeek-R1-MXFP4-Preview_online_all.png
+   ✅ Uploaded to GitHub (log branch): 20251206_DeepSeek-R1-MXFP4-Preview_online_all.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251206_DeepSeek-R1-MXFP4-Preview_online_all.png
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+   Found timing_summary log for deepseek online on 20251205: timing_summary_20251205_153034.log
+   Found timing_summary log for deepseek online on 20251204: timing_summary_20251204_153034.log
+🔍 Discovered 1 plot file(s) for deepseek online
+   - 20251206_DeepSeek-R1-MXFP4-Preview_online_all.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+   Found timing_summary log for deepseek online on 20251206: timing_summary_20251206_130230.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/DeepSeek-R1-MXFP4-Preview/online/20251206_DeepSeek-R1-MXFP4-Preview_online_all.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for deepseek online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for deepseek online
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251206
+[nightly] Stopping container sgl-dev_v0.5.6-rocm700-mi35x-20251206 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
