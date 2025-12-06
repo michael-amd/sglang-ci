@@ -1,0 +1,84 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-06 08:40:43 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-06 08:40:43 PST
+Server startup: 174.72s
+Trial 1: PASS [OK] (Accuracy: 0.853, Time: 145.14s)
+Trial 2: PASS [OK] (Accuracy: 0.860, Time: 131.13s)
+Trial 3: PASS [OK] (Accuracy: 0.861, Time: 128.13s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.853, 0.86, 0.861]
+Highest accuracy: 0.861 (Required: 0.820)
+Total time: 579.62s
+End time: 2025-12-06 08:50:23 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-06 08:50:23 PST
+Server startup: 86.61s
+Trial 1: PASS [OK] (Accuracy: 0.527, Time: 94.09s)
+Trial 2: PASS [OK] (Accuracy: 0.522, Time: 82.08s)
+Trial 3: PASS [OK] (Accuracy: 0.520, Time: 80.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.527, 0.522, 0.52]
+Highest accuracy: 0.527 (Required: 0.500)
+Total time: 343.36s
+End time: 2025-12-06 08:56:06 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-06 08:56:06 PST
+Server startup: FAILED after 69.58s
+Error: Kernel compilation deadlock (size (4 workers waiting))
+💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-06 08:57:17 PST
+Server startup: FAILED after 67.60s
+Error: Kernel compilation deadlock (size (4 workers waiting))
+💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-06 08:58:26 PST
+Server startup: FAILED after 133.18s
+Error: Kernel compilation deadlock (size (4 workers waiting))
+💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-06 09:00:40 PST
+Server startup: FAILED after 126.66s
+Error: Kernel compilation deadlock (size (4 workers waiting))
+💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+
+=== llama4 on mi30x ===
+Start time: 2025-12-06 09:02:47 PST
+Server startup: FAILED after 129.67s
+Error: Code bug - AttributeError: 'CustomAllreduce' object has no attribute 'original_disabled'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-06 09:04:58 PST
+Total execution time: 1454.69s (24.2 minutes)
+Average time per model: 207.81s
+Models tested: 7/7
+Models passed: 2/7
+Models failed: 5/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: FAIL
