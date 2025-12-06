@@ -1,23 +1,23 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[test] Start time: 2025-12-06 10:01:01 CST
-[test] Machine: dell300x-pla-t10-23
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
+[test] Start time: 2025-12-06 11:01:01 CST
+[test] Machine: dell300x-pla-t12-38
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 1659249
+[test] Process ID: 115971
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700
 [test] Test Type: unit
 [test] Created process lock: /tmp/test_nightly_unit.lock
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: b9e7a2c95cbc
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -67,49 +67,54 @@ e6d023afbc03: Pulling fs layer
 0a8c44911a1d: Pulling fs layer
 6752b2c6a811: Pulling fs layer
 bf31ca1d6814: Pulling fs layer
-0a8c44911a1d: Waiting
 545a2d5cf525: Pulling fs layer
-6752b2c6a811: Waiting
-bf31ca1d6814: Waiting
 cdcca5a748a8: Pulling fs layer
+0a8c44911a1d: Waiting
+bf31ca1d6814: Waiting
+6752b2c6a811: Waiting
 d1634a76cc65: Pulling fs layer
+545a2d5cf525: Waiting
 ed93bcd62ef2: Pulling fs layer
 2accd35d8074: Pulling fs layer
+cdcca5a748a8: Waiting
 d1634a76cc65: Waiting
-ed93bcd62ef2: Waiting
 137acbea656e: Pulling fs layer
 a39991ac3235: Pulling fs layer
-2257f38cc2a5: Pulling fs layer
+2accd35d8074: Waiting
 137acbea656e: Waiting
+2257f38cc2a5: Pulling fs layer
+ed93bcd62ef2: Waiting
 a39991ac3235: Waiting
-174b057d1722: Pulling fs layer
 2257f38cc2a5: Waiting
+174b057d1722: Pulling fs layer
 1803068afc6f: Pulling fs layer
 174b057d1722: Waiting
-e6d023afbc03: Verifying Checksum
-e6d023afbc03: Download complete
+1803068afc6f: Waiting
+4f4fb700ef54: Verifying Checksum
 4f4fb700ef54: Download complete
+e6d023afbc03: Download complete
 11b073088bad: Verifying Checksum
 11b073088bad: Download complete
-0a8c44911a1d: Verifying Checksum
 0a8c44911a1d: Download complete
 11b073088bad: Pull complete
 4f4fb700ef54: Pull complete
 e6d023afbc03: Pull complete
 0a8c44911a1d: Pull complete
-6752b2c6a811: Download complete
-cdcca5a748a8: Verifying Checksum
-cdcca5a748a8: Download complete
 bf31ca1d6814: Verifying Checksum
 bf31ca1d6814: Download complete
+cdcca5a748a8: Verifying Checksum
+cdcca5a748a8: Download complete
+6752b2c6a811: Verifying Checksum
+6752b2c6a811: Download complete
 ed93bcd62ef2: Verifying Checksum
 ed93bcd62ef2: Download complete
+2accd35d8074: Verifying Checksum
 2accd35d8074: Download complete
 6752b2c6a811: Pull complete
-d1634a76cc65: Verifying Checksum
-d1634a76cc65: Download complete
 137acbea656e: Verifying Checksum
 137acbea656e: Download complete
+d1634a76cc65: Verifying Checksum
+d1634a76cc65: Download complete
 2257f38cc2a5: Verifying Checksum
 2257f38cc2a5: Download complete
 174b057d1722: Verifying Checksum
@@ -143,7 +148,7 @@ docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 [test] ==========================================
 [test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206...
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: 99ff1bc72649
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -152,21 +157,16 @@ docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 [test] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 [test] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251206
 [test] Creating container sgl-dev_v0.5.6-rocm700-mi30x-20251206
-1f8db48169f128ffc06ae9fcdc54908e9881058d6ae755aaa6370165162dbde4
+57d8a685bbaa5962e3ffebb6056c2b4ac2ecec9dbc36122abc134b8701c98f88
 [test] === Starting test_custom_allreduce unit test ===
 [test] Test directory: /sgl-workspace/sglang/test/manual
 [test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251206.log
 [test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
 [test] Running unit test inside sgl-dev_v0.5.6-rocm700-mi30x-20251206...
-[test] === Unit test FAILED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206 (exit code: 1) ===
+[test] === Unit test PASSED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206 ===
 [test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251206.log
-[test] Check the log file for detailed error information
 [test] Stopping container sgl-dev_v0.5.6-rocm700-mi30x-20251206 to release resources...
-[test] Sending Teams notification...
-📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251206.log
-✅ Docker image date matches expected date (20251206) - proceeding with alert
-✅ Successfully sent unit test fail alert to Teams
-   (Power Automate flow accepted - message processing asynchronously)
+[test] No Teams webhook URL provided - skipping notification
 [test] ==========================================
 [test] Test completed for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 [test] Test type: unit
