@@ -28,12 +28,12 @@ The dashboard reuses data collection logic from `send_daily_summary_alert.py` an
 ### Prerequisites
 
 - Python 3.8 or higher
-- Access to SGLang CI log directory (default: `/mnt/raid/michael/sglang-ci`)
+- Access to SGLang CI log directory (or set `SGL_BENCHMARK_CI_DIR` environment variable)
 
 ### Install Dependencies
 
 ```bash
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 pip install -r requirements.txt
 ```
 
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 Run the dashboard with default settings (uses GitHub by default):
 
 ```bash
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 python app.py
 ```
 
@@ -98,7 +98,7 @@ Configure the dashboard using environment variables:
 
 - `DASHBOARD_HOST`: Host to bind to (default: `127.0.0.1`)
 - `DASHBOARD_PORT`: Port to run on (default: `5000`)
-- `SGL_BENCHMARK_CI_DIR`: Base directory for CI logs (default: `/mnt/raid/michael/sglang-ci`)
+- `SGL_BENCHMARK_CI_DIR`: Base directory for CI logs
 - `GITHUB_REPO`: GitHub repository (default: `ROCm/sglang-ci`)
 - `USE_GITHUB`: Use GitHub as data source (default: `true`)
 - `USE_DATABASE`: Use SQLite database for queries (default: `true`)
@@ -343,7 +343,7 @@ If you get permission errors accessing logs:
 
 ```bash
 # Check directory permissions
-ls -la /mnt/raid/michael/sglang-ci/cron/cron_log
+ls -la cron/cron_log
 
 # Run with appropriate user
 sudo -u michael python app.py
@@ -364,7 +364,7 @@ If you get import errors:
 
 ```bash
 # Make sure you're in the correct directory
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 
 # Reinstall dependencies
 pip install -r requirements.txt

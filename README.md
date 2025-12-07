@@ -117,7 +117,7 @@ Powerful database interface for querying and analyzing CI data:
 
 The dashboard uses an SQLite database for fast queries and efficient data access. The database is automatically synced to GitHub for cross-machine sharing.
 
-**Database Location:** `/mnt/raid/michael/sglang-ci/database/ci_dashboard.db`
+**Database Location:** `database/ci_dashboard.db`
 
 ### Quick Start
 
