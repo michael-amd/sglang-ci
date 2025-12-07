@@ -29,7 +29,7 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 ### Dashboard Features
 
 - **📈 Daily Summaries**: Real-time status for MI30X and MI35X platforms with pass/fail statistics
-- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics over configurable time periods
+- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics (via Database Explorer)
 - **📊 Performance Plots**: Interactive visualization of benchmark results with direct GitHub links
 - **🔍 Task Details**: Detailed status for each CI task (benchmarks, integration tests, validation)
 - **⚖️ Hardware Comparison**: Side-by-side comparison charts for MI30X vs MI35X platforms
@@ -44,9 +44,9 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 | **Home** | http://10.194.129.138:5000/ | Overview with summary cards for both platforms |
 | **MI30X Dashboard** | http://10.194.129.138:5000/hardware/mi30x | Detailed MI30X results and task breakdown |
 | **MI35X Dashboard** | http://10.194.129.138:5000/hardware/mi35x | Detailed MI35X results and task breakdown |
-| **Trends** | http://10.194.129.138:5000/trends | Historical analytics with interactive charts |
 | **Plots** | http://10.194.129.138:5000/plots/mi30x | Performance plots gallery |
 | **Upstream CI** | http://10.194.129.138:5000/upstream-ci | AMD vs NVIDIA coverage comparison |
+| **Database Explorer** | http://10.194.129.138:5000/database | SQL queries, historical trends, and raw data access |
 
 ### Dashboard Pages Preview
 
