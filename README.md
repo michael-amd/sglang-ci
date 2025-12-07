@@ -97,6 +97,16 @@ AMD vs NVIDIA test coverage tracking with:
 
 ![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
 
+#### 5. Database Explorer
+**URL:** http://10.194.129.138:5000/database
+
+Powerful database interface for querying and analyzing CI data:
+- **Overview Panel**: Daily run summaries with pass/fail statistics and benchmark results
+- **SQL Query Editor**: Execute custom SELECT queries against the SQLite database
+- **Schema Browser**: View all tables and column definitions
+- **Date Range Filters**: Analyze data across configurable time periods
+- **Export Support**: Download query results for further analysis
+
 **Full Documentation:** See `dashboard/README.md` for detailed dashboard documentation including API endpoints, deployment options, and troubleshooting.
 
 ---
@@ -203,6 +213,8 @@ python database/sync_database.py push  # Upload local changes
   - [Model Download](#model-download)
   - [Docker Image Management](#docker-image-management)
   - [Dashboard Management](#dashboard-management)
+  - [System Maintenance](#system-maintenance)
+  - [Database Management](#database-management)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
@@ -725,6 +737,41 @@ Stops the running dashboard server.
 ```bash
 bash dashboard/stop_dashboard.sh
 ```
+
+### System Maintenance
+
+#### system_cleanup.sh
+
+Automated cleanup script for Docker images and GPU core dumps to prevent disk space issues.
+
+**Location:** `cron/system_cleanup.sh`
+
+**Features:**
+- Removes Docker images older than 7 days (configurable)
+- Cleans up stopped containers and dangling images
+- Removes GPU core dump files (`gpucore.*`)
+- Critical disk space detection with aggressive cleanup mode
+- Teams alerts for disk space warnings
+
+**Usage:**
+
+```bash
+# Normal cleanup
+bash cron/system_cleanup.sh
+
+# Dry run (show what would be deleted)
+DRY_RUN=true bash cron/system_cleanup.sh
+
+# Custom thresholds
+CLEANUP_AGE_DAYS=3 CRITICAL_SPACE_GB=100 bash cron/system_cleanup.sh
+```
+
+**Environment Variables:**
+- `CLEANUP_AGE_DAYS`: Days to keep Docker images (default: 7)
+- `GPUCORE_AGE_DAYS`: Days to keep GPU core dumps (default: 0 = all)
+- `CRITICAL_SPACE_GB`: Free space threshold for aggressive cleanup (default: 200)
+- `DRY_RUN`: Set to "true" to simulate without deleting
+- `TEAMS_WEBHOOK_URL`: Enable Teams alerts for disk space issues
 
 ### Database Management
 

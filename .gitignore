@@ -33,3 +33,4 @@ team_alert/alert_log/*
 cron/crontab_rules.txt
 cron/crontab_rules.txt.backup
 upstream_ci/upstream_test_log/*
+dashboard/setup_https.sh
