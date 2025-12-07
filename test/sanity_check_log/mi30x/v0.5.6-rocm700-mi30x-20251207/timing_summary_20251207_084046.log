@@ -1,0 +1,120 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-07 08:40:46 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-07 08:40:46 PST
+Server startup: 166.22s
+Trial 1: PASS [OK] (Accuracy: 0.854, Time: 143.14s)
+Trial 2: PASS [OK] (Accuracy: 0.866, Time: 132.13s)
+Trial 3: PASS [OK] (Accuracy: 0.843, Time: 130.12s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.854, 0.866, 0.843]
+Highest accuracy: 0.866 (Required: 0.820)
+Total time: 572.11s
+End time: 2025-12-07 08:50:18 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-07 08:50:18 PST
+Server startup: 90.11s
+Trial 1: PASS [OK] (Accuracy: 0.542, Time: 96.09s)
+Trial 2: PASS [OK] (Accuracy: 0.538, Time: 83.08s)
+Trial 3: PASS [OK] (Accuracy: 0.521, Time: 80.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.542, 0.538, 0.521]
+Highest accuracy: 0.542 (Required: 0.500)
+Total time: 349.87s
+End time: 2025-12-07 08:56:08 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-07 08:56:08 PST
+Server startup: FAILED after 112.14s
+Error: Kernel compilation deadlock (49ffeed9 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-07 08:58:01 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.42s
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-07 09:03:03 PST
+Server startup: FAILED after 300.19s
+Error: Kernel compilation deadlock (6fb5a21f (14 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-07 09:08:04 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: 123.71s
+Trial 1: PASS [OK] (Accuracy: 0.810, Time: 60.06s)
+Trial 2: PASS [OK] (Accuracy: 0.813, Time: 98.09s)
+Trial 3: PASS [OK] (Accuracy: 0.809, Time: 55.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.81, 0.813, 0.809]
+Highest accuracy: 0.813 (Required: 0.800)
+Total time: 337.42s
+End time: 2025-12-07 09:13:41 PST
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-07 09:13:41 PST
+Server startup: 169.74s
+Trial 1: PASS [OK] (Accuracy: 0.832, Time: 34.03s)
+Trial 2: PASS [OK] (Accuracy: 0.829, Time: 33.03s)
+Trial 3: PASS [OK] (Accuracy: 0.823, Time: 33.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.832, 0.829, 0.823]
+Highest accuracy: 0.832 (Required: 0.800)
+Total time: 270.34s
+End time: 2025-12-07 09:18:12 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-07 09:18:12 PST
+Server startup: 190.26s
+Trial 1: PASS [OK] (Accuracy: 0.933, Time: 37.03s)
+Trial 2: PASS [OK] (Accuracy: 0.936, Time: 34.03s)
+Trial 3: PASS [OK] (Accuracy: 0.926, Time: 34.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.933, 0.936, 0.926]
+Highest accuracy: 0.936 (Required: 0.915)
+Total time: 295.86s
+End time: 2025-12-07 09:23:07 PST
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-12-07 09:23:07 PST
+Server startup: FAILED after 142.68s
+Error: Code bug - AttributeError: 'CustomAllreduce' object has no attribute 'original_disabled'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-07 09:25:31 PST
+Total execution time: 2685.06s (44.8 minutes)
+Average time per model: 383.58s
+Models tested: 7/7
+Models passed: 5/7
+Models failed: 2/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: FAIL
