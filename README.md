@@ -107,6 +107,8 @@ Powerful database interface for querying and analyzing CI data:
 - **Date Range Filters**: Analyze data across configurable time periods
 - **Export Support**: Download query results for further analysis
 
+![Database Explorer](dashboard/screenshots/database_page_mi30x.png)
+
 **Full Documentation:** See `dashboard/README.md` for detailed dashboard documentation including API endpoints, deployment options, and troubleshooting.
 
 ---
