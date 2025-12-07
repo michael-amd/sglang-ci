@@ -1,23 +1,23 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[test] Start time: 2025-12-07 10:01:01 CST
-[test] Machine: dell300x-pla-t10-23
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
+[test] Start time: 2025-12-07 11:01:01 CST
+[test] Machine: dell300x-pla-t12-38
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 2234296
+[test] Process ID: 351667
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700
 [test] Test Type: unit
 [test] Created process lock: /tmp/test_nightly_unit.lock
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: ffc5b460dd84
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -69,29 +69,31 @@ e142dbecd600: Pulling fs layer
 b4dbf4c3d119: Pulling fs layer
 51a78669cdff: Pulling fs layer
 c6582af6cbcb: Pulling fs layer
+aaf0c7d802ed: Waiting
 b4dbf4c3d119: Waiting
 3340362217b9: Pulling fs layer
-aaf0c7d802ed: Waiting
 e142dbecd600: Waiting
-db0ed11e74e9: Pulling fs layer
+c6582af6cbcb: Waiting
 51a78669cdff: Waiting
+db0ed11e74e9: Pulling fs layer
 161ebd170de1: Pulling fs layer
+3340362217b9: Waiting
 6f5184478e45: Pulling fs layer
+db0ed11e74e9: Waiting
 31f407b5d9c6: Pulling fs layer
 8c9bcdecda4b: Pulling fs layer
-c6582af6cbcb: Waiting
-db0ed11e74e9: Waiting
-31f407b5d9c6: Waiting
+161ebd170de1: Waiting
 1529348a29b3: Pulling fs layer
-f50149cdaae9: Pulling fs layer
-1529348a29b3: Waiting
-3340362217b9: Waiting
-f50149cdaae9: Waiting
 6f5184478e45: Waiting
+31f407b5d9c6: Waiting
+f50149cdaae9: Pulling fs layer
+8c9bcdecda4b: Waiting
+f50149cdaae9: Waiting
 4f4fb700ef54: Verifying Checksum
 4f4fb700ef54: Download complete
 6a1a1619f458: Verifying Checksum
 6a1a1619f458: Download complete
+6031d8553198: Verifying Checksum
 6031d8553198: Download complete
 aaf0c7d802ed: Verifying Checksum
 aaf0c7d802ed: Download complete
@@ -101,29 +103,29 @@ aaf0c7d802ed: Download complete
 aaf0c7d802ed: Pull complete
 b4dbf4c3d119: Verifying Checksum
 b4dbf4c3d119: Download complete
-e142dbecd600: Verifying Checksum
-e142dbecd600: Download complete
 c6582af6cbcb: Verifying Checksum
 c6582af6cbcb: Download complete
+3340362217b9: Verifying Checksum
+3340362217b9: Download complete
+db0ed11e74e9: Verifying Checksum
 db0ed11e74e9: Download complete
 161ebd170de1: Verifying Checksum
 161ebd170de1: Download complete
+e142dbecd600: Verifying Checksum
+e142dbecd600: Download complete
 e142dbecd600: Pull complete
 6f5184478e45: Verifying Checksum
 6f5184478e45: Download complete
-3340362217b9: Verifying Checksum
-3340362217b9: Download complete
-8c9bcdecda4b: Verifying Checksum
 8c9bcdecda4b: Download complete
 1529348a29b3: Verifying Checksum
 1529348a29b3: Download complete
 f50149cdaae9: Verifying Checksum
 f50149cdaae9: Download complete
 b4dbf4c3d119: Pull complete
-51a78669cdff: Verifying Checksum
-51a78669cdff: Download complete
 31f407b5d9c6: Verifying Checksum
 31f407b5d9c6: Download complete
+51a78669cdff: Verifying Checksum
+51a78669cdff: Download complete
 51a78669cdff: Pull complete
 c6582af6cbcb: Pull complete
 3340362217b9: Pull complete
@@ -146,7 +148,7 @@ docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207
 [test] ==========================================
 [test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207...
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: a83070d35765
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -155,21 +157,16 @@ docker.io/rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207
 [test] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207
 [test] Container name: sgl-dev_v0.5.6-rocm700-mi30x-20251207
 [test] Creating container sgl-dev_v0.5.6-rocm700-mi30x-20251207
-a3c741e23894bb36bc688c87763f9a027c9f0442e98528914dadda0e3f18b7ad
+eeaa25374d0e4f35f246105e268b5fb822f05fab44c0ac995c664ee2617cd855
 [test] === Starting test_custom_allreduce unit test ===
 [test] Test directory: /sgl-workspace/sglang/test/manual
 [test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251207.log
 [test] Test command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
 [test] Running unit test inside sgl-dev_v0.5.6-rocm700-mi30x-20251207...
-[test] === Unit test FAILED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207 (exit code: 1) ===
+[test] === Unit test PASSED for rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207 ===
 [test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251207.log
-[test] Check the log file for detailed error information
 [test] Stopping container sgl-dev_v0.5.6-rocm700-mi30x-20251207 to release resources...
-[test] Sending Teams notification...
-📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6-rocm700-mi30x-20251207.log
-✅ Docker image date matches expected date (20251207) - proceeding with alert
-✅ Successfully sent unit test fail alert to Teams
-   (Power Automate flow accepted - message processing asynchronously)
+[test] No Teams webhook URL provided - skipping notification
 [test] ==========================================
 [test] Test completed for image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251207
 [test] Test type: unit
