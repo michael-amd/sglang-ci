@@ -1,0 +1,86 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-06 15:15:32 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
+Model: /data/models/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t12-38
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 155 seconds
+
+GSM8K Test Results:
+  Total duration: 361 seconds
+  Average accuracy: 0.935
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.935
+
+Serving Benchmark Results:
+  Start time: 2025-12-06 15:24:08 PST
+  Concurrency 128, Run 1: 539 seconds
+Completed concurrency 128 - Total time: 541 seconds
+  Concurrency 64, Run 1: 831 seconds
+Completed concurrency 64 - Total time: 834 seconds
+  Concurrency 16, Run 1: 527 seconds
+Completed concurrency 16 - Total time: 529 seconds
+  Concurrency 4, Run 1: 690 seconds
+Completed concurrency 4 - Total time: 692 seconds
+  Concurrency 1, Run 1: 2533 seconds
+Completed concurrency 1 - Total time: 2535 seconds
+  End time: 2025-12-06 16:49:51 PST
+  Total duration: 5143 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: 135688.18 ms
+  TTFT: 19183.04 ms
+  ITL: 120.63 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 64:
+  E2E Latency: 106445.37 ms
+  TTFT: 9883.36 ms
+  ITL: 108.89 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 16:
+  E2E Latency: 80505.47 ms
+  TTFT: 2812.75 ms
+  ITL: 94.75 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 4:
+  E2E Latency: 21149.42 ms
+  TTFT: 334.30 ms
+  ITL: 26.05 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 1:
+  E2E Latency: 19676.02 ms
+  TTFT: 180.66 ms
+  ITL: 24.40 ms
+  Output throughput: (tok/s): tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-06 16:49:51 PST
+Total execution time: 5659 seconds (94 minutes)
+========================================
