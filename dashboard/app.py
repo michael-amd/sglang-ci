@@ -907,6 +907,18 @@ def api_database_refresh():
 
         # Pull latest database from GitHub
         db_sync_script = os.path.join(BASE_DIR, "database", "sync_database.py")
+
+        if not os.path.exists(db_sync_script):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Sync script not found at {db_sync_script}. Check BASE_DIR configuration.",
+                    }
+                ),
+                500,
+            )
+
         result = subprocess.run(
             ["python3", db_sync_script, "pull"],
             capture_output=True,

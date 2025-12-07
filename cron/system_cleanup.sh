@@ -190,7 +190,7 @@ if [ -n "$OLD_IMAGES" ]; then
 
     while IFS= read -r IMAGE; do
         # Extract date from image tag (format: ...-YYYYMMDD)
-        IMAGE_DATE=$(echo "$IMAGE" | grep -oE "[0-9]{8}" | tail -1)
+        IMAGE_DATE=$(echo "$IMAGE" | grep -oE "20[0-9]{6}" | tail -1)
 
         if [ -n "$IMAGE_DATE" ]; then
             # Convert to seconds since epoch

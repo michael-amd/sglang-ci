@@ -465,7 +465,7 @@ async function syncDatabaseFromGitHub() {
         }
     } catch (error) {
         if (indicator) {
-            indicator.textContent = '⚠️ Could not sync database: ' + error.message;
+            indicator.textContent = '⚠️ Could not sync database: ' + (error?.message || 'Unknown error');
             indicator.classList.remove('alert-info');
             indicator.classList.add('alert-danger');
             setTimeout(() => indicator.classList.add('d-none'), 4000);

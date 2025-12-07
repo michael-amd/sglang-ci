@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Setup HTTPS for SGLang CI Dashboard
-# 
+#
 # This script configures the dashboard to be accessible at:
 #   https://sglang-internal.amd.com:3000/
 #
@@ -22,8 +22,8 @@ set -e
 DOMAIN="sglang-internal.amd.com"
 HTTPS_PORT=3000
 FLASK_PORT=5000
-CERT_DIR="/etc/ssl/sglang-dashboard"
-DASHBOARD_DIR="/mnt/raid/michael/sglang-ci/dashboard"
+CERT_DIR="${CERT_DIR:-/etc/ssl/sglang-dashboard}"
+DASHBOARD_DIR="${DASHBOARD_DIR:-/mnt/raid/michael/sglang-ci/dashboard}"
 
 # Colors
 RED='\033[0;31m'
@@ -40,11 +40,11 @@ print_header() {
 
 check_status() {
     print_header "Current Status"
-    
+
     echo -e "🖥️  Server IP: ${GREEN}$(hostname -I | awk '{print $1}')${NC}"
     echo -e "🏠 Hostname:  ${GREEN}$(hostname)${NC}"
     echo ""
-    
+
     # Check DNS
     echo -n "🌐 DNS ($DOMAIN): "
     if host $DOMAIN &>/dev/null; then
@@ -55,7 +55,7 @@ check_status() {
         echo -e "   ${YELLOW}→ Ask AMD IT to add DNS A record:${NC}"
         echo -e "   ${YELLOW}  $DOMAIN -> $(hostname -I | awk '{print $1}')${NC}"
     fi
-    
+
     # Check nginx
     echo -n "📦 Nginx:     "
     if which nginx &>/dev/null; then
@@ -63,7 +63,7 @@ check_status() {
     else
         echo -e "${YELLOW}Not installed${NC}"
     fi
-    
+
     # Check SSL cert
     echo -n "🔐 SSL Cert:  "
     if [ -f "$CERT_DIR/server.crt" ]; then
@@ -72,7 +72,7 @@ check_status() {
     else
         echo -e "${YELLOW}Not found${NC}"
     fi
-    
+
     # Check dashboard
     echo -n "🚀 Dashboard: "
     if curl -s http://127.0.0.1:$FLASK_PORT/health &>/dev/null; then
@@ -80,7 +80,7 @@ check_status() {
     else
         echo -e "${RED}Not running${NC}"
     fi
-    
+
     # Check HTTPS endpoint
     echo -n "🔒 HTTPS:     "
     if curl -sk https://127.0.0.1:$HTTPS_PORT/health &>/dev/null; then
@@ -88,18 +88,18 @@ check_status() {
     else
         echo -e "${YELLOW}Not configured${NC}"
     fi
-    
+
     echo ""
 }
 
 install_nginx() {
     print_header "Installing Nginx"
-    
+
     if which nginx &>/dev/null; then
         echo -e "${GREEN}Nginx already installed${NC}"
         return
     fi
-    
+
     echo "Installing nginx..."
     sudo apt-get update
     sudo apt-get install -y nginx
@@ -109,20 +109,20 @@ install_nginx() {
 
 generate_self_signed_cert() {
     print_header "Generating Self-Signed Certificate"
-    
+
     echo "Creating certificate directory..."
     sudo mkdir -p "$CERT_DIR"
-    
+
     echo "Generating private key and certificate..."
     sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "$CERT_DIR/server.key" \
         -out "$CERT_DIR/server.crt" \
         -subj "/C=US/ST=California/L=Santa Clara/O=AMD/OU=SGLang CI/CN=$DOMAIN" \
         -addext "subjectAltName=DNS:$DOMAIN,DNS:localhost,IP:$(hostname -I | awk '{print $1}')"
-    
+
     sudo chmod 600 "$CERT_DIR/server.key"
     sudo chmod 644 "$CERT_DIR/server.crt"
-    
+
     echo -e "${GREEN}✓ Self-signed certificate generated${NC}"
     echo -e "  Certificate: $CERT_DIR/server.crt"
     echo -e "  Private Key: $CERT_DIR/server.key"
@@ -131,9 +131,9 @@ generate_self_signed_cert() {
 
 configure_nginx() {
     print_header "Configuring Nginx"
-    
+
     CONFIG_FILE="/etc/nginx/sites-available/sglang-dashboard"
-    
+
     echo "Creating nginx configuration..."
     sudo tee "$CONFIG_FILE" > /dev/null << NGINX_CONF
 # SGLang CI Dashboard - HTTPS Configuration
@@ -160,11 +160,11 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        
+
         # WebSocket support (if needed)
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -181,21 +181,21 @@ NGINX_CONF
 
     echo "Enabling site..."
     sudo ln -sf "$CONFIG_FILE" /etc/nginx/sites-enabled/
-    
+
     echo "Testing nginx configuration..."
     sudo nginx -t
-    
+
     echo "Reloading nginx..."
     sudo systemctl reload nginx
-    
+
     echo -e "${GREEN}✓ Nginx configured${NC}"
 }
 
 create_systemd_service() {
     print_header "Creating Systemd Service"
-    
+
     SERVICE_FILE="/etc/systemd/system/sglang-dashboard.service"
-    
+
     echo "Creating systemd service..."
     sudo tee "$SERVICE_FILE" > /dev/null << SERVICE
 [Unit]
@@ -218,13 +218,13 @@ SERVICE
 
     echo "Reloading systemd..."
     sudo systemctl daemon-reload
-    
+
     echo "Enabling service..."
     sudo systemctl enable sglang-dashboard
-    
+
     echo "Starting service..."
     sudo systemctl start sglang-dashboard
-    
+
     echo -e "${GREEN}✓ Systemd service created and started${NC}"
     echo -e "  Status: sudo systemctl status sglang-dashboard"
     echo -e "  Logs:   sudo journalctl -u sglang-dashboard -f"
@@ -232,23 +232,23 @@ SERVICE
 
 full_setup() {
     print_header "Full HTTPS Setup for SGLang Dashboard"
-    
+
     echo -e "This will configure:"
     echo -e "  📍 URL: https://$DOMAIN:$HTTPS_PORT/"
     echo -e "  🖥️  Server: $(hostname -I | awk '{print $1}')"
     echo ""
-    
+
     # Step 1: Install nginx
     install_nginx
-    
+
     # Step 2: Generate/check SSL certificate
     if [ ! -f "$CERT_DIR/server.crt" ] || [ "$1" == "--self-signed" ]; then
         generate_self_signed_cert
     fi
-    
+
     # Step 3: Configure nginx
     configure_nginx
-    
+
     # Step 4: Create systemd service (optional)
     echo ""
     read -p "Create systemd service for auto-start? [y/N] " -n 1 -r
@@ -256,9 +256,9 @@ full_setup() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         create_systemd_service
     fi
-    
+
     print_header "Setup Complete!"
-    
+
     echo -e "🌐 Dashboard URL: ${GREEN}https://$DOMAIN:$HTTPS_PORT/${NC}"
     echo -e "   (or https://$(hostname -I | awk '{print $1}'):$HTTPS_PORT/)"
     echo ""
@@ -302,4 +302,3 @@ case "${1:-}" in
         full_setup
         ;;
 esac
-

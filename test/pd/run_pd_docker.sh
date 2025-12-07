@@ -648,9 +648,9 @@ if [ $GSM8K_EXIT_CODE -eq 0 ]; then
   # Extract accuracy from log
   GSM8K_ACCURACY=$(grep "Accuracy:" "${LOG_DIR}/test_gsm8k.log" | tail -1 | awk '{print $2}')
   if [ -n "$GSM8K_ACCURACY" ]; then
-    # Check if accuracy is 0.0000 or invalid (should be treated as FAIL)
+    # Check if accuracy is 0.0 or very low (should be treated as FAIL)
     # Valid accuracy should be > 0.0 for a meaningful test
-    if [ "$GSM8K_ACCURACY" = "0.0000" ] || [ "$GSM8K_ACCURACY" = "0.0" ] || [ "$GSM8K_ACCURACY" = "0" ]; then
+    if (( $(echo "$GSM8K_ACCURACY < 0.001" | bc -l) )); then
       echo "[pd-test] ✗ GSM8K test completed but FAILED - Accuracy: ${GSM8K_ACCURACY} (all questions failed/timed out)"
       echo "[pd-test]    Duration: ${GSM8K_DURATION}s"
       TEST_EXIT_CODE=1

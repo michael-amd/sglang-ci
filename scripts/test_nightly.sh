@@ -301,7 +301,7 @@ for arg in "$@"; do
       echo "    - Test: test_custom_allreduce.TestCustomAllReduce"
       echo "    - Test Directory: /sgl-workspace/sglang/test/manual"
       echo "    - GPUs Used: 0,1,2,3,4,5,6,7 (8 GPUs)"
-      echo "    - Log Directory: \${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/[image-name].log"
+      echo "    - Log Directory: \${MOUNT_DIR}/test/unit-test-backend-8-gpu-CAR-amd/{hardware}/[image-name].log"
       echo ""
       echo "  PD Test:"
       echo "    - Test: Prefill/Decode Disaggregation"

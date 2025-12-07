@@ -275,7 +275,7 @@ def get_dynamic_additional_categories() -> List[Tuple[str, int, int]]:
             f"- {AMD_WORKFLOW_URL}\n"
             f"Optional (for nightly test counts):\n"
             f"- {NVIDIA_NIGHTLY_SUITE_URL}\n"
-            f"- {AMD_NIGHTLY_SUITE_URL}"
+            f"- {AMD_NIGHTLY_URL}"
         ) from e
 
 
