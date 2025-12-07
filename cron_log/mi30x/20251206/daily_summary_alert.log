@@ -9,33 +9,35 @@
 Alert sent: 2025-12-06 Daily CI Summary Report
 ================================================================================
 
-Generated on 2025-12-06 at 16:30:01 PST
-Hostname: dell300x-pla-t12-38
+Generated on 2025-12-06 at 13:30:01 PST
+Hostname: dell300x-pla-t10-23
 Hardware: mi30x
 Docker Image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
 
 Overall Status:
 • Tasks run: 11/11
-• Passed: 5, Failed: 2, Unknown: 4
+• Passed: 3, Failed: 6, Unknown: 2
 
 Task Results:
 
 Validation & Checks:
-  ✅ Unit Tests: Pass
+  ❌ Unit Tests: Failed
   ❌ PD Disaggregation Tests: Failed
-    Error: Model path does not exist: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+    Error: exit code: 1
   ✅ Docker Image Check: Pass
 
 Performance Benchmarks:
-  ✅ Grok Online Benchmark: Pass (GSM8K: 81.4%)
+  ❌ Grok Online Benchmark: Failed
+    Error: Test failed or did not complete
   ❌ Grok 2 Online Benchmark: Failed
     Error: Test failed or did not complete
-  ❓ DeepSeek Online Benchmark: Unknown
+  ❌ DeepSeek Online Benchmark: Failed
+    Error: Test failed or did not complete
 
 Integration Tests:
-  ❓ DeepSeek DP Attention Test: Unknown
+  ❌ DeepSeek DP Attention Test: Failed (GSM8K: 0.0%)
+    Error: GSM8K accuracy is 0% - test did not complete successfully
   ❓ DeepSeek Torch Compile Test: Unknown
-  ❓ DeepSeek DP+Torch Compile: Unknown
 
 Sanity Check (Accuracy): ✅ Pass
   ✅ gpt-oss-120b-bf16 - GSM8K: 85.8% (threshold ≥ 82.0%)
@@ -43,5 +45,6 @@ Sanity Check (Accuracy): ✅ Pass
 
 ================================================================================
 
-💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251206_mi30x_20251206_163001.json
-ℹ️  No Teams webhook URL provided, skipping Teams notification
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251206_mi30x_20251206_133001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
