@@ -671,11 +671,11 @@ def wait_for_server_ready(server_log_path, timeout=300):
                     content = f.read()
 
                 # Check for kernel compilation deadlock (aiter JIT lock issue)
+                # At timeout, if workers are still waiting for baton, it's a deadlock
                 if "waiting for baton release" in content:
-                    # Count how many workers are waiting
                     waiting_count = content.count("waiting for baton release")
-                    lock_match = re.search(r"lock_(\w+)", content)
-                    lock_name = lock_match.group(1) if lock_match else "unknown"
+                    lock_match = re.search(r"pa_ragged_(\w+)", content)
+                    lock_name = lock_match.group(1)[:8] if lock_match else "unknown"
                     return (
                         False,
                         "kernel_deadlock",
@@ -740,23 +740,34 @@ def wait_for_server_ready(server_log_path, timeout=300):
                     print(f"   Suggestion: Increase --mem-fraction-static value")
                     return False, "memory_error", current_mem
 
-                # Check for kernel compilation deadlock early
+                # Check for kernel compilation deadlock - but only after significant waiting
+                # Note: "waiting for baton release" is NORMAL during JIT compilation
+                # All workers wait while one compiles. Only flag as deadlock if:
+                # 1. All 8 workers are waiting (waiting_count >= 16, since each logs twice)
+                # 2. AND we've been waiting for at least 60 seconds
+                # 3. AND no progress is being made (log content unchanged)
                 if "waiting for baton release" in content:
                     waiting_count = content.count("waiting for baton release")
-                    if waiting_count >= 4:  # Multiple workers waiting = likely deadlock
-                        lock_match = re.search(r"lock_(\w+)", content)
-                        lock_name = lock_match.group(1) if lock_match else "unknown"
-                        print(
-                            f"❌ Kernel compilation deadlock detected! {waiting_count} workers waiting for {lock_name}"
-                        )
-                        print(
-                            f"   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
-                        )
-                        return (
-                            False,
-                            "kernel_deadlock",
-                            f"{lock_name} ({waiting_count} workers waiting)",
-                        )
+                    # Only consider deadlock if ALL workers are waiting (8 TP × 2 messages each = 16)
+                    # AND we've waited at least 60 seconds with no progress
+                    if waiting_count >= 16 and elapsed > 60:
+                        # Check if log is still growing (compilation in progress)
+                        if content == last_content:
+                            lock_match = re.search(r"pa_ragged_(\w+)", content)
+                            lock_name = (
+                                lock_match.group(1)[:8] if lock_match else "unknown"
+                            )
+                            print(
+                                f"❌ Kernel compilation deadlock detected! {waiting_count} workers waiting for {lock_name}"
+                            )
+                            print(
+                                f"   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
+                            )
+                            return (
+                                False,
+                                "kernel_deadlock",
+                                f"{lock_name} ({waiting_count} workers waiting)",
+                            )
 
                 # Check for Python errors (AttributeError, etc.)
                 if "AttributeError:" in content:
@@ -920,6 +931,7 @@ def sanity_check(
     timing_log=None,
     docker_image=None,
     models_dir=DEFAULT_MODELS_DIR,
+    disable_cuda_graph=False,
 ):
     """Run server + multiple client trials and save logs.
 
@@ -929,6 +941,10 @@ def sanity_check(
     launch_cmd, error_msg = build_launch_command(
         config, platform, model_path, tokenizer_path, models_dir
     )
+
+    # Add --disable-cuda-graph flag if requested (used for kernel deadlock fallback)
+    if disable_cuda_graph and launch_cmd:
+        launch_cmd = launch_cmd + " --disable-cuda-graph"
     if not launch_cmd:
         if error_msg:
             # Model or tokenizer files not available - this is a skip, not a failure
@@ -964,9 +980,13 @@ def sanity_check(
     os.makedirs(log_dir, mode=0o755, exist_ok=True)
 
     print(f"\n=== Testing {model_name} on {platform} ===")
+    if disable_cuda_graph:
+        print(f"   (Running with --disable-cuda-graph fallback)")
     if timing_log:
         timing_log.write(f"\n=== {model_name} on {platform} ===\n")
         timing_log.write(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
+        if disable_cuda_graph:
+            timing_log.write(f"Note: Running with --disable-cuda-graph fallback\n")
         timing_log.flush()
 
     overall_start = time.time()
@@ -1025,7 +1045,50 @@ def sanity_check(
                 timing_log.flush()
         elif error_type == "kernel_deadlock":
             error_msg = f"Kernel compilation deadlock ({error_details})"
-            suggestion = f"💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
+
+            # Clean up the failed server process before retry
+            try:
+                os.killpg(os.getpgid(server_proc.pid), signal.SIGTERM)
+                time.sleep(1)
+                if server_proc.poll() is None:
+                    os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
+            if server_proc in ACTIVE_SERVER_PROCESSES:
+                ACTIVE_SERVER_PROCESSES.remove(server_proc)
+
+            # If not already using --disable-cuda-graph, retry with it
+            if not disable_cuda_graph:
+                print(
+                    f"⚠️  {model_name}: Kernel deadlock detected, retrying with --disable-cuda-graph..."
+                )
+                if timing_log:
+                    timing_log.write(
+                        f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                    )
+                    timing_log.write(f"Error: {error_msg}\n")
+                    timing_log.write(
+                        f"🔄 Retrying with --disable-cuda-graph fallback...\n"
+                    )
+                    timing_log.flush()
+
+                # Retry with --disable-cuda-graph
+                return sanity_check(
+                    model_name=model_name,
+                    config=config,
+                    platform=platform,
+                    trials=trials,
+                    log_dir=log_dir,
+                    model_path=model_path,
+                    tokenizer_path=tokenizer_path,
+                    timing_log=timing_log,
+                    docker_image=docker_image,
+                    models_dir=models_dir,
+                    disable_cuda_graph=True,  # Enable fallback
+                )
+
+            # Already tried with --disable-cuda-graph, give up
+            suggestion = f"💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph"
             print(f"{model_name}: {FAIL_MARK} ({error_msg})")
             print(f"   {suggestion}")
             if timing_log:
