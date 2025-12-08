@@ -177,32 +177,21 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row g-3 mb-4" id="summaryCards"></div>
-
-    <!-- Pass Rate Chart -->
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Pass Rate Trend (Last <span id="rangeLabel">7</span> Days)</h5>
-            <span class="text-muted"><i class="bi bi-calendar3"></i> <span id="dateRangeLabel">—</span></span>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="passRateChart"></canvas>
-            </div>
-        </div>
-    </div>
-
     <div class="row g-4 mb-4">
-        <!-- Daily Runs Table -->
+        <!-- Left Column: Daily Runs + Pass Rate Chart -->
         <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Daily Run Overview</h5>
-                    <span class="badge bg-light text-dark" id="dailyRunCount">0 runs</span>
+            <!-- Daily Runs Table with Stats -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Daily Run Overview</h5>
+                        <span class="badge bg-secondary" id="selectedRunLabel">—</span>
+                    </div>
+                    <!-- Selected Run Stats -->
+                    <div id="selectedRunSummary" class="row g-2 text-center"></div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="max-height: 550px;">
                         <table class="table table-hover mb-0" id="dailyRunsTable">
                             <thead class="table-light">
                                 <tr>
@@ -220,25 +209,28 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Selected Run Details -->
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Selected Run Details</h5>
-                        <span class="badge bg-secondary" id="selectedRunLabel">—</span>
+            <!-- Pass Rate Chart -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <h6 class="mb-0">Pass Rate Trend (Last <span id="rangeLabel">7</span> Days)</h6>
+                    <span class="text-muted small"><i class="bi bi-calendar3"></i> <span id="dateRangeLabel">—</span></span>
+                </div>
+                <div class="card-body py-2">
+                    <div class="chart-container" style="height: 180px;">
+                        <canvas id="passRateChart"></canvas>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Selected Run Details -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Test Results</h5>
+                </div>
                 <div class="card-body">
-                    <div id="selectedRunSummary" class="mb-3"></div>
-
-                    <div class="mb-3">
-                        <h6>Log Links</h6>
-                        <div id="selectedRunLogs" class="d-flex flex-wrap"></div>
-                    </div>
-
                     <div class="mb-3">
                         <h6>Validation & Checks</h6>
                         <div class="table-responsive small-table">
@@ -256,9 +248,26 @@
                     </div>
 
                     <div class="mb-3">
-                        <h6>Benchmarks & Integration Tests</h6>
+                        <h6>Performance Benchmarks</h6>
                         <div class="table-responsive small-table">
                             <table class="table table-sm" id="selectedBenchmarksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Status</th>
+                                        <th>GSM8K</th>
+                                        <th>Runtime</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Integration Tests (DeepSeek)</h6>
+                        <div class="table-responsive small-table">
+                            <table class="table table-sm" id="selectedIntegrationTable">
                                 <thead>
                                     <tr>
                                         <th>Test Name</th>
@@ -586,51 +595,7 @@ function updateFilterControls(data) {
 }
 
 function renderSummaryCards(data) {
-    const container = document.getElementById('summaryCards');
-    if (!container) return;
-
-    const selectedRun = data.selected_run || {};
-
-    const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
-
-    container.innerHTML = `
-        <div class="col-md-3">
-            <div class="card summary-card">
-                <div class="card-body">
-                    <div class="card-title">Tasks Run</div>
-                    <div class="card-value">${tasksRun}</div>
-                    <p class="text-muted mb-0">Out of ${selectedRun.total_tasks || 0} total</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card summary-card">
-                <div class="card-body">
-                    <div class="card-title">Passed</div>
-                    <div class="card-value text-success">${selectedRun.passed_tasks || 0}</div>
-                    <p class="text-muted mb-0">${selectedRun.pass_rate || 0}% pass rate</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card summary-card">
-                <div class="card-body">
-                    <div class="card-title">Failed</div>
-                    <div class="card-value text-danger">${selectedRun.failed_tasks || 0}</div>
-                    <p class="text-muted mb-0">${selectedRun.unknown_tasks || 0} unknown</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card summary-card">
-                <div class="card-body">
-                    <div class="card-title">Not Run</div>
-                    <div class="card-value text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</div>
-                    <p class="text-muted mb-0">Docker image unavailable</p>
-                </div>
-            </div>
-        </div>
-    `;
+    // Function removed as summary cards are now integrated into Daily Run Overview
 }
 
 function renderDailyRuns(runs) {
@@ -690,15 +655,20 @@ function renderSelectedRun(selectedRun) {
     const validationTableBody = document.querySelector('#selectedValidationTable tbody');
     const benchmarkTableBody = document.querySelector('#selectedBenchmarksTable tbody');
     const sanityTableBody = document.querySelector('#selectedSanityTable tbody');
-    const logsContainer = document.getElementById('selectedRunLogs');
 
     if (!selectedRun) {
-        if (label) label.textContent = 'No run selected';
-        if (summaryContainer) summaryContainer.innerHTML = '<p class="text-muted">No run data available.</p>';
+        if (label) label.textContent = 'Select a run';
+        if (summaryContainer) summaryContainer.innerHTML = `
+            <div class="col"><div class="border rounded p-2 bg-light h-100 text-center"><div class="text-muted small">Tasks Run</div><strong class="fs-4">—</strong></div></div>
+            <div class="col"><div class="border rounded p-2 bg-light h-100 text-center"><div class="text-muted small">Passed</div><strong class="fs-4">—</strong></div></div>
+            <div class="col"><div class="border rounded p-2 bg-light h-100 text-center"><div class="text-muted small">Failed</div><strong class="fs-4">—</strong></div></div>
+            <div class="col"><div class="border rounded p-2 bg-light h-100 text-center"><div class="text-muted small">Not Run</div><strong class="fs-4">—</strong></div></div>
+            <div class="col"><div class="border rounded p-2 bg-light h-100 text-center"><div class="text-muted small">Pass Rate</div><strong class="fs-4">—</strong></div></div>
+            <div class="col-12 mt-2"><div class="d-flex justify-content-between align-items-center"><div><span class="text-muted small me-1">Machine:</span><span>—</span></div><div><span class="text-muted small me-1">Docker Image:</span><span>—</span></div></div></div>
+        `;
         if (validationTableBody) validationTableBody.innerHTML = '';
         if (benchmarkTableBody) benchmarkTableBody.innerHTML = '';
         if (sanityTableBody) sanityTableBody.innerHTML = '';
-        if (logsContainer) logsContainer.innerHTML = '';
         return;
     }
 
@@ -707,71 +677,78 @@ function renderSelectedRun(selectedRun) {
     }
 
     if (summaryContainer) {
-        const tasksRun = (selectedRun.total_tasks || 0) - (selectedRun.not_run || 0);
+        const totalTasks = selectedRun.total_tasks || 0;
+        const tasksRun = totalTasks - (selectedRun.not_run || 0);
+        const passRate = selectedRun.pass_rate || 0;
+        const notRun = selectedRun.not_run || 0;
         const machineName = selectedRun.machine_name || '—';
+        const dockerImage = selectedRun.docker_image || '—';
+        const dockerImageTag = dockerImage !== '—' ? dockerImage.split(':').pop() : '—';
+
         summaryContainer.innerHTML = `
-            <div class="row g-2 mb-3">
-                <div class="col-3">
+            <div class="col">
+                <div class="border rounded p-2 bg-light h-100 text-center">
                     <div class="text-muted small">Tasks Run</div>
-                    <strong>${tasksRun}</strong>
-                </div>
-                <div class="col-3">
-                    <div class="text-muted small">Passed</div>
-                    <strong class="text-success">${selectedRun.passed_tasks || 0}</strong>
-                </div>
-                <div class="col-3">
-                    <div class="text-muted small">Failed</div>
-                    <strong class="text-danger">${selectedRun.failed_tasks || 0}</strong>
-                </div>
-                <div class="col-3">
-                    <div class="text-muted small">Not Run</div>
-                    <strong class="text-primary" style="font-weight: 700;">${selectedRun.not_run || 0}</strong>
+                    <strong class="fs-4">${tasksRun}</strong>
                 </div>
             </div>
-            <div class="row g-2 mb-3">
-                <div class="col-4">
+            <div class="col">
+                <div class="border rounded p-2 bg-light h-100 text-center">
+                    <div class="text-muted small">Passed</div>
+                    <strong class="fs-4 text-success">${selectedRun.passed_tasks || 0}</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="border rounded p-2 bg-light h-100 text-center">
+                    <div class="text-muted small">Failed</div>
+                    <strong class="fs-4 text-danger">${selectedRun.failed_tasks || 0}</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="border rounded p-2 bg-light h-100 text-center">
+                    <div class="text-muted small">Not Run</div>
+                    <strong class="fs-4 text-primary">${notRun}</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="border rounded p-2 bg-light h-100 text-center">
                     <div class="text-muted small">Pass Rate</div>
-                    <strong class="text-primary">${selectedRun.pass_rate || 0}%</strong>
+                    <strong class="fs-4 text-info">${passRate}%</strong>
                 </div>
-                <div class="col-4">
-                    <div class="text-muted small">Machine</div>
-                    <strong>${machineName}</strong>
-                </div>
-                <div class="col-4">
-                    <div class="text-muted small">Docker Image</div>
-                    <div class="text-truncate" title="${selectedRun.docker_image || '—'}"><small>${selectedRun.docker_image || '—'}</small></div>
+            </div>
+            <div class="col-12 mt-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div><span class="text-muted small me-1">Machine:</span><span>${machineName}</span></div>
+                    <div><span class="text-muted small me-1">Docker Image:</span><span>${dockerImageTag}</span></div>
                 </div>
             </div>
         `;
     }
 
-    if (logsContainer) {
-        const logs = selectedRun.log_files || [];
-        if (!logs.length) {
-            logsContainer.innerHTML = '<span class="text-muted">No log links available.</span>';
-        } else {
-            logsContainer.innerHTML = logs.map((log) => {
-                const link = log.github_url || log.local_path || '#';
-                const icon = log.github_url ? 'bi-link-45deg' : 'bi-file-text';
-                const disabled = link === '#';
-                return `<a class="badge badge-log text-decoration-none ${disabled ? 'disabled' : ''}" href="${disabled ? '#!' : link}" target="_blank">` +
-                    `<i class="bi ${icon}"></i> ${log.log_name}` +
-                    `${log.log_type ? ` <span class=\"text-muted\">(${log.log_type})</span>` : ''}` +
-                `</a>`;
-            }).join('');
-        }
-    }
-
-    // Split test results into validation and benchmarks
-    if (benchmarkTableBody || validationTableBody) {
+    // Split test results into validation, benchmarks, and integration tests
+    const integrationTableBody = document.querySelector('#selectedIntegrationTable tbody');
+    if (benchmarkTableBody || validationTableBody || integrationTableBody) {
         const allTests = selectedRun.benchmark_results || [];
 
         // Define validation test names
         const validationTests = ['Unit Tests', 'PD Disaggregation Tests', 'Docker Image Check'];
 
-        // Split tests into two categories
+        // Define integration tests (DeepSeek-based tests)
+        const integrationTestNames = [
+            'DeepSeek DP Attention Test',
+            'DeepSeek Torch Compile Test',
+            'DeepSeek DP+Torch Compile',
+            'DeepSeek DP+MTP Test',
+            'DeepSeek MTP Test'
+        ];
+
+        // Split tests into three categories
         const validation = allTests.filter(test => validationTests.includes(test.benchmark_name));
-        const benchmarks = allTests.filter(test => !validationTests.includes(test.benchmark_name));
+        const integrationTests = allTests.filter(test => integrationTestNames.includes(test.benchmark_name));
+        const benchmarks = allTests.filter(test =>
+            !validationTests.includes(test.benchmark_name) &&
+            !integrationTestNames.includes(test.benchmark_name)
+        );
 
         // Render validation tests (no GSM8K column)
         if (validationTableBody) {
@@ -788,7 +765,7 @@ function renderSelectedRun(selectedRun) {
             }
         }
 
-        // Render benchmarks (with GSM8K column)
+        // Render performance benchmarks (Grok, DeepSeek Online)
         if (benchmarkTableBody) {
             if (!benchmarks.length) {
                 benchmarkTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">No benchmark data</td></tr>';
@@ -799,6 +776,22 @@ function renderSelectedRun(selectedRun) {
                         <td>${statusBadge(bench.status)}</td>
                         <td>${bench.gsm8k_accuracy !== null ? bench.gsm8k_accuracy + '%' : '—'}</td>
                         <td>${bench.runtime_minutes ? bench.runtime_minutes + 'm' : '—'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Render integration tests (DeepSeek feature tests)
+        if (integrationTableBody) {
+            if (!integrationTests.length) {
+                integrationTableBody.innerHTML = '<tr><td colspan="4" class="text-muted">No integration test data</td></tr>';
+            } else {
+                integrationTableBody.innerHTML = integrationTests.map((test) => `
+                    <tr>
+                        <td>${test.benchmark_name}</td>
+                        <td>${statusBadge(test.status)}</td>
+                        <td>${test.gsm8k_accuracy !== null ? test.gsm8k_accuracy + '%' : '—'}</td>
+                        <td>${test.runtime_minutes ? test.runtime_minutes + 'm' : '—'}</td>
                     </tr>
                 `).join('');
             }
