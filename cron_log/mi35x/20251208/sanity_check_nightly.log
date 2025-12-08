@@ -1,0 +1,192 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --mode=sanity --hardware=mi35x --sanity-trials=3 --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-12-08 09:00:01 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3345561
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo docker... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Will run 3 trials per model for sanity check
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Mode is 'sanity', setting model to 'sanity' as well
+[nightly] Model: sanity, Mode(s): sanity
+[nightly] Created process lock: /tmp/perf_nightly_sanity.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: df99ee2f0350
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for sanity for the last 1 days...
+[nightly] Searching for non-SRT mi35x image (rocm700) in 'rocm/sgl-dev' for date 20251208...
+[nightly] Found candidate tag for day -0: v0.5.6-rocm700-mi35x-20251208
+[nightly] Found local image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Successfully obtained image for date 20251208: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 5b86dd86ff99
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: No completion check defined for mode 'sanity'. Assuming not complete.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Container name: sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[nightly] Reusing container sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[nightly] Models directory not accessible in existing container. Recreating container...
+[nightly] Creating container sgl-dev_v0.5.6-rocm700-mi35x-20251208
+83aba0ae88255e6a789aca49bce16ce5d791f01ef2548a0903f3c7dd9bcace3f
+[nightly] No custom model path provided. Using default model path from benchmark script for sanity model.
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly SANITY sanity benchmark ===
+[nightly] Launching sanity check inside sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208' --hardware='mi35x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x'
+🔧 Testing on platform: mi35x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] lsof not available or timed out, skipping port check
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] GPU is idle. Proceeding with tests.
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+
+=== Testing GPT-OSS-120B on mi35x ===
+🚀 Starting server for GPT-OSS-120B...
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+   📦 Kernel compilation completed (4 kernels)
+❌ Kernel compilation deadlock detected! 18 workers waiting for unknown
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+⚠️  GPT-OSS-120B: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing GPT-OSS-120B on mi35x ===
+   (Running with --disable-cuda-graph fallback)
+🚀 Starting server for GPT-OSS-120B...
+GPT-OSS-120B: FAIL [X] (Kernel compilation deadlock (unknown (16 workers waiting)))
+   💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ❌ GPT-OSS-120B completed in 539.1s
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+
+=== Testing GPT-OSS-20B on mi35x ===
+🚀 Starting server for GPT-OSS-20B...
+⚠️  GPT-OSS-20B: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing GPT-OSS-20B on mi35x ===
+   (Running with --disable-cuda-graph fallback)
+🚀 Starting server for GPT-OSS-20B...
+⚠️  Server errors detected at 81s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 111s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 141s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 171s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 201s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 231s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 261s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+⚠️  Server errors detected at 291s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GPT-OSS-20B_mi35x_server.log
+GPT-OSS-20B: FAIL [X] (server not ready after 300.10s)
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ❌ GPT-OSS-20B completed in 602.3s
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+
+=== Testing QWEN-30B on mi35x ===
+🚀 Starting server for QWEN-30B...
+   ⏳ Kernel compilation in progress... (60s elapsed)
+❌ Kernel compilation deadlock detected! 28 workers waiting for 49ffeed9
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+⚠️  QWEN-30B: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing QWEN-30B on mi35x ===
+   (Running with --disable-cuda-graph fallback)
+🚀 Starting server for QWEN-30B...
+QWEN-30B: FAIL [X] (server not ready after 300.09s)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ❌ QWEN-30B completed in 362.7s
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+
+=== Testing GROK1-IN4 on mi35x ===
+🚀 Starting server for GROK1-IN4...
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+❌ Kernel compilation deadlock detected! 18 workers waiting for 6fb5a21f
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+⚠️  GROK1-IN4: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing GROK1-IN4 on mi35x ===
+   (Running with --disable-cuda-graph fallback)
+🚀 Starting server for GROK1-IN4...
+⚠️  Server errors detected at 218s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 248s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GROK1-IN4_mi35x_server.log
+⚠️  Server errors detected at 278s - check /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi35x/v0.5.6-rocm700-mi35x-20251208/GROK1-IN4_mi35x_server.log
+GROK1-IN4: FAIL [X] (server not ready after 300.34s)
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 4/7 (57.1%) ❌ GROK1-IN4 completed in 376.5s
+
+🚀 [5/7] Starting GROK1-FP8...
+============================================================
+Progress: [██████████████████████░░░░░░░░░░░░░░░░░░] 5/7 (57.1%)
+
+=== Testing GROK1-FP8 on mi35x ===
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+   ⏳ Kernel compilation in progress... (153s elapsed)
+❌ Kernel compilation deadlock detected! 28 workers waiting for e2f7ef6b
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+⚠️  GROK1-FP8: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing GROK1-FP8 on mi35x ===
+   (Running with --disable-cuda-graph fallback)
+🚀 Starting server for GROK1-FP8...
+   Using extended timeout (600s) for GROK1-FP8 kernel compilation
+   ⏳ Kernel compilation in progress... (67s elapsed)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+   📦 Kernel compilation completed (2 kernels)
+❌ Kernel compilation deadlock detected! 30 workers waiting for unknown
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+GROK1-FP8: FAIL [X] (Kernel compilation deadlock (unknown (30 workers waiting)))
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Sending Teams notification for sanity check results...
+OCI runtime exec failed: exec failed: unable to start container process: error executing setns process: exit status 1: unknown
+[nightly] WARN: Teams notification failed for sanity check (exit code: 128)
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Stopping container sgl-dev_v0.5.6-rocm700-mi35x-20251208 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
