@@ -1,0 +1,142 @@
+=== CONFIGURATION ===
+Model: grok2 (variant: GROK2)
+Data directory: /mnt/raid/michael/sglang-ci/online/GROK2
+Output prefix: GROK2_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online
+Model name: GROK2
+Mode filter: aiter
+Variant filter: all variants
+Load metric: request_rate
+Expected request_rates: [1, 2, 4, 8]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Found GSM8K accuracy (single run) for mode aiter: 0.925
+Found GSM8K accuracy for mode aiter: 0.923
+Found GSM8K accuracy (single run) for mode aiter: 0.916
+Found GSM8K accuracy for mode aiter: 0.918
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.917
+Found GSM8K accuracy for mode aiter: 0.923
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.924
+Found GSM8K accuracy (single run) for mode aiter: 0.929
+Found GSM8K accuracy for mode aiter: 0.928
+Found GSM8K accuracy (single run) for mode aiter: 0.925
+Found GSM8K accuracy for mode aiter: 0.922
+Found GSM8K accuracy (single run) for mode aiter: 0.928
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.93
+Found GSM8K accuracy for mode aiter: 0.93
+Found GSM8K accuracy (single run) for mode aiter: 0.935
+Found GSM8K accuracy for mode aiter: 0.929
+Found GSM8K accuracy (single run) for mode aiter: 0.924
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.924
+Found GSM8K accuracy (single run) for mode aiter: 0.925
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.928
+Found GSM8K accuracy for mode aiter: 0.927
+Found GSM8K accuracy (single run) for mode aiter: 0.928
+Found GSM8K accuracy for mode aiter: 0.931
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.924
+Found GSM8K accuracy for mode aiter: 0.925
+Found GSM8K accuracy (single run) for mode aiter: 0.927
+Found GSM8K accuracy for mode aiter: 0.925
+Found GSM8K accuracy (single run) for mode aiter: 0.929
+Found GSM8K accuracy for mode aiter: 0.927
+Found GSM8K accuracy (single run) for mode aiter: 0.917
+Found GSM8K accuracy for mode aiter: 0.923
+Found GSM8K accuracy (single run) for mode aiter: 0.929
+Found GSM8K accuracy for mode aiter: 0.927
+Found GSM8K accuracy (single run) for mode aiter: 0.923
+Found GSM8K accuracy for mode aiter: 0.926
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 8
+Warning: Missing data for aiter, E2E_Latency_ms, request_rate 16
+Warning: Missing data for aiter, TTFT_ms, request_rate 8
+Warning: Missing data for aiter, TTFT_ms, request_rate 16
+Warning: Missing data for aiter, ITL_ms, request_rate 8
+Warning: Missing data for aiter, ITL_ms, request_rate 16
+Found GSM8K accuracy (single run) for mode aiter: 0.923
+Found GSM8K accuracy for mode aiter: 0.921
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.928
+Found GSM8K accuracy for mode aiter: 0.926
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.927
+Found GSM8K accuracy (single run) for mode aiter: 0.926
+Found GSM8K accuracy for mode aiter: 0.925
+Date 20251204, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251112, Variant standard, Mode aiter: Extra request_rates: [16]
+Date 20251123, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251125, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251202, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251114, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251121, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251128, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251203, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251117, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251129, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251122, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251126, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251124, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251207, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251206, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251120, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251201, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251205, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251109, Variant standard, Mode aiter: Extra request_rates: [16]
+Date 20251118, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251127, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251113, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251119, Variant standard: Complete and valid data for all modes and request_rates
+Date 20251130, Variant standard: Complete and valid data for all modes and request_rates
+
+Kept 23 date+variant combinations with complete and valid data: [('20251113', 'standard'), ('20251114', 'standard'), ('20251117', 'standard'), ('20251118', 'standard'), ('20251119', 'standard'), ('20251120', 'standard'), ('20251121', 'standard'), ('20251122', 'standard'), ('20251123', 'standard'), ('20251124', 'standard'), ('20251125', 'standard'), ('20251126', 'standard'), ('20251127', 'standard'), ('20251128', 'standard'), ('20251129', 'standard'), ('20251130', 'standard'), ('20251201', 'standard'), ('20251202', 'standard'), ('20251203', 'standard'), ('20251204', 'standard'), ('20251205', 'standard'), ('20251206', 'standard'), ('20251207', 'standard')]
+Total records after filtering: 92
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/GROK2/GROK2_FP8_online_all_variants_aiter_summary_smci355-ccs-aus-m12-33.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20251113: Complete and valid data for all modes and request_rates
+Date 20251114: Complete and valid data for all modes and request_rates
+Date 20251117: Complete and valid data for all modes and request_rates
+Date 20251118: Complete and valid data for all modes and request_rates
+Date 20251119: Complete and valid data for all modes and request_rates
+Date 20251120: Complete and valid data for all modes and request_rates
+Date 20251121: Complete and valid data for all modes and request_rates
+Date 20251122: Complete and valid data for all modes and request_rates
+Date 20251123: Complete and valid data for all modes and request_rates
+Date 20251124: Complete and valid data for all modes and request_rates
+Date 20251125: Complete and valid data for all modes and request_rates
+Date 20251126: Complete and valid data for all modes and request_rates
+Date 20251127: Complete and valid data for all modes and request_rates
+Date 20251128: Complete and valid data for all modes and request_rates
+Date 20251129: Complete and valid data for all modes and request_rates
+Date 20251130: Complete and valid data for all modes and request_rates
+Date 20251201: Complete and valid data for all modes and request_rates
+Date 20251202: Complete and valid data for all modes and request_rates
+Date 20251203: Complete and valid data for all modes and request_rates
+Date 20251204: Complete and valid data for all modes and request_rates
+Date 20251205: Complete and valid data for all modes and request_rates
+Date 20251206: Complete and valid data for all modes and request_rates
+Date 20251207: Complete and valid data for all modes and request_rates
+
+Kept 23 dates with complete and valid data for plotting
+Total records after filtering: 92
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/GROK2/online/20251208_GROK2_online_standard.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
