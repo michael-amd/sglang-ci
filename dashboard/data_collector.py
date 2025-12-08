@@ -124,7 +124,14 @@ class DashboardDataCollector:
                 result["status"] = "fail"
                 result["error"] = "Server errors detected"
             elif result["gsm8k_accuracy"] is not None:
-                result["status"] = "pass"
+                # GSM8K accuracy of 0.0 or very low indicates test failure (server didn't start)
+                if result["gsm8k_accuracy"] < 0.01:  # Less than 1%
+                    result["status"] = "fail"
+                    result["error"] = (
+                        "GSM8K accuracy is 0% - test did not complete successfully"
+                    )
+                else:
+                    result["status"] = "pass"
             elif "Status: SKIPPED (prerequisites not met)" in content:
                 result["exists"] = False
                 return result
@@ -267,8 +274,15 @@ class DashboardDataCollector:
                 result["status"] = "pass"
             elif "[test] Test completed for image:" in content:
                 result["status"] = "pass"
-            elif "Total execution time:" in content or "✅" in content:
+            elif "Total execution time:" in content:
                 result["status"] = "pass"
+            # Check for server startup failures (should be marked as fail)
+            elif "SGLang server failed to start in time" in content:
+                result["status"] = "fail"
+                result["error"] = "Server failed to start (timeout)"
+            elif "SGLang server process.*has terminated unexpectedly" in content:
+                result["status"] = "fail"
+                result["error"] = "Server terminated unexpectedly"
             else:
                 result["status"] = "unknown"
 
@@ -485,12 +499,12 @@ class DashboardDataCollector:
         if self.hardware != "mi30x":
             integration_tests["DeepSeek MTP Test"] = (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online_mtp",
+                "online_mtp_test",
                 "deepseek_r1_mxfp4_mtp.log",
             )
             integration_tests["DeepSeek DP+MTP Test"] = (
                 ["DeepSeek-R1-MXFP4-Preview", "DeepSeek-V3-0324"],
-                "online_dp_mtp",
+                "online_dp_attention_mtp_test",
                 "deepseek_r1_mxfp4_dp_mtp.log",
             )
 

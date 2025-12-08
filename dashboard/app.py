@@ -547,7 +547,7 @@ def api_database_overview():
         cursor.execute(
             """
             SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                   total_tasks, docker_image, not_run, run_datetime_pt,
+                   total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
                    github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
             FROM test_runs
             WHERE hardware = ? AND run_date BETWEEN ? AND ?
@@ -575,6 +575,7 @@ def api_database_overview():
                     "not_run": not_run,
                     "docker_image": row["docker_image"],
                     "run_datetime_pt": row["run_datetime_pt"],
+                    "machine_name": row["machine_name"],
                     "github_log_url": row["github_log_url"],
                     "github_cron_log_url": row["github_cron_log_url"],
                     "github_detail_log_url": row["github_detail_log_url"],
@@ -623,6 +624,7 @@ def api_database_overview():
             "hardware": selected_row["hardware"],
             "overall_status": selected_row["overall_status"],
             "docker_image": selected_row["docker_image"],
+            "machine_name": selected_row["machine_name"],
             "total_tasks": selected_row["total_tasks"] or 0,
             "passed_tasks": selected_row["passed_tasks"] or 0,
             "failed_tasks": selected_row["failed_tasks"] or 0,
@@ -895,6 +897,96 @@ def api_database_schema():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/database/refresh", methods=["POST"])
+def api_database_refresh():
+    """Refresh database from GitHub and clear cache"""
+    try:
+        import subprocess
+
+        # Pull latest database from GitHub
+        db_sync_script = os.path.join(BASE_DIR, "database", "sync_database.py")
+
+        if not os.path.exists(db_sync_script):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Sync script not found at {db_sync_script}. Check BASE_DIR configuration.",
+                    }
+                ),
+                500,
+            )
+
+        result = subprocess.run(
+            ["python3", db_sync_script, "pull"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Database sync failed: {result.stderr}",
+                    }
+                ),
+                500,
+            )
+
+        # Clear all Flask caches
+        cache.clear()
+
+        # Get database file info
+        db_path = get_database_path()
+        if os.path.exists(db_path):
+            file_size = os.path.getsize(db_path)
+            file_mtime = os.path.getmtime(db_path)
+            from datetime import datetime
+
+            last_modified = datetime.fromtimestamp(file_mtime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Database refreshed successfully",
+                    "database": {
+                        "path": db_path,
+                        "size_kb": round(file_size / 1024, 1),
+                        "last_modified": last_modified,
+                    },
+                }
+            )
+        else:
+            return (
+                jsonify(
+                    {"success": False, "error": "Database file not found after sync"}
+                ),
+                404,
+            )
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"success": False, "error": "Database sync timed out"}), 504
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+def api_cache_clear():
+    """Clear all Flask caches"""
+    try:
+        cache.clear()
+        return jsonify({"success": True, "message": "Cache cleared successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/database/stats")

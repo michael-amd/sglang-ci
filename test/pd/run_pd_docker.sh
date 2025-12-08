@@ -26,7 +26,13 @@ fi
 
 # Log directory structure: test/pd/pd_log/{hardware}/{docker_tag}
 LOG_BASE_DIR="/mnt/raid/michael/sglang-ci/test/pd/pd_log"
-LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
+# Allow custom log directory suffix (e.g., for reruns)
+if [ -n "${PD_LOG_DIR_SUFFIX:-}" ]; then
+  LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}${PD_LOG_DIR_SUFFIX}"
+  echo "[pd-test] Using custom log directory suffix: ${PD_LOG_DIR_SUFFIX}"
+else
+  LOG_DIR="${LOG_BASE_DIR}/${HARDWARE}/${DOCKER_TAG}"
+fi
 
 # Docker command with sudo
 DOCKER_CMD=(sudo /usr/bin/docker)
@@ -54,6 +60,7 @@ echo "[pd-test] Model: ${MODEL_PATH}"
 echo "[pd-test] Model Name: ${MODEL_NAME}"
 echo "[pd-test] Docker Image: ${DOCKER_IMAGE}"
 echo "[pd-test] Hardware: ${HARDWARE}"
+echo "[pd-test] Machine: $(hostname)"
 echo "[pd-test] Docker Tag: ${DOCKER_TAG}"
 echo "[pd-test] Log Directory: ${LOG_DIR}"
 echo "[pd-test] IP: ${HOST_IP}"
@@ -292,14 +299,27 @@ echo "[pd-test] Step 3: Starting Decode Server (GPUs 4-7)..."
 echo "[pd-test] =========================================="
 STEP3_START=$(date +%s)
 
+# Build decode server environment variables
+DECODE_ENV_ARGS="-e HIP_VISIBLE_DEVICES=4,5,6,7 -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib"
+
+# Set KV cache transfer timeout to 600s (10 minutes) for PD disaggregation
+# Default 300s is too short for GSM8K with long 5-shot prompts
+# See: PD_TEST_FIXES_20251123.md for context on timeout requirements
+DECODE_ENV_ARGS="${DECODE_ENV_ARGS} -e SGLANG_DISAGGREGATION_WAITING_TIMEOUT=600"
+echo "[pd-test] Using SGLANG_DISAGGREGATION_WAITING_TIMEOUT=600 (10 minutes for KV cache transfer)"
+
+if [ -n "${SGLANG_ROCM_FUSED_DECODE_MLA:-}" ]; then
+  echo "[pd-test] Using SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
+  DECODE_ENV_ARGS="${DECODE_ENV_ARGS} -e SGLANG_ROCM_FUSED_DECODE_MLA=${SGLANG_ROCM_FUSED_DECODE_MLA}"
+fi
+
 "${DOCKER_CMD[@]}" run -d --name sglang-pd-decode \
   --network=host --ipc=host --cap-add=SYS_PTRACE \
   --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
   --group-add video --privileged \
   -v /mnt/raid:/mnt/raid \
   -v /data2:/data2 \
-  -e HIP_VISIBLE_DEVICES=4,5,6,7 \
-  -e LD_LIBRARY_PATH=/opt/rocm/lib:/usr/local/lib \
+  $DECODE_ENV_ARGS \
   "${DOCKER_IMAGE}" \
   python3 -m sglang.launch_server \
     --model-path "${MODEL_PATH}" \
@@ -628,12 +648,24 @@ if [ $GSM8K_EXIT_CODE -eq 0 ]; then
   # Extract accuracy from log
   GSM8K_ACCURACY=$(grep "Accuracy:" "${LOG_DIR}/test_gsm8k.log" | tail -1 | awk '{print $2}')
   if [ -n "$GSM8K_ACCURACY" ]; then
-    echo "[pd-test] ✓ GSM8K test completed - Accuracy: ${GSM8K_ACCURACY} (Duration: ${GSM8K_DURATION}s)"
+    # Check if accuracy is 0.0 or very low (should be treated as FAIL)
+    # Valid accuracy should be > 0.0 for a meaningful test
+    if (( $(echo "$GSM8K_ACCURACY < 0.001" | bc -l) )); then
+      echo "[pd-test] ✗ GSM8K test completed but FAILED - Accuracy: ${GSM8K_ACCURACY} (all questions failed/timed out)"
+      echo "[pd-test]    Duration: ${GSM8K_DURATION}s"
+      TEST_EXIT_CODE=1
+      GSM8K_ACCURACY="0.0000"
+      TEST6_RESULT="FAIL"
+    else
+      echo "[pd-test] ✓ GSM8K test completed - Accuracy: ${GSM8K_ACCURACY} (Duration: ${GSM8K_DURATION}s)"
+      TEST6_RESULT="PASS"
+    fi
   else
-    echo "[pd-test] ✓ GSM8K test completed (Duration: ${GSM8K_DURATION}s)"
+    echo "[pd-test] ✗ GSM8K test completed but accuracy could not be extracted (Duration: ${GSM8K_DURATION}s)"
+    TEST_EXIT_CODE=1
     GSM8K_ACCURACY="N/A"
+    TEST6_RESULT="FAIL"
   fi
-  TEST6_RESULT="PASS"
 else
   echo "[pd-test] ✗ GSM8K test failed (exit code: ${GSM8K_EXIT_CODE}, Duration: ${GSM8K_DURATION}s)"
   TEST_EXIT_CODE=1

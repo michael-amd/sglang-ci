@@ -301,6 +301,7 @@ manage_container() {
             -e INSIDE_CONTAINER=1 \
             -e LATEST_TAG="${LATEST_TAG}" \
             -e TZ='America/Los_Angeles' \
+            -e HSA_ENABLE_COREDUMP=0 \
             $([ -n "${SERVER_MEM_FRACTION:-}" ] && echo "-e SERVER_MEM_FRACTION=${SERVER_MEM_FRACTION}") \
             $([ -n "${CUDA_GRAPH_MAX_BS:-}" ] && echo "-e CUDA_GRAPH_MAX_BS=${CUDA_GRAPH_MAX_BS}") \
             $([ "${DISABLE_CUDA_GRAPH:-false}" = "true" ] && echo "-e DISABLE_CUDA_GRAPH=true") \
@@ -443,6 +444,7 @@ create_container() {
     docker run -d --name "${container_name}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+        -e HSA_ENABLE_COREDUMP=0 \
         ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
 }
@@ -588,6 +590,25 @@ get_sglang_env_var() {
     echo "$aiter_env_var"
 }
 
+# Clean up stale aiter JIT lock files to prevent deadlock
+# This is necessary when a previous run crashed/timed out and left locks behind
+cleanup_aiter_locks() {
+  echo "[csv] Cleaning up stale aiter JIT lock files..."
+
+  # Remove all lock files in the aiter build cache
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count
+  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+
+  if [[ "$lock_count" -gt 0 ]]; then
+    echo "[csv] Found $lock_count stale aiter lock file(s), removing..."
+    find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
+    echo "[csv] Aiter lock cleanup complete"
+  else
+    echo "[csv] No stale aiter lock files found"
+  fi
+}
+
 # Function to start SGLang server and wait for it to be ready
 #
 # This function:
@@ -602,6 +623,9 @@ get_sglang_env_var() {
 # - Memory fraction and request limits
 # - Proper port and trust settings
 start_sglang_server() {
+    # Clean up stale aiter locks before starting the server to prevent deadlock
+    cleanup_aiter_locks
+
     # Build torch compile flag if enabled
     local torch_compile_flag=""
     if [ "$ENABLE_TORCH_COMPILE" = "true" ]; then
@@ -614,7 +638,7 @@ start_sglang_server() {
             echo "[DEBUG] Torch compile enabled with DP attention"
         fi
 
-        local server_env=(env SGLANG_USE_AITER=1)
+        local server_env=(env HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1)
         local normalized_rocm="${ROCM_VERSION,,}"
         if [[ -z "$normalized_rocm" && -n "${FULL_IMAGE:-}" && "${FULL_IMAGE,,}" == *"rocm700"* ]]; then
             normalized_rocm="rocm700"
@@ -673,7 +697,7 @@ start_sglang_server() {
         fi
 
         # Start server in background using the standard command format
-        env ${aiter_env_var}=1 python3 -m sglang.launch_server \
+        env HSA_ENABLE_COREDUMP=0 ${aiter_env_var}=1 python3 -m sglang.launch_server \
             --model-path "${MODEL}" \
             --tp-size "${TP}" \
             --port "$GSM8K_PORT" \

@@ -322,6 +322,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       docker run -d --name "${CONTAINER_NAME}" \
         --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
         --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+        -e HSA_ENABLE_COREDUMP=0 \
         ${mount_args} --group-add video --privileged \
         -w "$WORK_DIR_CONTAINER" "${FULL_IMAGE}" tail -f /dev/null
     fi
@@ -334,7 +335,7 @@ if [ -z "${INSIDE_CONTAINER:-}" ]; then
       CONTAINER_ARGS="${CONTAINER_ARGS} --current-dir=\"${CURRENT_DIR}\""
     fi
 
-    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' \
+    docker exec -e INSIDE_CONTAINER=1 -e LATEST_TAG="${LATEST_TAG}" -e TZ='America/Los_Angeles' -e HSA_ENABLE_COREDUMP=0 \
       "${CONTAINER_NAME}" \
       bash "${SCRIPT_PATH}" \
            --docker_image="${FULL_IMAGE}" \
@@ -401,15 +402,15 @@ get_model_env_vars() {
 
   if [[ "${model_type}" == "grok2" ]]; then
     if [[ "${prefix_only}" == "true" ]]; then
-      echo "RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+      echo "HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
     else
-      echo "env RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
+      echo "env HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0"
     fi
   else
     if [[ "${prefix_only}" == "true" ]]; then
-      echo "SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+      echo "HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
     else
-      echo "env SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
+      echo "env HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1"
     fi
   fi
 }
@@ -420,9 +421,31 @@ get_model_env_vars() {
 # Global variable to store the actual attention backend being used
 ATTENTION_BACKEND=""
 
+# Clean up stale aiter JIT lock files to prevent deadlock
+# This is necessary when a previous run crashed/timed out and left locks behind
+cleanup_aiter_locks() {
+  echo "[online] Cleaning up stale aiter JIT lock files..."
+
+  # Remove all lock files in the aiter build cache
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count
+  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+
+  if [[ "$lock_count" -gt 0 ]]; then
+    echo "[online] Found $lock_count stale aiter lock file(s), removing..."
+    find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
+    echo "[online] Aiter lock cleanup complete"
+  else
+    echo "[online] No stale aiter lock files found"
+  fi
+}
+
 launch_server() {
   SERVER_LOG="${folder}/server_output_aiter.log"
   rm -f "$SERVER_LOG"
+
+  # Clean up stale aiter locks before starting the server to prevent deadlock
+  cleanup_aiter_locks
 
   # All supported images use aiter backend with SGLANG_USE_AITER
   attn_backend="aiter"

@@ -621,6 +621,9 @@ for arg in "$@"; do
     --sanity-trials=*)
       CLI_SANITY_TRIALS="${arg#*=}"
       ;;
+    --models-dir=*)
+      CLI_MODELS_DIR="${arg#*=}"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo ""
@@ -644,6 +647,7 @@ for arg in "$@"; do
       echo "  --enable-mtp-test                Enable DeepSeek MTP throughput export (nightly online)"
       echo "  --enable-dp-test                 Enable DeepSeek DP throughput test (nightly online)"
       echo "  --sanity-trials=N                Number of trials per model for sanity check [default: 1]"
+      echo "  --models-dir=PATH                Models directory for sanity check [default: /data]"
       echo "  --help, -h                       Show this help message"
       echo ""
       echo "Examples:"
@@ -1363,6 +1367,7 @@ if ! "${DOCKER_CMD[@]}" ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME
   "${DOCKER_CMD[@]}" run -d --name "${CONTAINER_NAME}" \
     --shm-size "$CONTAINER_SHM_SIZE" --ipc=host --cap-add=SYS_PTRACE --network=host \
     --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined \
+    -e HSA_ENABLE_COREDUMP=0 \
     ${mount_args} --group-add video --privileged \
     -w "$WORK_DIR" "${DOCKER_IMAGE}" tail -f /dev/null
 fi
@@ -1448,6 +1453,11 @@ fi
       else
         # Use default log directory structure
         SANITY_ARGS="${SANITY_ARGS} --log-dir='${BENCHMARK_CI_DIR}/test/sanity_check_log/${HARDWARE_TYPE}'"
+      fi
+
+      # Add custom models directory if provided
+      if [[ -n "${CLI_MODELS_DIR:-}" ]]; then
+        SANITY_ARGS="${SANITY_ARGS} --models-dir='${CLI_MODELS_DIR}'"
       fi
 
       echo "[nightly] Executing: python3 '${SANITY_CHECK_SCRIPT}' ${SANITY_ARGS}"

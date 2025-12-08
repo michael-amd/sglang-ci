@@ -29,7 +29,7 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 ### Dashboard Features
 
 - **📈 Daily Summaries**: Real-time status for MI30X and MI35X platforms with pass/fail statistics
-- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics over configurable time periods
+- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics (via Database Explorer)
 - **📊 Performance Plots**: Interactive visualization of benchmark results with direct GitHub links
 - **🔍 Task Details**: Detailed status for each CI task (benchmarks, integration tests, validation)
 - **⚖️ Hardware Comparison**: Side-by-side comparison charts for MI30X vs MI35X platforms
@@ -44,9 +44,9 @@ A comprehensive web dashboard is now available for viewing and analyzing all CI 
 | **Home** | http://10.194.129.138:5000/ | Overview with summary cards for both platforms |
 | **MI30X Dashboard** | http://10.194.129.138:5000/hardware/mi30x | Detailed MI30X results and task breakdown |
 | **MI35X Dashboard** | http://10.194.129.138:5000/hardware/mi35x | Detailed MI35X results and task breakdown |
-| **Trends** | http://10.194.129.138:5000/trends | Historical analytics with interactive charts |
 | **Plots** | http://10.194.129.138:5000/plots/mi30x | Performance plots gallery |
 | **Upstream CI** | http://10.194.129.138:5000/upstream-ci | AMD vs NVIDIA coverage comparison |
+| **Database Explorer** | http://10.194.129.138:5000/database | SQL queries, historical trends, and raw data access |
 
 ### Dashboard Pages Preview
 
@@ -97,6 +97,18 @@ AMD vs NVIDIA test coverage tracking with:
 
 ![Upstream CI Coverage](dashboard/screenshots/upstream_ci_coverage.png)
 
+#### 5. Database Explorer
+**URL:** http://10.194.129.138:5000/database
+
+Powerful database interface for querying and analyzing CI data:
+- **Overview Panel**: Daily run summaries with pass/fail statistics and benchmark results
+- **SQL Query Editor**: Execute custom SELECT queries against the SQLite database
+- **Schema Browser**: View all tables and column definitions
+- **Date Range Filters**: Analyze data across configurable time periods
+- **Export Support**: Download query results for further analysis
+
+![Database Explorer](dashboard/screenshots/database_page_mi30x.png)
+
 **Full Documentation:** See `dashboard/README.md` for detailed dashboard documentation including API endpoints, deployment options, and troubleshooting.
 
 ---
@@ -105,7 +117,7 @@ AMD vs NVIDIA test coverage tracking with:
 
 The dashboard uses an SQLite database for fast queries and efficient data access. The database is automatically synced to GitHub for cross-machine sharing.
 
-**Database Location:** `/mnt/raid/michael/sglang-ci/database/ci_dashboard.db`
+**Database Location:** `database/ci_dashboard.db`
 
 ### Quick Start
 
@@ -203,6 +215,8 @@ python database/sync_database.py push  # Upload local changes
   - [Model Download](#model-download)
   - [Docker Image Management](#docker-image-management)
   - [Dashboard Management](#dashboard-management)
+  - [System Maintenance](#system-maintenance)
+  - [Database Management](#database-management)
 - [Requirements](#requirements)
 - [Additional Notes](#additional-notes)
 - [Cron Schedule](#cron-schedule)
@@ -725,6 +739,41 @@ Stops the running dashboard server.
 ```bash
 bash dashboard/stop_dashboard.sh
 ```
+
+### System Maintenance
+
+#### system_cleanup.sh
+
+Automated cleanup script for Docker images and GPU core dumps to prevent disk space issues.
+
+**Location:** `cron/system_cleanup.sh`
+
+**Features:**
+- Removes Docker images older than 7 days (configurable)
+- Cleans up stopped containers and dangling images
+- Removes GPU core dump files (`gpucore.*`)
+- Critical disk space detection with aggressive cleanup mode
+- Teams alerts for disk space warnings
+
+**Usage:**
+
+```bash
+# Normal cleanup
+bash cron/system_cleanup.sh
+
+# Dry run (show what would be deleted)
+DRY_RUN=true bash cron/system_cleanup.sh
+
+# Custom thresholds
+CLEANUP_AGE_DAYS=3 CRITICAL_SPACE_GB=100 bash cron/system_cleanup.sh
+```
+
+**Environment Variables:**
+- `CLEANUP_AGE_DAYS`: Days to keep Docker images (default: 7)
+- `GPUCORE_AGE_DAYS`: Days to keep GPU core dumps (default: 0 = all)
+- `CRITICAL_SPACE_GB`: Free space threshold for aggressive cleanup (default: 200)
+- `DRY_RUN`: Set to "true" to simulate without deleting
+- `TEAMS_WEBHOOK_URL`: Enable Teams alerts for disk space issues
 
 ### Database Management
 

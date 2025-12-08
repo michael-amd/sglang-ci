@@ -32,6 +32,7 @@ import atexit
 import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -55,7 +56,7 @@ DEFAULT_MODELS = {
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
+            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.90 --attention-backend triton",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.820},
@@ -71,7 +72,7 @@ DEFAULT_MODELS = {
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=0 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
-            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.85 --attention-backend triton",
+            "mi35x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --trust-remote-code --chunked-prefill-size 130172 --max-running-requests 128 --mem-fraction-static 0.90 --attention-backend triton",
         },
         "bench_cmd": "python3 /sgl-workspace/sglang/benchmark/gsm8k/bench_sglang.py --num-questions 2000 --parallel 2000",
         "criteria": {"accuracy": 0.500},
@@ -185,11 +186,11 @@ DEFAULT_MODELS = {
     "llama4": {
         "model_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "tokenizer_path": {
             "mi30x": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
-            "mi35x": "/data2/models/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "mi35x": "/data/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
         },
         "launch_cmd_template": {
             "mi30x": "SGLANG_USE_AITER=1 python3 -m sglang.launch_server --model-path {model_path} --tp 8 --attention-backend aiter --trust-remote-code",
@@ -669,15 +670,50 @@ def wait_for_server_ready(server_log_path, timeout=300):
                 with open(server_log_path, "r") as f:
                     content = f.read()
 
-                # Check for memory errors
-                if "Not enough memory" in content or "mem_fraction_static" in content:
+                # Check for kernel compilation deadlock (aiter JIT lock issue)
+                # At timeout, if workers are still waiting for baton, it's a deadlock
+                if "waiting for baton release" in content:
+                    waiting_count = content.count("waiting for baton release")
+                    lock_match = re.search(r"pa_ragged_(\w+)", content)
+                    lock_name = lock_match.group(1)[:8] if lock_match else "unknown"
+                    return (
+                        False,
+                        "kernel_deadlock",
+                        f"{lock_name} ({waiting_count} workers waiting)",
+                    )
+
+                # Check for actual memory errors (OOM)
+                # Note: "mem_fraction_static" appears in ALL server logs as part of args,
+                # so we should NOT use it as an error indicator
+                if (
+                    "Not enough memory" in content
+                    or "OutOfMemoryError" in content
+                    or "CUDA out of memory" in content
+                ):
                     mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
                     current_mem = mem_match.group(1) if mem_match else "unknown"
                     return False, "memory_error", current_mem
 
-                # Check for timeout during compilation
+                # Check for Python AttributeError (like llama4 bug)
+                if "AttributeError:" in content:
+                    attr_match = re.search(
+                        r"AttributeError: (.+?)$", content, re.MULTILINE
+                    )
+                    error_msg = (
+                        attr_match.group(1) if attr_match else "unknown attribute error"
+                    )
+                    return False, "attribute_error", error_msg
+
+                # Check for timeout during compilation (build started but not finished)
                 if "start build" in content and "finish build" not in content:
                     return False, "compilation_timeout", None
+
+                # Check for sigquit/child process failure
+                if (
+                    "Received sigquit from a child process" in content
+                    or "child failed" in content
+                ):
+                    return False, "child_process_crash", None
 
             except:
                 pass
@@ -690,8 +726,12 @@ def wait_for_server_ready(server_log_path, timeout=300):
                 if ready_msg in content:
                     return True, None, None
 
-                # Check for memory errors early
-                if "Not enough memory" in content:
+                # Check for actual memory errors early (NOT just presence of mem_fraction_static)
+                if (
+                    "Not enough memory" in content
+                    or "OutOfMemoryError" in content
+                    or "CUDA out of memory" in content
+                ):
                     mem_match = re.search(r"mem_fraction_static=([-\d.]+)", content)
                     current_mem = mem_match.group(1) if mem_match else "unknown"
                     print(
@@ -699,6 +739,47 @@ def wait_for_server_ready(server_log_path, timeout=300):
                     )
                     print(f"   Suggestion: Increase --mem-fraction-static value")
                     return False, "memory_error", current_mem
+
+                # Check for kernel compilation deadlock - but only after significant waiting
+                # Note: "waiting for baton release" is NORMAL during JIT compilation
+                # All workers wait while one compiles. Only flag as deadlock if:
+                # 1. All 8 workers are waiting (waiting_count >= 16, since each logs twice)
+                # 2. AND we've been waiting for at least 60 seconds
+                # 3. AND no progress is being made (log content unchanged)
+                if "waiting for baton release" in content:
+                    waiting_count = content.count("waiting for baton release")
+                    # Only consider deadlock if ALL workers are waiting (8 TP × 2 messages each = 16)
+                    # AND we've waited at least 60 seconds with no progress
+                    if waiting_count >= 16 and elapsed > 60:
+                        # Check if log is still growing (compilation in progress)
+                        if content == last_content:
+                            lock_match = re.search(r"pa_ragged_(\w+)", content)
+                            lock_name = (
+                                lock_match.group(1)[:8] if lock_match else "unknown"
+                            )
+                            print(
+                                f"❌ Kernel compilation deadlock detected! {waiting_count} workers waiting for {lock_name}"
+                            )
+                            print(
+                                f"   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/"
+                            )
+                            return (
+                                False,
+                                "kernel_deadlock",
+                                f"{lock_name} ({waiting_count} workers waiting)",
+                            )
+
+                # Check for Python errors (AttributeError, etc.)
+                if "AttributeError:" in content:
+                    attr_match = re.search(
+                        r"AttributeError: (.+?)$", content, re.MULTILINE
+                    )
+                    error_msg = attr_match.group(1) if attr_match else "unknown"
+                    print(f"❌ Python AttributeError detected: {error_msg}")
+                    print(
+                        f"   💡 Suggestion: This is a code bug - check the server log for traceback"
+                    )
+                    return False, "attribute_error", error_msg
 
                 # Log errors periodically to help with debugging
                 if elapsed - last_error_logged > 30:  # Every 30 seconds
@@ -850,6 +931,7 @@ def sanity_check(
     timing_log=None,
     docker_image=None,
     models_dir=DEFAULT_MODELS_DIR,
+    disable_cuda_graph=False,
 ):
     """Run server + multiple client trials and save logs.
 
@@ -859,6 +941,10 @@ def sanity_check(
     launch_cmd, error_msg = build_launch_command(
         config, platform, model_path, tokenizer_path, models_dir
     )
+
+    # Add --disable-cuda-graph flag if requested (used for kernel deadlock fallback)
+    if disable_cuda_graph and launch_cmd:
+        launch_cmd = launch_cmd + " --disable-cuda-graph"
     if not launch_cmd:
         if error_msg:
             # Model or tokenizer files not available - this is a skip, not a failure
@@ -894,9 +980,13 @@ def sanity_check(
     os.makedirs(log_dir, mode=0o755, exist_ok=True)
 
     print(f"\n=== Testing {model_name} on {platform} ===")
+    if disable_cuda_graph:
+        print(f"   (Running with --disable-cuda-graph fallback)")
     if timing_log:
         timing_log.write(f"\n=== {model_name} on {platform} ===\n")
         timing_log.write(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
+        if disable_cuda_graph:
+            timing_log.write(f"Note: Running with --disable-cuda-graph fallback\n")
         timing_log.flush()
 
     overall_start = time.time()
@@ -944,6 +1034,85 @@ def sanity_check(
             suggestion = (
                 f"💡 Suggestion: Increase --mem-fraction-static in launch command"
             )
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "kernel_deadlock":
+            error_msg = f"Kernel compilation deadlock ({error_details})"
+
+            # Clean up the failed server process before retry
+            try:
+                os.killpg(os.getpgid(server_proc.pid), signal.SIGTERM)
+                time.sleep(1)
+                if server_proc.poll() is None:
+                    os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
+            if server_proc in ACTIVE_SERVER_PROCESSES:
+                ACTIVE_SERVER_PROCESSES.remove(server_proc)
+
+            # If not already using --disable-cuda-graph, retry with it
+            if not disable_cuda_graph:
+                print(
+                    f"⚠️  {model_name}: Kernel deadlock detected, retrying with --disable-cuda-graph..."
+                )
+                if timing_log:
+                    timing_log.write(
+                        f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                    )
+                    timing_log.write(f"Error: {error_msg}\n")
+                    timing_log.write(
+                        f"🔄 Retrying with --disable-cuda-graph fallback...\n"
+                    )
+                    timing_log.flush()
+
+                # Retry with --disable-cuda-graph
+                return sanity_check(
+                    model_name=model_name,
+                    config=config,
+                    platform=platform,
+                    trials=trials,
+                    log_dir=log_dir,
+                    model_path=model_path,
+                    tokenizer_path=tokenizer_path,
+                    timing_log=timing_log,
+                    docker_image=docker_image,
+                    models_dir=models_dir,
+                    disable_cuda_graph=True,  # Enable fallback
+                )
+
+            # Already tried with --disable-cuda-graph, give up
+            suggestion = f"💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph"
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "attribute_error":
+            error_msg = f"Code bug - AttributeError: {error_details}"
+            suggestion = f"💡 Suggestion: Check server log for full traceback - this is a SGLang code bug"
+            print(f"{model_name}: {FAIL_MARK} ({error_msg})")
+            print(f"   {suggestion}")
+            if timing_log:
+                timing_log.write(
+                    f"Server startup: FAILED after {server_ready_time:.2f}s\n"
+                )
+                timing_log.write(f"Error: {error_msg}\n")
+                timing_log.write(f"{suggestion}\n")
+                timing_log.flush()
+        elif error_type == "child_process_crash":
+            error_msg = "Child process crashed during startup"
+            suggestion = f"💡 Suggestion: Check server log for crash details"
             print(f"{model_name}: {FAIL_MARK} ({error_msg})")
             print(f"   {suggestion}")
             if timing_log:
@@ -1322,6 +1491,7 @@ if __name__ == "__main__":
         timing_log.write("SGLang Sanity Check Timing Summary\n")
         timing_log.write("=" * 50 + "\n")
         timing_log.write(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
+        timing_log.write(f"Machine: {socket.gethostname()}\n")
         timing_log.write(f"Platform: {platform}\n")
         timing_log.write(f"Models: {', '.join(models_to_test.keys())}\n")
         timing_log.write(f"Trials per model: {args.trials}\n")

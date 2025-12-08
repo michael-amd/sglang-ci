@@ -7,9 +7,13 @@ test/sanity_check_log/*
 test/pd/pd_log/*
 test/unit-test-backend-8-gpu-CAR-amd/*
 
+# AMD GPU core dumps (can be 50GB+ each!)
+gpucore.*
+
 *.jsonl
 *.csv
 *.html
+!dashboard/templates/*.html
 *.png
 !dashboard/screenshots/*.png
 *.md
@@ -29,3 +33,4 @@ team_alert/alert_log/*
 cron/crontab_rules.txt
 cron/crontab_rules.txt.backup
 upstream_ci/upstream_test_log/*
+dashboard/setup_https.sh

@@ -300,8 +300,10 @@ echo "[github_log_upload] Destination in repo: $DEST_PATH"
 
 # rsync keeps timestamps and only updates changed files; falls back to cp when
 # rsync is unavailable.
+# NOTE: Always use append mode (no --delete) to preserve existing logs.
+# Multiple machines may upload to the same directories.
 if command -v rsync &>/dev/null; then
-  rsync -a --delete "$SRC_LOG_DIR/" "$DEST_PATH/"
+  rsync -a "$SRC_LOG_DIR/" "$DEST_PATH/"
 else
   cp -a "$SRC_LOG_DIR/." "$DEST_PATH/"
 fi

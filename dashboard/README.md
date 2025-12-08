@@ -6,11 +6,13 @@ A comprehensive web dashboard for viewing CI results, performance plots, and tre
 
 - **Daily Summary View**: Overview of all nightly CI tasks for both hardware platforms
 - **Hardware-Specific Views**: Detailed results for MI30X and MI35X
-- **Historical Trends**: Visualize pass rates, GSM8K accuracy, and runtime trends over time
+- **Database Explorer**: SQL queries, historical trends, and raw data access
 - **Performance Plots**: View and download performance benchmark plots
+- **Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking
 - **REST API**: Programmatic access to all CI data
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **GitHub Data Source**: Fetch data from GitHub log branch (works behind firewalls!)
+- **Database Backend**: SQLite database for fast queries (50-300x faster than log parsing)
 - **Local Fallback**: Automatically falls back to local filesystem if GitHub is unavailable
 
 ## Architecture
@@ -26,12 +28,12 @@ The dashboard reuses data collection logic from `send_daily_summary_alert.py` an
 ### Prerequisites
 
 - Python 3.8 or higher
-- Access to SGLang CI log directory (default: `/mnt/raid/michael/sglang-ci`)
+- Access to SGLang CI log directory (or set `SGL_BENCHMARK_CI_DIR` environment variable)
 
 ### Install Dependencies
 
 ```bash
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 pip install -r requirements.txt
 ```
 
@@ -42,7 +44,7 @@ pip install -r requirements.txt
 Run the dashboard with default settings (uses GitHub by default):
 
 ```bash
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 python app.py
 ```
 
@@ -96,9 +98,10 @@ Configure the dashboard using environment variables:
 
 - `DASHBOARD_HOST`: Host to bind to (default: `127.0.0.1`)
 - `DASHBOARD_PORT`: Port to run on (default: `5000`)
-- `SGL_BENCHMARK_CI_DIR`: Base directory for CI logs (default: `/mnt/raid/michael/sglang-ci`)
+- `SGL_BENCHMARK_CI_DIR`: Base directory for CI logs
 - `GITHUB_REPO`: GitHub repository (default: `ROCm/sglang-ci`)
 - `USE_GITHUB`: Use GitHub as data source (default: `true`)
+- `USE_DATABASE`: Use SQLite database for queries (default: `true`)
 
 Example:
 
@@ -177,16 +180,22 @@ sudo systemctl status sglang-dashboard
 - Validation & checks
 - Sanity check (accuracy) results
 
-### Trends (`/trends`)
-- Overall pass rate trends
-- Task status distribution over time
-- GSM8K accuracy trends
-- Runtime trends
-
 ### Plots (`/plots/<hardware>`)
 - Performance benchmark plots
 - Direct links to GitHub
 - Download options
+
+### Upstream CI (`/upstream-ci`)
+- AMD vs NVIDIA test coverage comparison
+- Coverage trends over time
+- Test category breakdown
+
+### Database Explorer (`/database`)
+- Overview panel with daily run summaries
+- SQL query editor for custom queries
+- Database schema browser
+- Date range filters
+- Benchmark results with GSM8K accuracy
 
 ## REST API
 
@@ -201,13 +210,13 @@ GET /api/summary/<hardware>/<date>
 curl http://localhost:5000/api/summary/mi30x/20251106
 ```
 
-### Get Historical Trends
+### Get Test History
 
 ```bash
-GET /api/trends/<hardware>?days=<days>
+GET /api/test-history/<hardware>?days=<days>
 
 # Example
-curl http://localhost:5000/api/trends/mi30x?days=30
+curl http://localhost:5000/api/test-history/mi30x?days=30
 ```
 
 ### Get Available Dates
@@ -237,6 +246,24 @@ GET /api/compare?date=<date>
 curl http://localhost:5000/api/compare?date=20251106
 ```
 
+### Database Overview
+
+```bash
+GET /api/database/overview?hardware=<hardware>&date=<date>&range=<days>
+
+# Example
+curl "http://localhost:5000/api/database/overview?hardware=mi30x&range=7"
+```
+
+### Database Schema
+
+```bash
+GET /api/database/schema
+
+# Example
+curl http://localhost:5000/api/database/schema
+```
+
 ### Health Check
 
 ```bash
@@ -260,8 +287,9 @@ dashboard/
 │   ├── base.html           # Base template
 │   ├── index.html          # Home page
 │   ├── hardware.html       # Hardware-specific view
-│   ├── trends.html         # Trends page
 │   ├── plots.html          # Plots viewer
+│   ├── upstream_ci.html    # Upstream CI coverage
+│   ├── database.html       # Database explorer
 │   ├── 404.html            # 404 error page
 │   └── 500.html            # 500 error page
 └── static/                  # Static assets
@@ -315,7 +343,7 @@ If you get permission errors accessing logs:
 
 ```bash
 # Check directory permissions
-ls -la /mnt/raid/michael/sglang-ci/cron/cron_log
+ls -la cron/cron_log
 
 # Run with appropriate user
 sudo -u michael python app.py
@@ -336,7 +364,7 @@ If you get import errors:
 
 ```bash
 # Make sure you're in the correct directory
-cd /mnt/raid/michael/sglang-ci/dashboard
+cd dashboard
 
 # Reinstall dependencies
 pip install -r requirements.txt
