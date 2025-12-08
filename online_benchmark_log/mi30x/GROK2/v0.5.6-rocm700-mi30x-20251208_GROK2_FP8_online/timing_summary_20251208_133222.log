@@ -1,0 +1,15 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-08 13:32:22 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/data/models/grok-2 --tokenizer-path=/data/models/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251208
+Model: /data/models/grok-2
+Hostname: dell300x-pla-t12-38
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
