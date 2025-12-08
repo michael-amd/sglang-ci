@@ -1,0 +1,221 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok --model-path=/data/amd--grok-1-W4A8KV8 --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+[nightly] Start time: 2025-12-08 14:45:02 PST
+[nightly] Machine: smci355-ccs-aus-m12-33
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 3556591
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: michaezh | Groups: michaezh sudo docker... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /data/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi35x, ROCM Version: rocm700
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 738e116e3903
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi35x image (rocm700) in 'rocm/sgl-dev' for date 20251208...
+[nightly] Found candidate tag for day -0: v0.5.6-rocm700-mi35x-20251208
+[nightly] Found local image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Successfully obtained image for date 20251208: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 48ba07fb6dcb
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Container name: sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[nightly] Reusing container sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6-rocm700-mi35x-20251208
+[online] Auto-detected model type: grok1 from path: /data/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Using custom model path as tokenizer path: /data/amd--grok-1-W4A8KV8
+[online] Script started at: 2025-12-08 14:45:34 PST
+[online] MI355 hardware detected - CSV will use request rates: 1 2 4 8 (excluding 16)
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6-rocm700-mi35x-20251208_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/4 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Cleaning up stale aiter JIT lock files...
+[online] No stale aiter lock files found
+[online] Using Grok1 environment: HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+[2025-12-08 14:46:10 TP0] Capture cuda graph begin. This can take up to several minutes. avail mem=41.83 GB
+[2025-12-08 14:46:10 TP0] Capture cuda graph bs [1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512]
+[2025-12-08 14:46:10 TP2] Capture cuda graph begin. This can take up to several minutes. avail mem=41.81 GB
+[2025-12-08 14:46:10 TP6] Capture cuda graph begin. This can take up to several minutes. avail mem=41.94 GB
+  0%|          | 0/52 [00:00<?, ?it/s]Capturing batches (bs=512 avail_mem=41.54 GB):   0%|          | 0/52 [00:00<?, ?it/s][aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:14 TP0] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:15 TP1] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:16 TP3] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:17 TP6] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:18 TP5] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:18 TP4] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[2025-12-08 14:46:19 TP7] waiting for baton release at /root/.aiter/build/pa_ragged_6fb5a21f6c081c6fd9f35860fddc366d/lock
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:25 TP3] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:25 TP3] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP1] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP1] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP6] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP6] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP2] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP2] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP5] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP5] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP0] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP0] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP4] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP4] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[aiter] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[2025-12-08 14:46:26 TP7] [fused_moe] using 2stage default for (256, 512, 6144, 4096, 8, 2, 'ActivationType.Gelu', 'torch.bfloat16', 'torch.float8_e4m3fn', 'torch.uint32', 'QuantType.per_Token', True, False) 
+[aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[2025-12-08 14:46:26 TP7] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_moe_sorting
+[nightly] === Online benchmark dispatched for GROK; check logs in sgl-dev_v0.5.6-rocm700-mi35x-20251208 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6-rocm700-mi35x-20251208_GROK1_MOE-I4F8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251208
+[nightly] MI355 hardware detected for grok - using request rates [1, 2, 4, 8] (excluding 16)
+[nightly] Sending Teams notification for grok online plots...
+[nightly] Adding benchmark date to Teams notification: 20251208
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi35x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+   🔍 Uploading 20251208_GROK1_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📄 Creating new file: plot/mi35x/GROK1/online/20251208_GROK1_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251208_GROK1_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/GROK1/online/20251208_GROK1_online_standard.png
+🔍 Discovered 1 plot file(s) for grok online
+   - 20251208_GROK1_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok online on 20251208: timing_summary_20251208_144534.log
+   Found timing_summary log for grok online on 20251208: timing_summary_20251208_144534.log
+   Found timing_summary log for grok online on 20251208: timing_summary_20251208_144534.log
+   Found timing_summary log for grok online on 20251208: timing_summary_20251208_144534.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi35x/GROK1/online/20251208_GROK1_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for grok online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok online
+[nightly] === Online post-processing completed for GROK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251208
+[nightly] Stopping container sgl-dev_v0.5.6-rocm700-mi35x-20251208 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
