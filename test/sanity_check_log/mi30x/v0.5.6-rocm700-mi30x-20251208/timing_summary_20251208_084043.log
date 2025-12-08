@@ -1,0 +1,120 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-08 08:40:43 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251208
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-08 08:40:43 PST
+Server startup: 161.21s
+Trial 1: FAIL [X] (Accuracy: 0.001, Time: 90.09s)
+Trial 2: FAIL [X] (Accuracy: 0.001, Time: 74.07s)
+Trial 3: FAIL [X] (Accuracy: 0.001, Time: 75.07s)
+Server shutdown: 0.50s
+Final result: FAIL [X]
+Accuracies: [0.001, 0.001, 0.001]
+Highest accuracy: 0.001 (Required: 0.820)
+Total time: 400.95s
+End time: 2025-12-08 08:47:24 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-08 08:47:24 PST
+Server startup: 89.11s
+Trial 1: FAIL [X] (Accuracy: 0.020, Time: 63.06s)
+Trial 2: FAIL [X] (Accuracy: 0.021, Time: 51.05s)
+Trial 3: FAIL [X] (Accuracy: 0.022, Time: 49.05s)
+Server shutdown: 0.50s
+Final result: FAIL [X]
+Accuracies: [0.02, 0.021, 0.022]
+Highest accuracy: 0.022 (Required: 0.500)
+Total time: 252.78s
+End time: 2025-12-08 08:51:37 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-08 08:51:37 PST
+Server startup: FAILED after 91.11s
+Error: Kernel compilation deadlock (49ffeed9 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-08 08:53:09 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.42s
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-08 08:58:11 PST
+Server startup: FAILED after 300.20s
+Error: Kernel compilation deadlock (6fb5a21f (14 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-08 09:03:12 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: 113.68s
+Trial 1: PASS [OK] (Accuracy: 0.807, Time: 57.06s)
+Trial 2: PASS [OK] (Accuracy: 0.814, Time: 95.10s)
+Trial 3: PASS [OK] (Accuracy: 0.810, Time: 54.05s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.807, 0.814, 0.81]
+Highest accuracy: 0.814 (Required: 0.800)
+Total time: 320.40s
+End time: 2025-12-08 09:08:32 PST
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-08 09:08:32 PST
+Server startup: 181.25s
+Trial 1: PASS [OK] (Accuracy: 0.833, Time: 36.04s)
+Trial 2: PASS [OK] (Accuracy: 0.820, Time: 32.03s)
+Trial 3: PASS [OK] (Accuracy: 0.817, Time: 33.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.833, 0.82, 0.817]
+Highest accuracy: 0.833 (Required: 0.800)
+Total time: 282.86s
+End time: 2025-12-08 09:13:15 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-08 09:13:15 PST
+Server startup: 173.74s
+Trial 1: PASS [OK] (Accuracy: 0.933, Time: 37.04s)
+Trial 2: PASS [OK] (Accuracy: 0.930, Time: 34.03s)
+Trial 3: PASS [OK] (Accuracy: 0.924, Time: 34.03s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.933, 0.93, 0.924]
+Highest accuracy: 0.933 (Required: 0.915)
+Total time: 279.35s
+End time: 2025-12-08 09:17:54 PST
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-12-08 09:17:54 PST
+Server startup: FAILED after 38.54s
+Error: Code bug - AttributeError: 'Llama4TextConfig' object has no attribute 'rope_theta'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-08 09:18:34 PST
+Total execution time: 2270.63s (37.8 minutes)
+Average time per model: 324.38s
+Models tested: 7/7
+Models passed: 3/7
+Models failed: 4/7
+Models skipped: 0/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: FAIL
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: FAIL
