@@ -53,3 +53,44 @@ From https://github.com/ROCm/sglang-ci
    7aa6a97..f303d81  log        -> origin/log
 [github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251208
 [github_log_upload] Destination in repo: cron_log/mi35x/20251208
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+remote: 
+remote: GitHub found 8 vulnerabilities on ROCm/sglang-ci's default branch (3 high, 5 moderate). To find out more, visit:        
+remote:      https://github.com/ROCm/sglang-ci/security/dependabot        
+remote: 
+[github_log_upload] ✅  Logs uploaded successfully: cron_log/mi35x/20251208
+[github_log_upload] Auto-detecting latest directory for model: GROK2
+[github_log_upload] Found latest directory: v0.5.6-rocm700-mi35x-20251208_GROK2_FP8_online
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   f303d81..c15b692  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6-rocm700-mi35x-20251208_GROK2_FP8_online
+[github_log_upload] Destination in repo: online_benchmark_log/mi35x/GROK2/v0.5.6-rocm700-mi35x-20251208_GROK2_FP8_online
+[github_log_upload] Pushing commit to remote (ROCm/sglang-ci)…
+remote: 
+remote: GitHub found 8 vulnerabilities on ROCm/sglang-ci's default branch (3 high, 5 moderate). To find out more, visit:        
+remote:      https://github.com/ROCm/sglang-ci/security/dependabot        
+remote: 
+[github_log_upload] ✅  Logs uploaded successfully: online_benchmark_log/mi35x/GROK2/v0.5.6-rocm700-mi35x-20251208_GROK2_FP8_online
+[sync_and_ingest] Syncing database from GitHub...
+✅ Database pulled from GitHub to /mnt/raid/michael/sglang-ci/database/ci_dashboard.db
+[sync_and_ingest] ✅ Database synced from GitHub
+[sync_and_ingest] Ingesting test data...
+[sync_and_ingest] ✅ Data ingested
+[sync_and_ingest] Uploading database to GitHub...
+[github_database_upload] ✅  Database uploaded successfully
+[sync_and_ingest] ✅ Database uploaded
+[sync_and_ingest] ✅ Complete - database synchronized
+[2/4] GROK2 ONLINE completed at Mon Dec  8 09:49:29 PM CST 2025
+
+[3/4] Starting GROK ONLINE at Mon Dec  8 09:49:29 PM CST 2025...
+Expected runtime: ~30 minutes
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   f874a03..084b7c2  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251208
+[github_log_upload] Destination in repo: cron_log/mi35x/20251208
