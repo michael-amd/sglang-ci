@@ -10,7 +10,7 @@ export GROK2_MODEL_PATH="/mnt/raid/models/huggingface/grok-2"
 export GROK2_TOKENIZER_PATH="/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer"
 export DEEPSEEK_MODEL_PATH="/mnt/raid/models/deepseek-ai/amd-DeepSeek-R1-MXFP4-Preview"
 export HARDWARE_TYPE="mi35x"
-export TEAMS_WEBHOOK_URL="https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=REDACTED"
+export TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"
 export GITHUB_REPO="${GITHUB_REPO:-ROCm/sglang-ci}"
 
 # Fixed date for re-running failed 20251030 tasks
