@@ -1,23 +1,23 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[test] Start time: 2025-12-09 10:01:01 CST
-[test] Machine: dell300x-pla-t10-23
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
+[test] Start time: 2025-12-09 11:01:01 CST
+[test] Machine: dell300x-pla-t12-38
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 3355467
+[test] Process ID: 821429
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700
 [test] Test Type: unit
 [test] Created process lock: /tmp/test_nightly_unit.lock
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: d05aa2f1a6f6
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -67,31 +67,31 @@ d9b88c1e947d: Already exists
 69a52d6d4304: Pulling fs layer
 5c91c3eba9c6: Pulling fs layer
 36445b4fd410: Pulling fs layer
-69a52d6d4304: Waiting
-36445b4fd410: Waiting
 25b49d985585: Pulling fs layer
-5c91c3eba9c6: Waiting
 0cad10b70a68: Pulling fs layer
 0d0e65abe7d2: Pulling fs layer
 7aa68d000519: Pulling fs layer
-25b49d985585: Waiting
 5d9a4fd9b67f: Pulling fs layer
+69a52d6d4304: Waiting
 2ef299d347f7: Pulling fs layer
-0cad10b70a68: Waiting
-7aa68d000519: Waiting
+5c91c3eba9c6: Waiting
 f8ecf43de095: Pulling fs layer
+25b49d985585: Waiting
+36445b4fd410: Waiting
 1616e20be75a: Pulling fs layer
-0d0e65abe7d2: Waiting
-9afa04502023: Pulling fs layer
-1616e20be75a: Waiting
-a2ac6e22f164: Pulling fs layer
-f8ecf43de095: Waiting
+7aa68d000519: Waiting
 5d9a4fd9b67f: Waiting
+9afa04502023: Pulling fs layer
+2ef299d347f7: Waiting
+0cad10b70a68: Waiting
+f8ecf43de095: Waiting
+a2ac6e22f164: Pulling fs layer
+0d0e65abe7d2: Waiting
+1616e20be75a: Waiting
 9afa04502023: Waiting
-4f4fb700ef54: Verifying Checksum
-4f4fb700ef54: Download complete
-0417a6276f5b: Verifying Checksum
+a2ac6e22f164: Waiting
 0417a6276f5b: Download complete
+4f4fb700ef54: Download complete
 0c44f4c363db: Verifying Checksum
 0c44f4c363db: Download complete
 69a52d6d4304: Verifying Checksum
@@ -100,16 +100,17 @@ f8ecf43de095: Waiting
 4f4fb700ef54: Pull complete
 0417a6276f5b: Pull complete
 69a52d6d4304: Pull complete
-5c91c3eba9c6: Verifying Checksum
-5c91c3eba9c6: Download complete
-0cad10b70a68: Verifying Checksum
-0cad10b70a68: Download complete
-5c91c3eba9c6: Pull complete
 36445b4fd410: Verifying Checksum
 36445b4fd410: Download complete
+0cad10b70a68: Verifying Checksum
+0cad10b70a68: Download complete
+5c91c3eba9c6: Verifying Checksum
+5c91c3eba9c6: Download complete
+7aa68d000519: Verifying Checksum
 7aa68d000519: Download complete
 5d9a4fd9b67f: Verifying Checksum
 5d9a4fd9b67f: Download complete
+5c91c3eba9c6: Pull complete
 0d0e65abe7d2: Verifying Checksum
 0d0e65abe7d2: Download complete
 2ef299d347f7: Verifying Checksum
@@ -118,7 +119,6 @@ f8ecf43de095: Waiting
 1616e20be75a: Download complete
 9afa04502023: Verifying Checksum
 9afa04502023: Download complete
-a2ac6e22f164: Verifying Checksum
 a2ac6e22f164: Download complete
 36445b4fd410: Pull complete
 25b49d985585: Verifying Checksum
@@ -147,7 +147,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
 [test] ==========================================
 [test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209...
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: f206430d9c65
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -156,7 +156,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
 [test] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
 [test] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251209
 [test] Creating container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251209
-a24ea1fddeb88cb29f1df31eb05d087f0305422e4580be4a5b4f8b6973e7657b
+b517c015d15b779e8d12b133b3c9c49ea581651917349e73b112ac4d53660953
 [test] === Starting test_custom_allreduce unit test ===
 [test] Test directory: /sgl-workspace/sglang/test/manual
 [test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251209.log
@@ -165,11 +165,7 @@ a24ea1fddeb88cb29f1df31eb05d087f0305422e4580be4a5b4f8b6973e7657b
 [test] === Unit test PASSED for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209 ===
 [test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251209.log
 [test] Stopping container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251209 to release resources...
-[test] Sending Teams notification...
-📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251209.log
-✅ Docker image date matches expected date (20251209) - proceeding with alert
-✅ Successfully sent unit test pass alert to Teams
-   (Power Automate flow accepted - message processing asynchronously)
+[test] No Teams webhook URL provided - skipping notification
 [test] ==========================================
 [test] Test completed for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
 [test] Test type: unit
