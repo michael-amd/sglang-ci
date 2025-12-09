@@ -1,0 +1,78 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-09 14:00:33 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/data/grok-2 --tokenizer-path=/data/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi35x-20251209
+Model: /data/grok-2
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
+Server startup time: 241 seconds
+
+GSM8K Test Results:
+  Total duration: 305 seconds
+  Average accuracy: 0.925
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.925
+
+Client Benchmark Results:
+  Start time: 2025-12-09 14:09:40 PST
+  Rate 1, Run 1: 337 seconds
+Completed rate 1 - Total time: 337 seconds
+  Rate 2, Run 1: 350 seconds
+Completed rate 2 - Total time: 350 seconds
+  Rate 4, Run 1: 356 seconds
+Completed rate 4 - Total time: 356 seconds
+  Rate 8, Run 1: 504 seconds
+Completed rate 8 - Total time: 504 seconds
+Rate 16 skipped on MI355 hardware
+  End time: 2025-12-09 14:35:39 PST
+  Total duration: 1559 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 24601.02 ms
+  TTFT: 225.60 ms
+  ITL: 39.59 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 27153.22 ms
+  TTFT: 154.27 ms
+  ITL: 43.07 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 56613.07 ms
+  TTFT: 230.51 ms
+  ITL: 93.58 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 180155.27 ms
+  TTFT: 392.93 ms
+  ITL: 259.63 ms
+  Throughput: N/A requests/s
+
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-09 14:35:41 PST
+Total execution time: 2108 seconds (35 minutes)
+========================================
