@@ -1,0 +1,102 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-09 09:00:44 PST
+Machine: smci355-ccs-aus-m12-33
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi35x-20251209
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-09 09:00:44 PST
+Server startup: FAILED after 184.33s
+Error: Kernel compilation deadlock (unknown (16 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-09 09:03:49 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.10s
+Error: Kernel compilation deadlock (unknown (14 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-09 09:08:50 PST
+Server startup: FAILED after 300.49s
+Error: Kernel compilation deadlock (unknown (14 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-09 09:13:52 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.11s
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-09 09:18:53 PST
+Server startup: FAILED after 64.11s
+Error: Kernel compilation deadlock (14860e65 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-09 09:19:58 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.08s
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-09 09:24:59 PST
+Server startup: FAILED after 77.18s
+Error: Kernel compilation deadlock (6dcc7977 (16 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-09 09:26:17 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.30s
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-09 09:31:19 PST
+Server startup: FAILED after 126.22s
+Error: Kernel compilation deadlock (2cf92130 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-09 09:33:26 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 97.66s
+Error: Kernel compilation deadlock (unknown (32 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-09 09:35:04 PST
+Server startup: FAILED after 222.39s
+Error: Kernel compilation deadlock (1b756bac (32 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-09 09:38:48 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.04s
+
+=== llama4 on mi35x ===
+Start time: 2025-12-09 09:43:49 PST
+Server startup: FAILED after 23.03s
+Error: Code bug - AttributeError: 'Llama4TextConfig' object has no attribute 'rope_theta'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-09 09:44:13 PST
+Total execution time: 2609.31s (43.5 minutes)
+Average time per model: 372.76s
+Models tested: 7/7
+Models passed: 0/7
+Models failed: 7/7
+Models skipped: 0/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: FAIL
