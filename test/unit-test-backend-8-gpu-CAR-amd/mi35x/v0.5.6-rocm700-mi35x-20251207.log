@@ -1,0 +1,342 @@
+==========================================
+SGL Unit Test Log
+==========================================
+Test: test_custom_allreduce.TestCustomAllReduce
+Image: rocm/sgl-dev:v0.5.6-rocm700-mi35x-20251207
+Container: sgl-dev_v0.5.6-rocm700-mi35x-20251207
+Hardware: mi35x
+Machine: smci355-ccs-aus-m12-33
+Start time: 2025-12-07 10:03:50 CST
+Test directory: /sgl-workspace/sglang/test/manual
+Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
+==========================================
+
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
+  process_info = ray._private.services.start_gcs_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-03-54_277847_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-03-54_277847_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-03-54_277847_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/utils.py:521: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='UTF-8'>
+  max_file = open(cpu_max_file_name).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1247: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
+  process_info = ray._private.services.start_raylet(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-03-54_277847_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:03:55,274	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:02] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=631)[0m [aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_aiter_enum
+[36m(eager_allreduce pid=631)[0m [2025-12-07 16:04:09] INFO file_baton.py:48: waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_aiter_enum
+[36m(eager_allreduce pid=644)[0m [aiter] start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:09] INFO core.py:461: start build [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/build/module_aiter_enum
+[36m(eager_allreduce pid=644)[0m [aiter] [32mfinish build [module_aiter_enum], cost 7.4s [0m
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:16] INFO core.py:632: [32mfinish build [module_aiter_enum], cost 7.4s [0m
+[36m(eager_allreduce pid=644)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:16] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=644)[0m [aiter] start build [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/build/module_custom_all_reduce
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:16] INFO core.py:461: start build [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/build/module_custom_all_reduce
+[36m(eager_allreduce pid=631)[0m [aiter] waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_custom_all_reduce
+[36m(eager_allreduce pid=631)[0m [2025-12-07 16:04:16] INFO file_baton.py:48: waiting for baton release at /sgl-workspace/aiter/aiter/jit/build/lock_module_custom_all_reduce
+[36m(eager_allreduce pid=631)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=631)[0m [2025-12-07 16:04:36] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=631)[0m [2025-12-07 16:04:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=631)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=631)[0m [2025-12-07 16:04:16] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=644)[0m [aiter] [32mfinish build [module_custom_all_reduce], cost 19.5s [0m
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:36] INFO core.py:632: [32mfinish build [module_custom_all_reduce], cost 19.5s [0m
+[36m(eager_allreduce pid=644)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:36] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=644)[0m [2025-12-07 16:04:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 410 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
+  process_info = ray._private.services.start_gcs_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-39_227239_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-39_227239_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-39_227239_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-39_227239_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:04:40,111	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=16170)[0m [2025-12-07 16:04:47] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=16177)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=16177)[0m [2025-12-07 16:04:52] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=16177)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=16177)[0m [2025-12-07 16:04:52] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=16177)[0m [2025-12-07 16:04:52] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=16187)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=16187)[0m [2025-12-07 16:04:52] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=16187)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=16187)[0m [2025-12-07 16:04:52] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=16187)[0m [2025-12-07 16:04:52] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 15949 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-55_186137_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-55_186137_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-55_186137_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-04-55_186137_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:04:56,087	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=31554)[0m [2025-12-07 16:05:03] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=31555)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=31555)[0m [2025-12-07 16:05:08] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=31555)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=31555)[0m [2025-12-07 16:05:08] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=31555)[0m [2025-12-07 16:05:08] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=31554)[0m [2025-12-07 16:05:08] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(eager_allreduce pid=31546)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=31546)[0m [2025-12-07 16:05:08] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=31546)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=31546)[0m [2025-12-07 16:05:08] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=31546)[0m [2025-12-07 16:05:08] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=31555)[0m [2025-12-07 16:05:08] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 31324 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-11_675669_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-11_675669_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-11_675669_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-11_675669_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:05:12,566	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=47159)[0m [2025-12-07 16:05:21] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=47156)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=47156)[0m [2025-12-07 16:05:27] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=47156)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=47156)[0m [2025-12-07 16:05:27] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=47156)[0m [2025-12-07 16:05:27] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=47163)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=47163)[0m [2025-12-07 16:05:28] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=47163)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=47163)[0m [2025-12-07 16:05:28] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=47163)[0m [2025-12-07 16:05:28] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 46927 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-33_353571_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-33_353571_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-33_353571_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-33_353571_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:05:34,223	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=62983)[0m [2025-12-07 16:05:41] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=62983)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=62983)[0m [2025-12-07 16:05:45] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=62983)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=62983)[0m [2025-12-07 16:05:45] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=62983)[0m [2025-12-07 16:05:45] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=62983)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=62983)[0m [2025-12-07 16:05:45] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=62976)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=62976)[0m [2025-12-07 16:05:45] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=62976)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=62976)[0m [2025-12-07 16:05:45] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=62976)[0m [2025-12-07 16:05:45] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=62976)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 473x across cluster][0m
+[36m(graph_allreduce pid=62976)[0m [2025-12-07 16:05:48] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 473x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 62755 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-50_323808_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-50_323808_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-50_323808_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-05-50_323808_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:05:51,203	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=78123)[0m [2025-12-07 16:05:59] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[CI Test Method] TestCustomAllReduce.test_eager_allreduce
+[36m(eager_allreduce pid=644)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(eager_allreduce pid=644)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=644)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(eager_allreduce pid=644)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=631)[0m [Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1[32m [repeated 3x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(eager_allreduce pid=631)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=644)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
+[36m(eager_allreduce pid=631)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
+[36m(eager_allreduce pid=16169)[0m [Gloo] Rank 2 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(eager_allreduce pid=16177)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=16177)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(eager_allreduce pid=16177)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=16169)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 8x across cluster][0m
+[36m(eager_allreduce pid=16187)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 9x across cluster][0m
+[36m(eager_allreduce pid=16177)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=31559)[0m [Gloo] Rank 2 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(eager_allreduce pid=31559)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=31559)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(eager_allreduce pid=31559)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=31559)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 13x across cluster][0m
+[36m(eager_allreduce pid=31554)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 15x across cluster][0m
+[36m(eager_allreduce pid=31545)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 10x across cluster][0m
+[36m(eager_allreduce pid=47150)[0m [Gloo] Rank 5 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(eager_allreduce pid=47159)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=47159)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(eager_allreduce pid=47159)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(eager_allreduce pid=47165)[0m [Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7[32m [repeated 15x across cluster][0m
+[36m(eager_allreduce pid=47163)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 21x across cluster][0m
+[36m(eager_allreduce pid=47165)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 16x across cluster][0m
+[CI Test Method] TestCustomAllReduce.test_graph_allreduce
+[36m(graph_allreduce pid=62983)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(graph_allreduce pid=62983)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=62983)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(graph_allreduce pid=62983)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=62976)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=62976)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78138)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(graph_allreduce pid=78123)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=78123)[0m [2025-12-07 16:06:02] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=78123)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=78123)[0m [2025-12-07 16:06:03] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=78123)[0m [2025-12-07 16:06:03] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=78123)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=78123)[0m [2025-12-07 16:06:03] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=78129)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [2025-12-07 16:06:02] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [2025-12-07 16:06:03] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [2025-12-07 16:06:03] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 959x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m [2025-12-07 16:06:06] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 959x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 77901 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-08_390425_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-08_390425_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-08_390425_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-08_390425_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:06:09,239	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=93500)[0m [2025-12-07 16:06:17] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=93505)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=93505)[0m [2025-12-07 16:06:21] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=93505)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=93505)[0m [2025-12-07 16:06:21] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=93505)[0m [2025-12-07 16:06:21] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=93507)[0m [2025-12-07 16:06:21] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(graph_allreduce pid=93507)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=93507)[0m [2025-12-07 16:06:22] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=93494)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [2025-12-07 16:06:21] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [2025-12-07 16:06:21] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [2025-12-07 16:06:21] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [2025-12-07 16:06:21] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=93507)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
+[36m(graph_allreduce pid=93507)[0m [2025-12-07 16:06:26] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 93269 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-28_785275_13/logs/monitor.out' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-28_785275_13/logs/monitor.err' mode='a' encoding='utf-8'>
+  self.start_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-28_785275_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+  self.start_api_server(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-07_16-06-28_785275_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+  self.start_log_monitor()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-12-07 16:06:29,718	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=109087)[0m [2025-12-07 16:06:37] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=109089)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=109089)[0m [2025-12-07 16:06:44] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=109089)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=109089)[0m [2025-12-07 16:06:44] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=109089)[0m [2025-12-07 16:06:44] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=109089)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=109089)[0m [2025-12-07 16:06:47] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=109096)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=109096)[0m [2025-12-07 16:06:44] INFO core.py:413: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=109122)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=109122)[0m [2025-12-07 16:06:44] INFO core.py:413: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=109122)[0m [2025-12-07 16:06:44] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=109098)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1919x across cluster][0m
+[36m(graph_allreduce pid=109098)[0m [2025-12-07 16:06:51] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1919x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 108867 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.
+----------------------------------------------------------------------
+Ran 2 tests in 178.781s
+
+OK
+[36m(graph_allreduce pid=78138)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=78138)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(graph_allreduce pid=78138)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=78129)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 15x across cluster][0m
+[36m(graph_allreduce pid=78129)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 9x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m [Gloo] Rank 5 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(graph_allreduce pid=93505)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=93505)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(graph_allreduce pid=93505)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=93494)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 13x across cluster][0m
+[36m(graph_allreduce pid=93494)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 15x across cluster][0m
+[36m(graph_allreduce pid=93507)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 10x across cluster][0m
+[36m(graph_allreduce pid=109098)[0m [Gloo] Rank 7 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(graph_allreduce pid=109098)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=109098)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_tuned_gemm_ds_v3.csv
+[36m(graph_allreduce pid=109098)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv
+[36m(graph_allreduce pid=109122)[0m [Gloo] Rank 2 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7[32m [repeated 15x across cluster][0m
+[36m(graph_allreduce pid=109087)[0m merge tuned file under model_configs/ and configs/  /sgl-workspace/aiter/aiter/configs/a8w8_blockscale_bpreshuffle_tuned_gemm.csv:/sgl-workspace/aiter/aiter/configs/model_configs/a8w8_blockscale_bpreshuffle_tuned_gemm_dsv3.csv[32m [repeated 21x across cluster][0m
+[36m(graph_allreduce pid=109122)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 16x across cluster][0m
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+==========================================
+End time: 2025-12-07 10:06:54 CST
+Exit code: 0
+Result: PASSED
+==========================================
