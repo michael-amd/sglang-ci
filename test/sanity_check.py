@@ -395,6 +395,63 @@ def cleanup_sglang_processes():
         pass  # Optional cleanup, don't warn if not available
 
 
+def cleanup_aiter_locks():
+    """Clean up stale aiter JIT lock files to prevent kernel compilation deadlock.
+
+    This is necessary when a previous run crashed/timed out and left locks behind.
+    Cleans both /root/.aiter/build and /sgl-workspace/aiter/aiter/jit/build paths.
+    """
+    print("[sanity] Cleaning up stale aiter JIT lock files...")
+    total_cleaned = 0
+
+    # Path 1: /root/.aiter/build (aiter runtime cache)
+    aiter_build_path = "/root/.aiter/build"
+    try:
+        result = subprocess.run(
+            ["find", aiter_build_path, "-name", "lock", "-type", "f"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            lock_files = [f for f in result.stdout.strip().split("\n") if f]
+            if lock_files:
+                for lock_file in lock_files:
+                    try:
+                        os.remove(lock_file)
+                        total_cleaned += 1
+                    except OSError:
+                        pass
+    except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks)
+    jit_build_path = "/sgl-workspace/aiter/aiter/jit/build"
+    try:
+        result = subprocess.run(
+            ["find", jit_build_path, "-name", "lock*", "-type", "f"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            lock_files = [f for f in result.stdout.strip().split("\n") if f]
+            if lock_files:
+                for lock_file in lock_files:
+                    try:
+                        os.remove(lock_file)
+                        total_cleaned += 1
+                    except OSError:
+                        pass
+    except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    if total_cleaned > 0:
+        print(f"[sanity] Cleaned {total_cleaned} stale aiter lock file(s)")
+    else:
+        print("[sanity] No stale aiter lock files found")
+
+
 def ensure_gpu_idle():
     """Ensure GPU is idle by stopping running Docker containers, similar to perf_nightly.sh."""
     # GPU idle wait time
@@ -402,6 +459,9 @@ def ensure_gpu_idle():
 
     # First, clean up any existing SGLang processes and port conflicts
     cleanup_sglang_processes()
+
+    # Clean up stale aiter JIT locks to prevent kernel compilation deadlock
+    cleanup_aiter_locks()
 
     if not check_gpu_idle():
         print("[sanity] GPU is busy. Attempting to stop running Docker containers...")
@@ -990,6 +1050,10 @@ def sanity_check(
         timing_log.flush()
 
     overall_start = time.time()
+
+    # Clean up stale aiter locks before starting each model's server
+    # This prevents deadlock from locks left by previous model tests
+    cleanup_aiter_locks()
 
     # 1. Start server
     server_log = os.path.join(log_dir, f"{model_name}_{platform}_server.log")

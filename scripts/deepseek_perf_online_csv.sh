@@ -592,18 +592,32 @@ get_sglang_env_var() {
 
 # Clean up stale aiter JIT lock files to prevent deadlock
 # This is necessary when a previous run crashed/timed out and left locks behind
+# Cleans both /root/.aiter/build and /sgl-workspace/aiter/aiter/jit/build paths
 cleanup_aiter_locks() {
   echo "[csv] Cleaning up stale aiter JIT lock files..."
 
-  # Remove all lock files in the aiter build cache
-  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
-  local lock_count
-  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+  local total_cleaned=0
 
-  if [[ "$lock_count" -gt 0 ]]; then
-    echo "[csv] Found $lock_count stale aiter lock file(s), removing..."
+  # Path 1: /root/.aiter/build (aiter runtime cache)
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count1=0
+  lock_count1=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count1=0
+  if [[ "$lock_count1" -gt 0 ]]; then
     find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
-    echo "[csv] Aiter lock cleanup complete"
+    total_cleaned=$((total_cleaned + lock_count1))
+  fi
+
+  # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks like lock_module_moe_sorting)
+  # These locks are created during kernel JIT compilation and can cause deadlock if stale
+  local lock_count2=0
+  lock_count2=$(find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f 2>/dev/null | wc -l) || lock_count2=0
+  if [[ "$lock_count2" -gt 0 ]]; then
+    find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f -delete 2>/dev/null || true
+    total_cleaned=$((total_cleaned + lock_count2))
+  fi
+
+  if [[ "$total_cleaned" -gt 0 ]]; then
+    echo "[csv] Cleaned $total_cleaned stale aiter lock file(s)"
   else
     echo "[csv] No stale aiter lock files found"
   fi
