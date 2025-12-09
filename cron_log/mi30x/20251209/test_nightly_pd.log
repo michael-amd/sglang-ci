@@ -1,0 +1,173 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --test-type=pd --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[test] Start time: 2025-12-09 10:15:01 CST
+[test] Machine: dell300x-pla-t10-23
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 3407985
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi30x, ROCM Version: rocm700 (PD test - using rocm700)
+[test] Test Type: pd
+[test] Created process lock: /tmp/test_nightly_pd.lock
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 16a2bfdc4ce8
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251209...
+[test] Found candidate tag for today: v0.5.6.post1-rocm700-mi30x-20251209
+[test] Attempting to pull rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209...
+v0.5.6.post1-rocm700-mi30x-20251209: Pulling from rocm/sgl-dev
+Digest: sha256:04f5f6edb8d85fa17cc7c3bacc624e8c83d9648c4518a7942530ddb9c90646f2
+Status: Image is up to date for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[test] Test type: pd
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209...
+[test] Cleaning up Docker containers...
+[test] Stopping running containers: 586f03f904e9
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[test] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251209
+[test] ==========================================
+[test] Running PD Disaggregation Test
+[test] ==========================================
+[test] Hardware type: mi30x
+[test] Model path: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[test] Model name: DeepSeek-V3-0324
+[test] Running PD test script: /mnt/raid/michael/sglang-ci/test/pd/run_pd_docker.sh
+[test] Model: DeepSeek-V3-0324 (/mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324)
+[test] Docker Image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[pd-test] Log directory created: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6.post1-rocm700-mi30x-20251209
+===================================================
+PD Test Execution Started: Tue Dec  9 10:15:32 AM CST 2025
+===================================================
+[pd-test] ==========================================
+[pd-test] SGLang PD Docker-based Test Runner
+[pd-test] ==========================================
+[pd-test] Model: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+[pd-test] Model Name: DeepSeek-V3-0324
+[pd-test] Docker Image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[pd-test] Hardware: mi30x
+[pd-test] Machine: dell300x-pla-t10-23
+[pd-test] Docker Tag: v0.5.6.post1-rocm700-mi30x-20251209
+[pd-test] Log Directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6.post1-rocm700-mi30x-20251209
+[pd-test] IP: 10.194.129.138
+[pd-test]
+[pd-test] Checking for existing containers...
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Dec  9 10:15:36 AM CST 2025 (Exit Code: 0)
+===================================================
+[pd-test] ==========================================
+[pd-test] Step 1: Starting Load Balancer/Router...
+[pd-test] ==========================================
+[pd-test] Router container started (ID: c9a9b7a7a8ec)
+[pd-test] Waiting 10 seconds for router to initialize...
+[pd-test] ✓ Router started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 2: Starting Prefill Server (GPUs 0-3)...
+[pd-test] ==========================================
+[pd-test] Prefill Server container started (ID: 11a11df37fff)
+[pd-test] Waiting 150 seconds for prefill server to initialize...
+[pd-test] ✓ Prefill Server started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 3: Starting Decode Server (GPUs 4-7)...
+[pd-test] ==========================================
+[pd-test] Using SGLANG_DISAGGREGATION_WAITING_TIMEOUT=600 (10 minutes for KV cache transfer)
+[pd-test] Using SGLANG_ROCM_FUSED_DECODE_MLA=0
+[pd-test] Decode Server container started (ID: f7f745c1837d)
+[pd-test] Waiting 150 seconds for decode server to initialize...
+[pd-test] ✓ Decode Server started successfully
+
+[pd-test] ==========================================
+[pd-test] Step 4: Waiting for services to be healthy...
+[pd-test] ==========================================
+[pd-test] Waiting additional 30 seconds...
+[pd-test] Checking health endpoints for all services...
+[pd-test] Attempt 1/60...
+[pd-test]   ✓ Prefill server is healthy
+[pd-test]   ✓ Decode server is healthy
+[pd-test]   ✓ Router is healthy
+[pd-test] All backend services healthy - restarting router to register workers...
+[pd-test] ✓ Router restarted successfully
+[pd-test] Attempt 2/60...
+[pd-test]   ✓ Router is healthy
+[pd-test] All services report healthy. Performing functional test...
+[pd-test] ✓ Functional test passed - all services fully operational!
+
+[pd-test] ==========================================
+[pd-test] Step 5: Running Tests...
+[pd-test] ==========================================
+[pd-test] Test 1: Health Check
+[pd-test] ✓ Health check passed
+
+[pd-test] Test 2: Model Info
+[pd-test] ✓ Model info passed
+
+[pd-test] Test 3: Simple Completion
+[pd-test] ✓ Simple completion passed
+
+[pd-test] Test 4: Code Generation
+[pd-test] ✓ Code generation passed
+
+[pd-test] Test 6: GSM8K Accuracy Test
+[pd-test] Running GSM8K benchmark (200 questions, parallel 16, 5-shot)...
+[pd-test] Using official implementation (bench_gsm8k_pd.py based on sglang/benchmark/gsm8k/bench_sglang.py)
+[pd-test] Note: Using parallel=16 instead of 128 to avoid PD timeout issues with long prompts
+
+[pd-test] ==========================================
+[pd-test] Cleaning up Docker containers...
+[pd-test] ==========================================
+[pd-test] Collecting final router logs...
+[pd-test] Collecting final prefill logs...
+[pd-test] Collecting final decode logs...
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-decode
+sglang-pd-router
+sglang-pd-prefill
+sglang-pd-decode
+[pd-test] Cleanup complete.
+===================================================
+PD Test Execution Ended: Tue Dec  9 10:40:08 AM CST 2025 (Exit Code: 137)
+===================================================
+[test] PD test log directory: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6.post1-rocm700-mi30x-20251209
+[test] === PD test FAILED for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209 (exit code: 137) ===
+[test] Logs saved to: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6.post1-rocm700-mi30x-20251209
+[test] Check the log directory for detailed error information
+[test] Sending Teams notification...
+📋 Parsing PD test summary file: /mnt/raid/michael/sglang-ci/test/pd/pd_log/mi30x/v0.5.6.post1-rocm700-mi30x-20251209/test_summary.txt
+✅ Docker image date matches expected date (20251209) - proceeding with alert
+✅ Successfully sent PD test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[test] ==========================================
+[test] Test completed for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[test] Test type: pd
+[test] ==========================================
+[test] Cleaning up process lock...
