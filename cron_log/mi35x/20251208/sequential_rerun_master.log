@@ -1,0 +1,9 @@
+==============================================
+Sequential Rerun Started at Mon Dec  8 08:10:27 PM CST 2025
+Date: 20251208
+Hardware: mi35x
+Log directory: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251208
+==============================================
+
+[1/4] Starting SANITY CHECK at Mon Dec  8 08:10:27 PM CST 2025...
+Expected runtime: ~40 minutes

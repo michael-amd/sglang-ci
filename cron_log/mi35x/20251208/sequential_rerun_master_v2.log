@@ -1,0 +1,16 @@
+==============================================
+Sequential Rerun Started at Mon Dec  8 08:25:53 PM CST 2025
+Date: 20251208
+Hardware: mi35x
+Log directory: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251208
+==============================================
+
+[1/4] Starting SANITY CHECK at Mon Dec  8 08:25:53 PM CST 2025...
+Expected runtime: ~40 minutes
+[github_log_upload] Lock acquired – proceeding with upload
+[github_log_upload] Repository already cloned – re-using /mnt/raid/michael/sglang-ci-data
+From https://github.com/ROCm/sglang-ci
+ * branch            log        -> FETCH_HEAD
+   8a09269..35d2047  log        -> origin/log
+[github_log_upload] Uploading logs from: /mnt/raid/michael/sglang-ci/cron/cron_log/mi35x/20251208
+[github_log_upload] Destination in repo: cron_log/mi35x/20251208
