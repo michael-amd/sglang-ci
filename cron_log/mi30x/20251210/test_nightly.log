@@ -1,23 +1,23 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
-[test] Start time: 2025-12-10 11:01:01 CST
-[test] Machine: dell300x-pla-t12-38
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[test] Start time: 2025-12-10 10:01:01 CST
+[test] Machine: dell300x-pla-t10-23
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 1095760
+[test] Process ID: 3747977
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700
 [test] Test Type: unit
 [test] Created process lock: /tmp/test_nightly_unit.lock
 [test] Cleaning up Docker containers...
-[test] No running containers to stop.
+[test] Stopping running containers: 0a325c593980
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -68,23 +68,22 @@ e8e2c9a734bb: Pulling fs layer
 2d3904894c92: Pulling fs layer
 b250db6bf7f0: Pulling fs layer
 1029a9da878a: Pulling fs layer
-b250db6bf7f0: Waiting
-2d3904894c92: Waiting
 ae8e01506a6f: Pulling fs layer
 5f51c5797571: Waiting
 96ba6e73119c: Pulling fs layer
-e29d0822cc4f: Pulling fs layer
 ae8e01506a6f: Waiting
-bb49a86dee43: Pulling fs layer
 1029a9da878a: Waiting
+e29d0822cc4f: Pulling fs layer
+96ba6e73119c: Waiting
+bb49a86dee43: Pulling fs layer
 5e95d97a572d: Pulling fs layer
 e29d0822cc4f: Waiting
 50e9c1313b8c: Pulling fs layer
-96ba6e73119c: Waiting
-bb49a86dee43: Waiting
 6c6c2a2a2823: Pulling fs layer
 5e95d97a572d: Waiting
+bb49a86dee43: Waiting
 c2d5c59436af: Pulling fs layer
+50e9c1313b8c: Waiting
 6c6c2a2a2823: Waiting
 a3d0e3bb1c8d: Pulling fs layer
 c2d5c59436af: Waiting
@@ -92,35 +91,35 @@ a3d0e3bb1c8d: Waiting
 4f4fb700ef54: Download complete
 e8e2c9a734bb: Verifying Checksum
 e8e2c9a734bb: Download complete
-5f51c5797571: Verifying Checksum
-5f51c5797571: Download complete
+d987c340e661: Verifying Checksum
 d987c340e661: Download complete
 d987c340e661: Pull complete
+5f51c5797571: Verifying Checksum
+5f51c5797571: Download complete
 4f4fb700ef54: Pull complete
 e8e2c9a734bb: Pull complete
 5f51c5797571: Pull complete
-b250db6bf7f0: Verifying Checksum
-b250db6bf7f0: Download complete
 2d3904894c92: Verifying Checksum
 2d3904894c92: Download complete
 ae8e01506a6f: Verifying Checksum
 ae8e01506a6f: Download complete
+b250db6bf7f0: Verifying Checksum
+b250db6bf7f0: Download complete
+2d3904894c92: Pull complete
 e29d0822cc4f: Verifying Checksum
 e29d0822cc4f: Download complete
 bb49a86dee43: Verifying Checksum
 bb49a86dee43: Download complete
-2d3904894c92: Pull complete
-96ba6e73119c: Verifying Checksum
-96ba6e73119c: Download complete
-b250db6bf7f0: Pull complete
 5e95d97a572d: Verifying Checksum
 5e95d97a572d: Download complete
-6c6c2a2a2823: Verifying Checksum
+96ba6e73119c: Verifying Checksum
+96ba6e73119c: Download complete
 6c6c2a2a2823: Download complete
 c2d5c59436af: Verifying Checksum
 c2d5c59436af: Download complete
 a3d0e3bb1c8d: Verifying Checksum
 a3d0e3bb1c8d: Download complete
+b250db6bf7f0: Pull complete
 1029a9da878a: Verifying Checksum
 1029a9da878a: Download complete
 50e9c1313b8c: Verifying Checksum
@@ -147,7 +146,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 [test] ==========================================
 [test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210...
 [test] Cleaning up Docker containers...
-[test] No running containers to stop.
+[test] Stopping running containers: 5e65cb9c8065
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -156,7 +155,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 [test] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 [test] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251210
 [test] Creating container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251210
-03fa8a993d83beda8360b4bf434fa64f7c8ade1d7188b4067be08ac63a5cc02c
+1335f8128d6c97c4ac9ec816cb5151faf2054af529baf4eb905fef1ca35b7492
 [test] === Starting test_custom_allreduce unit test ===
 [test] Test directory: /sgl-workspace/sglang/test/manual
 [test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251210.log
@@ -165,7 +164,11 @@ docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 [test] === Unit test PASSED for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210 ===
 [test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251210.log
 [test] Stopping container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251210 to release resources...
-[test] No Teams webhook URL provided - skipping notification
+[test] Sending Teams notification...
+📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post1-rocm700-mi30x-20251210.log
+✅ Docker image date matches expected date (20251210) - proceeding with alert
+✅ Successfully sent unit test pass alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
 [test] ==========================================
 [test] Test completed for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 [test] Test type: unit
