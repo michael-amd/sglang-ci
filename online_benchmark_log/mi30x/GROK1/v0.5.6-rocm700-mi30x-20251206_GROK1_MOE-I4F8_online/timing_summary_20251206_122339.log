@@ -1,0 +1,35 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-06 12:23:39 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/models/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6-rocm700-mi30x-20251206
+Model: /data/models/amd--grok-1-W4A8KV8
+Hostname: dell300x-pla-t12-38
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 174 seconds
+
+GSM8K Test Results:
+  Total duration: 200 seconds
+  Average accuracy: 0.814
+  Total runs: 5
+  Valid runs: 5
+  Excluded runs: 0
+  GSM8K accuracy: 0.814
+
+Client Benchmark Results:
+  Start time: 2025-12-06 12:29:54 PST
+  Rate 1, Run 1: 348 seconds
+Completed rate 1 - Total time: 348 seconds
+  Rate 2, Run 1: 363 seconds
+Completed rate 2 - Total time: 363 seconds
+  Rate 4, Run 1: 348 seconds
+Completed rate 4 - Total time: 348 seconds
+  Rate 8, Run 1: 388 seconds
+Completed rate 8 - Total time: 388 seconds
