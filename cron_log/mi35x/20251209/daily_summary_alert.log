@@ -1,0 +1,46 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251209
+🖥️  Hardware: mi35x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251209...
+✅ Docker image date matches expected date (20251209) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-12-09 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-12-09 at 17:30:02 PST
+Hostname: smci355-ccs-aus-m12-33
+Hardware: mi35x
+Docker Image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi35x-20251209
+
+Overall Status:
+• Tasks run: 11/11
+• Passed: 5, Failed: 4, Unknown: 2
+
+Task Results:
+
+Validation & Checks:
+  ✅ Unit Tests: Pass
+  ❌ PD Disaggregation Tests: Failed
+    Error: Health check failed after 60 attempts
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 81.6%) [30m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 92.5%) [35m]
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 94.4%) [1h 26m]
+
+Integration Tests:
+  ❌ DeepSeek DP Attention Test: Failed (GSM8K: 0.0%)
+    Error: GSM8K accuracy is 0% - test did not complete successfully
+  ❌ DeepSeek Torch Compile Test: Failed
+    Error: Test failed or did not complete
+  ❌ DeepSeek MTP Test: Failed
+    Error: Test failed or did not complete
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251209_mi35x_20251209_173002.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
