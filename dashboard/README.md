@@ -4,16 +4,16 @@ A comprehensive web dashboard for viewing CI results, performance plots, and tre
 
 ## Features
 
-- **Daily Summary View**: Overview of all nightly CI tasks for both hardware platforms
-- **Hardware-Specific Views**: Detailed results for MI30X and MI35X
+- **Daily Summaries**: Real-time status for MI30X and MI35X platforms with pass/fail statistics
+- **Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics via Database Explorer
+- **Performance Plots**: Interactive visualization of benchmark results with GitHub links
+- **Task Details**: Detailed status for each CI task (benchmarks, integration tests, validation)
+- **Hardware Comparison**: Side-by-side comparison charts for MI30X vs MI35X platforms
+- **Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking with interactive charts
 - **Database Explorer**: SQL queries, historical trends, and raw data access
-- **Performance Plots**: View and download performance benchmark plots
-- **Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking
 - **REST API**: Programmatic access to all CI data
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **GitHub Data Source**: Fetch data from GitHub log branch (works behind firewalls!)
-- **Database Backend**: SQLite database for fast queries (50-300x faster than log parsing)
-- **Local Fallback**: Automatically falls back to local filesystem if GitHub is unavailable
+- **Data Backend**: SQLite database for fast queries (50-300x faster) with GitHub sync
 
 ## Architecture
 
