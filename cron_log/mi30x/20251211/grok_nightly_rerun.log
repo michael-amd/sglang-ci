@@ -1,0 +1,39 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok --model-path=/mnt/raid/models/huggingface/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=
+[nightly] Start time: 2025-12-11 13:37:14 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 59856
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 318184779dba
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251211...
+[nightly] Found candidate tag for day -0: v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Found local image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Successfully obtained image for date 20251211: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: 63298ec3c162
+[nightly] Waiting 15s for GPU to become idle...
