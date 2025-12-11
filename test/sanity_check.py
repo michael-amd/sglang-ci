@@ -1226,9 +1226,10 @@ def sanity_check(
         timing_log.write(f"Server startup: {server_ready_time:.2f}s\n")
         timing_log.flush()
 
-    # 3. Run multiple client trials
-    print(f"🧪 Running {trials} benchmark trials...")
+    # 3. Run multiple client trials (exit early if pass, like upstream CI)
+    print(f"🧪 Running up to {trials} benchmark trials (early exit on pass)...")
     accuracies = []
+    early_exit = False
     for i in range(1, trials + 1):
         client_log = os.path.join(log_dir, f"{model_name}_{platform}_client_try{i}.log")
         trial_start = time.time()
@@ -1297,7 +1298,8 @@ def sanity_check(
             try:
                 acc = parse_accuracy(client_log)
                 accuracies.append(acc)
-                status = PASS_MARK if acc >= criteria["accuracy"] else FAIL_MARK
+                passed = acc >= criteria["accuracy"]
+                status = PASS_MARK if passed else FAIL_MARK
                 print(
                     f"  ✅ Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)"
                 )
@@ -1306,6 +1308,15 @@ def sanity_check(
                         f"Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)\n"
                     )
                     timing_log.flush()
+                # Early exit if passed (like upstream CI - saves time)
+                if passed:
+                    if i < trials:
+                        print(f"  🚀 Passed on trial {i}, skipping remaining {trials - i} trial(s)")
+                        if timing_log:
+                            timing_log.write(f"Early exit: Passed on trial {i}, skipped {trials - i} trial(s)\n")
+                            timing_log.flush()
+                    early_exit = True
+                    break
             except ValueError as e:
                 print(f"  ❌ Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)")
                 if timing_log:
