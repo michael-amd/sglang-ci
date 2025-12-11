@@ -1,0 +1,223 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
+[nightly] Start time: 2025-12-11 11:30:01 PST
+[nightly] Machine: dell300x-pla-t10-23
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 205100
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] Teams webhook URL provided via command line - notifications enabled
+[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
+[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] Using rocm700 for grok2 on mi30x hardware
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: grok2, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_grok2.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: ff05bb498f88
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251211...
+[nightly] Found candidate tag for day -0: v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Found local image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Successfully obtained image for date 20251211: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] Stopping running containers: d8ebc67a586a
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Reusing container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK2 online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[online] Using Grok 2 configuration
+[online] Using default Grok 2 tokenizer: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-12-11 11:30:46 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/sglang_client_log_GROK2_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Cleaning up stale aiter JIT lock files...
+[online] No stale aiter lock files found
+[online] Using Grok2 environment: HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0
+[online] Launching backend=aiter for grok2
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+/mnt/raid/michael/sglang-ci/scripts/grok_perf_online_csv.sh: line 457:    54 Killed                  env HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model '/mnt/raid/models/huggingface/grok-2' --tokenizer-path '/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85 --watchdog-timeout 600 > '/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/server_output_aiter.log' 2>&1
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+  File "/usr/lib/python3.10/logging/__init__.py", line 1634, in handle
+    self.callHandlers(record)
+  File "/usr/lib/python3.10/logging/__init__.py", line 1696, in callHandlers
+    hdlr.handle(record)
+  File "/usr/lib/python3.10/logging/__init__.py", line 968, in handle
+    self.emit(record)
+  File "/usr/lib/python3.10/logging/__init__.py", line 1108, in emit
+    self.handleError(record)
+  File "/usr/lib/python3.10/logging/__init__.py", line 1021, in handleError
+    sys.stderr.write('--- Logging error ---\n')
+RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
+Call stack:
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 28, in <module>
+    run_server(server_args)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 21, in run_server
+    launch_server(server_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1390, in launch_server
+    _launch_subprocesses(server_args=server_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 915, in _launch_subprocesses
+    data = scheduler_pipe_readers[i].recv()
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 250, in recv
+    buf = self._recv_bytes()
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 414, in _recv_bytes
+    buf = self._recv(4)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 379, in _recv
+    chunk = read(handle, remaining)
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 751, in launch_phase_sigquit_handler
+    logger.error(
+  File "/usr/lib/python3.10/logging/__init__.py", line 1505, in error
+    if self.isEnabledFor(ERROR):
+  File "/usr/lib/python3.10/logging/__init__.py", line 1732, in isEnabledFor
+    return self._cache[level]
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 754, in launch_phase_sigquit_handler
+    kill_process_tree(os.getpid())
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 1058, in kill_process_tree
+    children = itself.children(recursive=True)
+  File "/opt/venv/lib/python3.10/site-packages/psutil/__init__.py", line 966, in children
+    ppid_map = _ppid_map()
+  File "/opt/venv/lib/python3.10/site-packages/psutil/_pslinux.py", line 1621, in ppid_map
+    for pid in pids():
+  File "/opt/venv/lib/python3.10/site-packages/psutil/_pslinux.py", line 1579, in pids
+    return [int(x) for x in os.listdir(path) if x.isdigit()]
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 751, in launch_phase_sigquit_handler
+    logger.error(
+Message: 'Received sigquit from a child process. It usually means the child failed.'
+Arguments: ()
+[nightly] === Online benchmark dispatched for GROK2; check logs in sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251211
+[nightly] Sending Teams notification for grok2 online plots...
+[nightly] Adding benchmark date to Teams notification: 20251211
+[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
+[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
+[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
+[nightly] Including intelligent analysis (7 days lookback)
+🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
+🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
+📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
+🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
+   🔍 Uploading 20251211_GROK2_online_standard.png to GitHub...
+   📋 Log branch already exists
+   📄 Creating new file: plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
+   ✅ Uploaded to GitHub (log branch): 20251211_GROK2_online_standard.png
+   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
+🔍 Discovered 1 plot file(s) for grok2 online
+   - 20251211_GROK2_online_standard.png -> ✅ uploaded to GitHub
+🔍 Analyzing benchmark results for accuracy and performance...
+   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
+   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
+   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
+   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
+🔍 Sending adaptive card with 1 image(s) hosted on GitHub
+📊 Total payload size: 0.00MB
+   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
+   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
+✅ Successfully sent Teams notification for grok2 online plots
+   (Power Automate flow accepted - message processing asynchronously)
+🎉 Teams notification sent successfully! (with intelligent analysis)
+[nightly] Teams notification sent successfully for grok2 online
+[nightly] === Online post-processing completed for GROK2 ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Stopping container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
