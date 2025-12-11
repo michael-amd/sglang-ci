@@ -2559,19 +2559,8 @@ class TeamsNotifier:
                                 "spacing": "Small",
                             }
                         )
-
-                    else:
-                        # Fallback - show file path
-                        body_elements.append(
-                            {
-                                "type": "TextBlock",
-                                "text": f"📁 File: `{plot['file_path']}`",
-                                "wrap": True,
-                                "size": "Small",
-                                "spacing": "Small",
-                                "fontType": "Monospace",
-                            }
-                        )
+                    # Note: Removed fallback that showed internal file paths (📁 File: ...)
+                    # Plots without public URLs or plot URLs will only show their filename
 
         # Create actions
         actions = []
