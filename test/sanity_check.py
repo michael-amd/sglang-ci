@@ -306,13 +306,17 @@ def cleanup_sglang_processes():
     print("[sanity] Checking for existing SGLang processes and port conflicts...")
 
     # Kill processes using port 30000 (default SGLang port)
+    # Try multiple methods: lsof, fuser, ss+kill
+    port_cleaned = False
+
+    # Method 1: lsof
     try:
         result = subprocess.run(
             ["lsof", "-ti:30000"], capture_output=True, text=True, timeout=10
         )
         if result.returncode == 0 and result.stdout.strip():
             pids = result.stdout.strip().split("\n")
-            print(f"[sanity] Found processes using port 30000: {' '.join(pids)}")
+            print(f"[sanity] Found processes using port 30000 (lsof): {' '.join(pids)}")
             for pid in pids:
                 if pid:
                     try:
@@ -320,12 +324,56 @@ def cleanup_sglang_processes():
                             ["kill", "-9", pid], capture_output=True, timeout=5
                         )
                         print(f"[sanity] Killed process {pid} using port 30000")
+                        port_cleaned = True
                     except (subprocess.SubprocessError, subprocess.TimeoutExpired):
                         pass
-        else:
-            print("[sanity] No processes found using port 30000")
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        print("[sanity] lsof not available or timed out, skipping port check")
+        pass  # Try other methods
+
+    # Method 2: fuser (fallback)
+    if not port_cleaned:
+        try:
+            result = subprocess.run(
+                ["fuser", "-k", "30000/tcp"], capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                print("[sanity] Killed processes using port 30000 (fuser)")
+                port_cleaned = True
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass  # Try other methods
+
+    # Method 3: ss + kill (last resort)
+    if not port_cleaned:
+        try:
+            result = subprocess.run(
+                ["ss", "-tlnp", "sport", "=", ":30000"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                # Parse PIDs from ss output
+                import re
+
+                pids = re.findall(r"pid=(\d+)", result.stdout)
+                if pids:
+                    print(
+                        f"[sanity] Found processes using port 30000 (ss): {' '.join(pids)}"
+                    )
+                    for pid in pids:
+                        try:
+                            subprocess.run(
+                                ["kill", "-9", pid], capture_output=True, timeout=5
+                            )
+                            print(f"[sanity] Killed process {pid}")
+                            port_cleaned = True
+                        except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+                            pass
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+    if not port_cleaned:
+        print("[sanity] No processes found using port 30000 (or tools unavailable)")
 
     # Kill any sglang.launch_server processes
     try:
@@ -393,6 +441,97 @@ def cleanup_sglang_processes():
                 )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass  # Optional cleanup, don't warn if not available
+
+
+def wait_for_gpu_memory_free(timeout=60, threshold_percent=10):
+    """Wait for GPU memory to be freed after killing server processes.
+
+    Args:
+        timeout: Maximum seconds to wait for GPU memory to be freed
+        threshold_percent: Consider GPU "free" if all GPUs have less than this % used
+
+    Returns:
+        True if GPU memory freed within timeout, False otherwise
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            result = subprocess.run(
+                ["rocm-smi", "--showmemuse"], capture_output=True, text=True, timeout=15
+            )
+            if result.returncode == 0:
+                # Parse memory usage percentages
+                import re
+
+                mem_percentages = re.findall(
+                    r"GPU Memory Allocated \(VRAM%\):\s*(\d+)", result.stdout
+                )
+                if mem_percentages:
+                    max_usage = max(int(p) for p in mem_percentages)
+                    if max_usage < threshold_percent:
+                        print(f"[sanity] GPU memory freed (max usage: {max_usage}%)")
+                        return True
+                    else:
+                        print(
+                            f"[sanity] Waiting for GPU memory to free... (current max: {max_usage}%)"
+                        )
+        except (
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
+            pass
+        time.sleep(3)
+
+    print(f"[sanity] WARNING: GPU memory not fully freed after {timeout}s timeout")
+    return False
+
+
+def aggressive_cleanup_between_models():
+    """Perform aggressive cleanup between model tests to prevent resource conflicts.
+
+    This function ensures:
+    1. All SGLang processes are killed (including child processes)
+    2. Port 30000 is freed
+    3. Aiter JIT lock files are cleaned
+    4. GPU memory is freed (with timeout)
+    """
+    print("\n[sanity] === Performing aggressive cleanup between models ===")
+
+    # Step 1: Kill all SGLang-related processes aggressively
+    cleanup_sglang_processes()
+
+    # Step 2: Kill any torch distributed processes that might be holding GPU memory
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "torch.distributed|multiprocessing.spawn"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            pids = result.stdout.strip().split("\n")
+            current_pid = str(os.getpid())
+            for pid in pids:
+                if pid and pid != current_pid:
+                    try:
+                        subprocess.run(
+                            ["kill", "-9", pid], capture_output=True, timeout=5
+                        )
+                        print(f"[sanity] Killed torch distributed process {pid}")
+                    except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+                        pass
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Step 3: Clean aiter locks
+    cleanup_aiter_locks()
+
+    # Step 4: Wait for GPU memory to be freed (give processes time to release resources)
+    time.sleep(3)  # Brief pause after killing processes
+    wait_for_gpu_memory_free(timeout=30, threshold_percent=15)
+
+    print("[sanity] === Cleanup complete ===\n")
 
 
 def cleanup_aiter_locks():
@@ -1311,9 +1450,13 @@ def sanity_check(
                 # Early exit if passed (like upstream CI - saves time)
                 if passed:
                     if i < trials:
-                        print(f"  🚀 Passed on trial {i}, skipping remaining {trials - i} trial(s)")
+                        print(
+                            f"  🚀 Passed on trial {i}, skipping remaining {trials - i} trial(s)"
+                        )
                         if timing_log:
-                            timing_log.write(f"Early exit: Passed on trial {i}, skipped {trials - i} trial(s)\n")
+                            timing_log.write(
+                                f"Early exit: Passed on trial {i}, skipped {trials - i} trial(s)\n"
+                            )
                             timing_log.flush()
                     early_exit = True
                     break
@@ -1326,7 +1469,7 @@ def sanity_check(
                     timing_log.flush()
                 accuracies.append(0.0)
 
-    # 4. Kill server after all trials
+    # 4. Kill server after all trials - use aggressive shutdown
     print(f"🛑 Stopping server...")
     shutdown_start = time.time()
 
@@ -1334,16 +1477,37 @@ def sanity_check(
         # Send SIGTERM first for graceful shutdown
         os.killpg(os.getpgid(server_proc.pid), signal.SIGTERM)
 
-        # Wait up to 10 seconds for graceful shutdown
-        timeout = 10
+        # Wait up to 5 seconds for graceful shutdown (reduced from 10)
+        timeout = 5
         elapsed = 0
         while server_proc.poll() is None and elapsed < timeout:
             time.sleep(0.5)
             elapsed += 0.5
 
-        # If still running, force kill
+        # If still running, force kill immediately
         if server_proc.poll() is None:
-            print(f"🔥 Server didn't stop gracefully, force killing...")
+            print(
+                f"🔥 Server didn't stop gracefully after {timeout}s, force killing..."
+            )
+            os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+            time.sleep(1)
+
+        # Double-check and kill any remaining child processes
+        if server_proc.poll() is None:
+            print(f"🔥 Server still running, using SIGKILL on all children...")
+            try:
+                # Kill the entire process tree
+                subprocess.run(
+                    ["pkill", "-9", "-P", str(server_proc.pid)],
+                    capture_output=True,
+                    timeout=5,
+                )
+            except (
+                subprocess.SubprocessError,
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+            ):
+                pass
             os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
             time.sleep(1)
 
@@ -1354,29 +1518,34 @@ def sanity_check(
     if server_proc in ACTIVE_SERVER_PROCESSES:
         ACTIVE_SERVER_PROCESSES.remove(server_proc)
 
+    # Additional cleanup to ensure port 30000 is freed and no zombie processes
+    cleanup_sglang_processes()
+
     shutdown_time = time.time() - shutdown_start
 
-    # 5. Determine final result based on highest accuracy
-    max_accuracy = max(accuracies) if accuracies else 0.0
-
+    # 5. Determine final result (with early exit, first passing accuracy is sufficient)
     required_accuracy = criteria["accuracy"]
-    any_pass = max_accuracy >= required_accuracy
+    any_pass = (
+        any(acc >= required_accuracy for acc in accuracies) if accuracies else False
+    )
     final_status = PASS_MARK if any_pass else FAIL_MARK
     total_time = time.time() - overall_start
 
     print(f"📋 Result for {model_name} on {platform}: {final_status}")
-    print(f"   Accuracies: {accuracies}")
     print(
-        f"   Highest Accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})"
+        f"   Accuracy: {accuracies[0]:.3f} (Required: {required_accuracy:.3f})"
+        if accuracies
+        else "   No accuracy recorded"
     )
     print(f"   Total Time: {total_time:.2f}s")
 
     if timing_log:
         timing_log.write(f"Server shutdown: {shutdown_time:.2f}s\n")
         timing_log.write(f"Final result: {final_status}\n")
-        timing_log.write(f"Accuracies: {accuracies}\n")
         timing_log.write(
-            f"Highest accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
+            f"Accuracy: {accuracies[0]:.3f} (Required: {required_accuracy:.3f})\n"
+            if accuracies
+            else "No accuracy recorded\n"
         )
         timing_log.write(f"Total time: {total_time:.2f}s\n")
         timing_log.write(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
@@ -1619,6 +1788,11 @@ if __name__ == "__main__":
             print(
                 f"Progress: [{progress_bar}] {current_model}/{total_models} ({current_model/total_models*100:.1f}%) {status_emoji} {model_name} {status_text} in {model_duration:.1f}s"
             )
+
+            # Aggressive cleanup between models to prevent resource conflicts
+            # Skip cleanup after the last model to save time
+            if current_model < total_models:
+                aggressive_cleanup_between_models()
 
         # Final timing summary
         script_end_time = time.time()

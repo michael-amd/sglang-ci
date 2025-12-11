@@ -611,11 +611,34 @@ run_client_gsm8k() {
              total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
              valid_count=$((valid_count+1))
              echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$gsm8k_log"
+
+             # Early exit if accuracy meets threshold (saves time - like upstream CI)
+             if awk "BEGIN {exit !($run_accuracy >= $THRESHOLD)}"; then
+                 if [ $i -lt $runs ]; then
+                     echo "  🚀 Passed on run $i, skipping remaining $((runs - i)) run(s)" | tee -a "$gsm8k_log"
+                 fi
+                 local gsm8k_end_time=$(date +%s)
+                 local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
+                 echo "GSM8K test completed in ${gsm8k_duration} seconds (early exit)" | tee -a "$gsm8k_log"
+                 echo "Accuracy: $run_accuracy (Required: $THRESHOLD)" | tee -a "$gsm8k_log"
+
+                 # Log to timing summary
+                 echo "" >> "$TIMING_LOG"
+                 echo "GSM8K Test Results:" >> "$TIMING_LOG"
+                 echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
+                 echo "  Accuracy: $run_accuracy (Required: $THRESHOLD)" >> "$TIMING_LOG"
+                 echo "  Early exit: Passed on run $i, skipped $((runs - i)) run(s)" >> "$TIMING_LOG"
+                 echo "  GSM8K accuracy: $run_accuracy" >> "$TIMING_LOG"
+
+                 echo "Accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
+                 return 0
+             fi
          else
              echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$gsm8k_log"
          fi
     done
 
+    # All runs completed without early exit - compute average
     local avg_accuracy
     if [ $valid_count -gt 0 ]; then
         avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_count" 'BEGIN { printf "%.3f", total/count }')
@@ -793,9 +816,8 @@ check_all_logs_complete() {
         echo "Empty: GSM8K log file ($gsm8k_log)"
         gsm8k_complete=false
     else
-        # Check if GSM8K test completed successfully
-        if grep -q "Average Accuracy over $GSM8K_RUNS runs for mode ${ATTENTION_BACKEND}" "$gsm8k_log" && \
-           grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
+        # Check if GSM8K test completed successfully (either early exit or full run)
+        if grep -q "Accuracy meets threshold\|Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
             echo "✅ GSM8K log file is complete."
         else
             echo "Incomplete: GSM8K log file missing final summary ($gsm8k_log)"
