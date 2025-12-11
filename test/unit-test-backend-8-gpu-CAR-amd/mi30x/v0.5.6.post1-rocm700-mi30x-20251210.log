@@ -5,8 +5,8 @@ Test: test_custom_allreduce.TestCustomAllReduce
 Image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251210
 Container: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251210
 Hardware: mi30x
-Machine: dell300x-pla-t10-23
-Start time: 2025-12-10 10:03:20 CST
+Machine: dell300x-pla-t12-38
+Start time: 2025-12-10 11:04:13 CST
 Test directory: /sgl-workspace/sglang/test/manual
 Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_allreduce.TestCustomAllReduce
 ==========================================
@@ -14,13 +14,13 @@ Command: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python3 -m unittest test_custom_al
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_gcs_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-25_487803_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-18_869466_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-25_487803_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-18_869466_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-25_487803_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-18_869466_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/utils.py:521: ResourceWarning: unclosed file <_io.TextIOWrapper name='/sys/fs/cgroup/cpu.max' mode='r' encoding='UTF-8'>
@@ -29,303 +29,271 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1247: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_raylet(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-25_487803_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-18_869466_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:03:26,570	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(eager_allreduce pid=473)[0m [2025-12-10 16:03:34] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(eager_allreduce pid=475)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=475)[0m [2025-12-10 16:03:45] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=475)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=475)[0m [2025-12-10 16:03:45] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=475)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=475)[0m [2025-12-10 16:03:45] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=475)[0m [2025-12-10 16:03:45] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(eager_allreduce pid=473)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=473)[0m [2025-12-10 16:03:45] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=473)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=473)[0m [2025-12-10 16:03:45] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=473)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=473)[0m [2025-12-10 16:03:45] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=473)[0m [2025-12-10 16:03:45] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+2025-12-10 17:04:19,940	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=472)[0m [2025-12-10 17:04:27] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=472)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=472)[0m [2025-12-10 17:04:38] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=472)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=472)[0m [2025-12-10 17:04:38] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=472)[0m [2025-12-10 17:04:38] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=474)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=474)[0m [2025-12-10 17:04:38] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=474)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=474)[0m [2025-12-10 17:04:38] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=474)[0m [2025-12-10 17:04:38] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
 /usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 290 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 /opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1204: ResourceWarning: unclosed file <_io.TextIOWrapper name='/dev/null' mode='w' encoding='UTF-8'>
   process_info = ray._private.services.start_gcs_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-48_084428_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-41_307491_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-48_084428_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-41_307491_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-48_084428_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-41_307491_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-03-48_084428_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-41_307491_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:03:49,006	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(eager_allreduce pid=6429)[0m [2025-12-10 16:03:56] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(eager_allreduce pid=6429)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=6429)[0m [2025-12-10 16:04:03] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=6429)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=6429)[0m [2025-12-10 16:04:03] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=6429)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=6429)[0m [2025-12-10 16:04:04] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=6429)[0m [2025-12-10 16:04:04] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(eager_allreduce pid=6430)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [2025-12-10 16:04:04] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [2025-12-10 16:04:04] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [2025-12-10 16:04:04] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [2025-12-10 16:04:04] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 6247 is still running
+2025-12-10 17:04:42,272	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=6427)[0m [2025-12-10 17:04:49] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=6427)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=6427)[0m [2025-12-10 17:04:56] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=6427)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=6427)[0m [2025-12-10 17:04:56] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=6427)[0m [2025-12-10 17:04:56] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=6432)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=6432)[0m [2025-12-10 17:04:56] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=6432)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=6432)[0m [2025-12-10 17:04:56] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(eager_allreduce pid=6432)[0m [2025-12-10 17:04:56] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 6246 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-06_668615_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-59_136585_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-06_668615_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-59_136585_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-06_668615_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-59_136585_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-06_668615_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-04-59_136585_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:04:07,706	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:15] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(eager_allreduce pid=12523)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:23] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=12523)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:23] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=12523)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:23] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:23] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(eager_allreduce pid=12523)[0m [2025-12-10 16:04:23] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
-[36m(eager_allreduce pid=12529)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [2025-12-10 16:04:23] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [2025-12-10 16:04:23] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [2025-12-10 16:04:23] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [2025-12-10 16:04:23] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
-[36m(eager_allreduce pid=12525)[0m [2025-12-10 16:04:23] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 12343 is still running
+2025-12-10 17:05:00,214	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=12529)[0m [2025-12-10 17:05:07] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=12533)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=12533)[0m [2025-12-10 17:05:14] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=12527)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=12527)[0m [2025-12-10 17:05:14] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=12527)[0m [2025-12-10 17:05:14] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=12533)[0m [2025-12-10 17:05:14] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(eager_allreduce pid=12532)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12532)[0m [2025-12-10 17:05:14] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12535)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12535)[0m [2025-12-10 17:05:14] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12535)[0m [2025-12-10 17:05:14] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
+[36m(eager_allreduce pid=12532)[0m [2025-12-10 17:05:14] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 12346 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-27_180729_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-18_143977_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-27_180729_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-18_143977_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-27_180729_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-18_143977_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-27_180729_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-18_143977_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:04:28,126	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(eager_allreduce pid=18773)[0m [2025-12-10 16:04:37] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(eager_allreduce pid=18777)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=18777)[0m [2025-12-10 16:04:46] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(eager_allreduce pid=18777)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=18777)[0m [2025-12-10 16:04:46] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(eager_allreduce pid=18777)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=18777)[0m [2025-12-10 16:04:46] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(eager_allreduce pid=18777)[0m [2025-12-10 16:04:46] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(eager_allreduce pid=18780)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [2025-12-10 16:04:46] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [2025-12-10 16:04:46] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [2025-12-10 16:04:46] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [2025-12-10 16:04:46] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
+2025-12-10 17:05:19,137	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(eager_allreduce pid=18775)[0m [2025-12-10 17:05:27] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(eager_allreduce pid=18778)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=18778)[0m [2025-12-10 17:05:36] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(eager_allreduce pid=18778)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=18778)[0m [2025-12-10 17:05:36] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(eager_allreduce pid=18778)[0m [2025-12-10 17:05:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(eager_allreduce pid=18784)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=18784)[0m [2025-12-10 17:05:36] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=18784)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=18784)[0m [2025-12-10 17:05:36] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(eager_allreduce pid=18784)[0m [2025-12-10 17:05:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
 /usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 18592 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-./opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-50_602606_13/logs/monitor.out' mode='a' encoding='utf-8'>
+./opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-40_464405_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-50_602606_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-40_464405_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-50_602606_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-40_464405_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-04-50_602606_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-40_464405_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:04:51,674	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:04:59] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(graph_allreduce pid=25175)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:05:05] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=25175)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:05:05] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=25175)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:05:05] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:05:05] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(graph_allreduce pid=25175)[0m [aiter] Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=25175)[0m [2025-12-10 16:05:06] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=25177)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=25177)[0m [2025-12-10 16:05:05] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=25177)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=25177)[0m [2025-12-10 16:05:05] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=25177)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=25177)[0m [2025-12-10 16:05:05] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=25177)[0m [2025-12-10 16:05:05] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(graph_allreduce pid=25177)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 477x across cluster][0m
-[36m(graph_allreduce pid=25177)[0m [2025-12-10 16:05:08] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 477x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 24995 is still running
+2025-12-10 17:05:41,380	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=25164)[0m [2025-12-10 17:05:48] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=25169)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=25169)[0m [2025-12-10 17:05:55] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=25169)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=25169)[0m [2025-12-10 17:05:55] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=25169)[0m [2025-12-10 17:05:55] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=25169)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25169)[0m [2025-12-10 17:05:55] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=25164)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=25164)[0m [2025-12-10 17:05:55] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=25164)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=25164)[0m [2025-12-10 17:05:55] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=25164)[0m [2025-12-10 17:05:55] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=25164)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 471x across cluster][0m
+[36m(graph_allreduce pid=25164)[0m [2025-12-10 17:05:58] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 471x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 24984 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-10_298080_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-59_894485_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-10_298080_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-59_894485_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-10_298080_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-59_894485_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-10_298080_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-05-59_894485_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:05:11,346	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(graph_allreduce pid=31137)[0m [2025-12-10 16:05:19] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(graph_allreduce pid=31138)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=31138)[0m [2025-12-10 16:05:26] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=31138)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=31138)[0m [2025-12-10 16:05:26] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=31138)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=31138)[0m [2025-12-10 16:05:26] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=31138)[0m [2025-12-10 16:05:26] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(graph_allreduce pid=31137)[0m [aiter] Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=31137)[0m [2025-12-10 16:05:27] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=31141)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [2025-12-10 16:05:26] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [2025-12-10 16:05:26] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [2025-12-10 16:05:26] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [2025-12-10 16:05:26] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 943x across cluster][0m
-[36m(graph_allreduce pid=31141)[0m [2025-12-10 16:05:29] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 943x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 30955 is still running
+2025-12-10 17:06:00,855	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=31115)[0m [2025-12-10 17:06:08] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=31115)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=31115)[0m [2025-12-10 17:06:15] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=31115)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=31115)[0m [2025-12-10 17:06:15] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=31115)[0m [2025-12-10 17:06:15] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=31115)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31115)[0m [2025-12-10 17:06:15] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=31121)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [2025-12-10 17:06:15] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [2025-12-10 17:06:15] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [2025-12-10 17:06:15] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 3x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 935x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [2025-12-10 17:06:18] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 935x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 30934 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-31_325575_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-20_029665_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-31_325575_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-20_029665_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-31_325575_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-20_029665_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-31_325575_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-20_029665_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:05:32,282	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(graph_allreduce pid=37238)[0m [2025-12-10 16:05:41] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(graph_allreduce pid=37242)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:49] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=37242)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:49] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=37242)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:49] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:49] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:49] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
-[36m(graph_allreduce pid=37242)[0m [aiter] Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=37242)[0m [2025-12-10 16:05:50] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=37236)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:49] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:49] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:49] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:49] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:49] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
-[36m(graph_allreduce pid=37236)[0m [2025-12-10 16:05:54] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 37055 is still running
+2025-12-10 17:06:21,011	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=37211)[0m [2025-12-10 17:06:29] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=37208)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=37208)[0m [2025-12-10 17:06:36] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=37213)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=37213)[0m [2025-12-10 17:06:36] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=37213)[0m [2025-12-10 17:06:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=37213)[0m [2025-12-10 17:06:36] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].
+[36m(graph_allreduce pid=37213)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37213)[0m [2025-12-10 17:06:37] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=37215)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37215)[0m [2025-12-10 17:06:36] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37215)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37215)[0m [2025-12-10 17:06:36] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37215)[0m [2025-12-10 17:06:36] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37208)[0m [2025-12-10 17:06:36] WARNING quick_all_reduce.py:126: Custom quick allreduce is disabled due to an unsupported world size: 6. Supported world sizes: [2, 4, 8].[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=37208)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
+[36m(graph_allreduce pid=37208)[0m [2025-12-10 17:06:41] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1427x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 37028 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-55_854796_13/logs/monitor.out' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-42_852012_13/logs/monitor.out' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-55_854796_13/logs/monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1414: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-42_852012_13/logs/monitor.err' mode='a' encoding='utf-8'>
   self.start_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-55_854796_13/logs/dashboard.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1425: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-42_852012_13/logs/dashboard.err' mode='a' encoding='utf-8'>
   self.start_api_server(
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_16-05-55_854796_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
+/opt/venv/lib/python3.10/site-packages/ray/_private/node.py:1469: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/ray/session_2025-12-10_17-06-42_852012_13/logs/log_monitor.err' mode='a' encoding='utf-8'>
   self.start_log_monitor()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-2025-12-10 16:05:56,830	INFO worker.py:1852 -- Started a local Ray instance.
-[36m(graph_allreduce pid=43490)[0m [2025-12-10 16:06:06] INFO pynccl.py:83: sglang is using nccl==2.26.6
-[36m(graph_allreduce pid=43492)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=43492)[0m [2025-12-10 16:06:15] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing
-[36m(graph_allreduce pid=43492)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=43492)[0m [2025-12-10 16:06:15] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
-[36m(graph_allreduce pid=43492)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=43492)[0m [2025-12-10 16:06:15] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
-[36m(graph_allreduce pid=43492)[0m [2025-12-10 16:06:15] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
-[36m(graph_allreduce pid=43489)[0m [aiter] Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=43489)[0m [2025-12-10 16:06:17] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
-[36m(graph_allreduce pid=43496)[0m [aiter] WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [2025-12-10 16:06:15] WARNING core.py:454: WARNING: NUMA balancing is enabled, which may cause errors. It is recommended to disable NUMA balancing by running "sudo sh -c 'echo 0 > /proc/sys/kernel/numa_balancing'" for more details: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/mi300x.html#disable-numa-auto-balancing[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [2025-12-10 16:06:15] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [2025-12-10 16:06:15] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [2025-12-10 16:06:15] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1887x across cluster][0m
-[36m(graph_allreduce pid=43496)[0m [2025-12-10 16:06:21] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1887x across cluster][0m
-/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 43307 is still running
+2025-12-10 17:06:43,840	INFO worker.py:1852 -- Started a local Ray instance.
+[36m(graph_allreduce pid=43455)[0m [2025-12-10 17:06:51] INFO pynccl.py:83: sglang is using nccl==2.26.6
+[36m(graph_allreduce pid=43456)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=43456)[0m [2025-12-10 17:07:00] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[36m(graph_allreduce pid=43456)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=43456)[0m [2025-12-10 17:07:00] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so
+[36m(graph_allreduce pid=43456)[0m [2025-12-10 17:07:00] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.
+[36m(graph_allreduce pid=43458)[0m [aiter] Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43458)[0m [2025-12-10 17:07:02] INFO custom_all_reduce.py:246: Registering 2 cuda graph addresses
+[36m(graph_allreduce pid=43457)[0m [aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [2025-12-10 17:07:00] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [aiter] import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [2025-12-10 17:07:00] INFO core.py:477: import [module_custom_all_reduce] under /sgl-workspace/aiter/aiter/jit/module_custom_all_reduce.so[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [2025-12-10 17:07:00] INFO custom_all_reduce.py:421: Using AiterCustomAllreduce for ROCm.[32m [repeated 7x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [aiter] Registering 0 cuda graph addresses[32m [repeated 1903x across cluster][0m
+[36m(graph_allreduce pid=43457)[0m [2025-12-10 17:07:05] INFO custom_all_reduce.py:246: Registering 0 cuda graph addresses[32m [repeated 1903x across cluster][0m
+/usr/lib/python3.10/subprocess.py:1072: ResourceWarning: subprocess 43275 is still running
   _warn("subprocess %s is still running" % self.pid,
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 .
 ----------------------------------------------------------------------
-Ran 2 tests in 177.765s
+Ran 2 tests in 167.894s
 
 OK
 [CI Test Method] TestCustomAllReduce.test_eager_allreduce
-[36m(eager_allreduce pid=473)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
-[36m(eager_allreduce pid=473)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 5x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
-[36m(eager_allreduce pid=475)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
-[36m(eager_allreduce pid=6430)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-[36m(eager_allreduce pid=6430)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 9x across cluster][0m
-[36m(eager_allreduce pid=6433)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 6x across cluster][0m
-[36m(eager_allreduce pid=12523)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
-[36m(eager_allreduce pid=12523)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 13x across cluster][0m
-[36m(eager_allreduce pid=12529)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 10x across cluster][0m
-[36m(eager_allreduce pid=18773)[0m [Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
-[36m(eager_allreduce pid=18773)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
-[36m(eager_allreduce pid=18780)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
+[36m(eager_allreduce pid=474)[0m [Gloo] Rank 1 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(eager_allreduce pid=474)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 5x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(eager_allreduce pid=472)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
+[36m(eager_allreduce pid=6429)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(eager_allreduce pid=6429)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 9x across cluster][0m
+[36m(eager_allreduce pid=6431)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 6x across cluster][0m
+[36m(eager_allreduce pid=12529)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(eager_allreduce pid=12529)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 12x across cluster][0m
+[36m(eager_allreduce pid=12529)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 11x across cluster][0m
+[36m(eager_allreduce pid=18781)[0m [Gloo] Rank 6 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(eager_allreduce pid=18781)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
+[36m(eager_allreduce pid=18775)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
 [CI Test Method] TestCustomAllReduce.test_graph_allreduce
-[36m(graph_allreduce pid=25175)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
-[36m(graph_allreduce pid=25175)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 5x across cluster][0m
-[36m(graph_allreduce pid=25177)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
-[36m(graph_allreduce pid=31139)[0m [Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-[36m(graph_allreduce pid=31139)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 9x across cluster][0m
-[36m(graph_allreduce pid=31138)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 6x across cluster][0m
-[36m(graph_allreduce pid=37238)[0m [Gloo] Rank 0 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
-[36m(graph_allreduce pid=37237)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 13x across cluster][0m
-[36m(graph_allreduce pid=37239)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 10x across cluster][0m
-[36m(graph_allreduce pid=43490)[0m [Gloo] Rank 0 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
-[36m(graph_allreduce pid=43490)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
-[36m(graph_allreduce pid=43494)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
+[36m(graph_allreduce pid=25164)[0m [Gloo] Rank 0 is connected to 1 peer ranks. Expected number of connected peer ranks is : 1
+[36m(graph_allreduce pid=25164)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 5x across cluster][0m
+[36m(graph_allreduce pid=25169)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 2x across cluster][0m
+[36m(graph_allreduce pid=31115)[0m [Gloo] Rank 0 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
+[36m(graph_allreduce pid=31115)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 9x across cluster][0m
+[36m(graph_allreduce pid=31121)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 6x across cluster][0m
+[36m(graph_allreduce pid=37215)[0m [Gloo] Rank 3 is connected to 5 peer ranks. Expected number of connected peer ranks is : 5
+[36m(graph_allreduce pid=37215)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 13x across cluster][0m
+[36m(graph_allreduce pid=37208)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 10x across cluster][0m
+[36m(graph_allreduce pid=43461)[0m [Gloo] Rank 3 is connected to 7 peer ranks. Expected number of connected peer ranks is : 7
+[36m(graph_allreduce pid=43461)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 17x across cluster][0m
+[36m(graph_allreduce pid=43456)[0m [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0[32m [repeated 14x across cluster][0m
 sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
 
 ==========================================
-End time: 2025-12-10 10:06:24 CST
+End time: 2025-12-10 11:07:07 CST
 Exit code: 0
 Result: PASSED
 ==========================================
