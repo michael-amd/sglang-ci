@@ -1,33 +1,250 @@
 [nightly] ==========================================
 [nightly] SGL Nightly Benchmark Started
 [nightly] ==========================================
-[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/mnt/raid/models/huggingface/grok-2 --tokenizer-path=/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[nightly] Start time: 2025-12-11 11:30:01 PST
-[nightly] Machine: dell300x-pla-t10-23
+[nightly] Command: scripts/perf_nightly.sh --model=grok2 --model-path=/data/models/grok-2 --tokenizer-path=/data/models/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi30x --teams-webhook-url=
+[nightly] Start time: 2025-12-11 13:30:01 PST
+[nightly] Machine: dell300x-pla-t12-38
 [nightly] Working directory: /mnt/raid/michael/sglang-ci
 [nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
-[nightly] Process ID: 205100
+[nightly] Process ID: 1512717
 [nightly] ==========================================
 
 [nightly] Runtime Environment:
-[nightly] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [nightly] Testing Docker daemon access...
 [nightly] Docker daemon accessible - proceeding...
-[nightly] Teams webhook URL provided via command line - notifications enabled
-[nightly] Custom model path provided: /mnt/raid/models/huggingface/grok-2
-[nightly] Custom tokenizer path provided: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
+[nightly] Custom model path provided: /data/models/grok-2
+[nightly] Custom tokenizer path provided: /data/models/alvarobartt--grok-2-tokenizer
 [nightly] Using rocm700 for grok2 on mi30x hardware
 [nightly] Hardware: mi30x, ROCM Version: rocm700
 [nightly] Model: grok2, Mode(s): online
 [nightly] Created process lock: /tmp/perf_nightly_grok2.lock
 [nightly] GPU is busy. Attempting to stop running Docker containers...
-[nightly] Stopping running containers: ff05bb498f88
+[nightly] No running containers to stop.
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
 [nightly] Searching for non-SRT images for grok2 for the last 1 days...
 [nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251211...
 [nightly] Found candidate tag for day -0: v0.5.6.post1-rocm700-mi30x-20251211
-[nightly] Found local image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Pull attempt 1/3 for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211...
+v0.5.6.post1-rocm700-mi30x-20251211: Pulling from rocm/sgl-dev
+660ffc76f83b: Pulling fs layer
+8f15127cc838: Pulling fs layer
+9b15895e3240: Pulling fs layer
+f9b093ef803e: Pulling fs layer
+7871d920fb0f: Pulling fs layer
+7935d8c4e26c: Pulling fs layer
+a32765e78010: Pulling fs layer
+7fc751a2ed3a: Pulling fs layer
+980be016a223: Pulling fs layer
+f9b093ef803e: Waiting
+9e1a971876ec: Pulling fs layer
+ec6812b374e9: Pulling fs layer
+a32765e78010: Waiting
+01b887f14943: Pulling fs layer
+844c30750327: Pulling fs layer
+7871d920fb0f: Waiting
+7fc751a2ed3a: Waiting
+2682f0d8340c: Pulling fs layer
+9e1a971876ec: Waiting
+980be016a223: Waiting
+7935d8c4e26c: Waiting
+ec6812b374e9: Waiting
+4f4fb700ef54: Pulling fs layer
+01b887f14943: Waiting
+844c30750327: Waiting
+2682f0d8340c: Waiting
+349b8c8a8418: Pulling fs layer
+d0b1657b26f5: Pulling fs layer
+4f4fb700ef54: Waiting
+349b8c8a8418: Waiting
+45b70560bebf: Pulling fs layer
+d0b1657b26f5: Waiting
+b18067367790: Pulling fs layer
+45b70560bebf: Waiting
+80e4388c8594: Pulling fs layer
+43bd5f89e157: Pulling fs layer
+b18067367790: Waiting
+4f4e25c713a5: Pulling fs layer
+80e4388c8594: Waiting
+fa9b244e8ec3: Pulling fs layer
+43bd5f89e157: Waiting
+4f4e25c713a5: Waiting
+fa9b244e8ec3: Waiting
+802ff7b676ec: Pulling fs layer
+91c970c997c5: Pulling fs layer
+c7b1c2221fca: Pulling fs layer
+f741376ff6a1: Pulling fs layer
+d9b88c1e947d: Pulling fs layer
+802ff7b676ec: Waiting
+0e6681539f16: Pulling fs layer
+91c970c997c5: Waiting
+c7b1c2221fca: Waiting
+f741376ff6a1: Waiting
+6a588d14a733: Pulling fs layer
+d9b88c1e947d: Waiting
+0e6681539f16: Waiting
+c4047ddad202: Pulling fs layer
+6a588d14a733: Waiting
+c4047ddad202: Waiting
+d8b7caf6b6be: Pulling fs layer
+51e84a0a21a8: Pulling fs layer
+4d50178aaaf7: Pulling fs layer
+228bf33f07ec: Pulling fs layer
+4d50178aaaf7: Waiting
+687c8acfabbd: Pulling fs layer
+51e84a0a21a8: Waiting
+228bf33f07ec: Waiting
+0d311baf3b3e: Pulling fs layer
+d8b7caf6b6be: Waiting
+be0ac0064cd0: Pulling fs layer
+687c8acfabbd: Waiting
+0d311baf3b3e: Waiting
+1b83604b328f: Pulling fs layer
+1fecc6023f10: Pulling fs layer
+be0ac0064cd0: Waiting
+3191d42de5bf: Pulling fs layer
+1b83604b328f: Waiting
+d8f90ac21c04: Pulling fs layer
+3191d42de5bf: Waiting
+1fecc6023f10: Waiting
+d8f90ac21c04: Waiting
+0193b350796e: Pulling fs layer
+b971d598c49f: Pulling fs layer
+0193b350796e: Waiting
+b971d598c49f: Waiting
+8f15127cc838: Verifying Checksum
+8f15127cc838: Download complete
+660ffc76f83b: Verifying Checksum
+660ffc76f83b: Download complete
+7871d920fb0f: Verifying Checksum
+7871d920fb0f: Download complete
+660ffc76f83b: Pull complete
+8f15127cc838: Pull complete
+9b15895e3240: Verifying Checksum
+9b15895e3240: Download complete
+a32765e78010: Verifying Checksum
+a32765e78010: Download complete
+7fc751a2ed3a: Verifying Checksum
+7fc751a2ed3a: Download complete
+f9b093ef803e: Verifying Checksum
+f9b093ef803e: Download complete
+9e1a971876ec: Download complete
+9b15895e3240: Pull complete
+f9b093ef803e: Pull complete
+7871d920fb0f: Pull complete
+ec6812b374e9: Verifying Checksum
+ec6812b374e9: Download complete
+01b887f14943: Verifying Checksum
+01b887f14943: Download complete
+844c30750327: Verifying Checksum
+844c30750327: Download complete
+2682f0d8340c: Verifying Checksum
+2682f0d8340c: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+349b8c8a8418: Verifying Checksum
+349b8c8a8418: Download complete
+d0b1657b26f5: Verifying Checksum
+d0b1657b26f5: Download complete
+45b70560bebf: Verifying Checksum
+45b70560bebf: Download complete
+980be016a223: Verifying Checksum
+980be016a223: Download complete
+80e4388c8594: Download complete
+7935d8c4e26c: Verifying Checksum
+7935d8c4e26c: Download complete
+4f4e25c713a5: Verifying Checksum
+4f4e25c713a5: Download complete
+fa9b244e8ec3: Download complete
+802ff7b676ec: Verifying Checksum
+802ff7b676ec: Download complete
+43bd5f89e157: Verifying Checksum
+43bd5f89e157: Download complete
+91c970c997c5: Verifying Checksum
+91c970c997c5: Download complete
+f741376ff6a1: Verifying Checksum
+f741376ff6a1: Download complete
+d9b88c1e947d: Verifying Checksum
+d9b88c1e947d: Download complete
+0e6681539f16: Verifying Checksum
+0e6681539f16: Download complete
+6a588d14a733: Verifying Checksum
+6a588d14a733: Download complete
+c4047ddad202: Verifying Checksum
+c4047ddad202: Download complete
+d8b7caf6b6be: Download complete
+51e84a0a21a8: Verifying Checksum
+51e84a0a21a8: Download complete
+b18067367790: Verifying Checksum
+b18067367790: Download complete
+4d50178aaaf7: Verifying Checksum
+4d50178aaaf7: Download complete
+687c8acfabbd: Verifying Checksum
+687c8acfabbd: Download complete
+c7b1c2221fca: Verifying Checksum
+c7b1c2221fca: Download complete
+be0ac0064cd0: Verifying Checksum
+be0ac0064cd0: Download complete
+1b83604b328f: Download complete
+0d311baf3b3e: Verifying Checksum
+0d311baf3b3e: Download complete
+1fecc6023f10: Verifying Checksum
+1fecc6023f10: Download complete
+d8f90ac21c04: Verifying Checksum
+d8f90ac21c04: Download complete
+0193b350796e: Verifying Checksum
+0193b350796e: Download complete
+b971d598c49f: Verifying Checksum
+b971d598c49f: Download complete
+228bf33f07ec: Verifying Checksum
+228bf33f07ec: Download complete
+3191d42de5bf: Verifying Checksum
+3191d42de5bf: Download complete
+7935d8c4e26c: Pull complete
+a32765e78010: Pull complete
+7fc751a2ed3a: Pull complete
+980be016a223: Pull complete
+9e1a971876ec: Pull complete
+ec6812b374e9: Pull complete
+01b887f14943: Pull complete
+844c30750327: Pull complete
+2682f0d8340c: Pull complete
+4f4fb700ef54: Pull complete
+349b8c8a8418: Pull complete
+d0b1657b26f5: Pull complete
+45b70560bebf: Pull complete
+b18067367790: Pull complete
+80e4388c8594: Pull complete
+43bd5f89e157: Pull complete
+4f4e25c713a5: Pull complete
+fa9b244e8ec3: Pull complete
+802ff7b676ec: Pull complete
+91c970c997c5: Pull complete
+c7b1c2221fca: Pull complete
+f741376ff6a1: Pull complete
+d9b88c1e947d: Pull complete
+0e6681539f16: Pull complete
+6a588d14a733: Pull complete
+c4047ddad202: Pull complete
+d8b7caf6b6be: Pull complete
+51e84a0a21a8: Pull complete
+4d50178aaaf7: Pull complete
+228bf33f07ec: Pull complete
+687c8acfabbd: Pull complete
+0d311baf3b3e: Pull complete
+be0ac0064cd0: Pull complete
+1b83604b328f: Pull complete
+1fecc6023f10: Pull complete
+3191d42de5bf: Pull complete
+d8f90ac21c04: Pull complete
+0193b350796e: Pull complete
+b971d598c49f: Pull complete
+Digest: sha256:283b79fed3330bc4a1bb1433da824aab110f6226e0c24e56158ee07c63b89bf7
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+docker.io/rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Successfully pulled image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
 [nightly] Successfully obtained image for date 20251211: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
 [nightly] Found 1 valid image(s) to run benchmarks on:
 [nightly]   - rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
@@ -37,21 +254,23 @@
 [nightly] ==========================================
 [nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211...
 [nightly] GPU is busy. Attempting to stop running Docker containers...
-[nightly] Stopping running containers: d8ebc67a586a
+[nightly] No running containers to stop.
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
 [nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211 (online). Proceeding with benchmarks.
 [nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
 [nightly] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
-[nightly] Reusing container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Creating container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Custom model path /data/models/grok-2 requires mounting /data...
+35edf89b85da0a240429994c994b12c8deeec8ac487487c6b11c61ff797a27a0
 [nightly] === Starting benchmark execution ===
 [nightly] === Starting nightly GROK2 online benchmark ===
 [nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
 [nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
-[nightly] Adding --tokenizer='/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/data/models/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
 [online] Using Grok 2 configuration
-[online] Using default Grok 2 tokenizer: /mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer
-[online] Script started at: 2025-12-11 11:30:46 PST
+[online] Using default Grok 2 tokenizer: /data/models/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-12-11 13:36:42 PST
 Scanning existing logs to check if all benchmarks are already complete...
 Checking GSM8K log status...
 Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/sglang_client_log_GROK2_gsm8k_aiter.log)
@@ -98,7 +317,6 @@ Starting benchmarks using aiter backend...
 [online] Still waiting... (300s elapsed)
 [online] Still waiting... (310s elapsed)
 [online] Still waiting... (320s elapsed)
-/mnt/raid/michael/sglang-ci/scripts/grok_perf_online_csv.sh: line 457:    54 Killed                  env HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0 python3 -m sglang.launch_server --model '/mnt/raid/models/huggingface/grok-2' --tokenizer-path '/mnt/raid/models/huggingface/alvarobartt--grok-2-tokenizer' --tp 8 --quantization fp8 --trust-remote-code --attention-backend aiter --mem-fraction-static 0.85 --watchdog-timeout 600 > '/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/server_output_aiter.log' 2>&1
 [online] Still waiting... (330s elapsed)
 [online] Still waiting... (340s elapsed)
 [online] Still waiting... (350s elapsed)
@@ -128,91 +346,57 @@ Starting benchmarks using aiter backend...
 [online] Still waiting... (590s elapsed)
 [online] ERROR: Server failed to start within 600 seconds
 [online] Last 50 lines of server log:
-  File "/usr/lib/python3.10/logging/__init__.py", line 1634, in handle
-    self.callHandlers(record)
-  File "/usr/lib/python3.10/logging/__init__.py", line 1696, in callHandlers
-    hdlr.handle(record)
-  File "/usr/lib/python3.10/logging/__init__.py", line 968, in handle
-    self.emit(record)
-  File "/usr/lib/python3.10/logging/__init__.py", line 1108, in emit
-    self.handleError(record)
-  File "/usr/lib/python3.10/logging/__init__.py", line 1021, in handleError
-    sys.stderr.write('--- Logging error ---\n')
-RuntimeError: reentrant call inside <_io.BufferedWriter name='<stderr>'>
-Call stack:
+[aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[2025-12-11 13:36:49] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+INFO 12-11 13:36:50 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:71: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF quantization currently.
+  warnings.warn(f"Only CUDA support GGUF quantization currently.")
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1360, in from_pretrained
+    config_class = CONFIG_MAPPING[config_dict["model_type"]]
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1048, in __getitem__
+    raise KeyError(key)
+KeyError: 'grok'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
   File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
     return _run_code(code, main_globals, None,
   File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
     exec(code, run_globals)
-  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 28, in <module>
-    run_server(server_args)
-  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 21, in run_server
-    launch_server(server_args)
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1390, in launch_server
-    _launch_subprocesses(server_args=server_args)
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 915, in _launch_subprocesses
-    data = scheduler_pipe_readers[i].recv()
-  File "/usr/lib/python3.10/multiprocessing/connection.py", line 250, in recv
-    buf = self._recv_bytes()
-  File "/usr/lib/python3.10/multiprocessing/connection.py", line 414, in _recv_bytes
-    buf = self._recv(4)
-  File "/usr/lib/python3.10/multiprocessing/connection.py", line 379, in _recv
-    chunk = read(handle, remaining)
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 751, in launch_phase_sigquit_handler
-    logger.error(
-  File "/usr/lib/python3.10/logging/__init__.py", line 1505, in error
-    if self.isEnabledFor(ERROR):
-  File "/usr/lib/python3.10/logging/__init__.py", line 1732, in isEnabledFor
-    return self._cache[level]
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 754, in launch_phase_sigquit_handler
-    kill_process_tree(os.getpid())
-  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 1058, in kill_process_tree
-    children = itself.children(recursive=True)
-  File "/opt/venv/lib/python3.10/site-packages/psutil/__init__.py", line 966, in children
-    ppid_map = _ppid_map()
-  File "/opt/venv/lib/python3.10/site-packages/psutil/_pslinux.py", line 1621, in ppid_map
-    for pid in pids():
-  File "/opt/venv/lib/python3.10/site-packages/psutil/_pslinux.py", line 1579, in pids
-    return [int(x) for x in os.listdir(path) if x.isdigit()]
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 751, in launch_phase_sigquit_handler
-    logger.error(
-Message: 'Received sigquit from a child process. It usually means the child failed.'
-Arguments: ()
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 25, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4494, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4032, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 294, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 646, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 978, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4042, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 3206, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 267, in get_config
+    raise e
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 262, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1362, in from_pretrained
+    raise ValueError(
+ValueError: The checkpoint you are trying to load has model type `grok` but Transformers does not recognize this architecture. This could be because of an issue with the checkpoint, or because your version of Transformers is out of date.
+
+You can update Transformers with the command `pip install --upgrade transformers`. If this does not work, and the checkpoint is very new, then there may not be a release version that supports this model yet. In this case, you can get the most up-to-date code by installing Transformers from source with the command `pip install git+https://github.com/huggingface/transformers.git`
 [nightly] === Online benchmark dispatched for GROK2; check logs in sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211 ===
 [nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
 [nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post1-rocm700-mi30x-20251211_GROK2_FP8_online/process_and_generate_online_plots.log
 [nightly] Using plot date from image tag: 20251211
-[nightly] Sending Teams notification for grok2 online plots...
-[nightly] Adding benchmark date to Teams notification: 20251211
-[nightly] Teams notification using plot directory: /mnt/raid/michael/sglang-ci/plots_server
-[nightly] Using GitHub upload for plot images (repo: ROCm/sglang-ci)
-[nightly] Images will be stored in main branch with structure: plot/mi30x/model/mode/filename.png
-[nightly] Including intelligent analysis (7 days lookback)
-🐙 GitHub upload mode: Images will be uploaded to ROCm/sglang-ci
-🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams
-📁 Plot directory: /mnt/raid/michael/sglang-ci/plots_server
-🗂️  Benchmark directory: /mnt/raid/michael/sglang-ci
-   🔍 Uploading 20251211_GROK2_online_standard.png to GitHub...
-   📋 Log branch already exists
-   📄 Creating new file: plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
-   ✅ Uploaded to GitHub (log branch): 20251211_GROK2_online_standard.png
-   🔗 GitHub URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
-🔍 Discovered 1 plot file(s) for grok2 online
-   - 20251211_GROK2_online_standard.png -> ✅ uploaded to GitHub
-🔍 Analyzing benchmark results for accuracy and performance...
-   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
-   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
-   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
-   Found timing_summary log for grok2 online on 20251211: timing_summary_20251211_113046.log
-🔍 Sending adaptive card with 1 image(s) hosted on GitHub
-📊 Total payload size: 0.00MB
-   📷 Image URL: https://github.com/ROCm/sglang-ci/blob/log/plot/mi30x/GROK2/online/20251211_GROK2_online_standard.png
-   💾 Debug: Card JSON saved to /tmp/teams_card_debug.json
-✅ Successfully sent Teams notification for grok2 online plots
-   (Power Automate flow accepted - message processing asynchronously)
-🎉 Teams notification sent successfully! (with intelligent analysis)
-[nightly] Teams notification sent successfully for grok2 online
-[nightly] === Online post-processing completed for GROK2 ===
+[nightly] ERROR: Online post-processing failed (exit code: 1)
+[nightly] Error notification skipped - no webhook URL configured
 [nightly] ==========================================
 [nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
 [nightly] Stopping container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211 to release resources...
