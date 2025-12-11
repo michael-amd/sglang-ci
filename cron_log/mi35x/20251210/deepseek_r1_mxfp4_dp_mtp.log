@@ -1,0 +1,7 @@
+[Wed Dec 10 03:00:01 PM CST 2025] Skipping DP+MTP combined test - prerequisite tests did not pass
+
+Prerequisite check results:
+  - MTP Test: FAILED
+  - DP Test: FAILED
+
+Status: SKIPPED (prerequisites not met)
