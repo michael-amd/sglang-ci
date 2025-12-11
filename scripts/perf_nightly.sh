@@ -31,8 +31,8 @@
 #   • Teams notifications require --teams-webhook-url
 #   • Plot images are automatically uploaded to GitHub when GITHUB_REPO and GITHUB_TOKEN
 #     environment variables are set (plots appear as GitHub URLs in Teams)
-#   • If GitHub credentials are not set, falls back to local plot server URLs
 #   • Set GITHUB_REPO=owner/repo and GITHUB_TOKEN=ghp_xxx for auto-upload
+#   • Plots are also viewable via dashboard at http://10.194.129.138:5000/plots/
 #
 # USAGE:
 #   perf_nightly.sh [OPTIONS]
@@ -144,13 +144,9 @@ TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 # Teams configuration (disabled by default - requires explicit webhook URL)
 TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"  # Empty by default - set via --teams-webhook-url or environment
 ENABLE_TEAMS_NOTIFICATIONS="${ENABLE_TEAMS_NOTIFICATIONS:-true}"  # Enabled if webhook URL is provided
-TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES:-false}"  # Set to true for text-only notifications (when plot server is not public)
+TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES:-false}"  # Set to true for text-only notifications
 TEAMS_SKIP_ANALYSIS="${TEAMS_SKIP_ANALYSIS:-false}"  # Set to true to skip GSM8K accuracy and performance analysis
 TEAMS_ANALYSIS_DAYS="${TEAMS_ANALYSIS_DAYS:-7}"  # Number of days to look back for performance comparison
-# Plot server configuration (only used when GITHUB_REPO/GITHUB_TOKEN are not set for auto-upload)
-PLOT_SERVER_HOST="${PLOT_SERVER_HOST:-}"
-PLOT_SERVER_PORT="${PLOT_SERVER_PORT:-8000}"
-PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL:-}"
 
 # Output directories
 OFFLINE_OUTPUT_DIR="${OFFLINE_OUTPUT_DIR:-${BENCHMARK_CI_DIR}/offline}"
@@ -453,8 +449,9 @@ send_teams_notification() {
     echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
     echo "[nightly] Images will be stored in main branch with structure: plot/${HARDWARE_TYPE}/model/mode/filename.png"
   else
-    echo "[nightly] GitHub credentials not provided via environment - using plot server links only"
+    echo "[nightly] GitHub credentials not provided - plots won't be embedded in Teams messages"
     echo "[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables"
+    echo "[nightly] Plots are still viewable via dashboard at http://10.194.129.138:5000/plots/"
   fi
 
   # Add analysis parameters
@@ -490,28 +487,15 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-mtp-test flag for Teams notification"
   fi
 
-  # Build docker exec command with appropriate environment variables
-  # When using GitHub upload, don't set PLOT_SERVER_* to avoid fallback to local URLs
-  if [[ "$USE_GITHUB_UPLOAD" == "true" ]]; then
-    "${DOCKER_CMD[@]}" exec \
-      -e INSIDE_CONTAINER=1 \
-      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
-      -e GITHUB_REPO="${GITHUB_REPO:-}" \
-      -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
-      "${CONTAINER_NAME}" \
-      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
-  else
-    "${DOCKER_CMD[@]}" exec \
-      -e INSIDE_CONTAINER=1 \
-      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
-      -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
-      -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
-      -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
-      "${CONTAINER_NAME}" \
-      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
-  fi
+  # Build docker exec command with environment variables
+  "${DOCKER_CMD[@]}" exec \
+    -e INSIDE_CONTAINER=1 \
+    -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+    -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
+    -e GITHUB_REPO="${GITHUB_REPO:-}" \
+    -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
+    "${CONTAINER_NAME}" \
+    bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
 
   if [ $TEAMS_EXIT_CODE -eq 0 ]; then
     echo "[nightly] Teams notification sent successfully for ${model} ${mode}"

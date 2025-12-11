@@ -12,8 +12,6 @@ This repository provides a comprehensive benchmarking and continuous integration
 - **Production-Ready Automation:** Docker-based workflows, scheduled nightly jobs, intelligent GPU resource checks, Teams alerts (accuracy monitoring, regression detection, daily summaries), and flexible CLI configuration with automatic backend selection (aiter/triton).
 - **Upstream SGLang CI Toolkit:** AMD vs NVIDIA test coverage analysis, benchmark CSV comparison, and on-demand upstream test execution.
 
-The toolkit is designed for both development teams conducting regular performance validation and researchers requiring detailed model performance analysis across different configurations and deployment scenarios.
-
 ---
 
 ## Table of Contents
@@ -220,10 +218,10 @@ The benchmark scripts support Docker images from multiple sources:
 
    ```bash
    # Pull latest image (main branch)
-   bash ./build_sglang_docker.sh
+   bash upstream_ci/build_sglang_docker.sh
 
    # Pull specific version
-   bash ./build_sglang_docker.sh --branch=v0.4.9
+   bash upstream_ci/build_sglang_docker.sh --branch=v0.4.9
    ```
 
    **Important Limitations:**
@@ -536,9 +534,13 @@ bash scripts/perf_nightly.sh --teams-webhook-url="https://..." --teams-skip-anal
 - `TEAMS_WEBHOOK_URL`: Teams webhook URL (required to enable)
 - `TEAMS_SKIP_ANALYSIS`: Skip intelligent analysis (default: false)
 - `TEAMS_ANALYSIS_DAYS`: Days to look back for comparison (default: 7)
-- `PLOT_SERVER_HOST`: Plot server hostname (auto-detected)
-- `PLOT_SERVER_PORT`: Plot server port (default: 8000)
+- `GITHUB_REPO`: GitHub repository for log/plot links (default: ROCm/sglang-ci)
+- `GITHUB_TOKEN`: GitHub personal access token (required for `--github-upload` mode)
 - `BENCHMARK_BASE_DIR`: Base directory for benchmark data (default: ~/sglang-ci)
+
+**Plot Hosting Options:**
+- **GitHub (recommended)**: Use `--github-upload` flag to upload plots to GitHub log branch and embed public links in Teams messages
+- **Dashboard**: Plots are also viewable at http://10.194.129.138:5000/plots/mi30x
 
 **Setting Up Webhook URLs:**
 
@@ -579,10 +581,10 @@ Compares NVIDIA vs AMD test suites from SGLang's CI to analyze test coverage and
 
 ```bash
 # CSV coverage report (default)
-python3 compare_suites.py
+python3 upstream_ci/compare_suites.py
 
 # Detailed markdown report
-python3 compare_suites.py --details
+python3 upstream_ci/compare_suites.py --details
 ```
 
 **Output:** CSV with coverage percentages or markdown with detailed test breakdowns
@@ -604,7 +606,7 @@ python3 compare_suites.py --details
 
 Compares CSV benchmark results between runs with automatic GSM8K extraction and performance regression detection.
 
-**Script:** `compare_csv_results.py`
+**Script:** `upstream_ci/compare_csv_results.py`
 
 **Key Parameters:** `--csv1`, `--csv2`, `--mode` (offline/online/auto), `--model`, `--gsm8k-threshold`, `--performance-threshold`
 
@@ -612,10 +614,10 @@ Compares CSV benchmark results between runs with automatic GSM8K extraction and 
 
 ```bash
 # Compare offline results
-python3 compare_csv_results.py --csv1 offline/GROK1/run1 --csv2 offline/GROK1/run2 --mode offline --model grok1
+python3 upstream_ci/compare_csv_results.py --csv1 offline/GROK1/run1 --csv2 offline/GROK1/run2 --mode offline --model grok1
 
 # Compare online results
-python3 compare_csv_results.py --csv1 online/DeepSeek-V3/run1 --csv2 online/DeepSeek-V3/run2 --mode online
+python3 upstream_ci/compare_csv_results.py --csv1 online/DeepSeek-V3/run1 --csv2 online/DeepSeek-V3/run2 --mode online
 ```
 
 **Output:** Timestamped folders with markdown reports showing color-coded performance changes (🟢 improvements, 🔴 regressions)

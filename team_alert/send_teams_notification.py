@@ -26,15 +26,12 @@ ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
     TEAMS_SKIP_ANALYSIS: Set to "true" to skip intelligent analysis (default: false)
     TEAMS_ANALYSIS_DAYS: Days to look back for performance comparison (default: 7)
-    PLOT_SERVER_HOST: Host where plots are served (default: hostname -I)
-    PLOT_SERVER_PORT: Port where plots are served (default: 8000)
-    PLOT_SERVER_BASE_URL: Full base URL override (overrides host/port)
+    GITHUB_REPO: GitHub repository for log/plot links (default: ROCm/sglang-ci)
     GITHUB_TOKEN: GitHub personal access token (required for --github-upload)
 
 REQUIREMENTS:
     - requests library
     - pytz library (for timezone handling)
-    - Plot server must be running and accessible
     - Teams webhook must be configured
 """
 
@@ -1236,7 +1233,6 @@ class TeamsNotifier:
     def __init__(
         self,
         webhook_url: str,
-        plot_server_base_url: str,
         skip_analysis: bool = False,
         analysis_days: int = 7,
         benchmark_dir: Optional[str] = None,
@@ -1255,7 +1251,6 @@ class TeamsNotifier:
 
         Args:
             webhook_url: Microsoft Teams webhook URL
-            plot_server_base_url: Base URL where plots are served (e.g., http://host:8000)
             skip_analysis: If True, skip GSM8K accuracy and performance regression analysis
             analysis_days: Number of days to look back for performance comparison
             benchmark_dir: Base directory for benchmark data (overrides BENCHMARK_BASE_DIR env var)
@@ -1270,9 +1265,6 @@ class TeamsNotifier:
             hardware: Hardware type (mi30x or mi35x) for GitHub upload path structure
         """
         self.webhook_url = webhook_url
-        self.plot_server_base_url = (
-            plot_server_base_url.rstrip("/") if plot_server_base_url else ""
-        )
         self.skip_analysis = skip_analysis
         self.analysis_days = analysis_days
         self.github_upload = github_upload
@@ -2189,10 +2181,6 @@ class TeamsNotifier:
                             )
                             if plot_info.get("public_url"):
                                 plot_info["hosting_service"] = "GitHub"
-                        elif self.plot_server_base_url:
-                            plot_info["plot_url"] = (
-                                f"{self.plot_server_base_url}/{relative_path}"
-                            )
 
                         plots.append(plot_info)
                         date_found = True
@@ -2650,10 +2638,6 @@ class TeamsNotifier:
                 }
             )
 
-        if self.plot_server_base_url:
-            # Add HTTP server links
-            pass
-
         # Only add plot-related actions if:
         # 1. Not in DP attention mode or torch compile mode
         # 2. No critical errors detected
@@ -2819,34 +2803,6 @@ class TeamsNotifier:
             return False
 
 
-def get_plot_server_base_url() -> str:
-    """
-    Get the plot server base URL from environment or default configuration
-
-    Returns:
-        Base URL for the plot server
-    """
-    # Check for full URL override first
-    base_url = os.environ.get("PLOT_SERVER_BASE_URL")
-    if base_url:
-        return base_url.rstrip("/")
-
-    # Build URL from host and port
-    host = os.environ.get("PLOT_SERVER_HOST")
-    if not host:
-        try:
-            # Get the first IP address from hostname -I
-            result = subprocess.run(
-                ["hostname", "-I"], capture_output=True, text=True, check=True
-            )
-            host = result.stdout.strip().split()[0]
-        except (subprocess.CalledProcessError, IndexError):
-            host = "localhost"
-
-    port = os.environ.get("PLOT_SERVER_PORT", "8000")
-    return f"http://{host}:{port}"
-
-
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
@@ -2886,12 +2842,6 @@ def main():
         type=str,
         default=os.path.expanduser("~/sglang-ci"),
         help="Base directory for benchmark data (overrides BENCHMARK_BASE_DIR env var)",
-    )
-
-    parser.add_argument(
-        "--check-server",
-        action="store_true",
-        help="Check if plot server is accessible before sending notification",
     )
 
     parser.add_argument(
@@ -3055,28 +3005,6 @@ def main():
     else:
         github_token = None
 
-    # Get plot server base URL (skip if using upload modes)
-    if args.github_upload:
-        plot_server_base_url = ""
-        print(
-            "🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams"
-        )
-    else:
-        plot_server_base_url = get_plot_server_base_url()
-        print(f"📡 Plot server base URL: {plot_server_base_url}")
-
-        # Check if plot server is accessible
-        if args.check_server:
-            try:
-                response = requests.get(plot_server_base_url, timeout=10)
-                if response.status_code != 200:
-                    print(
-                        f"⚠️  Warning: Plot server returned status {response.status_code}"
-                    )
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️  Warning: Could not reach plot server: {e}")
-                print("   Plot links may not be accessible via provided URLs")
-
     print(f"📁 Plot directory: {args.plot_dir}")
     print(f"🗂️  Benchmark directory: {args.benchmark_dir}")
 
@@ -3097,7 +3025,6 @@ def main():
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
-        plot_server_base_url=plot_server_base_url,
         skip_analysis=args.skip_analysis,
         analysis_days=args.analysis_days,
         benchmark_dir=args.benchmark_dir,
@@ -3119,8 +3046,6 @@ def main():
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
             print(f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}")
-        elif plot.get("plot_url"):
-            print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
             print(f"   - {prefix}{plot['file_name']} -> 📁 {plot['file_path']}")
 
