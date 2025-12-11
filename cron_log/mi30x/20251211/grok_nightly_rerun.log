@@ -37,3 +37,30 @@
 [nightly] GPU is busy. Attempting to stop running Docker containers...
 [nightly] Stopping running containers: 63298ec3c162
 [nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6.post1-rocm700-mi30x-20251211_GROK1_MOE-I4F8_online
+[nightly] Found 0 completed benchmark runs
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Container name: sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] Reusing container sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6.post1-rocm700-mi30x-20251211
+[online] Auto-detected model type: grok1 from path: /mnt/raid/models/huggingface/amd--grok-1-W4A8KV8
+[online] Using Grok 1 configuration
+[online] Script started at: 2025-12-11 13:37:46 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK1/v0.5.6.post1-rocm700-mi30x-20251211_GROK1_MOE-I4F8_online/sglang_client_log_GROK1_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+[online] Cleaning up stale aiter JIT lock files...
+[online] No stale aiter lock files found
+[online] Using Grok1 environment: HSA_ENABLE_COREDUMP=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1
+[online] Launching backend=aiter for grok1
+[online] Waiting for server to be ready (timeout: 600s)...
