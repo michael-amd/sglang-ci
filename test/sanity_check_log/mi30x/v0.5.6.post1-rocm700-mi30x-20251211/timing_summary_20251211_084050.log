@@ -1,0 +1,85 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-11 08:40:50 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251211
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-11 08:40:50 PST
+Server startup: 199.27s
+Trial 1: PASS [OK] (Accuracy: 0.850, Time: 146.14s)
+Trial 2: PASS [OK] (Accuracy: 0.859, Time: 138.13s)
+Trial 3: PASS [OK] (Accuracy: 0.854, Time: 134.13s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.85, 0.859, 0.854]
+Highest accuracy: 0.859 (Required: 0.820)
+Total time: 618.16s
+End time: 2025-12-11 08:51:08 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-11 08:51:08 PST
+Server startup: 110.65s
+Trial 1: PASS [OK] (Accuracy: 0.530, Time: 102.10s)
+Trial 2: PASS [OK] (Accuracy: 0.524, Time: 88.08s)
+Trial 3: PASS [OK] (Accuracy: 0.539, Time: 88.08s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.53, 0.524, 0.539]
+Highest accuracy: 0.539 (Required: 0.500)
+Total time: 389.41s
+End time: 2025-12-11 08:57:37 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-11 08:57:37 PST
+Server startup: FAILED after 110.64s
+Error: Kernel compilation deadlock (14860e65 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-11 08:59:29 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.44s
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-11 09:04:30 PST
+Server startup: FAILED after 300.24s
+Error: Kernel compilation deadlock (6dcc7977 (18 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-11 09:09:31 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 140.22s
+Error: Kernel compilation deadlock (unknown (18 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-11 09:11:53 PST
+Server startup: FAILED after 600.11s
+Error: Kernel compilation deadlock (2cf92130 (18 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-11 09:21:54 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: 187.76s
+Trial 1: PASS [OK] (Accuracy: 0.826, Time: 82.07s)
+Trial 2: PASS [OK] (Accuracy: 0.820, Time: 103.10s)
+Trial 3: PASS [OK] (Accuracy: 0.820, Time: 61.06s)
+Server shutdown: 0.50s
+Final result: PASS [OK]
+Accuracies: [0.826, 0.82, 0.82]
+Highest accuracy: 0.826 (Required: 0.800)
+Total time: 434.49s
+End time: 2025-12-11 09:29:08 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-11 09:29:08 PST
