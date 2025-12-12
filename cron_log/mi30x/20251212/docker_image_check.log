@@ -1,0 +1,22 @@
+[check] ==========================================
+[check] SGL Nightly Docker Image Availability Check
+[check] ==========================================
+[check] Run Date/Time: 2025-12-12 09:00:01 PST
+[check] Machine: dell300x-pla-t12-38
+[check] Repository: rocm/sgl-dev
+[check] Hardware types: mi30x mi35x
+[check] Checking images for date: 20251212
+
+[check] Searching for mi30x image (discovering ROCM version)... found, verifying... ✓ AVAILABLE
+[check]   Image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251212
+[check] Searching for mi35x image (discovering ROCM version)... found, verifying... ✓ AVAILABLE
+[check]   Image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251212
+
+[check] ==========================================
+[check] Summary
+[check] ==========================================
+[check] Total images checked: 2
+[check] Available images: 2
+[check] Missing images: 0
+
+[check] ✓ All expected images are available!
