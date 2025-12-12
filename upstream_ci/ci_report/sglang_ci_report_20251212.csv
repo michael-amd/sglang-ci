@@ -1,0 +1,23 @@
+Test Category,AMD # of Tests,Nvidia # of Tests,AMD Coverage (%)
+
+# CI Category Summary
+Per-PR CI (total test count),76,147,52%
+Nightly/Periodic CI (total test count),15,12,125%
+Per-Commit CI (total test count),76,147,52%
+
+# Detailed Breakdown
+## Per-PR CI Tests
+unit-test-backend-1-gpu,60,105,57%
+unit-test-backend-2-gpu,3,15,20%
+unit-test-backend-4-gpu,1,5,20%
+unit-test-backend-8-gpu,2,1,200%
+
+## Additional Test Categories
+nightly-models-test,15,12,125%
+unit-test-frontend,0,0,N/A
+performance-test-1-gpu,8,13,62%
+performance-test-2-gpu,0,6,0%
+accuracy-test-1-gpu,1,1,100%
+accuracy-test-2-gpu,1,1,100%
+
+Total,91,159,57%
