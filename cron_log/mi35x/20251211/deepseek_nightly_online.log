@@ -23,4 +23,23 @@
 [nightly] If this is incorrect, remove /tmp/perf_nightly_deepseek.lock and try again
 [nightly] Sending error notification to Teams...
 [nightly] WARN: Error notification failed (HTTP 202)
-.
+...................................................................................................
+SGLang server failed to start in time (900 seconds timeout reached).
+Check /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6.post1-rocm700-mi35x-20251211_DeepSeek-R1-MXFP4-Preview_FP8_online/sglang_server.log for details. Killing server (if any) and exiting.
+Cleaning up...
+Killing background SGLang server (PID: 828)...
+Server process 828 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.6.post1-rocm700-mi35x-20251211 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-R1-MXFP4-Preview/v0.5.6.post1-rocm700-mi35x-20251211_DeepSeek-R1-MXFP4-Preview_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251211
+[nightly] Teams notifications skipped - --teams-webhook-url not provided
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post1-rocm700-mi35x-20251211
+[nightly] Stopping container sgl-dev_v0.5.6.post1-rocm700-mi35x-20251211 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
