@@ -495,6 +495,7 @@ def api_database_overview():
             hardware = "mi30x"
 
         selected_test = request.args.get("test", "all")
+        selected_machine = request.args.get("machine", "all")  # Filter by machine name
         range_days = request.args.get("range", "7")
         try:
             range_days = int(range_days)
@@ -544,17 +545,47 @@ def api_database_overview():
         if selected_test not in test_options:
             selected_test = "all"
 
+        # Get available machine names for this hardware
         cursor.execute(
             """
-            SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                   total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
-                   github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
-            FROM test_runs
-            WHERE hardware = ? AND run_date BETWEEN ? AND ?
-            ORDER BY run_date DESC
+            SELECT DISTINCT machine_name FROM test_runs
+            WHERE hardware = ? AND machine_name IS NOT NULL
+            ORDER BY machine_name
             """,
-            (hardware, start_date, selected_date),
+            (hardware,),
         )
+        machine_names = [row["machine_name"] for row in cursor.fetchall()]
+        machine_options = ["all"] + machine_names
+        if selected_machine not in machine_options:
+            selected_machine = "all"
+
+        # Get all test runs including multiple machines per date
+        # Order by run_date DESC, then by machine_name to group by machine
+        # Filter by machine if specified
+        if selected_machine != "all":
+            cursor.execute(
+                """
+                SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
+                       total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
+                       github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
+                FROM test_runs
+                WHERE hardware = ? AND run_date BETWEEN ? AND ? AND machine_name = ?
+                ORDER BY run_date DESC, machine_name
+                """,
+                (hardware, start_date, selected_date, selected_machine),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
+                       total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
+                       github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
+                FROM test_runs
+                WHERE hardware = ? AND run_date BETWEEN ? AND ?
+                ORDER BY run_date DESC, machine_name
+                """,
+                (hardware, start_date, selected_date),
+            )
         daily_runs = []
         for row in cursor.fetchall():
             total_tasks = row["total_tasks"] or 0
@@ -785,6 +816,8 @@ def api_database_overview():
             },
             "test_names": test_options,
             "selected_test": selected_test,
+            "machine_names": machine_options,
+            "selected_machine": selected_machine,
             "summary": summary,
             "daily_runs": daily_runs,
             "selected_run": selected_run,
