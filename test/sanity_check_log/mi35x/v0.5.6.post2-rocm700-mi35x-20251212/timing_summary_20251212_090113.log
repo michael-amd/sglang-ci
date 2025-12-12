@@ -1,0 +1,106 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-12 09:01:13 PST
+Machine: smci355-ccs-aus-m12-33
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251212
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-12 09:01:13 PST
+Server startup: FAILED after 159.80s
+Error: Kernel compilation deadlock (unknown (18 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-12 09:03:54 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.01s
+Error: Kernel compilation deadlock (unknown (14 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-12 09:09:05 PST
+Server startup: FAILED after 300.13s
+Error: Kernel compilation deadlock (unknown (14 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-12 09:14:06 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.12s
+Error: Kernel compilation deadlock (unknown (14 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-12 09:19:17 PST
+Server startup: FAILED after 65.62s
+Error: Kernel compilation deadlock (14860e65 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-12 09:20:23 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.13s
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-12 09:25:30 PST
+Server startup: FAILED after 68.67s
+Error: Kernel compilation deadlock (6dcc7977 (18 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-12 09:26:39 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 62.15s
+Error: Kernel compilation deadlock (unknown (28 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-12 09:27:49 PST
+Server startup: FAILED after 170.33s
+Error: Kernel compilation deadlock (2cf92130 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-12 09:30:40 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 93.18s
+Error: Kernel compilation deadlock (unknown (28 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-12 09:32:21 PST
+Server startup: FAILED after 237.55s
+Error: Kernel compilation deadlock (1b756bac (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-12 09:36:19 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 109.21s
+Error: Kernel compilation deadlock (unknown (28 workers waiting))
+💡 Suggestion: Kernel deadlock persists even with --disable-cuda-graph
+
+=== llama4 on mi35x ===
+Start time: 2025-12-12 09:38:16 PST
+Server startup: FAILED after 300.09s
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-12 09:43:17 PST
+Total execution time: 2523.79s (42.1 minutes)
+Average time per model: 360.54s
+Models tested: 7/7
+Models passed: 0/7
+Models failed: 7/7
+Models skipped: 0/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: FAIL
