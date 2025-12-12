@@ -441,6 +441,51 @@ def cleanup_sglang_processes():
         pass  # Optional cleanup, don't warn if not available
 
 
+def is_port_free(port=30000):
+    """Check if a port is free (not in use).
+
+    Args:
+        port: Port number to check (default: 30000)
+
+    Returns:
+        True if port is free, False if in use
+    """
+    import socket as sock
+
+    try:
+        with sock.socket(sock.AF_INET, sock.SOCK_STREAM) as s:
+            s.settimeout(1)
+            result = s.connect_ex(("127.0.0.1", port))
+            # If connect_ex returns 0, the port is in use (connection succeeded)
+            return result != 0
+    except Exception:
+        return True  # Assume free on error
+
+
+def wait_for_port_free(port=30000, timeout=30):
+    """Wait for a port to become free after killing processes.
+
+    Args:
+        port: Port number to check
+        timeout: Maximum seconds to wait
+
+    Returns:
+        True if port is free within timeout, False otherwise
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if is_port_free(port):
+            print(f"[sanity] Port {port} is now free")
+            return True
+        print(
+            f"[sanity] Waiting for port {port} to be freed... ({int(time.time() - start_time)}s)"
+        )
+        time.sleep(2)
+
+    print(f"[sanity] WARNING: Port {port} still in use after {timeout}s timeout")
+    return False
+
+
 def wait_for_gpu_memory_free(timeout=60, threshold_percent=10):
     """Wait for GPU memory to be freed after killing server processes.
 
@@ -523,7 +568,16 @@ def aggressive_cleanup_between_models():
     # Step 3: Clean aiter locks
     cleanup_aiter_locks()
 
-    # Step 4: Wait for GPU memory to be freed (give processes time to release resources)
+    # Step 4: Wait for port 30000 to be freed (critical for next server start)
+    if not wait_for_port_free(port=30000, timeout=30):
+        # If port still not free, try more aggressive cleanup
+        print("[sanity] Port still in use, attempting more aggressive cleanup...")
+        cleanup_sglang_processes()
+        time.sleep(5)
+        if not wait_for_port_free(port=30000, timeout=15):
+            print("[sanity] WARNING: Port 30000 may still be in use!")
+
+    # Step 5: Wait for GPU memory to be freed (give processes time to release resources)
     time.sleep(3)  # Brief pause after killing processes
     wait_for_gpu_memory_free(timeout=30, threshold_percent=15)
 

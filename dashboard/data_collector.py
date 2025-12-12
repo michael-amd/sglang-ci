@@ -397,11 +397,32 @@ class DashboardDataCollector:
                         if accs:
                             avg_accuracy = sum(accs) / len(accs)
 
-                if avg_accuracy is not None:
+                # Include models even without accuracy if they have a valid status
+                # This captures models that failed before benchmark trials could run
+                if avg_accuracy is not None or status in ("pass", "fail"):
                     model_results[model_name] = {
                         "status": status,
                         "accuracy": avg_accuracy,
                     }
+
+            # Also parse OVERALL SUMMARY section to catch models without Final result lines
+            # This handles models that failed early (kernel deadlock, code bugs, etc.)
+            summary_match = re.search(
+                r"OVERALL SUMMARY\s*={20,}(.*?)$", content, re.DOTALL
+            )
+            if summary_match:
+                summary_content = summary_match.group(1)
+                # Parse lines like "  GPT-OSS-120B: FAIL" or "  GROK1-IN4: PASS"
+                summary_results = re.findall(
+                    r"^\s+(\S+):\s*(PASS|FAIL)\s*$", summary_content, re.MULTILINE
+                )
+                for model_name, status_str in summary_results:
+                    # Only add if not already in results (don't overwrite accuracy data)
+                    if model_name not in model_results:
+                        model_results[model_name] = {
+                            "status": "pass" if status_str == "PASS" else "fail",
+                            "accuracy": None,
+                        }
 
         except Exception as e:
             print(f"   Warning: Could not parse sanity check log {log_file}: {e}")
