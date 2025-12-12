@@ -353,8 +353,6 @@ def cleanup_sglang_processes():
             )
             if result.returncode == 0 and result.stdout.strip():
                 # Parse PIDs from ss output
-                import re
-
                 pids = re.findall(r"pid=(\d+)", result.stdout)
                 if pids:
                     print(
@@ -368,9 +366,9 @@ def cleanup_sglang_processes():
                             print(f"[sanity] Killed process {pid}")
                             port_cleaned = True
                         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
-                            pass
+                            pass  # Process may already be dead; continue cleanup
         except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
+            pass  # ss command not available or timed out; port cleanup best-effort
 
     if not port_cleaned:
         print("[sanity] No processes found using port 30000 (or tools unavailable)")
@@ -461,8 +459,6 @@ def wait_for_gpu_memory_free(timeout=60, threshold_percent=10):
             )
             if result.returncode == 0:
                 # Parse memory usage percentages
-                import re
-
                 mem_percentages = re.findall(
                     r"GPU Memory Allocated \(VRAM%\):\s*(\d+)", result.stdout
                 )
@@ -480,7 +476,7 @@ def wait_for_gpu_memory_free(timeout=60, threshold_percent=10):
             subprocess.TimeoutExpired,
             FileNotFoundError,
         ):
-            pass
+            pass  # rocm-smi unavailable or failed; retry after delay
         time.sleep(3)
 
     print(f"[sanity] WARNING: GPU memory not fully freed after {timeout}s timeout")
@@ -520,9 +516,9 @@ def aggressive_cleanup_between_models():
                         )
                         print(f"[sanity] Killed torch distributed process {pid}")
                     except (subprocess.SubprocessError, subprocess.TimeoutExpired):
-                        pass
+                        pass  # Process may already be dead; continue cleanup
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        pass  # pgrep unavailable; torch cleanup best-effort
 
     # Step 3: Clean aiter locks
     cleanup_aiter_locks()
@@ -560,9 +556,9 @@ def cleanup_aiter_locks():
                         os.remove(lock_file)
                         total_cleaned += 1
                     except OSError:
-                        pass
+                        pass  # Lock file already removed or inaccessible
     except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+        pass  # find command failed; aiter cleanup best-effort
 
     # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks)
     jit_build_path = "/sgl-workspace/aiter/aiter/jit/build"
@@ -581,9 +577,9 @@ def cleanup_aiter_locks():
                         os.remove(lock_file)
                         total_cleaned += 1
                     except OSError:
-                        pass
+                        pass  # Lock file already removed or inaccessible
     except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+        pass  # find command failed; JIT lock cleanup best-effort
 
     if total_cleaned > 0:
         print(f"[sanity] Cleaned {total_cleaned} stale aiter lock file(s)")
@@ -1368,7 +1364,6 @@ def sanity_check(
     # 3. Run multiple client trials (exit early if pass, like upstream CI)
     print(f"🧪 Running up to {trials} benchmark trials (early exit on pass)...")
     accuracies = []
-    early_exit = False
     for i in range(1, trials + 1):
         client_log = os.path.join(log_dir, f"{model_name}_{platform}_client_try{i}.log")
         trial_start = time.time()
@@ -1458,7 +1453,6 @@ def sanity_check(
                                 f"Early exit: Passed on trial {i}, skipped {trials - i} trial(s)\n"
                             )
                             timing_log.flush()
-                    early_exit = True
                     break
             except ValueError as e:
                 print(f"  ❌ Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)")
@@ -1507,7 +1501,8 @@ def sanity_check(
                 subprocess.TimeoutExpired,
                 FileNotFoundError,
             ):
-                pass
+                pass  # pkill failed; fall through to final SIGKILL
+            # Final SIGKILL after killing children to ensure process group is terminated
             os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
             time.sleep(1)
 

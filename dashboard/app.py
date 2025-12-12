@@ -566,7 +566,10 @@ def api_database_overview():
         )
         machine_names = [row["machine_name"] for row in cursor.fetchall()]
         machine_options = machine_names  # No "all" option
-        if selected_machine not in machine_options and machine_names:
+        if not machine_names:
+            conn.close()
+            return jsonify({"error": f"No machines found for hardware {hardware}"}), 404
+        if selected_machine not in machine_options:
             selected_machine = (
                 default_machine
                 if default_machine in machine_names
