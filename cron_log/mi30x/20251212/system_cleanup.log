@@ -1,44 +1,45 @@
 [system-cleanup] ==========================================
 [system-cleanup] Docker & GPU Core Cleanup Script Started
-[system-cleanup] Date: 2025-12-12 10:30:01 CST
+[system-cleanup] Date: 2025-12-12 09:30:01 CST
 [system-cleanup] Cleanup Docker images older than: 7 days
 [system-cleanup] Cleanup GPU core dumps: ALL files
 [system-cleanup] GPU core search directory: /mnt/raid/michael/sglang-ci
 [system-cleanup] Critical space threshold: 200 GB
 [system-cleanup] Dry run mode: false
 [system-cleanup] ==========================================
-[system-cleanup] Initial disk usage: 90% (135G free)
-[system-cleanup] Initial free space: 135 GB
-[system-cleanup] ❌ CRITICAL: Free space (135 GB) is below threshold (200 GB)!
+[system-cleanup] Initial disk usage: 58% (178G free)
+[system-cleanup] Initial free space: 178 GB
+[system-cleanup] ❌ CRITICAL: Free space (178 GB) is below threshold (200 GB)!
 [system-cleanup] ⚠️  Switching to AGGRESSIVE cleanup mode
-[system-cleanup] ⚠️  Teams webhook URL not set, skipping alert
 [system-cleanup] Step 1: Removing stopped Docker containers...
 [system-cleanup] Found 1 stopped container(s)
 [system-cleanup] ✅ Removed stopped containers
 [system-cleanup] ⚠️  Using aggressive cleanup: removing images older than 3 days
 [system-cleanup] Step 2: Removing old sgl-dev images (older than 3 days)...
-[system-cleanup] Processed old sgl-dev images: 0 removed, 1 kept/skipped
+[system-cleanup] ✅ Removed: rocm/sgl-dev:v0.5.6.post1-rocm700-mi30x-20251209
+[system-cleanup] Processed old sgl-dev images: 1 removed, 2 kept/skipped
 [system-cleanup] Step 3: Removing dangling images and unused data...
 [system-cleanup] ✅ Cleaned up dangling images
 [system-cleanup] Step 4: Removing old GPU core dump files (gpucore.*)...
 [system-cleanup] ⚠️  Using aggressive cleanup: removing ALL GPU core dumps
-[system-cleanup] No old GPU core dump files found
-[system-cleanup] ⚠️  Additional cleanup needed - Free: 137 GB, Usage: 90%
+[system-cleanup] Found 1 GPU core dump file(s) (total: ~46 GB)
+[system-cleanup] ✅ Removed: gpucore.224
+[system-cleanup] ✅ Removed 1 GPU core dump file(s), freed ~46 GB
+[system-cleanup] ⚠️  Additional cleanup needed - Free: 178 GB, Usage: 58%
 [system-cleanup] Removing all unused Docker images older than 3 days...
 [system-cleanup] ✅ Pruned additional images: Total reclaimed space: 0B
-[system-cleanup] ❌ WARNING: Space still critically low after cleanup (137 GB free)
-[system-cleanup] ⚠️  Teams webhook URL not set, skipping alert
+[system-cleanup] ❌ WARNING: Space still critically low after cleanup (178 GB free)
 [system-cleanup] ==========================================
 [system-cleanup] ✅ Docker Cleanup Complete
-[system-cleanup] Initial disk usage: 90% (135G free) (135 GB free)
-[system-cleanup] Final disk usage: 90% (137G free) (137 GB free)
-[system-cleanup] Space freed: 2 GB
-[system-cleanup] Date: 2025-12-12 10:30:02 CST
+[system-cleanup] Initial disk usage: 58% (178G free) (178 GB free)
+[system-cleanup] Final disk usage: 58% (178G free) (178 GB free)
+[system-cleanup] Space freed: 0 GB
+[system-cleanup] Date: 2025-12-12 09:30:13 CST
 [system-cleanup] ==========================================
 [system-cleanup] Docker disk usage summary:
 TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
-Images          1         0         55.3GB    55.3GB (100%)
-Containers      0         0         0B        0B
-Local Volumes   0         0         0B        0B
+Images          3         1         72.04GB   72.01GB (99%)
+Containers      1         1         0B        0B
+Local Volumes   4         0         0B        0B
 Build Cache     0         0         0B        0B
 [system-cleanup] ⚠️  Cleanup completed but space is still below threshold
