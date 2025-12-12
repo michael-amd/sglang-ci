@@ -1,0 +1,70 @@
+=== CONFIGURATION ===
+Model: deepseek (variant: DeepSeek-V3)
+Data directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324
+Output prefix: DeepSeek-V3-0324_FP8_online
+Plot directory: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-V3-0324/online
+Model name: DeepSeek-V3-0324
+Mode filter: aiter
+Variant filter: all variants
+Load metric: concurrency
+Expected concurrencys: [1, 4, 16, 64, 128]
+Days to process: 30
+Split request rates: False
+Process only: False
+Plot only: False
+
+=== DATA PROCESSING PHASE ===
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.937
+Mapped default GSM8K accuracy to mode aiter: 0.937
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Warning: Missing data for aiter, E2E_Latency_ms, concurrency 128
+Warning: Missing data for aiter, TTFT_ms, concurrency 128
+Warning: Missing data for aiter, ITL_ms, concurrency 128
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.934
+Mapped default GSM8K accuracy to mode aiter: 0.934
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.929
+Mapped default GSM8K accuracy to mode aiter: 0.929
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.936
+Mapped default GSM8K accuracy to mode aiter: 0.936
+Warning: Could not determine mode from GSM8K log file: sglang_client_log_DeepSeek-V3-0324_gsm8k.log, will use default
+Found GSM8K accuracy (single run) for mode _default: 0.934
+Mapped default GSM8K accuracy to mode aiter: 0.934
+Date 20251122, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251211, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251209, Variant standard, Mode aiter, Concurrency 128: Missing valid data for one or more performance metrics
+Date 20251123, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251206, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251208, Variant standard: Complete and valid data for all modes and concurrencys
+Date 20251210, Variant standard: Complete and valid data for all modes and concurrencys
+
+Kept 6 date+variant combinations with complete and valid data: [('20251122', 'standard'), ('20251123', 'standard'), ('20251206', 'standard'), ('20251208', 'standard'), ('20251210', 'standard'), ('20251211', 'standard')]
+Total records after filtering: 30
+Online summary CSV saved to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/DeepSeek-V3-0324_FP8_online_all_variants_aiter_summary_dell300x-pla-t12-38.csv
+Processed all variants
+Processed modes: aiter
+Variants found in output: standard
+Modes found in output: aiter
+=== PLOT GENERATION PHASE ===
+Date 20251122: Complete and valid data for all modes and concurrencys
+Date 20251123: Complete and valid data for all modes and concurrencys
+Date 20251206: Complete and valid data for all modes and concurrencys
+Date 20251208: Complete and valid data for all modes and concurrencys
+Date 20251210: Complete and valid data for all modes and concurrencys
+Date 20251211: Complete and valid data for all modes and concurrencys
+
+Kept 6 dates with complete and valid data for plotting
+Total records after filtering: 30
+Plotting modes: aiter
+Using 3x2 layout (with token/KV cache data)
+Plot saved to: /mnt/raid/michael/sglang-ci/plots_server/DeepSeek-V3-0324/online/20251212_DeepSeek-V3-0324_online_standard.png
+=== COMPLETE ===
+Both processing and plotting completed successfully!
