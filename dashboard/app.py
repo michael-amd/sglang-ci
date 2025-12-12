@@ -495,7 +495,17 @@ def api_database_overview():
             hardware = "mi30x"
 
         selected_test = request.args.get("test", "all")
-        selected_machine = request.args.get("machine", "all")  # Filter by machine name
+
+        # Default machines per hardware type
+        DEFAULT_MACHINES = {
+            "mi30x": "dell300x-pla-t10-23",
+            "mi35x": "smci355-ccs-aus-m12-33",
+        }
+        # Use hardware-specific default if no machine specified
+        default_machine = DEFAULT_MACHINES.get(hardware, "all")
+        selected_machine = request.args.get(
+            "machine", default_machine
+        )  # Filter by machine name
         range_days = request.args.get("range", "7")
         try:
             range_days = int(range_days)
@@ -545,7 +555,7 @@ def api_database_overview():
         if selected_test not in test_options:
             selected_test = "all"
 
-        # Get available machine names for this hardware
+        # Get available machine names for this hardware (no "all" option)
         cursor.execute(
             """
             SELECT DISTINCT machine_name FROM test_runs
@@ -555,37 +565,27 @@ def api_database_overview():
             (hardware,),
         )
         machine_names = [row["machine_name"] for row in cursor.fetchall()]
-        machine_options = ["all"] + machine_names
-        if selected_machine not in machine_options:
-            selected_machine = "all"
+        machine_options = machine_names  # No "all" option
+        if selected_machine not in machine_options and machine_names:
+            selected_machine = (
+                default_machine
+                if default_machine in machine_names
+                else machine_names[0]
+            )
 
-        # Get all test runs including multiple machines per date
-        # Order by run_date DESC, then by machine_name to group by machine
-        # Filter by machine if specified
-        if selected_machine != "all":
-            cursor.execute(
-                """
-                SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                       total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
-                       github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
-                FROM test_runs
-                WHERE hardware = ? AND run_date BETWEEN ? AND ? AND machine_name = ?
-                ORDER BY run_date DESC, machine_name
-                """,
-                (hardware, start_date, selected_date, selected_machine),
-            )
-        else:
-            cursor.execute(
-                """
-                SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
-                       total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
-                       github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
-                FROM test_runs
-                WHERE hardware = ? AND run_date BETWEEN ? AND ?
-                ORDER BY run_date DESC, machine_name
-                """,
-                (hardware, start_date, selected_date),
-            )
+        # Get all test runs for selected machine
+        # Order by run_date DESC
+        cursor.execute(
+            """
+            SELECT id, run_date, overall_status, passed_tasks, failed_tasks,
+                   total_tasks, docker_image, not_run, run_datetime_pt, machine_name,
+                   github_log_url, github_cron_log_url, github_detail_log_url, plot_github_url
+            FROM test_runs
+            WHERE hardware = ? AND run_date BETWEEN ? AND ? AND machine_name = ?
+            ORDER BY run_date DESC
+            """,
+            (hardware, start_date, selected_date, selected_machine),
+        )
         daily_runs = []
         for row in cursor.fetchall():
             total_tasks = row["total_tasks"] or 0

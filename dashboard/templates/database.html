@@ -145,14 +145,18 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3 align-items-end">
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-2">
                     <label for="hardwareSelect" class="db-filter-label">Hardware</label>
                     <select class="form-select" id="hardwareSelect">
                         <option value="mi30x">MI30X</option>
                         <option value="mi35x">MI35X</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-2">
+                    <label for="machineSelect" class="db-filter-label">Machine</label>
+                    <select class="form-select" id="machineSelect"></select>
+                </div>
+                <div class="col-6 col-md-2">
                     <label for="dateSelect" class="db-filter-label">Date</label>
                     <select class="form-select" id="dateSelect"></select>
                 </div>
@@ -164,13 +168,13 @@
                         <option value="30">Last 30 days</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-2">
                     <label for="testSelect" class="db-filter-label">Test Type</label>
                     <select class="form-select" id="testSelect">
                         <option value="all">All Tests</option>
                     </select>
                 </div>
-                <div class="col-12 col-md-1 d-grid">
+                <div class="col-6 col-md-2 d-grid">
                     <button class="btn btn-primary" id="refreshButton"><i class="bi bi-arrow-repeat"></i> Update</button>
                 </div>
             </div>
@@ -391,12 +395,20 @@
 
 {% block extra_scripts %}
 <script>
+// Default machine names per hardware type
+const DEFAULT_MACHINES = {
+    'mi30x': 'dell300x-pla-t10-23',
+    'mi35x': 'smci355-ccs-aus-m12-33'
+};
+
 const dbState = {
     hardware: 'mi30x',
     selectedDate: null,
     rangeDays: 7,
     testName: 'all',
-    availableDates: []
+    machineName: 'all',  // Will be set to default on init
+    availableDates: [],
+    availableMachines: []
 };
 
 let passRateChart = null;
@@ -408,6 +420,8 @@ function setupFilterControls() {
     document.getElementById('hardwareSelect').addEventListener('change', (event) => {
         dbState.hardware = event.target.value;
         dbState.selectedDate = null;
+        // Set default machine for this hardware type
+        dbState.machineName = DEFAULT_MACHINES[dbState.hardware] || 'all';
         loadDatabaseOverview();
     });
 
@@ -418,6 +432,11 @@ function setupFilterControls() {
 
     document.getElementById('rangeSelect').addEventListener('change', (event) => {
         dbState.rangeDays = parseInt(event.target.value, 10) || 7;
+        loadDatabaseOverview();
+    });
+
+    document.getElementById('machineSelect').addEventListener('change', (event) => {
+        dbState.machineName = event.target.value || 'all';
         loadDatabaseOverview();
     });
 
@@ -509,13 +528,16 @@ async function loadDatabaseOverview() {
     const explorer = document.getElementById('databaseExplorer');
     if (explorer && !dbState.initialized) {
         dbState.hardware = explorer.dataset.defaultHardware || 'mi30x';
+        // Set default machine for this hardware type
+        dbState.machineName = DEFAULT_MACHINES[dbState.hardware] || 'all';
         dbState.initialized = true;
     }
 
     const params = new URLSearchParams({
         hardware: dbState.hardware,
         range: dbState.rangeDays,
-        test: dbState.testName
+        test: dbState.testName,
+        machine: dbState.machineName
     });
 
     if (dbState.selectedDate) {
@@ -570,6 +592,29 @@ function updateFilterControls(data) {
 
     const rangeSelect = document.getElementById('rangeSelect');
     if (rangeSelect) rangeSelect.value = dbState.rangeDays;
+
+    // Update machine select dropdown (no "all" option)
+    const machineSelect = document.getElementById('machineSelect');
+    if (machineSelect) {
+        machineSelect.innerHTML = '';
+        // Filter out 'all' option - only show actual machines
+        const machines = (data.machine_names || []).filter(name => name !== 'all');
+        machines.forEach((name) => {
+            const option = document.createElement('option');
+            option.value = name;
+            // Extract short name (e.g., t10-23 from dell300x-pla-t10-23)
+            const parts = name.split('-');
+            const shortName = parts.length >= 2 ? parts.slice(-2).join('-') : name;
+            option.textContent = shortName;
+            machineSelect.appendChild(option);
+        });
+        // Set selected value
+        const selectedMachine = data.selected_machine && data.selected_machine !== 'all'
+            ? data.selected_machine
+            : (machines[0] || '');
+        machineSelect.value = selectedMachine;
+        dbState.machineName = selectedMachine;
+    }
 
     const testSelect = document.getElementById('testSelect');
     if (testSelect) {
