@@ -1,12 +1,12 @@
 [nightly] ==========================================
 [nightly] SGL Nightly Benchmark Started
 [nightly] ==========================================
-[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=
-[nightly] Start time: 2025-12-13 10:30:01 PST
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --enable-torch-compile --teams-webhook-url=
+[nightly] Start time: 2025-12-13 11:15:01 PST
 [nightly] Machine: dell300x-pla-t12-38
 [nightly] Working directory: /mnt/raid/michael/sglang-ci
 [nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
-[nightly] Process ID: 1873401
+[nightly] Process ID: 1884714
 [nightly] ==========================================
 
 [nightly] Runtime Environment:
@@ -15,6 +15,7 @@
 [nightly] Docker daemon accessible - proceeding...
 [nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
 [nightly] DP attention mode enabled via command line
+[nightly] Torch compile mode enabled via command line
 [nightly] Custom model path provided: /data/models/deepseek-ai/DeepSeek-V3-0324
 [nightly] Hardware: mi30x, ROCM Version: rocm700
 [nightly] Model: deepseek, Mode(s): online
@@ -42,6 +43,8 @@
 [nightly] No running containers to stop.
 [nightly] Waiting 15s for GPU to become idle...
 [nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Checking benchmark completion in: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm630-mi30x-20251213_DeepSeek-V3-0324_FP8_online
+[nightly] Found 0 completed benchmark runs
 [nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213 (online). Proceeding with benchmarks.
 [nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [nightly] Container name: sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213
@@ -51,50 +54,15 @@
 [nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213
 [nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
 [nightly] Adding --check-dp-attention flag for DeepSeek online benchmark
+[nightly] Adding --enable-torch-compile flag for DeepSeek online benchmark
+[config] DP attention + torch compile detected - increased server timeout to 2700s (45 minutes)
 ✅ Parameter validation passed
-[online] Script started at: 2025-12-13 10:30:35 PST
-Scanning existing logs to check if all benchmarks are already complete...
-Checking GSM8K log status...
-Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm630-mi30x-20251213_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
-DP attention mode - skipping serving benchmark log checks (GSM8K only)
-Scan complete: 0 total runs needed, 0 missing/incomplete
-❌ GSM8K benchmark is missing, empty, or incomplete.
-Server startup required.
-Clearing previous logs...
-Starting SGLang server for online GSM8K benchmark...
-[csv] Cleaning up stale aiter JIT lock files...
-[csv] No stale aiter lock files found
-[DEBUG] Using Data Parallel attention settings with SGLANG_USE_AITER=1
-[DEBUG] Enabling SGLANG_USE_ROCM700A for ROCm 700 image
-Waiting for SGLang server (PID: 48) to start... (Max 15 minutes)
-Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm630-mi30x-20251213_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log
-..........................
-SGLang server process (PID: 48) has terminated unexpectedly!
-Check /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm630-mi30x-20251213_DeepSeek-V3-0324_FP8_online_dp_attention/sglang_server.log for error details:
---- Last 20 lines of server log ---
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 28, in <module>
-    run_server(server_args)
-  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 21, in run_server
-    launch_server(server_args)
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1619, in launch_server
-    launch_subprocesses_func(server_args=server_args)
-  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py", line 160, in _launch_subprocesses
-    data = scheduler_pipe_readers[i].recv()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 250, in recv
-    buf = self._recv_bytes()
-          ^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 399, in _recv
-    raise EOFError
-EOFError
---- End of server log ---
+[online] Script started at: 2025-12-13 11:15:36 PST
+[gating] Checking if prerequisites passed before running DP+Torch Compile...
+[gating] ❌ DP Attention test failed or incomplete
+[gating] ❌ Torch Compile test failed or incomplete
+[gating] ⏭️ SKIPPING DP+Torch Compile test - both prerequisites failed
 Cleaning up...
-Background SGLang server (PID: 48) already stopped.
 [nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213 ===
 [nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
 [nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm630-mi30x-20251213_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
