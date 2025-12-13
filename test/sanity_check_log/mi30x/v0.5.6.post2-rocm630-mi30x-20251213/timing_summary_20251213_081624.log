@@ -1,0 +1,61 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-13 08:16:24 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-13 08:16:24 PST
+Server startup: FAILED after 300.12s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-13 08:21:29 PST
+Server startup: FAILED after 300.10s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-13 08:26:33 PST
+Server startup: FAILED after 300.14s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-13 08:31:37 PST
+Server startup: FAILED after 300.34s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-13 08:36:42 PST
+Server startup: FAILED after 600.32s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== llama4 on mi30x ===
+Start time: 2025-12-13 08:46:47 PST
+Server startup: FAILED after 25.01s
+Error: Code bug - AttributeError: type object 'CompressionFormat' has no attribute 'nvfp4_pack_quantized'. Did you mean: 'pack_quantized'?
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-13 08:47:13 PST
+Total execution time: 1848.20s (30.8 minutes)
+Average time per model: 308.03s
+Models tested: 6/6
+Models passed: 0/6
+Models failed: 6/6
+Models skipped: 0/6
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: FAIL
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  llama4: FAIL
