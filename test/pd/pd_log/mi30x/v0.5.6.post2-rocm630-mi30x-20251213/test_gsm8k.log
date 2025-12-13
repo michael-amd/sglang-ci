@@ -1,0 +1,79 @@
+/mnt/raid/michael/sglang-ci/test/pd/bench_gsm8k_pd.py:85: SyntaxWarning: invalid escape sequence '\d'
+  """
+======================================================================
+GSM8K Benchmark - PD Testing
+======================================================================
+Host: http://10.194.129.138:30028
+Model: DeepSeek-V3-0324
+Num Questions: 200
+Parallelism: 16
+Num Shots: 5
+Max New Tokens: 512
+======================================================================
+Downloading GSM8K dataset from https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl...
+✓ Downloaded 1319 questions
+Loaded 1319 examples
+✓ Server is healthy
+
+Running benchmark with 16 parallel requests...
+Progress: 100/200 questions (0.91 QPS, Acc: 0.9200)
+Progress: 200/200 questions (1.12 QPS, Acc: 0.9300)
+
+======================================================================
+RESULTS
+======================================================================
+Total Questions: 200
+Correct: 186
+Incorrect: 14
+Invalid: 0
+Accuracy: 0.9300
+Invalid Rate: 0.0000
+Total Time: 178.44s
+Questions per Second: 1.12
+======================================================================
+
+Sample Errors (first 5):
+
+1. Q12
+   Expected: 13, Got: 12
+   Generated:  Each year the tree will produce 7 lemons * $1.5/lemon = $<<7*1.5=10.5>>10.5 worth of lemons.
+After paying $3/year for water and feed, the tree will earn $10.5 - $3 = $<<10.5-3=7.5>>7.5 per year.
+To e
+
+2. Q37
+   Expected: 2, Got: 0
+   Generated:  He sold all his lego sets so he has 13-13=<<13-13=0>>0 lego sets left
+#### 0
+
+
+
+3. Q57
+   Expected: 83, Got: 0
+   Generated: # 3x+2x+4=5x+4
+
+## Simple and best practice solution for 3x+2x+4=5x+4 equation. Check how easy it is, and learn it for the future. Our solution is simple, and easy to understand, so don`t hesitate to 
+
+4. Q78
+   Expected: 6, Got: 94
+   Generated:  The cost per flower in the first package is $2.50 / 3 = $<<2.50/3=0.8333333333333334>>0.83.
+The cost per flower in the second package is $1 / 2 = $<<1/2=0.5>>0.5.
+The second package is the better pri
+
+5. Q80
+   Expected: 10, Got: 14
+   Generated:  The two girls got a total of 1/6 x 24 = <<1/6*24=4>>4 liters of water.
+So, the girl and the boy got a total of 4 + 6 = <<4+6=10>>10 liters of water.
+Therefore, there were 24 - 10 = <<24-10=14>>14 lit
+
+✓ Detailed errors saved to: /tmp/gsm8k_errors_detailed.json
+
+Sample Correct Answers (first 3):
+
+1. Q0
+   Expected: 18, Got: 18 ✓
+
+2. Q1
+   Expected: 3, Got: 3 ✓
+
+3. Q2
+   Expected: 70000, Got: 70000 ✓
