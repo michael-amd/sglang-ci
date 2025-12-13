@@ -623,6 +623,91 @@ cleanup_aiter_locks() {
   fi
 }
 
+# Warmup MOE kernels to prevent JIT compilation deadlock
+# When MOE models (DeepSeek-V3) run for the first time with TP>1, multiple workers try to
+# JIT-compile MOE kernels simultaneously, causing a deadlock. This compiles kernels with TP=1 first.
+warmup_moe_kernels() {
+    echo ""
+    echo "============================================================"
+    echo "🔥 MOE Kernel Warmup Phase"
+    echo "============================================================"
+    echo "[warmup] Pre-compiling MOE kernels to prevent JIT deadlock..."
+
+    # Check if MOE kernels are already compiled
+    local moe_kernel_path="/sgl-workspace/aiter/aiter/jit/module_moe_sorting.so"
+    if [[ -f "$moe_kernel_path" ]]; then
+        echo "[warmup] MOE kernels already compiled, skipping warmup"
+        return 0
+    fi
+
+    echo "[warmup] MOE kernels not found, starting warmup server (TP=1)..."
+
+    local warmup_port=30001
+    local warmup_timeout=300
+    local warmup_pid=""
+
+    # Start a single-GPU server to compile kernels sequentially
+    SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
+        --model-path "${MODEL}" \
+        --tp 1 \
+        --trust-remote-code \
+        --mem-fraction-static 0.5 \
+        --port ${warmup_port} > /tmp/warmup_server.log 2>&1 &
+    warmup_pid=$!
+
+    echo "[warmup] Warmup server started (PID: ${warmup_pid}), waiting for kernels to compile..."
+
+    local start_time=$(date +%s)
+    local server_ready=false
+
+    while true; do
+        local elapsed=$(($(date +%s) - start_time))
+
+        # Check timeout
+        if [[ $elapsed -ge $warmup_timeout ]]; then
+            echo "[warmup] ⚠️ Warmup timeout after ${warmup_timeout}s"
+            break
+        fi
+
+        # Check if process died
+        if ! kill -0 $warmup_pid 2>/dev/null; then
+            echo "[warmup] ⚠️ Warmup server exited unexpectedly"
+            break
+        fi
+
+        # Check if server is ready
+        if curl -s -f "http://127.0.0.1:${warmup_port}/health" > /dev/null 2>&1; then
+            server_ready=true
+            echo "[warmup] ✅ Server ready, MOE kernels compiled! (${elapsed}s)"
+            break
+        fi
+
+        # Progress update every 30s
+        if [[ $((elapsed % 30)) -eq 0 ]] && [[ $elapsed -gt 0 ]]; then
+            echo "[warmup] ⏳ Kernel compilation in progress... (${elapsed}s elapsed)"
+        fi
+
+        sleep 5
+    done
+
+    # Cleanup warmup server
+    echo "[warmup] Shutting down warmup server..."
+    if [[ -n "$warmup_pid" ]]; then
+        kill $warmup_pid 2>/dev/null || true
+        wait $warmup_pid 2>/dev/null || true
+    fi
+    fuser -k ${warmup_port}/tcp 2>/dev/null || true
+
+    if $server_ready; then
+        echo "[warmup] ✅ MOE kernel warmup completed successfully!"
+    else
+        echo "[warmup] ⚠️ Warmup may not have completed fully, proceeding anyway"
+    fi
+
+    # Brief pause before main server
+    sleep 3
+}
+
 # Function to start SGLang server and wait for it to be ready
 #
 # This function:
@@ -1840,6 +1925,9 @@ else
     > "$SERVER_LOG_FILE" # Clear/truncate the server log file
 
     echo "Starting SGLang server for online GSM8K benchmark..."
+
+    # Warmup MOE kernels before starting main TP=8 server
+    warmup_moe_kernels
 
     start_sglang_server
 
