@@ -1,0 +1,24 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-13 11:15:36 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --enable-torch-compile --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
+Model: /data/models/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t12-38
+Mode: online
+DP Attention: true
+Torch Compile: true
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Test skipped: Both DP Attention and Torch Compile prerequisites failed
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-13 11:15:36 PST
+Status: SKIPPED (prerequisites not met)
+========================================
