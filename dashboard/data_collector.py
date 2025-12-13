@@ -380,22 +380,36 @@ class DashboardDataCollector:
                     status = "pass" if "PASS" in result_match.group(1) else "fail"
 
                 avg_accuracy = None
+                # Try multiple accuracy formats:
+                # Format 1: "Average accuracy: X.XX" (multiple trials)
                 avg_acc_match = re.search(
                     r"Average accuracy:\s*([\d.]+)", section_content
                 )
                 if avg_acc_match:
                     avg_accuracy = float(avg_acc_match.group(1))
                 else:
-                    accuracies_match = re.search(
-                        r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
+                    # Format 2: "Accuracy: X.XX (Required: Y.YY)" (single trial)
+                    single_acc_match = re.search(
+                        r"^Accuracy:\s*([\d.]+)\s*\(Required:",
+                        section_content,
+                        re.MULTILINE,
                     )
-                    if accuracies_match:
-                        acc_str = accuracies_match.group(1)
-                        accs = [
-                            float(a.strip()) for a in acc_str.split(",") if a.strip()
-                        ]
-                        if accs:
-                            avg_accuracy = sum(accs) / len(accs)
+                    if single_acc_match:
+                        avg_accuracy = float(single_acc_match.group(1))
+                    else:
+                        # Format 3: "Accuracies: [X.XX, Y.YY]" (multiple trials list)
+                        accuracies_match = re.search(
+                            r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
+                        )
+                        if accuracies_match:
+                            acc_str = accuracies_match.group(1)
+                            accs = [
+                                float(a.strip())
+                                for a in acc_str.split(",")
+                                if a.strip()
+                            ]
+                            if accs:
+                                avg_accuracy = sum(accs) / len(accs)
 
                 # Include models even without accuracy if they have a valid status
                 # This captures models that failed before benchmark trials could run

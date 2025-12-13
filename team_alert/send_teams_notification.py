@@ -1120,7 +1120,8 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                 if startup_failed_match:
                     result_data["status"] = "fail"
 
-            # Extract accuracies
+            # Extract accuracies - try multiple formats
+            # Format 1: Accuracies: [0.848, 0.852, ...] (multiple trials)
             accuracies_match = re.search(
                 r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
             )
@@ -1130,15 +1131,32 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                     float(a.strip()) for a in acc_str.split(",") if a.strip()
                 ]
 
-            # Extract average accuracy from log
+            # Format 2: Individual trial accuracies - Trial N: PASS [OK] (Accuracy: 0.848, ...)
+            if not result_data["accuracies"]:
+                trial_matches = re.findall(
+                    r"Trial \d+:.*?Accuracy:\s*([\d.]+)", section_content
+                )
+                if trial_matches:
+                    result_data["accuracies"] = [float(a) for a in trial_matches]
+
+            # Extract average/final accuracy from log - try multiple formats
             avg_acc_match = re.search(r"Average accuracy:\s*([\d.]+)", section_content)
             if avg_acc_match:
                 result_data["average_accuracy"] = float(avg_acc_match.group(1))
-            elif result_data["accuracies"]:
-                # Calculate average from individual trial accuracies if not in log
-                result_data["average_accuracy"] = sum(result_data["accuracies"]) / len(
-                    result_data["accuracies"]
+            else:
+                # Format 2: Accuracy: 0.848 (Required: 0.820) - single trial format
+                single_acc_match = re.search(
+                    r"^Accuracy:\s*([\d.]+)\s*\(Required:",
+                    section_content,
+                    re.MULTILINE,
                 )
+                if single_acc_match:
+                    result_data["average_accuracy"] = float(single_acc_match.group(1))
+                elif result_data["accuracies"]:
+                    # Calculate average from individual trial accuracies if not in log
+                    result_data["average_accuracy"] = sum(
+                        result_data["accuracies"]
+                    ) / len(result_data["accuracies"])
 
             # Extract total time for this model
             model_time_match = re.search(r"Total time:\s*([\d.]+)s", section_content)
