@@ -1,0 +1,15 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-13 11:45:35 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/models/amd--grok-1-W4A8KV8 --mode=online --hardware=mi30x --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
+Model: /data/models/amd--grok-1-W4A8KV8
+Hostname: dell300x-pla-t12-38
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
