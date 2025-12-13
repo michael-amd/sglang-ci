@@ -139,6 +139,18 @@ class DatabaseSyncer:
             print("    Run 'python sync_database.py push' to upload the database.")
             return
 
+        # Check if local db_path is a symlink pointing to the repo database
+        is_symlink_to_repo = False
+        if os.path.islink(self.db_path):
+            link_target = os.path.realpath(self.db_path)
+            repo_real = os.path.realpath(repo_db_file)
+            if link_target == repo_real:
+                is_symlink_to_repo = True
+                print(
+                    f"✅ Local database is symlink to repo – already synced via git pull"
+                )
+                return
+
         # Backup local database if requested
         if backup and os.path.exists(self.db_path):
             backup_path = (
@@ -212,10 +224,21 @@ class DatabaseSyncer:
                     )
                     print("✅ Conflict auto-resolved – will re-apply local changes")
 
-        # Copy database from local to repo
+        # Copy database from local to repo (skip if symlink points to repo)
         repo_db_file = os.path.join(self.work_dir, self.repo_db_path)
         os.makedirs(os.path.dirname(repo_db_file), exist_ok=True)
-        shutil.copy2(self.db_path, repo_db_file)
+
+        # Check if local db_path is a symlink pointing to the repo database
+        is_symlink_to_repo = False
+        if os.path.islink(self.db_path):
+            link_target = os.path.realpath(self.db_path)
+            repo_real = os.path.realpath(repo_db_file)
+            if link_target == repo_real:
+                is_symlink_to_repo = True
+                print("Local database is symlink to repo – no copy needed")
+
+        if not is_symlink_to_repo:
+            shutil.copy2(self.db_path, repo_db_file)
 
         # Stage the file
         subprocess.run(["git", "add", self.repo_db_path], check=True)

@@ -103,21 +103,35 @@ if ! git pull --rebase --quiet 2>&1; then
 fi
 
 ###########################################################################
-# 4. Copy database file
+# 4. Stage database file (handles both symlink and regular file cases)
 ###########################################################################
 
 readonly DEST_PATH="database"
+readonly DEST_FILE="$DEST_PATH/ci_dashboard.db"
 
 mkdir -p "$DEST_PATH"
 
-echo "[github_database_upload] Uploading database from: $DB_FILE"
-echo "[github_database_upload] Destination in repo: $DEST_PATH/ci_dashboard.db"
+echo "[github_database_upload] Database source: $DB_FILE"
+echo "[github_database_upload] Destination in repo: $DEST_FILE"
 
-# Copy database file
-cp "$DB_FILE" "$DEST_PATH/ci_dashboard.db"
+# Check if source is a symlink pointing to the repo database
+if [[ -L "$DB_FILE" ]]; then
+  LINK_TARGET=$(readlink -f "$DB_FILE")
+  REPO_DB=$(readlink -f "$DEST_FILE")
+
+  if [[ "$LINK_TARGET" == "$REPO_DB" ]]; then
+    echo "[github_database_upload] Source is symlink to repo database – no copy needed"
+  else
+    # Symlink points elsewhere, copy the resolved file
+    cp "$(readlink -f "$DB_FILE")" "$DEST_FILE"
+  fi
+else
+  # Regular file – copy to repo
+  cp "$DB_FILE" "$DEST_FILE"
+fi
 
 # Stage the file
-git add "$DEST_PATH/ci_dashboard.db"
+git add "$DEST_FILE"
 
 # Abort early if nothing changed
 if git diff --cached --quiet; then
