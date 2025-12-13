@@ -105,6 +105,7 @@ class DatabaseSyncer:
             text=True,
         )
 
+        conflict_resolved = False
         if result.returncode != 0:
             print("⚠️  Rebase conflict detected – auto-resolving...")
 
@@ -130,6 +131,7 @@ class DatabaseSyncer:
                     capture_output=True,
                 )
                 print("✅ Conflict auto-resolved (accepted remote database)")
+                conflict_resolved = True
 
         # Check if database exists in repo
         repo_db_file = os.path.join(self.work_dir, self.repo_db_path)
@@ -164,6 +166,10 @@ class DatabaseSyncer:
         shutil.copy2(repo_db_file, self.db_path)
 
         print(f"✅ Database pulled from GitHub to {self.db_path}")
+
+        # If conflict was resolved, backfill recent data to recover any lost entries
+        if conflict_resolved:
+            self._backfill_after_conflict()
 
     def push_database(self, force: bool = False):
         """
@@ -289,6 +295,54 @@ class DatabaseSyncer:
             )
 
         print(f"✅ Database pushed to GitHub ({self.github_repo} {self.branch} branch)")
+
+    def _backfill_after_conflict(self):
+        """Backfill recent data after conflict resolution to recover any lost entries"""
+        print("🔄 Backfilling recent data after conflict resolution...")
+
+        # Detect hardware type from hostname
+        import socket
+
+        hostname = socket.gethostname()
+        if "t10-23" in hostname:
+            hardware = "mi30x"
+        elif "t12-38" in hostname:
+            hardware = "mi35x"
+        else:
+            # Check environment variable
+            hardware = os.environ.get("HARDWARE_TYPE", "mi30x")
+
+        # Get base directory (parent of database directory)
+        base_dir = os.path.dirname(os.path.dirname(self.db_path))
+        ingest_script = os.path.join(base_dir, "database", "ingest_data.py")
+
+        if not os.path.exists(ingest_script):
+            print(f"⚠️  Ingest script not found at {ingest_script}")
+            return
+
+        # Backfill last 7 days to recover any lost data
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    ingest_script,
+                    "--backfill",
+                    "7",
+                    "--hardware",
+                    hardware,
+                    "--quiet",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=base_dir,
+            )
+
+            if result.returncode == 0:
+                print(f"✅ Backfill complete for {hardware} - local data recovered")
+            else:
+                print(f"⚠️  Backfill had issues: {result.stderr}")
+        except Exception as e:
+            print(f"⚠️  Backfill failed: {e}")
 
     def get_remote_db_info(self):
         """Get information about remote database"""

@@ -81,6 +81,7 @@ git fetch origin log
 git checkout -q log
 
 # Rebase to avoid merge commits, with automatic conflict resolution
+CONFLICT_RESOLVED=false
 if ! git pull --rebase --quiet 2>&1; then
   echo "[github_database_upload] Rebase conflict detected – auto-resolving…"
 
@@ -98,8 +99,42 @@ if ! git pull --rebase --quiet 2>&1; then
       git rebase --abort 2>/dev/null || true
     else
       echo "[github_database_upload] ✅ Conflict auto-resolved (accepted remote database)"
+      CONFLICT_RESOLVED=true
     fi
   fi
+fi
+
+###########################################################################
+# 3a. If conflict was resolved, re-ingest local data to recover any lost data
+###########################################################################
+
+if [[ "$CONFLICT_RESOLVED" == "true" ]]; then
+  echo "[github_database_upload] Re-ingesting local data after conflict resolution..."
+
+  # Detect hardware type from environment or hostname
+  HARDWARE="${HARDWARE_TYPE:-}"
+  if [[ -z "$HARDWARE" ]]; then
+    HOSTNAME=$(hostname)
+    if [[ "$HOSTNAME" == *"t10-23"* ]]; then
+      HARDWARE="mi30x"
+    elif [[ "$HOSTNAME" == *"t12-38"* ]]; then
+      HARDWARE="mi35x"
+    else
+      # Default based on common machine patterns
+      HARDWARE="mi30x"
+    fi
+  fi
+
+  # Re-ingest last 7 days of local data to recover any lost entries
+  # (With symlink setup, this writes directly to the repo database)
+  echo "[github_database_upload] Backfilling last 7 days for $HARDWARE..."
+  cd "$SGL_CI_DIR"
+  if python3 database/ingest_data.py --backfill 7 --hardware "$HARDWARE" --quiet 2>&1; then
+    echo "[github_database_upload] ✅ Backfill complete - local data recovered"
+  else
+    echo "[github_database_upload] ⚠️  Backfill had issues (non-fatal)"
+  fi
+  cd "$WORK_CLONE_DIR"
 fi
 
 ###########################################################################
