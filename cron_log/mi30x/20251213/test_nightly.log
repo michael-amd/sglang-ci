@@ -1,23 +1,23 @@
 [test] ==========================================
 [test] SGL Nightly Unit Test Started
 [test] ==========================================
-[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=https://default3dd8961fe4884e608e11a82d994e18.3d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5b63cac7474049f7a780db5486e3a5c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=5npWudEjINETmq67Bx35skofwckhvg92Io38Ayll5Ns
-[test] Start time: 2025-12-13 10:01:01 CST
-[test] Machine: dell300x-pla-t10-23
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
+[test] Start time: 2025-12-13 11:01:01 CST
+[test] Machine: dell300x-pla-t12-38
 [test] Working directory: /mnt/raid/michael/sglang-ci
 [test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
-[test] Process ID: 999417
+[test] Process ID: 1819372
 [test] ==========================================
 
 [test] Runtime Environment:
-[test] User: amd | Groups: amd video users... | Docker: /usr/bin/docker
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
 [test] Testing Docker daemon access...
 [test] Docker daemon accessible - proceeding...
 [test] Hardware: mi30x, ROCM Version: rocm700
 [test] Test Type: unit
 [test] Created process lock: /tmp/test_nightly_unit.lock
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: 8fb46974fe98
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -42,72 +42,81 @@ f6f97575f532: Pulling fs layer
 ce162731a8b4: Pulling fs layer
 886496af1b52: Pulling fs layer
 9782bae5e560: Pulling fs layer
-f6f97575f532: Waiting
 0456b1c0d4ee: Pulling fs layer
 bf2506ff98d5: Pulling fs layer
 990ebd29eb4c: Pulling fs layer
-ce162731a8b4: Waiting
-4f4fb700ef54: Waiting
 27b2c0ff8cb6: Pulling fs layer
-bf2506ff98d5: Waiting
 8a139095437d: Pulling fs layer
-990ebd29eb4c: Waiting
-9a814f065b00: Pulling fs layer
-9224f7232abd: Pulling fs layer
+4f4fb700ef54: Waiting
+6b0f51e662d9: Waiting
 2ae8666e7615: Waiting
-8d21946ae781: Pulling fs layer
-9a814f065b00: Waiting
-4bee7ff91294: Pulling fs layer
-9224f7232abd: Waiting
+886496af1b52: Waiting
+f6f97575f532: Waiting
+9a814f065b00: Pulling fs layer
+9782bae5e560: Waiting
+ce162731a8b4: Waiting
+d28fe32bd1e1: Waiting
+9224f7232abd: Pulling fs layer
+bf2506ff98d5: Waiting
 0456b1c0d4ee: Waiting
+8d21946ae781: Pulling fs layer
+8a139095437d: Waiting
+990ebd29eb4c: Waiting
+27b2c0ff8cb6: Waiting
+4bee7ff91294: Pulling fs layer
+9a814f065b00: Waiting
 58d33f52fba2: Pulling fs layer
-8d21946ae781: Waiting
-4bee7ff91294: Waiting
 8cc3e06393c6: Pulling fs layer
-58d33f52fba2: Waiting
+9224f7232abd: Waiting
+8d21946ae781: Waiting
 6621933c8f30: Pulling fs layer
-8cc3e06393c6: Waiting
 7f5438c2f045: Pulling fs layer
-6621933c8f30: Waiting
+4bee7ff91294: Waiting
 2493d82efb2e: Pulling fs layer
+58d33f52fba2: Waiting
 db5985cb22de: Pulling fs layer
+6621933c8f30: Waiting
 7f5438c2f045: Waiting
 2493d82efb2e: Waiting
 ba8fd8278a3c: Pulling fs layer
 db5985cb22de: Waiting
+ba8fd8278a3c: Waiting
 99cd8779a5ed: Pulling fs layer
 b5e6904bf486: Pulling fs layer
-8ff39be28247: Pulling fs layer
-a10a4336866a: Pulling fs layer
-f65e9be1ee18: Pulling fs layer
-b5e6904bf486: Waiting
 99cd8779a5ed: Waiting
+8ff39be28247: Pulling fs layer
+b5e6904bf486: Waiting
+a10a4336866a: Pulling fs layer
+8ff39be28247: Waiting
+f65e9be1ee18: Pulling fs layer
 060c12ae9bd9: Pulling fs layer
-51bf61044547: Pulling fs layer
 a10a4336866a: Waiting
+f65e9be1ee18: Waiting
+51bf61044547: Pulling fs layer
 83a2d1604cad: Pulling fs layer
 060c12ae9bd9: Waiting
 213dc2a3bdd0: Pulling fs layer
-8ff39be28247: Waiting
 dff7438565a7: Pulling fs layer
+83a2d1604cad: Waiting
+51bf61044547: Waiting
 213dc2a3bdd0: Waiting
 85b6f7d55378: Pulling fs layer
-83a2d1604cad: Waiting
 dff7438565a7: Waiting
-4a2bbdd4b846: Pulling fs layer
 85b6f7d55378: Waiting
+4a2bbdd4b846: Pulling fs layer
 17450084d1e2: Pulling fs layer
+17450084d1e2: Waiting
 4a2bbdd4b846: Waiting
 fb9b732d846a: Download complete
-6b0f51e662d9: Verifying Checksum
-6b0f51e662d9: Download complete
 6414378b6477: Verifying Checksum
 6414378b6477: Download complete
 d28fe32bd1e1: Verifying Checksum
 d28fe32bd1e1: Download complete
+4f4fb700ef54: Verifying Checksum
 4f4fb700ef54: Download complete
 6414378b6477: Pull complete
 fb9b732d846a: Pull complete
+6b0f51e662d9: Download complete
 f6f97575f532: Verifying Checksum
 f6f97575f532: Download complete
 2ae8666e7615: Verifying Checksum
@@ -118,13 +127,14 @@ f6f97575f532: Download complete
 9782bae5e560: Download complete
 0456b1c0d4ee: Verifying Checksum
 0456b1c0d4ee: Download complete
-bf2506ff98d5: Verifying Checksum
-bf2506ff98d5: Download complete
+ce162731a8b4: Verifying Checksum
+ce162731a8b4: Download complete
 990ebd29eb4c: Verifying Checksum
 990ebd29eb4c: Download complete
 27b2c0ff8cb6: Verifying Checksum
 27b2c0ff8cb6: Download complete
 8a139095437d: Download complete
+9a814f065b00: Verifying Checksum
 9a814f065b00: Download complete
 9224f7232abd: Verifying Checksum
 9224f7232abd: Download complete
@@ -132,45 +142,47 @@ bf2506ff98d5: Download complete
 8d21946ae781: Download complete
 4bee7ff91294: Verifying Checksum
 4bee7ff91294: Download complete
+58d33f52fba2: Verifying Checksum
 58d33f52fba2: Download complete
+8cc3e06393c6: Verifying Checksum
 8cc3e06393c6: Download complete
 6621933c8f30: Download complete
+7f5438c2f045: Verifying Checksum
 7f5438c2f045: Download complete
 2493d82efb2e: Verifying Checksum
 2493d82efb2e: Download complete
-db5985cb22de: Verifying Checksum
-db5985cb22de: Download complete
+bf2506ff98d5: Verifying Checksum
+bf2506ff98d5: Download complete
 ba8fd8278a3c: Verifying Checksum
 ba8fd8278a3c: Download complete
 99cd8779a5ed: Verifying Checksum
 99cd8779a5ed: Download complete
-ce162731a8b4: Verifying Checksum
-ce162731a8b4: Download complete
 b5e6904bf486: Verifying Checksum
 b5e6904bf486: Download complete
-72a47c966458: Verifying Checksum
+db5985cb22de: Verifying Checksum
+db5985cb22de: Download complete
 72a47c966458: Download complete
 f65e9be1ee18: Verifying Checksum
 f65e9be1ee18: Download complete
-a10a4336866a: Verifying Checksum
-a10a4336866a: Download complete
+060c12ae9bd9: Verifying Checksum
+060c12ae9bd9: Download complete
 51bf61044547: Verifying Checksum
 51bf61044547: Download complete
 83a2d1604cad: Verifying Checksum
 83a2d1604cad: Download complete
-060c12ae9bd9: Verifying Checksum
 213dc2a3bdd0: Verifying Checksum
 213dc2a3bdd0: Download complete
-85b6f7d55378: Verifying Checksum
-85b6f7d55378: Download complete
-4a2bbdd4b846: Verifying Checksum
-4a2bbdd4b846: Download complete
-17450084d1e2: Verifying Checksum
-17450084d1e2: Download complete
-dff7438565a7: Verifying Checksum
-dff7438565a7: Download complete
 8ff39be28247: Verifying Checksum
 8ff39be28247: Download complete
+85b6f7d55378: Download complete
+a10a4336866a: Verifying Checksum
+a10a4336866a: Download complete
+17450084d1e2: Verifying Checksum
+17450084d1e2: Download complete
+4a2bbdd4b846: Verifying Checksum
+4a2bbdd4b846: Download complete
+dff7438565a7: Verifying Checksum
+dff7438565a7: Download complete
 72a47c966458: Pull complete
 6b0f51e662d9: Pull complete
 d28fe32bd1e1: Pull complete
@@ -221,7 +233,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [test] ==========================================
 [test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213...
 [test] Cleaning up Docker containers...
-[test] Stopping running containers: dd3acb1e1b81
+[test] No running containers to stop.
 [test] Docker container cleanup complete.
 [test] Checking for conflicting SGLang processes...
 [test] No conflicting SGLang processes found.
@@ -230,7 +242,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [test] Using Docker image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [test] Container name: sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213
 [test] Creating container sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213
-4d82c823b748ea9a6f692dbc3a3f6d62efa25c5501e57a52ab3a3284561fb1b4
+35fde5735dd59502e467ef373d4a73cebc4172fe4a8e9a40a7de2c4039e2b800
 [test] === Starting test_custom_allreduce unit test ===
 [test] Test directory: /sgl-workspace/sglang/test/manual
 [test] Log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post2-rocm630-mi30x-20251213.log
@@ -239,11 +251,7 @@ docker.io/rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [test] === Unit test PASSED for rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213 ===
 [test] Log saved to: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post2-rocm630-mi30x-20251213.log
 [test] Stopping container sgl-dev_v0.5.6.post2-rocm630-mi30x-20251213 to release resources...
-[test] Sending Teams notification...
-📋 Parsing unit test log file: /mnt/raid/michael/sglang-ci/test/unit-test-backend-8-gpu-CAR-amd/mi30x/v0.5.6.post2-rocm630-mi30x-20251213.log
-✅ Docker image date matches expected date (20251213) - proceeding with alert
-✅ Successfully sent unit test pass alert to Teams
-   (Power Automate flow accepted - message processing asynchronously)
+[test] No Teams webhook URL provided - skipping notification
 [test] ==========================================
 [test] Test completed for image: rocm/sgl-dev:v0.5.6.post2-rocm630-mi30x-20251213
 [test] Test type: unit
