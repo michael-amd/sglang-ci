@@ -2924,20 +2924,19 @@ def main():
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
         notifier = TeamsNotifier(
-            webhook_url,
-            "",
-            False,
-            7,
-            None,
-            False,
-            None,
-            None,
-            False,
-            False,
-            False,
-            False,
-            None,
-            "mi30x",
+            webhook_url=webhook_url,
+            skip_analysis=False,
+            analysis_days=7,
+            benchmark_dir=None,
+            github_upload=False,
+            github_repo=None,
+            github_token=None,
+            check_dp_attention=False,
+            enable_torch_compile=False,
+            enable_dp_test=False,
+            enable_mtp_test=False,
+            benchmark_date=None,
+            hardware=args.hardware,
         )
         success = notifier.send_test_notification()
         if success:
@@ -2957,20 +2956,19 @@ def main():
 
         print("🔍 Sanity check mode: Processing sanity check results")
         notifier = TeamsNotifier(
-            webhook_url,
-            "",
-            False,
-            7,
-            None,
-            False,
-            None,
-            None,
-            False,
-            False,
-            False,
-            False,
-            None,
-            "mi30x",
+            webhook_url=webhook_url,
+            skip_analysis=False,
+            analysis_days=7,
+            benchmark_dir=None,
+            github_upload=False,
+            github_repo=None,
+            github_token=None,
+            check_dp_attention=False,
+            enable_torch_compile=False,
+            enable_dp_test=False,
+            enable_mtp_test=False,
+            benchmark_date=None,
+            hardware=args.hardware,
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1

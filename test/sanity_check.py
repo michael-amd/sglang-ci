@@ -641,6 +641,234 @@ def cleanup_aiter_locks():
         print("[sanity] No stale aiter lock files found")
 
 
+# List of models that require MOE kernels (prone to JIT compilation deadlock)
+MOE_MODELS = ["GROK1-IN4", "GROK1-FP8", "GROK2.5"]
+
+# Models that use aiter kernels (module_rmsnorm, etc.) - need warmup on mi35x
+AITER_MODELS = ["GPT-OSS-120B", "GPT-OSS-20B", "QWEN-30B"]
+
+
+def warmup_single_model(model_name, platform, models_dir, timeout=300, port=30001):
+    """Pre-compile kernels for a single model using TP=1 to avoid deadlock.
+
+    Args:
+        model_name: Name of the model to warm up
+        platform: Hardware platform (mi30x, mi35x)
+        models_dir: Directory containing model files
+        timeout: Maximum seconds to wait for kernel compilation
+        port: Port to use for warmup server
+
+    Returns:
+        True if warmup succeeded, False otherwise
+    """
+    if model_name not in DEFAULT_MODELS:
+        print(f"[warmup] {model_name} config not found, skipping")
+        return False
+
+    config = DEFAULT_MODELS[model_name]
+    model_path_template = config.get("model_path", {}).get(platform)
+
+    if not model_path_template:
+        print(f"[warmup] No model path for {model_name} on {platform}, skipping")
+        return False
+
+    # Build full model path
+    model_path = os.path.join(models_dir, model_path_template)
+
+    if not os.path.exists(model_path):
+        print(f"[warmup] Model not found at {model_path}, skipping")
+        return False
+
+    # Build warmup command based on model type
+    # Use TP=1 to avoid multi-worker JIT deadlock
+    if model_name in MOE_MODELS:
+        # MOE models need specific settings
+        tokenizer_path_template = config.get("tokenizer_path", {}).get(platform)
+        tokenizer_path = os.path.join(models_dir, tokenizer_path_template)
+        warmup_cmd = (
+            f"RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 "
+            f"python3 -m sglang.launch_server "
+            f"--model-path {model_path} "
+            f"--tokenizer-path {tokenizer_path} "
+            f"--tp 1 "
+            f"--quantization fp8 "
+            f"--trust-remote-code "
+            f"--attention-backend aiter "
+            f"--mem-fraction-static 0.3 "
+            f"--port {port}"
+        )
+    else:
+        # GPT-OSS and other models
+        warmup_cmd = (
+            f"SGLANG_USE_AITER=1 "
+            f"python3 -m sglang.launch_server "
+            f"--model-path {model_path} "
+            f"--tp 1 "
+            f"--trust-remote-code "
+            f"--attention-backend triton "
+            f"--mem-fraction-static 0.3 "
+            f"--port {port}"
+        )
+
+    print(f"[warmup] Starting {model_name} warmup (TP=1)...")
+
+    # Create log file for warmup output
+    warmup_log = f"/tmp/warmup_{model_name}_{platform}.log"
+
+    # Start server process with output capture
+    with open(warmup_log, "w") as log_file:
+        server_process = subprocess.Popen(
+            warmup_cmd,
+            shell=True,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        # Wait for server to be ready or timeout
+        start_time = time.time()
+        kernels_compiled = False
+
+        while time.time() - start_time < timeout:
+            # Check if process is still running
+            if server_process.poll() is not None:
+                # Process exited - check why
+                try:
+                    with open(warmup_log, "r") as f:
+                        log_content = f.read()
+                    if "The server is fired up and ready to roll!" in log_content:
+                        kernels_compiled = True
+                        print(f"[warmup] ✅ {model_name} kernels compiled!")
+                    elif "waiting for baton" in log_content:
+                        print(
+                            f"[warmup] ❌ {model_name} hit JIT deadlock even with TP=1"
+                        )
+                    elif "Error" in log_content or "Exception" in log_content:
+                        # Extract last few lines of error
+                        lines = log_content.strip().split("\n")
+                        last_lines = lines[-5:] if len(lines) > 5 else lines
+                        print(f"[warmup] ❌ {model_name} server error:")
+                        for line in last_lines:
+                            if "Error" in line or "Exception" in line:
+                                print(f"         {line[:100]}")
+                    else:
+                        print(f"[warmup] ❌ {model_name} server exited unexpectedly")
+                except Exception as e:
+                    print(f"[warmup] ❌ {model_name} failed to read log: {e}")
+                break
+
+            # Check server readiness
+            try:
+                import urllib.request
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/health")
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    if response.status == 200:
+                        kernels_compiled = True
+                        print(
+                            f"[warmup] ✅ {model_name} server ready, kernels compiled!"
+                        )
+                        break
+            except Exception:
+                pass
+
+            # Progress update
+            elapsed = int(time.time() - start_time)
+            if elapsed % 60 == 0 and elapsed > 0:
+                print(
+                    f"[warmup] ⏳ {model_name} compilation in progress... ({elapsed}s)"
+                )
+
+            time.sleep(5)
+
+        # Cleanup: kill the warmup server
+        try:
+            server_process.terminate()
+            server_process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server_process.kill()
+            server_process.wait()
+
+    # Kill any remaining processes on warmup port
+    try:
+        subprocess.run(["fuser", "-k", f"{port}/tcp"], capture_output=True, timeout=10)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Brief pause for cleanup
+    time.sleep(3)
+
+    return kernels_compiled
+
+
+def warmup_kernels(platform, models_to_test, models_dir=None, timeout=300):
+    """Pre-compile kernels for all model types to prevent JIT compilation deadlock.
+
+    When models run for the first time in a container with TP>1, multiple workers
+    try to JIT-compile kernels simultaneously, causing a deadlock. This function
+    starts single-GPU warmup servers to trigger kernel compilation sequentially.
+
+    Args:
+        platform: Hardware platform (mi30x, mi35x)
+        models_to_test: Dict of models that will be tested
+        models_dir: Directory containing model files
+        timeout: Maximum seconds to wait for each model's kernel compilation
+
+    Returns:
+        Number of successful warmups
+    """
+    print("\n" + "=" * 60)
+    print("🔥 Kernel Warmup Phase (Preventing JIT Deadlock)")
+    print("=" * 60)
+
+    if models_dir is None:
+        models_dir = DEFAULT_MODELS_DIR
+
+    # Determine which warmup models we need based on what's being tested
+    warmup_needed = set()
+
+    for model_name in models_to_test.keys():
+        if model_name in MOE_MODELS:
+            warmup_needed.add("GROK1-IN4")  # Use smallest GROK for MOE kernels
+        if model_name in AITER_MODELS and platform == "mi35x":
+            warmup_needed.add("GPT-OSS-20B")  # Use smaller GPT for aiter kernels
+
+    if not warmup_needed:
+        print("[warmup] No kernel warmup needed for selected models")
+        return 0
+
+    print(f"[warmup] Will warm up kernels using: {', '.join(warmup_needed)}")
+    print(
+        "[warmup] This pre-compiles kernels with TP=1 to avoid multi-worker deadlock\n"
+    )
+
+    successful = 0
+    for model_name in warmup_needed:
+        if warmup_single_model(model_name, platform, models_dir, timeout=timeout):
+            successful += 1
+        # Clean up between warmups
+        cleanup_aiter_locks()
+        time.sleep(5)
+
+    print(f"\n[warmup] Warmup complete: {successful}/{len(warmup_needed)} succeeded")
+
+    if successful < len(warmup_needed):
+        print("[warmup] ⚠️ Some warmups failed - tests may still hit JIT deadlock")
+        print("[warmup] Will proceed with tests anyway")
+
+    return successful
+
+
+def warmup_moe_kernels(platform, models_dir=None, timeout=300):
+    """Legacy wrapper - calls new warmup_kernels with MOE models only.
+
+    Kept for backwards compatibility.
+    """
+    # Create a fake models_to_test dict with just MOE models
+    moe_test = {m: {} for m in MOE_MODELS}
+    return warmup_kernels(platform, moe_test, models_dir, timeout) > 0
+
+
 def ensure_gpu_idle():
     """Ensure GPU is idle by stopping running Docker containers, similar to perf_nightly.sh."""
     # GPU idle wait time
@@ -1742,6 +1970,33 @@ if __name__ == "__main__":
     # Ensure GPU is idle before starting tests
     print("\n🔍 Checking GPU status and cleaning up running containers...")
     ensure_gpu_idle()
+
+    # Check which models need kernel warmup to prevent JIT deadlock
+    moe_models_to_test = [m for m in models_to_test.keys() if m in MOE_MODELS]
+    aiter_models_to_test = [m for m in models_to_test.keys() if m in AITER_MODELS]
+
+    needs_warmup = False
+    if moe_models_to_test:
+        print(f"\n🔥 MOE models detected: {', '.join(moe_models_to_test)}")
+        print(
+            "   These models require MOE kernel pre-compilation to avoid JIT deadlock"
+        )
+        needs_warmup = True
+    if aiter_models_to_test and platform == "mi35x":
+        print(f"\n🔥 Aiter models detected: {', '.join(aiter_models_to_test)}")
+        print(
+            "   These models require aiter kernel pre-compilation on mi35x to avoid JIT deadlock"
+        )
+        needs_warmup = True
+
+    if needs_warmup:
+        warmup_kernels(
+            platform, models_to_test, models_dir=args.models_dir, timeout=300
+        )
+        # Clean up after warmup
+        cleanup_sglang_processes()
+        cleanup_aiter_locks()
+        time.sleep(5)  # Brief pause before starting actual tests
 
     # Create timing log with Docker image subfolder
     if args.log_dir:
