@@ -1,0 +1,76 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-14 11:05:34 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok --model-path=/data/amd--grok-1-W4A8KV8 --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251214
+Model: /data/amd--grok-1-W4A8KV8
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok1
+Attention backend: unknown
+
+Attention backend: aiter (grok1)
+Server startup time: 134 seconds
+
+GSM8K Test Results:
+  Total duration: 58 seconds
+  Accuracy: 0.817 (Required: 0.8)
+  Early exit: Passed on run 1, skipped 4 run(s)
+  GSM8K accuracy: 0.817
+
+Client Benchmark Results:
+  Start time: 2025-12-14 11:08:46 PST
+  Rate 1, Run 1: 345 seconds
+Completed rate 1 - Total time: 345 seconds
+  Rate 2, Run 1: 338 seconds
+Completed rate 2 - Total time: 338 seconds
+  Rate 4, Run 1: 365 seconds
+Completed rate 4 - Total time: 365 seconds
+  Rate 8, Run 1: 418 seconds
+Completed rate 8 - Total time: 418 seconds
+Rate 16 skipped on MI355 hardware
+  End time: 2025-12-14 11:33:24 PST
+  Total duration: 1478 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 23999.30 ms
+  TTFT: 192.94 ms
+  ITL: 40.46 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 25865.47 ms
+  TTFT: 137.58 ms
+  ITL: 42.88 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 37317.18 ms
+  TTFT: 166.40 ms
+  ITL: 58.54 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 86912.61 ms
+  TTFT: 252.90 ms
+  ITL: 124.70 ms
+  Throughput: N/A requests/s
+
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-14 11:33:26 PST
+Total execution time: 1672 seconds (27 minutes)
+========================================
