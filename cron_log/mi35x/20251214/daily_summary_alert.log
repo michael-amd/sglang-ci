@@ -1,0 +1,7 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251214
+🖥️  Hardware: mi35x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251214...
+✅ Docker image date matches expected date (20251214) - proceeding with alert
+❌ Error generating summary: unsupported operand type(s) for *: 'NoneType' and 'int'
