@@ -1,16 +1,17 @@
 [system-cleanup] ==========================================
 [system-cleanup] Docker & GPU Core Cleanup Script Started
-[system-cleanup] Date: 2025-12-14 09:30:01 CST
+[system-cleanup] Date: 2025-12-14 10:30:01 CST
 [system-cleanup] Cleanup Docker images older than: 7 days
 [system-cleanup] Cleanup GPU core dumps: ALL files
 [system-cleanup] GPU core search directory: /mnt/raid/michael/sglang-ci
 [system-cleanup] Critical space threshold: 200 GB
 [system-cleanup] Dry run mode: false
 [system-cleanup] ==========================================
-[system-cleanup] Initial disk usage: 57% (183G free)
-[system-cleanup] Initial free space: 183 GB
-[system-cleanup] ❌ CRITICAL: Free space (183 GB) is below threshold (200 GB)!
+[system-cleanup] Initial disk usage: 97% (48G free)
+[system-cleanup] Initial free space: 48 GB
+[system-cleanup] ❌ CRITICAL: Free space (48 GB) is below threshold (200 GB)!
 [system-cleanup] ⚠️  Switching to AGGRESSIVE cleanup mode
+[system-cleanup] ⚠️  Teams webhook URL not set, skipping alert
 [system-cleanup] Step 1: Removing stopped Docker containers...
 [system-cleanup] Found 1 stopped container(s)
 [system-cleanup] ✅ Removed stopped containers
@@ -23,21 +24,22 @@
 [system-cleanup] Step 4: Removing old GPU core dump files (gpucore.*)...
 [system-cleanup] ⚠️  Using aggressive cleanup: removing ALL GPU core dumps
 [system-cleanup] No old GPU core dump files found
-[system-cleanup] ⚠️  Additional cleanup needed - Free: 183 GB, Usage: 57%
+[system-cleanup] ⚠️  Additional cleanup needed - Free: 64 GB, Usage: 96%
 [system-cleanup] Removing all unused Docker images older than 3 days...
 [system-cleanup] ✅ Pruned additional images: Total reclaimed space: 0B
-[system-cleanup] ❌ WARNING: Space still critically low after cleanup (183 GB free)
+[system-cleanup] ❌ WARNING: Space still critically low after cleanup (64 GB free)
+[system-cleanup] ⚠️  Teams webhook URL not set, skipping alert
 [system-cleanup] ==========================================
 [system-cleanup] ✅ Docker Cleanup Complete
-[system-cleanup] Initial disk usage: 57% (183G free) (183 GB free)
-[system-cleanup] Final disk usage: 57% (183G free) (183 GB free)
-[system-cleanup] Space freed: 0 GB
-[system-cleanup] Date: 2025-12-14 09:30:06 CST
+[system-cleanup] Initial disk usage: 97% (48G free) (48 GB free)
+[system-cleanup] Final disk usage: 96% (64G free) (64 GB free)
+[system-cleanup] Space freed: 16 GB
+[system-cleanup] Date: 2025-12-14 10:30:06 CST
 [system-cleanup] ==========================================
 [system-cleanup] Docker disk usage summary:
 TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
-Images          3         1         123GB     123GB (99%)
-Containers      1         1         0B        0B
-Local Volumes   4         0         0B        0B
+Images          2         0         123GB     123GB (100%)
+Containers      0         0         0B        0B
+Local Volumes   0         0         0B        0B
 Build Cache     0         0         0B        0B
 [system-cleanup] ⚠️  Cleanup completed but space is still below threshold
