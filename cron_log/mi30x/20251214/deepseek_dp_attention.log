@@ -1,0 +1,24 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --check-dp-attention --teams-webhook-url=
+[nightly] Start time: 2025-12-14 11:10:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2034969
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
+[nightly] DP attention mode enabled via command line
+[nightly] Custom model path provided: /data/models/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] ERROR: Another instance is already running (PID: 2008335)
+[nightly] Lock file: /tmp/perf_nightly_deepseek.lock
+[nightly] If this is incorrect, remove /tmp/perf_nightly_deepseek.lock and try again
+[nightly] Error notification skipped - no webhook URL configured

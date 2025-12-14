@@ -1,0 +1,135 @@
+[nightly] ==========================================
+[nightly] SGL Nightly Benchmark Started
+[nightly] ==========================================
+[nightly] Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=
+[nightly] Start time: 2025-12-14 10:00:01 PST
+[nightly] Machine: dell300x-pla-t12-38
+[nightly] Working directory: /mnt/raid/michael/sglang-ci
+[nightly] Script location: /mnt/raid/michael/sglang-ci/scripts/perf_nightly.sh
+[nightly] Process ID: 2008335
+[nightly] ==========================================
+
+[nightly] Runtime Environment:
+[nightly] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[nightly] Testing Docker daemon access...
+[nightly] Docker daemon accessible - proceeding...
+[nightly] WARN: --teams-webhook-url was provided without a value - notifications disabled
+[nightly] Custom model path provided: /data/models/deepseek-ai/DeepSeek-V3-0324
+[nightly] Hardware: mi30x, ROCM Version: rocm700
+[nightly] Model: deepseek, Mode(s): online
+[nightly] Created process lock: /tmp/perf_nightly_deepseek.lock
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for deepseek for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251214...
+[nightly] Found candidate tag for day -0: v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Found local image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Successfully obtained image for date 20251214: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Container name: sgl-dev_v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Reusing container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly DEEPSEEK online benchmark ===
+[nightly] Launching deepseek_perf_online_csv.sh inside sgl-dev_v0.5.6.post2-rocm700-mi30x-20251214
+[nightly] Passing --model-name='DeepSeek-V3-0324' to DeepSeek benchmark
+✅ Parameter validation passed
+[online] Script started at: 2025-12-14 10:00:33 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_online/sglang_client_log_DeepSeek-V3-0324_gsm8k.log)
+Checking serving benchmark logs...
+Missing: Concurrency 128, Run 1
+Missing: Concurrency 64, Run 1
+Missing: Concurrency 16, Run 1
+Missing: Concurrency 4, Run 1
+Missing: Concurrency 1, Run 1
+Scan complete: 5 total runs needed, 5 missing/incomplete
+❌ Missing 5 serving benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Clearing previous logs...
+Starting SGLang server for online GSM8K benchmark...
+
+============================================================
+🔥 MOE Kernel Warmup Phase
+============================================================
+[warmup] Pre-compiling MOE kernels to prevent JIT deadlock...
+[warmup] MOE kernels already compiled, skipping warmup
+[csv] Cleaning up stale aiter JIT lock files...
+[csv] No stale aiter lock files found
+[DEBUG] Using standard settings with environment variable: SGLANG_USE_AITER
+Waiting for SGLang server (PID: 53) to start... (Max 15 minutes)
+Server logs are being written to: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_online/sglang_server.log
+......................................
+SGLang server started successfully after 190 seconds.
+=== Online GSM8K Benchmark: TP=8, Questions=2000, Parallel=2000, Shots=5 ===
+[progress] Total benchmark runs to execute: 10 (GSM8K: 5, Serving: 5) - standard mode
+[progress] [--------------------------------------------------] 0/10 (0%) 
+Starting GSM8K Online Benchmark...
+Running 5 test iterations...
+Executing GSM8K test Run 1 ...
+  0%|          | 0/1319 [00:00<?, ?it/s]  0%|          | 1/1319 [00:23<8:32:59, 23.35s/it]  0%|          | 2/1319 [00:23<3:32:54,  9.70s/it]  0%|          | 3/1319 [00:24<2:00:42,  5.50s/it]  0%|          | 4/1319 [00:25<1:21:44,  3.73s/it]  1%|          | 7/1319 [00:25<30:57,  1.42s/it]    1%|          | 12/1319 [00:27<18:50,  1.16it/s]  1%|          | 15/1319 [00:27<13:50,  1.57it/s]  1%|          | 16/1319 [00:29<17:40,  1.23it/s]  1%|▏         | 18/1319 [00:30<16:00,  1.35it/s]  2%|▏         | 27/1319 [00:33<09:38,  2.23it/s]  2%|▏         | 30/1319 [00:33<06:05,  3.53it/s]  2%|▏         | 31/1319 [00:33<06:05,  3.53it/s]  2%|▏         | 32/1319 [00:33<06:30,  3.30it/s]  3%|▎         | 39/1319 [00:34<04:54,  4.35it/s]  3%|▎         | 42/1319 [00:35<04:50,  4.39it/s]  4%|▍         | 50/1319 [00:35<03:34,  5.91it/s]  5%|▍         | 60/1319 [00:36<02:42,  7.77it/s]  5%|▍         | 64/1319 [00:37<02:45,  7.56it/s]  5%|▌         | 69/1319 [00:37<02:23,  8.71it/s]  6%|▌         | 82/1319 [00:39<02:59,  6.91it/s]  7%|▋         | 91/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 92/1319 [00:39<02:27,  8.32it/s]  7%|▋         | 93/1319 [00:40<02:42,  7.56it/s]  7%|▋         | 98/1319 [00:40<03:08,  6.48it/s]  8%|▊         | 99/1319 [00:40<03:08,  6.48it/s]  8%|▊         | 100/1319 [00:40<03:08,  6.48it/s]  8%|▊         | 101/1319 [00:40<03:19,  6.10it/s]  8%|▊         | 107/1319 [00:41<02:56,  6.88it/s]  9%|▉         | 117/1319 [00:41<01:53, 10.56it/s] 10%|▉         | 128/1319 [00:42<01:20, 14.83it/s] 10%|█         | 135/1319 [00:42<01:28, 13.40it/s] 11%|█         | 144/1319 [00:42<01:12, 16.27it/s] 11%|█▏        | 150/1319 [00:42<00:30, 37.85it/s] 11%|█▏        | 151/1319 [00:42<00:30, 37.85it/s] 11%|█▏        | 151/1319 [00:42<00:30, 37.85it/s] 11%|█▏        | 151/1319 [00:42<00:30, 37.85it/s] 11%|█▏        | 151/1319 [00:42<00:30, 37.85it/s] 11%|█▏        | 151/1319 [00:42<00:30, 37.85it/s] 12%|█▏        | 155/1319 [00:43<00:38, 30.61it/s] 12%|█▏        | 161/1319 [00:43<00:42, 27.13it/s] 13%|█▎        | 173/1319 [00:44<00:49, 23.03it/s] 14%|█▍        | 183/1319 [00:44<00:45, 24.95it/s] 14%|█▍        | 184/1319 [00:44<00:41, 27.28it/s] 14%|█▍        | 187/1319 [00:45<00:58, 19.33it/s] 14%|█▍        | 191/1319 [00:47<02:32,  7.42it/s] 15%|█▌        | 202/1319 [00:47<01:56,  9.61it/s] 16%|█▌        | 214/1319 [00:48<01:33, 11.81it/s] 17%|█▋        | 221/1319 [00:48<00:55, 19.83it/s] 17%|█▋        | 222/1319 [00:48<00:55, 19.83it/s] 17%|█▋        | 223/1319 [00:48<00:55, 19.83it/s] 17%|█▋        | 223/1319 [00:48<00:55, 19.83it/s] 17%|█▋        | 226/1319 [00:49<01:11, 15.38it/s] 18%|█▊        | 235/1319 [00:49<01:12, 14.86it/s] 19%|█▉        | 253/1319 [00:52<01:48,  9.85it/s] 20%|██        | 265/1319 [00:52<01:23, 12.58it/s] 21%|██        | 275/1319 [00:52<00:29, 35.11it/s] 21%|██        | 278/1319 [00:52<00:29, 35.11it/s] 21%|██        | 278/1319 [00:52<00:29, 35.11it/s] 21%|██        | 278/1319 [00:52<00:29, 35.11it/s] 21%|██        | 278/1319 [00:52<00:29, 35.11it/s] 21%|██▏       | 283/1319 [00:55<01:33, 11.08it/s] 22%|██▏       | 291/1319 [00:55<01:21, 12.63it/s] 23%|██▎       | 302/1319 [00:56<01:05, 15.63it/s] 23%|██▎       | 307/1319 [00:56<00:31, 32.18it/s] 23%|██▎       | 307/1319 [00:56<00:31, 32.18it/s] 23%|██▎       | 307/1319 [00:56<00:31, 32.18it/s] 23%|██▎       | 307/1319 [00:56<00:31, 32.18it/s] 24%|██▎       | 312/1319 [00:56<00:34, 29.09it/s] 24%|██▍       | 314/1319 [00:56<00:37, 26.89it/s] 24%|██▍       | 314/1319 [00:56<00:37, 26.89it/s] 24%|██▍       | 317/1319 [00:56<00:38, 25.81it/s] 25%|██▍       | 327/1319 [00:56<00:29, 33.91it/s] 26%|██▌       | 338/1319 [00:56<00:22, 42.80it/s] 26%|██▋       | 347/1319 [00:56<00:20, 47.25it/s] 27%|██▋       | 354/1319 [00:57<00:20, 47.22it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 28%|██▊       | 366/1319 [00:57<00:09, 104.83it/s] 29%|██▊       | 377/1319 [00:57<00:12, 74.64it/s]  29%|██▉       | 386/1319 [00:57<00:13, 71.53it/s] 30%|██▉       | 394/1319 [00:57<00:13, 67.45it/s] 30%|███       | 402/1319 [00:57<00:14, 63.94it/s] 31%|███       | 412/1319 [00:57<00:13, 65.12it/s] 32%|███▏      | 427/1319 [00:58<00:11, 76.09it/s] 33%|███▎      | 439/1319 [00:58<00:11, 77.96it/s] 34%|███▍      | 447/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 34%|███▍      | 448/1319 [00:58<00:07, 114.88it/s] 35%|███▍      | 460/1319 [00:58<00:08, 104.98it/s] 36%|███▌      | 471/1319 [00:58<00:08, 96.46it/s]  36%|███▌      | 473/1319 [00:58<00:09, 92.47it/s] 37%|███▋      | 483/1319 [00:58<00:12, 65.98it/s] 37%|███▋      | 491/1319 [00:58<00:13, 63.47it/s] 38%|███▊      | 501/1319 [00:59<00:12, 64.96it/s] 39%|███▊      | 510/1319 [00:59<00:12, 64.40it/s] 39%|███▉      | 517/1319 [00:59<00:13, 59.71it/s] 40%|████      | 529/1319 [00:59<00:11, 66.53it/s] 41%|████      | 542/1319 [00:59<00:10, 73.14it/s] 42%|████▏     | 559/1319 [00:59<00:08, 87.09it/s] 43%|████▎     | 568/1319 [00:59<00:10, 72.76it/s] 44%|████▍     | 581/1319 [01:00<00:08, 84.83it/s] 45%|████▍     | 588/1319 [01:00<00:05, 135.64it/s] 45%|████▍     | 589/1319 [01:00<00:05, 135.64it/s] 45%|████▍     | 589/1319 [01:00<00:05, 135.64it/s] 45%|████▍     | 589/1319 [01:00<00:05, 135.64it/s] 46%|████▌     | 604/1319 [01:00<00:07, 92.09it/s]  47%|████▋     | 616/1319 [01:00<00:07, 89.94it/s] 48%|████▊     | 627/1319 [01:00<00:07, 86.59it/s] 48%|████▊     | 637/1319 [01:00<00:08, 81.97it/s] 49%|████▉     | 646/1319 [01:00<00:08, 76.64it/s] 50%|████▉     | 655/1319 [01:01<00:09, 72.38it/s] 50%|█████     | 665/1319 [01:01<00:08, 72.81it/s] 51%|█████     | 673/1319 [01:01<00:09, 67.60it/s] 52%|█████▏    | 684/1319 [01:01<00:09, 70.32it/s] 53%|█████▎    | 701/1319 [01:01<00:07, 86.15it/s] 54%|█████▍    | 710/1319 [01:01<00:07, 79.11it/s] 55%|█████▍    | 719/1319 [01:01<00:08, 74.59it/s] 55%|█████▍    | 724/1319 [01:01<00:07, 77.89it/s] 55%|█████▍    | 724/1319 [01:01<00:07, 77.89it/s] 55%|█████▍    | 724/1319 [01:01<00:07, 77.89it/s] 55%|█████▌    | 732/1319 [01:02<00:08, 71.29it/s] 56%|█████▌    | 740/1319 [01:02<00:08, 67.28it/s] 57%|█████▋    | 751/1319 [01:02<00:08, 70.80it/s] 58%|█████▊    | 762/1319 [01:02<00:07, 73.05it/s] 58%|█████▊    | 771/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▊    | 772/1319 [01:02<00:04, 118.55it/s] 59%|█████▉    | 784/1319 [01:02<00:06, 83.90it/s]  60%|██████    | 794/1319 [01:02<00:06, 80.82it/s] 62%|██████▏   | 817/1319 [01:03<00:04, 109.48it/s] 63%|██████▎   | 835/1319 [01:03<00:04, 108.73it/s] 64%|██████▎   | 840/1319 [01:03<00:03, 120.71it/s] 64%|██████▎   | 840/1319 [01:03<00:03, 120.71it/s] 64%|██████▎   | 840/1319 [01:03<00:03, 120.71it/s] 64%|██████▎   | 840/1319 [01:03<00:03, 120.71it/s] 65%|██████▍   | 853/1319 [01:03<00:04, 107.78it/s] 66%|██████▌   | 869/1319 [01:03<00:04, 104.81it/s] 67%|██████▋   | 881/1319 [01:03<00:04, 95.81it/s]  68%|██████▊   | 894/1319 [01:03<00:04, 91.60it/s] 69%|██████▉   | 907/1319 [01:04<00:04, 88.80it/s] 69%|██████▉   | 908/1319 [01:04<00:04, 88.65it/s] 70%|██████▉   | 922/1319 [01:04<00:04, 89.18it/s] 71%|███████▏  | 941/1319 [01:04<00:03, 99.20it/s] 73%|███████▎  | 961/1319 [01:04<00:03, 110.25it/s] 74%|███████▍  | 975/1319 [01:04<00:03, 106.21it/s] 75%|███████▍  | 988/1319 [01:04<00:03, 102.22it/s] 76%|███████▌  | 999/1319 [01:04<00:03, 94.52it/s]  76%|███████▌  | 1002/1319 [01:04<00:03, 92.44it/s] 76%|███████▌  | 1002/1319 [01:04<00:03, 92.44it/s] 76%|███████▌  | 1002/1319 [01:04<00:03, 92.44it/s] 77%|███████▋  | 1014/1319 [01:05<00:03, 90.91it/s] 78%|███████▊  | 1028/1319 [01:05<00:03, 95.25it/s] 79%|███████▊  | 1038/1319 [01:05<00:03, 89.25it/s] 80%|███████▉  | 1049/1319 [01:05<00:03, 87.69it/s] 81%|████████  | 1067/1319 [01:05<00:02, 103.38it/s] 82%|████████▏ | 1078/1319 [01:05<00:02, 86.73it/s]  82%|████████▏ | 1088/1319 [01:05<00:03, 75.43it/s] 83%|████████▎ | 1091/1319 [01:05<00:03, 68.45it/s] 83%|████████▎ | 1092/1319 [01:05<00:03, 68.45it/s] 83%|████████▎ | 1100/1319 [01:06<00:03, 67.92it/s] 84%|████████▍ | 1108/1319 [01:06<00:03, 67.64it/s] 85%|████████▍ | 1118/1319 [01:06<00:02, 72.37it/s] 85%|████████▌ | 1126/1319 [01:06<00:02, 71.35it/s] 86%|████████▌ | 1134/1319 [01:06<00:02, 70.27it/s] 87%|████████▋ | 1142/1319 [01:06<00:02, 70.16it/s] 87%|████████▋ | 1150/1319 [01:06<00:02, 61.98it/s] 88%|████████▊ | 1157/1319 [01:06<00:02, 61.97it/s] 88%|████████▊ | 1166/1319 [01:07<00:02, 67.53it/s] 89%|████████▉ | 1173/1319 [01:07<00:02, 66.77it/s] 89%|████████▉ | 1180/1319 [01:07<00:02, 65.78it/s] 90%|█████████ | 1188/1319 [01:07<00:01, 69.06it/s] 91%|█████████ | 1198/1319 [01:07<00:01, 76.60it/s] 91%|█████████▏| 1206/1319 [01:07<00:01, 60.37it/s] 92%|█████████▏| 1213/1319 [01:07<00:01, 62.43it/s] 92%|█████████▏| 1220/1319 [01:07<00:01, 57.29it/s] 93%|█████████▎| 1229/1319 [01:08<00:01, 59.16it/s] 94%|█████████▎| 1236/1319 [01:08<00:01, 51.08it/s] 94%|█████████▍| 1242/1319 [01:08<00:01, 44.45it/s] 95%|█████████▍| 1249/1319 [01:08<00:01, 46.15it/s] 95%|█████████▌| 1257/1319 [01:08<00:01, 42.33it/s] 96%|█████████▌| 1262/1319 [01:08<00:01, 41.27it/s] 96%|█████████▌| 1267/1319 [01:09<00:01, 40.55it/s] 97%|█████████▋| 1274/1319 [01:09<00:01, 44.74it/s] 97%|█████████▋| 1279/1319 [01:09<00:01, 32.22it/s] 97%|█████████▋| 1283/1319 [01:09<00:01, 30.49it/s] 98%|█████████▊| 1287/1319 [01:09<00:01, 29.31it/s] 98%|█████████▊| 1291/1319 [01:09<00:01, 27.14it/s] 98%|█████████▊| 1295/1319 [01:10<00:00, 29.21it/s] 98%|█████████▊| 1299/1319 [01:10<00:00, 24.31it/s] 99%|█████████▊| 1302/1319 [01:10<00:00, 17.63it/s] 99%|█████████▉| 1306/1319 [01:10<00:00, 20.40it/s] 99%|█████████▉| 1309/1319 [01:10<00:00, 18.59it/s] 99%|█████████▉| 1312/1319 [01:11<00:00, 16.91it/s]100%|█████████▉| 1315/1319 [01:11<00:00, 16.66it/s]100%|█████████▉| 1317/1319 [01:12<00:00,  8.06it/s]100%|██████████| 1319/1319 [01:16<00:00,  1.73it/s]100%|██████████| 1319/1319 [01:16<00:00, 17.27it/s]
+Accuracy: 0.939
+Invalid: 0.000
+Latency: 118.827 s
+Output throughput: 1149.341 token/s
+Run 1 completed in 125 seconds
+Run 1: Accuracy: 0.939
+  ✓ Run 1 included in average (accuracy: 0.939)
+  🚀 Passed on run 1, skipping remaining 4 run(s)
+GSM8K test completed in 125 seconds (early exit)
+Accuracy: 0.939 (Required: 0.93)
+Accuracy meets threshold (0.93).
+✅ GSM8K benchmark completed successfully.
+GSM8K log saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_online/sglang_client_log_DeepSeek-V3-0324_gsm8k.log
+Server log saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_online/sglang_server.log
+Starting serving benchmark tests with different concurrency levels...
+[online] Structured CSV initialized at /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_online/v0.5.6.post2-rocm700-mi30x-20251214_DeepSeek-V3-0324_FP8_serving.csv
+Processing concurrency 128 with 1 runs...
+Running serving benchmark with concurrency 128 (Run 1) - 500 prompts...
+Concurrency 128, Run 1 completed: 500 requests, (tok/s): tok/s output throughput, 156717.04ms E2E latency (627s)
+[progress] [=====---------------------------------------------] 1/10 (10%)  | Serving: C128 R1
+✅ Best results for concurrency 128: E2E=156717.04ms, TTFT=28631.78ms, ITL=146.36ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 128: E2E=156717.04ms, TTFT=28631.78ms, ITL=146.36ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 128
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 64 with 1 runs...
+Running serving benchmark with concurrency 64 (Run 1) - 500 prompts...
+Concurrency 64, Run 1 completed: 500 requests, (tok/s): tok/s output throughput, 116685.01ms E2E latency (891s)
+[progress] [==========----------------------------------------] 2/10 (20%)  | Serving: C64 R1
+✅ Best results for concurrency 64: E2E=116685.01ms, TTFT=9717.63ms, ITL=121.54ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 64: E2E=116685.01ms, TTFT=9717.63ms, ITL=121.54ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 64
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 16 with 1 runs...
+Running serving benchmark with concurrency 16 (Run 1) - 128 prompts...
+Concurrency 16, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 80726.54ms E2E latency (512s)
+[progress] [===============-----------------------------------] 3/10 (30%)  | Serving: C16 R1
+✅ Best results for concurrency 16: E2E=80726.54ms, TTFT=2214.74ms, ITL=96.79ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 16: E2E=80726.54ms, TTFT=2214.74ms, ITL=96.79ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 16
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 4 with 1 runs...
+Running serving benchmark with concurrency 4 (Run 1) - 128 prompts...
+Concurrency 4, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 21509.43ms E2E latency (702s)
+[progress] [====================------------------------------] 4/10 (40%)  | Serving: C4 R1
+✅ Best results for concurrency 4: E2E=21509.43ms, TTFT=377.92ms, ITL=26.42ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 4: E2E=21509.43ms, TTFT=377.92ms, ITL=26.42ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 4
+Sleeping 3 seconds before next concurrency level...
+Processing concurrency 1 with 1 runs...
+Running serving benchmark with concurrency 1 (Run 1) - 128 prompts...
