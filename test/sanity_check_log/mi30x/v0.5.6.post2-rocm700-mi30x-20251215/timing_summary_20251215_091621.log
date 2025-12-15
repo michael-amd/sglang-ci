@@ -1,0 +1,93 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-15 09:16:21 PST
+Machine: dell300x-pla-t12-38
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-15 09:16:21 PST
+Server startup: 141.19s
+Trial 1: PASS [OK] (Accuracy: 0.844, Time: 144.13s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.54s
+Final result: PASS [OK]
+Accuracy: 0.844 (Required: 0.820)
+Total time: 285.87s
+End time: 2025-12-15 09:21:07 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-15 09:21:12 PST
+Server startup: 76.10s
+Trial 1: PASS [OK] (Accuracy: 0.525, Time: 92.09s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.54s
+Final result: PASS [OK]
+Accuracy: 0.525 (Required: 0.500)
+Total time: 168.74s
+End time: 2025-12-15 09:24:01 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-15 09:24:06 PST
+Server startup: FAILED after 80.11s
+Error: Kernel compilation deadlock (14860e65 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-15 09:25:27 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.41s
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-15 09:30:34 PST
+Server startup: FAILED after 102.70s
+Error: Kernel compilation deadlock (6dcc7977 (30 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-15 09:32:18 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 300.15s
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-15 09:37:24 PST
+Server startup: FAILED after 188.77s
+Error: Kernel compilation deadlock (2cf92130 (28 workers waiting))
+🔄 Retrying with --disable-cuda-graph fallback...
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-15 09:40:34 PST
+Note: Running with --disable-cuda-graph fallback
+Server startup: FAILED after 600.07s
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-15 09:50:38 PST
+Server startup: FAILED after 300.31s
+
+=== llama4 on mi30x ===
+Start time: 2025-12-15 09:55:43 PST
+Server startup: FAILED after 79.60s
+Error: Code bug - AttributeError: 'CustomAllreduce' object has no attribute 'original_disabled'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-15 09:57:03 PST
+Total execution time: 2442.06s (40.7 minutes)
+Average time per model: 348.87s
+Models tested: 7/7
+Models passed: 2/7
+Models failed: 5/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: FAIL
+  GROK1-IN4: FAIL
+  GROK1-FP8: FAIL
+  GROK2.5: FAIL
+  llama4: FAIL
