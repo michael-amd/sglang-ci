@@ -71,7 +71,7 @@ GSM8K_HOST="${GSM8K_HOST:-http://127.0.0.1}"
 # Server configuration
 SERVER_MEM_FRACTION="${SERVER_MEM_FRACTION:-0.9}"
 SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
-SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
+SERVER_TIMEOUT="${SERVER_TIMEOUT:-1800}"  # 30 minutes (increased for cold-start aiter JIT compilation)
 
 # Torch compile specific configuration (standard mode without DP attention)
 # MoE models with torch compile require reduced memory and smaller CUDA graph batch size
@@ -84,6 +84,17 @@ TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
 # Reduced from 0.8/16 to 0.6/8 after Nov 2024 GPU memory fault crashes (see GPUCORE_INVESTIGATION.md)
 DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.6}"
 DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-8}"
+
+# MTP (Multi-Token Prediction) with EAGLE speculative decoding configuration
+# These settings match the recommended config for DeepSeek-R1-MXFP4-Preview
+MTP_MEM_FRACTION="${MTP_MEM_FRACTION:-0.8}"
+MTP_MAX_RUNNING_REQUESTS="${MTP_MAX_RUNNING_REQUESTS:-64}"
+MTP_CHUNKED_PREFILL_SIZE="${MTP_CHUNKED_PREFILL_SIZE:-131072}"
+MTP_KV_CACHE_DTYPE="${MTP_KV_CACHE_DTYPE:-fp8_e4m3}"
+MTP_SPECULATIVE_ALGORITHM="${MTP_SPECULATIVE_ALGORITHM:-EAGLE}"
+MTP_SPECULATIVE_NUM_STEPS="${MTP_SPECULATIVE_NUM_STEPS:-3}"
+MTP_SPECULATIVE_EAGLE_TOPK="${MTP_SPECULATIVE_EAGLE_TOPK:-1}"
+MTP_SPECULATIVE_NUM_DRAFT_TOKENS="${MTP_SPECULATIVE_NUM_DRAFT_TOKENS:-4}"
 
 # Benchmark run configuration
 BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"
@@ -213,7 +224,7 @@ for arg in "$@"; do
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
       echo "  --enable-torch-compile Enable torch compile for performance optimization (default: false)"
-      echo "  --enable-mtp-test      Generate MTP CSV/plot artifacts (DeepSeek-R1 MXFP4 on MI35x)"
+      echo "  --enable-mtp-test      Enable EAGLE speculative decoding (MTP), GSM8K only (no serving benchmarks)"
       echo "  --enable-dp-test       Run DP attention + throughput test (includes MTP-style serving runs)"
       echo "  --help                 Show this help message"
       echo ""
@@ -633,17 +644,34 @@ warmup_moe_kernels() {
     echo "============================================================"
     echo "[warmup] Pre-compiling MOE kernels to prevent JIT deadlock..."
 
-    # Check if MOE kernels are already compiled
-    local moe_kernel_path="/sgl-workspace/aiter/aiter/jit/module_moe_sorting.so"
-    if [[ -f "$moe_kernel_path" ]]; then
-        echo "[warmup] MOE kernels already compiled, skipping warmup"
+    # Check if critical aiter kernels are already compiled
+    # The most time-consuming kernels are: module_rmsnorm (~12 min), module_moe_ck2stages (~5 min)
+    local aiter_jit_dir="/sgl-workspace/aiter/aiter/jit"
+    local critical_kernels=(
+        "module_moe_sorting.so"
+        "module_rmsnorm.so"
+        "module_mla_metadata.so"
+        "module_mla_asm.so"
+        "module_mla_reduce.so"
+    )
+
+    local all_present=true
+    for kernel in "${critical_kernels[@]}"; do
+        if [[ ! -f "${aiter_jit_dir}/${kernel}" ]]; then
+            echo "[warmup] Missing kernel: ${kernel}"
+            all_present=false
+        fi
+    done
+
+    if $all_present; then
+        echo "[warmup] All critical aiter kernels already compiled, skipping warmup"
         return 0
     fi
 
-    echo "[warmup] MOE kernels not found, starting warmup server (TP=1)..."
+    echo "[warmup] Some aiter kernels not found, starting warmup server (TP=1)..."
 
     local warmup_port=30001
-    local warmup_timeout=300
+    local warmup_timeout=900  # 15 minutes to allow for module_rmsnorm (~12 min) + others
     local warmup_pid=""
 
     # Start a single-GPU server to compile kernels sequentially
@@ -678,7 +706,7 @@ warmup_moe_kernels() {
         # Check if server is ready
         if curl -s -f "http://127.0.0.1:${warmup_port}/health" > /dev/null 2>&1; then
             server_ready=true
-            echo "[warmup] ✅ Server ready, MOE kernels compiled! (${elapsed}s)"
+            echo "[warmup] ✅ Server ready, aiter kernels compiled! (${elapsed}s)"
             break
         fi
 
@@ -699,9 +727,10 @@ warmup_moe_kernels() {
     fuser -k ${warmup_port}/tcp 2>/dev/null || true
 
     if $server_ready; then
-        echo "[warmup] ✅ MOE kernel warmup completed successfully!"
+        echo "[warmup] ✅ Aiter kernel warmup completed successfully!"
     else
         echo "[warmup] ⚠️ Warmup may not have completed fully, proceeding anyway"
+        echo "[warmup] ⚠️ Server startup timeout may need to be increased for first-run JIT compilation"
     fi
 
     # Brief pause before main server
@@ -769,6 +798,29 @@ start_sglang_server() {
             --enable-dp-attention \
             --mem-fraction-static "${mem_fraction}" \
             ${cuda_graph_bs_flag} \
+            ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
+    elif [ "$ENABLE_MTP_TEST" = "true" ]; then
+        # MTP mode with EAGLE speculative decoding
+        echo "[DEBUG] MTP mode with EAGLE speculative decoding enabled"
+        echo "[DEBUG] MTP config: mem-fraction=${MTP_MEM_FRACTION}, max-requests=${MTP_MAX_RUNNING_REQUESTS}"
+        echo "[DEBUG] MTP speculative: algorithm=${MTP_SPECULATIVE_ALGORITHM}, steps=${MTP_SPECULATIVE_NUM_STEPS}, topk=${MTP_SPECULATIVE_EAGLE_TOPK}, draft-tokens=${MTP_SPECULATIVE_NUM_DRAFT_TOKENS}"
+
+        # Start server with MTP/EAGLE configuration
+        env HSA_ENABLE_COREDUMP=0 SGLANG_AITER_MLA_PERSIST=1 python3 -m sglang.launch_server \
+            --model-path "${MODEL}" \
+            --tensor-parallel-size "${TP}" \
+            --port "$GSM8K_PORT" \
+            --trust-remote-code \
+            --chunked-prefill-size "${MTP_CHUNKED_PREFILL_SIZE}" \
+            --disable-radix-cache \
+            --mem-fraction-static "${MTP_MEM_FRACTION}" \
+            --max-running-requests "${MTP_MAX_RUNNING_REQUESTS}" \
+            --kv-cache-dtype "${MTP_KV_CACHE_DTYPE}" \
+            --attention-backend aiter \
+            --speculative-algorithm "${MTP_SPECULATIVE_ALGORITHM}" \
+            --speculative-num-steps "${MTP_SPECULATIVE_NUM_STEPS}" \
+            --speculative-eagle-topk "${MTP_SPECULATIVE_EAGLE_TOPK}" \
+            --speculative-num-draft-tokens "${MTP_SPECULATIVE_NUM_DRAFT_TOKENS}" \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
@@ -876,6 +928,11 @@ start_sglang_server() {
 
 # Helper function to check if we should run serving benchmarks
 should_run_serving_benchmarks() {
+    # MTP test only runs GSM8K by default - skip serving benchmarks
+    if [ "$ENABLE_MTP_TEST" = "true" ]; then
+        return 1
+    fi
+
     if [ "$ENABLE_DP_TEST" = "true" ]; then
         return 0
     fi
@@ -886,7 +943,9 @@ should_run_serving_benchmarks() {
 build_mode_description() {
     local parts=()
 
-    if [ "$ENABLE_DP_TEST" = "true" ]; then
+    if [ "$ENABLE_MTP_TEST" = "true" ]; then
+        parts+=("MTP/EAGLE speculative")
+    elif [ "$ENABLE_DP_TEST" = "true" ]; then
         parts+=("DP test")
     elif [ "$CHECK_DP_ATTENTION" = "true" ]; then
         parts+=("DP attention")
