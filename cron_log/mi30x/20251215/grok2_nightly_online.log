@@ -23,3 +23,172 @@
 [nightly] GPU is busy. Attempting to stop running Docker containers...
 [nightly] Stopping running containers: a265a897f16b
 [nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] Searching for non-SRT images for grok2 for the last 1 days...
+[nightly] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251215...
+[nightly] Found candidate tag for day -0: v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Found local image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Successfully obtained image for date 20251215: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Found 1 valid image(s) to run benchmarks on:
+[nightly]   - rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+
+[nightly] ==========================================
+[nightly] Starting benchmarks for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] ==========================================
+[nightly] Checking GPU status before starting benchmarks for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215...
+[nightly] GPU is busy. Attempting to stop running Docker containers...
+[nightly] No running containers to stop.
+[nightly] Waiting 15s for GPU to become idle...
+[nightly] WARN: GPU may still be busy, but proceeding as requested.
+[nightly] INFO: Found 0/15 completed runs for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215 (online). Proceeding with benchmarks.
+[nightly] Using Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Container name: sgl-dev_v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Reusing container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] === Starting benchmark execution ===
+[nightly] === Starting nightly GROK2 online benchmark ===
+[nightly] Launching grok_perf_online_csv.sh inside sgl-dev_v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Adding --model-type=grok2 flag for Grok 2 benchmark
+[nightly] Adding --tokenizer='/data/models/alvarobartt--grok-2-tokenizer' flag for Grok 2 benchmark
+[online] Using Grok 2 configuration
+[online] Using default Grok 2 tokenizer: /data/models/alvarobartt--grok-2-tokenizer
+[online] Script started at: 2025-12-15 13:35:43 PST
+Scanning existing logs to check if all benchmarks are already complete...
+Checking GSM8K log status...
+Missing: GSM8K log file (/mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post2-rocm700-mi30x-20251215_GROK2_FP8_online/sglang_client_log_GROK2_gsm8k_aiter.log)
+Checking client benchmark logs...
+Scan complete: 0/5 client benchmark runs are complete.
+❌ Missing or incomplete client benchmark runs.
+❌ GSM8K benchmark is missing, empty, or incomplete.
+Server startup required.
+Starting benchmarks using aiter backend...
+
+============================================================
+🔥 MOE Kernel Warmup Phase
+============================================================
+[warmup] Pre-compiling MOE kernels to prevent JIT deadlock...
+[warmup] MOE kernels already compiled, skipping warmup
+[online] Cleaning up stale aiter JIT lock files...
+[online] No stale aiter lock files found
+[online] Using Grok2 environment: HSA_ENABLE_COREDUMP=0 RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=0
+[online] Launching backend=aiter for grok2
+[online] Waiting for server to be ready (timeout: 600s)...
+[online] Still waiting... (10s elapsed)
+[online] Still waiting... (20s elapsed)
+[online] Still waiting... (30s elapsed)
+[online] Still waiting... (40s elapsed)
+[online] Still waiting... (50s elapsed)
+[online] Still waiting... (60s elapsed)
+[online] Still waiting... (70s elapsed)
+[online] Still waiting... (80s elapsed)
+[online] Still waiting... (90s elapsed)
+[online] Still waiting... (100s elapsed)
+[online] Still waiting... (110s elapsed)
+[online] Still waiting... (120s elapsed)
+[online] Still waiting... (130s elapsed)
+[online] Still waiting... (140s elapsed)
+[online] Still waiting... (150s elapsed)
+[online] Still waiting... (160s elapsed)
+[online] Still waiting... (170s elapsed)
+[online] Still waiting... (180s elapsed)
+[online] Still waiting... (190s elapsed)
+[online] Still waiting... (200s elapsed)
+[online] Still waiting... (210s elapsed)
+[online] Still waiting... (220s elapsed)
+[online] Still waiting... (230s elapsed)
+[online] Still waiting... (240s elapsed)
+[online] Still waiting... (250s elapsed)
+[online] Still waiting... (260s elapsed)
+[online] Still waiting... (270s elapsed)
+[online] Still waiting... (280s elapsed)
+[online] Still waiting... (290s elapsed)
+[online] Still waiting... (300s elapsed)
+[online] Still waiting... (310s elapsed)
+[online] Still waiting... (320s elapsed)
+[online] Still waiting... (330s elapsed)
+[online] Still waiting... (340s elapsed)
+[online] Still waiting... (350s elapsed)
+[online] Still waiting... (360s elapsed)
+[online] Still waiting... (370s elapsed)
+[online] Still waiting... (380s elapsed)
+[online] Still waiting... (390s elapsed)
+[online] Still waiting... (400s elapsed)
+[online] Still waiting... (410s elapsed)
+[online] Still waiting... (420s elapsed)
+[online] Still waiting... (430s elapsed)
+[online] Still waiting... (440s elapsed)
+[online] Still waiting... (450s elapsed)
+[online] Still waiting... (460s elapsed)
+[online] Still waiting... (470s elapsed)
+[online] Still waiting... (480s elapsed)
+[online] Still waiting... (490s elapsed)
+[online] Still waiting... (500s elapsed)
+[online] Still waiting... (510s elapsed)
+[online] Still waiting... (520s elapsed)
+[online] Still waiting... (530s elapsed)
+[online] Still waiting... (540s elapsed)
+[online] Still waiting... (550s elapsed)
+[online] Still waiting... (560s elapsed)
+[online] Still waiting... (570s elapsed)
+[online] Still waiting... (580s elapsed)
+[online] Still waiting... (590s elapsed)
+[online] ERROR: Server failed to start within 600 seconds
+[online] Last 50 lines of server log:
+[aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[2025-12-15 13:35:50] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+INFO 12-15 13:35:50 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:71: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF quantization currently.
+  warnings.warn(f"Only CUDA support GGUF quantization currently.")
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1360, in from_pretrained
+    config_class = CONFIG_MAPPING[config_dict["model_type"]]
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1048, in __getitem__
+    raise KeyError(key)
+KeyError: 'grok'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 29, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4817, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4352, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 306, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 662, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 1010, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4362, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 3214, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 267, in get_config
+    raise e
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 262, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1362, in from_pretrained
+    raise ValueError(
+ValueError: The checkpoint you are trying to load has model type `grok` but Transformers does not recognize this architecture. This could be because of an issue with the checkpoint, or because your version of Transformers is out of date.
+
+You can update Transformers with the command `pip install --upgrade transformers`. If this does not work, and the checkpoint is very new, then there may not be a release version that supports this model yet. In this case, you can get the most up-to-date code by installing Transformers from source with the command `pip install git+https://github.com/huggingface/transformers.git`
+[nightly] === Online benchmark dispatched for GROK2; check logs in sgl-dev_v0.5.6.post2-rocm700-mi30x-20251215 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/GROK2/v0.5.6.post2-rocm700-mi30x-20251215_GROK2_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251215
+[nightly] ERROR: Online post-processing failed (exit code: 1)
+[nightly] Error notification skipped - no webhook URL configured
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251215
+[nightly] Stopping container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251215 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
