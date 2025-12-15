@@ -1,0 +1,45 @@
+[aiter] import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+[2025-12-15 13:35:50] INFO core.py:477: import [module_aiter_enum] under /sgl-workspace/aiter/aiter/jit/module_aiter_enum.so
+INFO 12-15 13:35:50 [__init__.py:241] Automatically detected platform rocm.
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq.py:71: UserWarning: HIP does not support fused_marlin_moe currently.
+  warnings.warn(f"HIP does not support fused_marlin_moe currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:46: UserWarning: Only CUDA support GGUF quantization currently.
+  warnings.warn(f"Only CUDA support GGUF quantization currently.")
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1360, in from_pretrained
+    config_class = CONFIG_MAPPING[config_dict["model_type"]]
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1048, in __getitem__
+    raise KeyError(key)
+KeyError: 'grok'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 29, in <module>
+    server_args = prepare_server_args(sys.argv[1:])
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4817, in prepare_server_args
+    return ServerArgs.from_cli_args(raw_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4352, in from_cli_args
+    return cls(**{attr: getattr(args, attr) for attr in attrs})
+  File "<string>", line 306, in __init__
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 662, in __post_init__
+    self._handle_model_specific_adjustments()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 1010, in _handle_model_specific_adjustments
+    hf_config = self.get_hf_config()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 4362, in get_hf_config
+    hf_config = get_config(
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 3214, in wrapper
+    result = func(*args, **kwargs)
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 267, in get_config
+    raise e
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/hf_transformers_utils.py", line 262, in get_config
+    config = AutoConfig.from_pretrained(
+  File "/opt/venv/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1362, in from_pretrained
+    raise ValueError(
+ValueError: The checkpoint you are trying to load has model type `grok` but Transformers does not recognize this architecture. This could be because of an issue with the checkpoint, or because your version of Transformers is out of date.
+
+You can update Transformers with the command `pip install --upgrade transformers`. If this does not work, and the checkpoint is very new, then there may not be a release version that supports this model yet. In this case, you can get the most up-to-date code by installing Transformers from source with the command `pip install git+https://github.com/huggingface/transformers.git`
