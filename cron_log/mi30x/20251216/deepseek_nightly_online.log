@@ -133,3 +133,41 @@ Concurrency 4, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 
 Sleeping 3 seconds before next concurrency level...
 Processing concurrency 1 with 1 runs...
 Running serving benchmark with concurrency 1 (Run 1) - 128 prompts...
+Concurrency 1, Run 1 completed: 128 requests, (tok/s): tok/s output throughput, 19995.59ms E2E latency (2574s)
+[progress] [=========================-------------------------] 5/10 (50%)  | Serving: C1 R1
+✅ Best results for concurrency 1: E2E=19995.59ms, TTFT=201.49ms, ITL=24.79ms, Output=(tok/s): tok/s
+[online] Updating CSV for concurrency 1: E2E=19995.59ms, TTFT=201.49ms, ITL=24.79ms, Output=(tok/s): tok/s
+[online] CSV updated with results for concurrency 1
+✅ Serving benchmark completed successfully in 5300 seconds (standard mode).
+Structured serving benchmark results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_serving.csv
+Individual concurrency logs saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/sglang_serving_benchmark_concurrency_*_run*.log
+GSM8K accuracy results written to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/sglang_client_log_DeepSeek-V3-0324_gsm8k.log
+Shutting down SGLang server...
+Server shutdown completed in 0 seconds
+
+==========================================
+SCRIPT EXECUTION SUMMARY
+==========================================
+Script completed at: 2025-12-16 11:33:53 PST
+Total execution time: 5590 seconds (93 minutes)
+Output directory: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online
+Serving CSV: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_serving.csv
+Timing log: /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/timing_summary_20251216_100043.log
+===========================================
+Cleaning up...
+Killing background SGLang server (PID: 53)...
+Server process 53 not found or already terminated.
+[nightly] === Online benchmark dispatched for DEEPSEEK; check logs in sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216 ===
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] Processing online CSV data and generating plots... Logs will be saved to /mnt/raid/michael/sglang-ci/online/DeepSeek-V3-0324/v0.5.6.post2-rocm700-mi30x-20251216_DeepSeek-V3-0324_FP8_online/process_and_generate_online_plots.log
+[nightly] Using plot date from image tag: 20251216
+[nightly] Teams notifications skipped - --teams-webhook-url not provided
+[nightly] === Online post-processing completed for DEEPSEEK ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[nightly] Stopping container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
