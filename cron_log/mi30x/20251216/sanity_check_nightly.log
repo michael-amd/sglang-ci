@@ -149,3 +149,180 @@ e873251f0cb6acb2f8a33acdbdf9a01712f5579378180226879a77934bed4d9d
 [nightly] === Starting nightly SANITY sanity benchmark ===
 [nightly] Launching sanity check inside sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216
 [nightly] Executing: python3 '/mnt/raid/michael/sglang-ci/test/sanity_check.py' --docker-image='rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216' --hardware='mi30x' --trials=3 --log-dir='/mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x' --models-dir='/data/models'
+🔧 Testing on platform: mi30x
+📋 Models to test: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+🎯 Trials per model: 3
+
+🔍 Checking GPU status and cleaning up running containers...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] No processes found using port 30000 (or tools unavailable)
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+[sanity] GPU is idle. Proceeding with tests.
+
+🔥 MOE models detected: GROK1-IN4, GROK1-FP8, GROK2.5
+   These models require MOE kernel pre-compilation to avoid JIT deadlock
+
+============================================================
+🔥 Kernel Warmup Phase (Preventing JIT Deadlock)
+============================================================
+[warmup] Will warm up kernels using: GROK1-IN4
+[warmup] This pre-compiles kernels with TP=1 to avoid multi-worker deadlock
+
+[warmup] Starting GROK1-IN4 warmup (TP=1)...
+[warmup] ❌ GROK1-IN4 server error:
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+
+[warmup] Warmup complete: 0/1 succeeded
+[warmup] ⚠️ Some warmups failed - tests may still hit JIT deadlock
+[warmup] Will proceed with tests anyway
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] No processes found using port 30000 (or tools unavailable)
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+📁 Using image-specific log directory: /mnt/raid/michael/sglang-ci/test/sanity_check_log/mi30x/v0.5.6.post2-rocm700-mi30x-20251216
+
+🚀 [1/7] Starting GPT-OSS-120B...
+============================================================
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (0.0%)
+
+=== Testing GPT-OSS-120B on mi30x ===
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+🚀 Starting server for GPT-OSS-120B...
+✅ Server ready in 145.69s
+🧪 Running up to 3 benchmark trials (early exit on pass)...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+    ⏳ Trial 1 still running... (105s elapsed)
+    ⏳ Trial 1 still running... (120s elapsed)
+    ⏳ Trial 1 still running... (135s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.859, Time: 143.14s)
+  🚀 Passed on trial 1, skipping remaining 2 trial(s)
+🛑 Stopping server...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] Found processes using port 30000 (ss): 516
+[sanity] Killed process 516
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+📋 Result for GPT-OSS-120B on mi30x: PASS [OK]
+   Accuracy: 0.859 (Required: 0.820)
+   Total Time: 289.39s
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/7 (14.3%) ✅ GPT-OSS-120B completed in 289.4s
+
+[sanity] === Performing aggressive cleanup between models ===
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] No processes found using port 30000 (or tools unavailable)
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+[sanity] Waiting for port 30000 to be freed... (0s)
+[sanity] Port 30000 is now free
+[sanity] GPU memory freed (max usage: 3%)
+[sanity] === Cleanup complete ===
+
+
+🚀 [2/7] Starting GPT-OSS-20B...
+============================================================
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (14.3%)
+
+=== Testing GPT-OSS-20B on mi30x ===
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+🚀 Starting server for GPT-OSS-20B...
+✅ Server ready in 78.60s
+🧪 Running up to 3 benchmark trials (early exit on pass)...
+  📊 Trial 1/3 starting...
+    ⏳ Trial 1 still running... (30s elapsed)
+    ⏳ Trial 1 still running... (45s elapsed)
+    ⏳ Trial 1 still running... (60s elapsed)
+    ⏳ Trial 1 still running... (75s elapsed)
+    ⏳ Trial 1 still running... (90s elapsed)
+  ✅ Trial 1: PASS [OK] (Accuracy: 0.528, Time: 95.09s)
+  🚀 Passed on trial 1, skipping remaining 2 trial(s)
+🛑 Stopping server...
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] Found processes using port 30000 (ss): 18444
+[sanity] Killed process 18444
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+📋 Result for GPT-OSS-20B on mi30x: PASS [OK]
+   Accuracy: 0.528 (Required: 0.500)
+   Total Time: 174.24s
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 (28.6%) ✅ GPT-OSS-20B completed in 174.2s
+
+[sanity] === Performing aggressive cleanup between models ===
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] No processes found using port 30000 (or tools unavailable)
+[sanity] No SGLang server processes found
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+[sanity] Waiting for port 30000 to be freed... (0s)
+[sanity] Port 30000 is now free
+[sanity] GPU memory freed (max usage: 3%)
+[sanity] === Cleanup complete ===
+
+
+🚀 [3/7] Starting QWEN-30B...
+============================================================
+Progress: [███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (28.6%)
+
+=== Testing QWEN-30B on mi30x ===
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+🚀 Starting server for QWEN-30B...
+   ⏳ Kernel compilation in progress... (101s elapsed)
+❌ Kernel compilation deadlock detected! 28 workers waiting for 14860e65
+   💡 Suggestion: Try --disable-cuda-graph or clean stale lock files in aiter/jit/build/
+⚠️  QWEN-30B: Kernel deadlock detected, retrying with --disable-cuda-graph...
+
+=== Testing QWEN-30B on mi30x ===
+   (Running with --disable-cuda-graph fallback)
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] Cleaned 1 stale aiter lock file(s)
+🚀 Starting server for QWEN-30B...
+QWEN-30B: FAIL [X] (server not ready after 300.43s)
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 3/7 (42.9%) ❌ QWEN-30B completed in 404.1s
+
+[sanity] === Performing aggressive cleanup between models ===
+[sanity] Checking for existing SGLang processes and port conflicts...
+[sanity] Found processes using port 30000 (ss): 31507
+[sanity] Killed process 31507
+[sanity] Found SGLang server processes: 36930
+[sanity] Killed SGLang server process 36930
+[sanity] Found Python SGLang processes, but they are this script - skipping self-termination
+[sanity] Cleaning up stale aiter JIT lock files...
+[sanity] No stale aiter lock files found
+[sanity] Port 30000 is now free
+[sanity] GPU memory freed (max usage: 0%)
+[sanity] === Cleanup complete ===
+
+
+🚀 [4/7] Starting GROK1-IN4...
+============================================================
+Progress: [█████████████████░░░░░░░░░░░░░░░░░░░░░░░] 4/7 (42.9%)
+
+=== Testing GROK1-IN4 on mi30x ===
+[nightly] === Sanity check failed (exit code: 137) ===
+[nightly] Teams notifications disabled - --teams-webhook-url not provided
+[nightly] === Starting post-processing (CSV processing, plot generation, Teams notifications) ===
+[nightly] === Sanity post-processing completed for SANITY ===
+[nightly] ==========================================
+[nightly] Completed benchmarks for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[nightly] Stopping container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216 to release resources...
+[nightly] ==========================================
+[nightly] ==========================================
+[nightly] All benchmarks completed for 1 image(s)
+[nightly] ==========================================
+[nightly] Cleaning up process lock...
