@@ -1,0 +1,161 @@
+[test] ==========================================
+[test] SGL Nightly Unit Test Started
+[test] ==========================================
+[test] Command: scripts/test_nightly.sh --hardware=mi30x --teams-webhook-url=
+[test] Start time: 2025-12-16 11:01:01 CST
+[test] Machine: dell300x-pla-t12-38
+[test] Working directory: /mnt/raid/michael/sglang-ci
+[test] Script location: /mnt/raid/michael/sglang-ci/scripts/test_nightly.sh
+[test] Process ID: 2206120
+[test] ==========================================
+
+[test] Runtime Environment:
+[test] User: amd | Groups: amd adm cdrom... | Docker: /usr/bin/docker
+[test] Testing Docker daemon access...
+[test] Docker daemon accessible - proceeding...
+[test] Hardware: mi30x, ROCM Version: rocm700
+[test] Test Type: unit
+[test] Created process lock: /tmp/test_nightly_unit.lock
+[test] Cleaning up Docker containers...
+[test] No running containers to stop.
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Searching for latest non-SRT image...
+[test] Searching for non-SRT mi30x image (rocm700) in 'rocm/sgl-dev' for date 20251216...
+[test] Found candidate tag for today: v0.5.6.post2-rocm700-mi30x-20251216
+[test] Attempting to pull rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216...
+v0.5.6.post2-rocm700-mi30x-20251216: Pulling from rocm/sgl-dev
+660ffc76f83b: Already exists
+8f15127cc838: Already exists
+9b15895e3240: Already exists
+f9b093ef803e: Already exists
+7871d920fb0f: Already exists
+7935d8c4e26c: Already exists
+a32765e78010: Already exists
+7fc751a2ed3a: Already exists
+980be016a223: Already exists
+9e1a971876ec: Already exists
+ec6812b374e9: Already exists
+01b887f14943: Already exists
+844c30750327: Already exists
+2682f0d8340c: Already exists
+4f4fb700ef54: Already exists
+349b8c8a8418: Already exists
+d0b1657b26f5: Already exists
+45b70560bebf: Already exists
+4f4fb700ef54: Already exists
+b18067367790: Already exists
+80e4388c8594: Already exists
+43bd5f89e157: Already exists
+4f4e25c713a5: Already exists
+fa9b244e8ec3: Already exists
+4f4fb700ef54: Already exists
+4f4fb700ef54: Already exists
+802ff7b676ec: Already exists
+4f4fb700ef54: Already exists
+91c970c997c5: Already exists
+c7b1c2221fca: Already exists
+f741376ff6a1: Already exists
+d9b88c1e947d: Already exists
+0e6681539f16: Already exists
+f58edb92caef: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+6f6bf38cbe7e: Pulling fs layer
+7c254f89cd1e: Pulling fs layer
+e4a03b906a19: Pulling fs layer
+02f596a64ce6: Pulling fs layer
+7c254f89cd1e: Waiting
+ac0a370c73f0: Pulling fs layer
+e4a03b906a19: Waiting
+fc07b538b970: Pulling fs layer
+02f596a64ce6: Waiting
+ce3ec114e5db: Pulling fs layer
+ac0a370c73f0: Waiting
+fc07b538b970: Waiting
+bc2e804ecd05: Pulling fs layer
+daac828ef96a: Pulling fs layer
+ce3ec114e5db: Waiting
+bc2e804ecd05: Waiting
+00467cd12b6c: Pulling fs layer
+daac828ef96a: Waiting
+cdfb1d9c331b: Pulling fs layer
+00467cd12b6c: Waiting
+25d2f26c9902: Pulling fs layer
+cdfb1d9c331b: Waiting
+52f8ba2db70b: Pulling fs layer
+25d2f26c9902: Waiting
+52f8ba2db70b: Waiting
+7a26e5b25233: Pulling fs layer
+7a26e5b25233: Waiting
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+6f6bf38cbe7e: Verifying Checksum
+6f6bf38cbe7e: Download complete
+f58edb92caef: Download complete
+f58edb92caef: Pull complete
+4f4fb700ef54: Pull complete
+6f6bf38cbe7e: Pull complete
+7c254f89cd1e: Download complete
+7c254f89cd1e: Pull complete
+02f596a64ce6: Verifying Checksum
+02f596a64ce6: Download complete
+fc07b538b970: Verifying Checksum
+fc07b538b970: Download complete
+e4a03b906a19: Verifying Checksum
+e4a03b906a19: Download complete
+bc2e804ecd05: Verifying Checksum
+bc2e804ecd05: Download complete
+daac828ef96a: Download complete
+e4a03b906a19: Pull complete
+ce3ec114e5db: Verifying Checksum
+ce3ec114e5db: Download complete
+00467cd12b6c: Verifying Checksum
+00467cd12b6c: Download complete
+25d2f26c9902: Download complete
+02f596a64ce6: Pull complete
+52f8ba2db70b: Verifying Checksum
+52f8ba2db70b: Download complete
+7a26e5b25233: Verifying Checksum
+7a26e5b25233: Download complete
+ac0a370c73f0: Verifying Checksum
+ac0a370c73f0: Download complete
+cdfb1d9c331b: Verifying Checksum
+cdfb1d9c331b: Download complete
+ac0a370c73f0: Pull complete
+fc07b538b970: Pull complete
+ce3ec114e5db: Pull complete
+bc2e804ecd05: Pull complete
+daac828ef96a: Pull complete
+00467cd12b6c: Pull complete
+cdfb1d9c331b: Pull complete
+25d2f26c9902: Pull complete
+52f8ba2db70b: Pull complete
+7a26e5b25233: Pull complete
+Digest: sha256:702c91e6c0329b3ccbbbc6e78f9ca1958d33c43ee0e648b0e59d2ff79ed792ac
+Status: Downloaded newer image for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+docker.io/rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[test] Successfully pulled image for today: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[test] Selected image to run tests on: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+
+[test] ==========================================
+[test] Starting tests for image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[test] Test type: unit
+[test] ==========================================
+[test] Checking GPU status before starting tests for rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216...
+[test] Cleaning up Docker containers...
+[test] No running containers to stop.
+[test] Docker container cleanup complete.
+[test] Checking for conflicting SGLang processes...
+[test] No conflicting SGLang processes found.
+[test] GPU is still busy after cleanup. Waiting 15s for GPU to become idle...
+[test] WARN: GPU may still be busy, but no conflicting processes found. Proceeding...
+[test] Using Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+[test] Container name: sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216
+[test] Creating container sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216
+docker: Error response from daemon: Conflict. The container name "/sgl-dev_v0.5.6.post2-rocm700-mi30x-20251216" is already in use by container "e873251f0cb6acb2f8a33acdbdf9a01712f5579378180226879a77934bed4d9d". You have to remove (or rename) that container to be able to reuse that name.
+
+Run 'docker run --help' for more information
+[test] Cleaning up process lock...
