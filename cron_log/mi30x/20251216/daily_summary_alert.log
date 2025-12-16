@@ -1,0 +1,47 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251216
+🖥️  Hardware: mi30x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251216...
+✅ Docker image date matches expected date (20251216) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-12-16 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-12-16 at 15:10:01 PST
+Hostname: dell300x-pla-t12-38
+Hardware: mi30x
+Docker Image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+
+Overall Status:
+• Tasks run: 11/11
+• Passed: 5, Failed: 2, Unknown: 4
+
+Task Results:
+
+Validation & Checks:
+  ❓ Unit Tests: Unknown
+  ❌ PD Disaggregation Tests: Failed
+    Error: Model path does not exist: /mnt/raid/models/huggingface/deepseek-ai/DeepSeek-V3-0324
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 82.0%) [31m]
+  ❌ Grok 2 Online Benchmark: Failed
+    Error: Test failed or did not complete
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 93.9%) [1h 33m]
+
+Integration Tests:
+  ❓ DeepSeek DP Attention Test: Unknown
+  ❓ DeepSeek Torch Compile Test: Unknown
+  ❓ DeepSeek DP+Torch Compile: Unknown
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ gpt-oss-120b-bf16 - GSM8K: 85.9% (threshold ≥ 82.0%)
+  ✅ gpt-oss-20b-bf16 - GSM8K: 52.8% (threshold ≥ 50.0%)
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251216_mi30x_20251216_151001.json
+ℹ️  No Teams webhook URL provided, skipping Teams notification
