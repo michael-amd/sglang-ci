@@ -1,0 +1,35 @@
+[system-cleanup] ==========================================
+[system-cleanup] Docker & GPU Core Cleanup Script Started
+[system-cleanup] Date: 2025-12-16 09:30:01 CST
+[system-cleanup] Cleanup Docker images older than: 7 days
+[system-cleanup] Cleanup GPU core dumps: ALL files
+[system-cleanup] GPU core search directory: /mnt/raid/michael/sglang-ci
+[system-cleanup] Critical space threshold: 200 GB
+[system-cleanup] Dry run mode: false
+[system-cleanup] ==========================================
+[system-cleanup] Initial disk usage: 80% (691G free)
+[system-cleanup] Initial free space: 691 GB
+[system-cleanup] Disk space is healthy (691 GB available)
+[system-cleanup] Step 1: Removing stopped Docker containers...
+[system-cleanup] Found 2 stopped container(s)
+[system-cleanup] ✅ Removed stopped containers
+[system-cleanup] Step 2: Removing old sgl-dev images (older than 7 days)...
+[system-cleanup] ✅ Removed: rocm/sgl-dev:v0.5.6.post1-rocm700-mi35x-20251209
+[system-cleanup] Processed old sgl-dev images: 1 removed, 6 kept/skipped
+[system-cleanup] Step 3: Removing dangling images and unused data...
+[system-cleanup] ✅ Cleaned up dangling images
+[system-cleanup] Step 4: Removing old GPU core dump files (gpucore.*)...
+[system-cleanup] No old GPU core dump files found
+[system-cleanup] ==========================================
+[system-cleanup] ✅ Docker Cleanup Complete
+[system-cleanup] Initial disk usage: 80% (691G free) (691 GB free)
+[system-cleanup] Final disk usage: 79% (712G free) (712 GB free)
+[system-cleanup] Space freed: 21 GB
+[system-cleanup] Date: 2025-12-16 09:30:09 CST
+[system-cleanup] ==========================================
+[system-cleanup] Docker disk usage summary:
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          25        1         722.5GB   722.5GB (99%)
+Containers      1         1         0B        0B
+Local Volumes   0         0         0B        0B
+Build Cache     215       0         27.04GB   27.04GB
