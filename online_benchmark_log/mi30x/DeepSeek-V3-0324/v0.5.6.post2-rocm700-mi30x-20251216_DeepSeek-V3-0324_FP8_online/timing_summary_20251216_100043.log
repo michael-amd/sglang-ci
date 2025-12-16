@@ -32,3 +32,53 @@ Completed concurrency 64 - Total time: 889 seconds
 Completed concurrency 16 - Total time: 484 seconds
   Concurrency 4, Run 1: 702 seconds
 Completed concurrency 4 - Total time: 704 seconds
+  Concurrency 1, Run 1: 2574 seconds
+Completed concurrency 1 - Total time: 2576 seconds
+  End time: 2025-12-16 11:33:53 PST
+  Total duration: 5300 seconds
+
+Performance Summary:
+===================
+Concurrency 128:
+  E2E Latency: 156452.14 ms
+  TTFT: 28288.59 ms
+  ITL: 146.36 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 64:
+  E2E Latency: 116657.09 ms
+  TTFT: 9626.93 ms
+  ITL: 121.60 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 16:
+  E2E Latency: 66476.40 ms
+  TTFT: 2431.72 ms
+  ITL: 96.65 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 4:
+  E2E Latency: 21500.53 ms
+  TTFT: 369.51 ms
+  ITL: 26.44 ms
+  Output throughput: (tok/s): tok/s
+
+Concurrency 1:
+  E2E Latency: 19995.59 ms
+  TTFT: 201.49 ms
+  ITL: 24.79 ms
+  Output throughput: (tok/s): tok/s
+
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 0 seconds
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-16 11:33:53 PST
+Total execution time: 5590 seconds (93 minutes)
+========================================
