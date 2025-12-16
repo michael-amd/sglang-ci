@@ -1,0 +1,34 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-16 10:00:43 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=deepseek --model-path=/data/models/deepseek-ai/DeepSeek-V3-0324 --mode=online --hardware=mi30x --teams-webhook-url=
+Hardware: mi30x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+Model: /data/models/deepseek-ai/DeepSeek-V3-0324
+Hostname: dell300x-pla-t12-38
+Mode: online
+DP Attention: false
+Torch Compile: false
+MTP Test Enabled: false
+DP Test Enabled: false
+
+Server startup time: 165 seconds
+
+GSM8K Test Results:
+  Total duration: 124 seconds
+  Accuracy: 0.939 (Required: 0.93)
+  Early exit: Passed on run 1, skipped 4 run(s)
+  GSM8K accuracy: 0.939
+
+Serving Benchmark Results:
+  Start time: 2025-12-16 10:05:33 PST
+  Concurrency 128, Run 1: 633 seconds
+Completed concurrency 128 - Total time: 635 seconds
+  Concurrency 64, Run 1: 887 seconds
+Completed concurrency 64 - Total time: 889 seconds
+  Concurrency 16, Run 1: 482 seconds
+Completed concurrency 16 - Total time: 484 seconds
+  Concurrency 4, Run 1: 702 seconds
+Completed concurrency 4 - Total time: 704 seconds
