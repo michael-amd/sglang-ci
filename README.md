@@ -482,7 +482,7 @@ Automated benchmark orchestration that pulls latest `rocm/sgl-dev` image, runs b
 **Key Parameters:**
 - `--model`: grok, grok2, deepseek, DeepSeek-V3, sanity (default: grok)
 - `--mode`: online, offline, all, sanity (default: all)
-- `--hardware`: mi30x, mi35x (default: mi30x)
+- `--hardware`: mi30x, mi35x (default: mi35x)
 - `--model-path`, `--tokenizer-path`, `--work-dir`: Custom paths
 - `--download-model`: Download model from HuggingFace if not exists
 - `--continue-run-days`: Run benchmarks for last N days' images (default: 1)
@@ -498,8 +498,11 @@ Automated benchmark orchestration that pulls latest `rocm/sgl-dev` image, runs b
 **Usage:**
 
 ```bash
-# GROK all benchmarks (default mi30x)
+# GROK all benchmarks (default mi35x)
 bash scripts/perf_nightly.sh
+
+# DeepSeek online on MI30x
+bash scripts/perf_nightly.sh --model=deepseek --mode=online --hardware=mi30x
 
 # DeepSeek online with Teams alerts
 bash scripts/perf_nightly.sh --model=deepseek --mode=online --teams-webhook-url="https://..."
