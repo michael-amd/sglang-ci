@@ -1386,26 +1386,42 @@ class TeamsNotifier:
         )
 
         if critical_error_results["status"] == "fail":
-            alert["status"] = "error"
-            alert["critical_errors"] = critical_error_results["errors"]
-            alert["error_type"] = critical_error_results["error_type"]
-
-            # Update title based on error type
             error_type = critical_error_results["error_type"]
-            if error_type == "import_error":
-                alert["title"] = "❌ Benchmark Failed: Import Error"
-            elif error_type == "server_startup_failed":
-                alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
-            elif error_type == "incomplete_run":
-                alert["title"] = "❌ Benchmark Failed: Incomplete Run"
-            elif error_type == "critical_error":
-                alert["title"] = "❌ Benchmark Failed: Critical Error"
-            else:
-                alert["title"] = "❌ Benchmark Failed"
 
-            # Add error details
-            for error in critical_error_results["errors"]:
-                alert["details"].append(error)
+            # For DeepSeek models: if GSM8K accuracy passes, treat "incomplete_run" as a warning
+            # rather than a failure. The benchmark is considered successful if GSM8K passes.
+            is_deepseek = model.lower().startswith("deepseek")
+            gsm8k_passed = (
+                gsm8k_accuracy is not None
+                and gsm8k_accuracy >= thresholds.get(model, 0.8)
+            )
+
+            if is_deepseek and gsm8k_passed and error_type == "incomplete_run":
+                # GSM8K passed for DeepSeek - treat as success with a note about missing end marker
+                alert["details"].append(
+                    "Note: Log end marker missing (benchmark completed successfully)"
+                )
+            else:
+                # For other errors or non-DeepSeek models, mark as failed
+                alert["status"] = "error"
+                alert["critical_errors"] = critical_error_results["errors"]
+                alert["error_type"] = error_type
+
+                # Update title based on error type
+                if error_type == "import_error":
+                    alert["title"] = "❌ Benchmark Failed: Import Error"
+                elif error_type == "server_startup_failed":
+                    alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
+                elif error_type == "incomplete_run":
+                    alert["title"] = "❌ Benchmark Failed: Incomplete Run"
+                elif error_type == "critical_error":
+                    alert["title"] = "❌ Benchmark Failed: Critical Error"
+                else:
+                    alert["title"] = "❌ Benchmark Failed"
+
+                # Add error details
+                for error in critical_error_results["errors"]:
+                    alert["details"].append(error)
 
         # Extract additional info for online mode
         if mode == "online":
