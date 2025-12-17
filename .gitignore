@@ -19,6 +19,7 @@ gpucore.*
 *.md
 !upstream_ci/**/README*.md
 !cron/README*.md
+!cron/RETRY_MECHANISM.md
 tmp_output_srt.txt
 upstream_ci/compare_pr/comparison_results/*
 comparison_results/*

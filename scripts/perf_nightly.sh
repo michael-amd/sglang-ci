@@ -1044,20 +1044,45 @@ check_yesterday_run_status() {
 
   # If log doesn't exist, yesterday didn't run
   if [[ ! -f "$yesterday_log" ]]; then
-    echo "[nightly] Yesterday's run log not found - yesterday did not run"
+    echo "[nightly] Yesterday's run log not found at $yesterday_log - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  echo "[nightly] Checking yesterday's log: $yesterday_log"
+
+  # Check for critical errors that indicate the run failed
+  if grep -qE "(Memory access fault|Fatal Python error|Lock File Conflict|ERROR:.*Another instance)" "$yesterday_log"; then
+    echo "[nightly] Yesterday's run had critical errors - allowing fallback"
     return 0  # Allow fallback
   fi
 
   # Check if yesterday's run completed successfully
-  if grep -q "OVERALL SCRIPT SUMMARY" "$yesterday_log" && grep -q "Total execution time:" "$yesterday_log"; then
+  # Look for the completion markers used by perf_nightly.sh
+  if grep -q "\[nightly\] All benchmarks completed" "$yesterday_log"; then
+    # Yesterday's run completed - check if it was actually successful (no server crashes, no failed benchmarks)
+    if grep -qE "(Server.*critical errors|SGLang server encountered critical errors|server process.*terminated|BENCHMARK_FAILED)" "$yesterday_log"; then
+      echo "[nightly] Yesterday's run completed but had benchmark failures - allowing fallback"
+      return 0  # Allow fallback
+    fi
     # Yesterday's run was successful
-    echo "[nightly] Yesterday's run completed successfully"
+    echo "[nightly] Yesterday's run completed successfully - skipping fallback (no need to re-run)"
     return 1  # Don't allow fallback - yesterday was successful
-  else
-    # Yesterday's run failed or didn't complete
-    echo "[nightly] Yesterday's run failed or did not complete"
+  fi
+
+  # Also check for sanity check specific completion
+  if [[ "$MODE" == "sanity" ]] && grep -q "All tests completed" "$yesterday_log"; then
+    # For sanity check, also verify pass rate
+    if grep -qE "Overall:.*100\.0%|Overall:.*[89][0-9]\.[0-9]%" "$yesterday_log"; then
+      echo "[nightly] Yesterday's sanity check completed with good pass rate - skipping fallback"
+      return 1  # Don't allow fallback
+    fi
+    echo "[nightly] Yesterday's sanity check completed but with poor pass rate - allowing fallback"
     return 0  # Allow fallback
   fi
+
+  # Yesterday's run didn't complete
+  echo "[nightly] Yesterday's run did not complete - allowing fallback"
+  return 0  # Allow fallback
 }
 
 ###############################################################################
@@ -1174,8 +1199,17 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
       echo "[nightly] No fallback image found for yesterday either."
     fi
   else
-    echo "[nightly] Skipping yesterday's image fallback - yesterday's run was successful"
-    echo "[nightly] Status: SKIPPED (prerequisites not met)"
+    # Yesterday's run was successful - no need to re-run with yesterday's image
+    echo "[nightly] =========================================="
+    echo "[nightly] SKIPPING: Yesterday's run completed successfully"
+    echo "[nightly] =========================================="
+    echo "[nightly] Today's Docker image is not available, but yesterday's run"
+    echo "[nightly] for this task ($MODEL $MODE) completed successfully."
+    echo "[nightly] No need to re-run with yesterday's image."
+    echo "[nightly] Status: SKIPPED (yesterday's run was successful)"
+    echo "[nightly] =========================================="
+    # Exit gracefully - this is not an error, just nothing to do
+    exit 0
   fi
 fi
 
