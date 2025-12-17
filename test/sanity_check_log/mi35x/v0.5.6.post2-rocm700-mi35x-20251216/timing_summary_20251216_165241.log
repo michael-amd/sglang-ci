@@ -1,0 +1,98 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-16 16:52:41 PST
+Machine: smci355-ccs-aus-m12-33
+Platform: mi35x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251216
+==================================================
+
+=== GPT-OSS-120B on mi35x ===
+Start time: 2025-12-16 16:52:41 PST
+Server startup: FAILED after 300.14s
+Error: Child process crashed during startup
+💡 Suggestion: Check server log for crash details
+
+=== GPT-OSS-20B on mi35x ===
+Start time: 2025-12-16 16:57:45 PST
+Server startup: 54.10s
+Warmup run: 93.1s - PASSED (accuracy: 0.518)
+Early exit: Warmup passed, skipped 3 trial(s)
+Server shutdown: 0.02s
+Final result: PASS [OK]
+Accuracy: 0.518 (Required: 0.500)
+Total time: 147.21s
+End time: 2025-12-16 17:00:12 PST
+==================================================
+
+=== QWEN-30B on mi35x ===
+Start time: 2025-12-16 17:00:20 PST
+Server startup: 69.63s
+Warmup run: 117.1s - PASSED (accuracy: 0.852)
+Early exit: Warmup passed, skipped 3 trial(s)
+Server shutdown: 0.01s
+Final result: PASS [OK]
+Accuracy: 0.852 (Required: 0.840)
+Total time: 186.78s
+End time: 2025-12-16 17:03:27 PST
+==================================================
+
+=== GROK1-IN4 on mi35x ===
+Start time: 2025-12-16 17:03:35 PST
+Server startup: 55.64s
+Warmup run: 57.1s - PASSED (accuracy: 0.812)
+Early exit: Warmup passed, skipped 3 trial(s)
+Server shutdown: 0.02s
+Final result: PASS [OK]
+Accuracy: 0.812 (Required: 0.800)
+Total time: 112.73s
+End time: 2025-12-16 17:05:28 PST
+==================================================
+
+=== GROK1-FP8 on mi35x ===
+Start time: 2025-12-16 17:05:37 PST
+Server startup: 97.20s
+Warmup run: 56.1s - PASSED (accuracy: 0.833)
+Early exit: Warmup passed, skipped 3 trial(s)
+Server shutdown: 0.02s
+Final result: PASS [OK]
+Accuracy: 0.833 (Required: 0.800)
+Total time: 153.28s
+End time: 2025-12-16 17:08:10 PST
+==================================================
+
+=== GROK2.5 on mi35x ===
+Start time: 2025-12-16 17:08:18 PST
+Server startup: 160.30s
+Warmup run: 63.1s - PASSED (accuracy: 0.929)
+Early exit: Warmup passed, skipped 3 trial(s)
+Server shutdown: 0.01s
+Final result: PASS [OK]
+Accuracy: 0.929 (Required: 0.915)
+Total time: 223.39s
+End time: 2025-12-16 17:12:01 PST
+==================================================
+
+=== llama4 on mi35x ===
+Start time: 2025-12-16 17:12:10 PST
+Server startup: FAILED after 95.68s
+Error: Code bug - AttributeError: 'CustomAllreduce' object has no attribute 'original_disabled'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-16 17:13:46 PST
+Total execution time: 1265.93s (21.1 minutes)
+Average time per model: 180.85s
+Models tested: 7/7
+Models passed: 5/7
+Models failed: 2/7
+Models skipped: 0/7
+  GPT-OSS-120B: FAIL
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: FAIL
