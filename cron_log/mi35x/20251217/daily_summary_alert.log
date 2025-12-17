@@ -1,0 +1,8 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251217
+🖥️  Hardware: mi35x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251217...
+🔔 Alert suppressed: Docker image is from 20251216, expected 20251217
+   Using yesterday's image as fallback - not sending alert
+ℹ️  Alert sending skipped - not using today's Docker image
