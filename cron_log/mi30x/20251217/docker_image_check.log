@@ -1,0 +1,50 @@
+[check] ==========================================
+[check] SGL Nightly Docker Image Availability Check
+[check] ==========================================
+[check] Run Date/Time: 2025-12-17 08:00:01 PST
+[check] Machine: dell300x-pla-t10-23
+[check] Repository: rocm/sgl-dev
+[check] Hardware types: mi30x mi35x
+[check] Checking images for date: 20251217
+
+[check] Searching for mi30x image (rocm700)... ✗ NOT FOUND
+[check] Searching for mi30x image (rocm630) [optional]... ✗ NOT FOUND [optional]
+[check] Searching for mi35x image (rocm700)... ✗ NOT FOUND
+
+[check] ==========================================
+[check] Summary
+[check] ==========================================
+[check] Total images checked: 3
+[check] Available images: 0
+[check] Missing required images: 2
+[check] Missing optional images: 1
+
+[check] ✗ Missing REQUIRED images:
+[check]   - mi30x-rocm700 (20251217): no image found
+[check]   - mi35x-rocm700 (20251217): no image found
+
+[check] ⚠ Missing optional images:
+[check]   - mi30x-rocm630 (20251217): no image found [optional]
+
+[check] ==========================================
+[check] Troubleshooting
+[check] ==========================================
+[check] REQUIRED images are missing - this will cause sanity check failures!
+[check] This could indicate build failures in the nightly pipeline.
+
+[check] To investigate build errors, check the GitHub workflow:
+[check] https://github.com/sgl-project/sglang/actions/workflows/release-docker-amd-nightly.yml
+
+[check] Look for recent workflow runs around the missing dates.
+[check] Check for:
+[check]   - Build failures in the workflow logs
+[check]   - Docker registry push errors
+[check]   - Resource or timeout issues
+[check]   - AMD-specific build problems
+
+[check] ==========================================
+[check] Sending Teams Notification
+[check] ==========================================
+✅ Successfully sent Docker image error alert to Teams
+   (Power Automate flow accepted - message processing asynchronously)
+[check] Teams notification sent successfully
