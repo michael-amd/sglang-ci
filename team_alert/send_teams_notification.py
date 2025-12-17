@@ -145,6 +145,56 @@ except ImportError:
     print("⚠️  Warning: pytz not available, using UTC time instead of Pacific time")
 
 
+def should_send_alert(
+    docker_image: Optional[str], expected_date: Optional[str] = None
+) -> bool:
+    """
+    Check if alert should be sent based on Docker image date
+
+    Only send alerts if today's Docker image is being used.
+    Skip alerts if using yesterday's image (fallback scenario).
+
+    Args:
+        docker_image: Docker image name (e.g., rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114)
+        expected_date: Expected date string in YYYYMMDD format (default: today)
+
+    Returns:
+        True if alert should be sent, False otherwise
+    """
+    if not docker_image:
+        # No docker image found, skip alert
+        print(
+            "⚠️  No Docker image found - skipping alert to avoid reporting on fallback runs"
+        )
+        return False
+
+    # Use today's date if no expected date provided
+    if expected_date is None:
+        expected_date = datetime.now().strftime("%Y%m%d")
+
+    # Extract date from Docker image tag
+    # Format: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-YYYYMMDD
+    date_match = re.search(r"-(\d{8})(?:$|[^0-9])", docker_image)
+    if not date_match:
+        print(f"⚠️  Could not extract date from Docker image: {docker_image}")
+        print("   Skipping alert to avoid reporting on fallback runs")
+        return False
+
+    image_date = date_match.group(1)
+
+    if image_date != expected_date:
+        print(
+            f"🔔 Alert suppressed: Docker image is from {image_date}, expected {expected_date}"
+        )
+        print(f"   Using yesterday's image as fallback - not sending alert")
+        return False
+
+    print(
+        f"✅ Docker image date matches expected date ({expected_date}) - proceeding with alert"
+    )
+    return True
+
+
 class BenchmarkAnalyzer:
     """Analyze benchmark results for accuracy and performance regressions"""
 
@@ -2712,6 +2762,18 @@ class TeamsNotifier:
             True if successful, False otherwise
         """
         try:
+            # Get summary alert first to check Docker image date
+            summary_alert = self.create_summary_alert(model, mode)
+
+            # Check if we should send alert (only for today's image)
+            docker_image = summary_alert.get("additional_info", {}).get("docker_image")
+            expected_date = self.analyzer.benchmark_date or datetime.now().strftime(
+                "%Y%m%d"
+            )
+            if not should_send_alert(docker_image, expected_date):
+                print("ℹ️  Alert sending skipped - not using today's Docker image")
+                return False
+
             card = self.create_adaptive_card(plots, model, mode)
             card_json = json.dumps(card)
             payload_size_mb = len(card_json.encode("utf-8")) / (1024 * 1024)
@@ -2781,6 +2843,20 @@ class TeamsNotifier:
             True if successful, False otherwise
         """
         try:
+            # Check if we should send alert (only for today's image)
+            # For sanity checks, the docker_image is the tag, need to construct full image name
+            full_image = (
+                f"rocm/sgl-dev:{docker_image}"
+                if ":" not in docker_image
+                else docker_image
+            )
+            expected_date = self.analyzer.benchmark_date or datetime.now().strftime(
+                "%Y%m%d"
+            )
+            if not should_send_alert(full_image, expected_date):
+                print("ℹ️  Alert sending skipped - not using today's Docker image")
+                return False
+
             # Find the log file
             log_file_path = find_sanity_check_log(docker_image, base_log_root)
             if log_file_path is None:
