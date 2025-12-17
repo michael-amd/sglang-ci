@@ -1,0 +1,104 @@
+SGLang Sanity Check Timing Summary
+==================================================
+Start time: 2025-12-17 08:16:17 PST
+Machine: dell300x-pla-t10-23
+Platform: mi30x
+Models: GPT-OSS-120B, GPT-OSS-20B, QWEN-30B, GROK1-IN4, GROK1-FP8, GROK2.5, llama4
+Trials per model: 3
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi30x-20251216
+==================================================
+
+=== GPT-OSS-120B on mi30x ===
+Start time: 2025-12-17 08:16:17 PST
+Server startup: 171.23s
+Trial 1: PASS [OK] (Accuracy: 0.863, Time: 143.15s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.863 (Required: 0.820)
+Total time: 314.91s
+End time: 2025-12-17 08:21:32 PST
+==================================================
+
+=== GPT-OSS-20B on mi30x ===
+Start time: 2025-12-17 08:22:26 PST
+Server startup: 81.61s
+Trial 1: PASS [OK] (Accuracy: 0.505, Time: 94.09s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.505 (Required: 0.500)
+Total time: 176.23s
+End time: 2025-12-17 08:25:22 PST
+==================================================
+
+=== QWEN-30B on mi30x ===
+Start time: 2025-12-17 08:26:17 PST
+Server startup: 66.59s
+Trial 1: PASS [OK] (Accuracy: 0.857, Time: 101.10s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.857 (Required: 0.840)
+Total time: 168.22s
+End time: 2025-12-17 08:29:05 PST
+==================================================
+
+=== GROK1-IN4 on mi30x ===
+Start time: 2025-12-17 08:29:59 PST
+Server startup: 86.67s
+Trial 1: PASS [OK] (Accuracy: 0.820, Time: 38.04s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.820 (Required: 0.800)
+Total time: 125.24s
+End time: 2025-12-17 08:32:04 PST
+==================================================
+
+=== GROK1-FP8 on mi30x ===
+Start time: 2025-12-17 08:32:58 PST
+Server startup: 162.24s
+Trial 1: PASS [OK] (Accuracy: 0.823, Time: 35.04s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.823 (Required: 0.800)
+Total time: 197.81s
+End time: 2025-12-17 08:36:16 PST
+==================================================
+
+=== GROK2.5 on mi30x ===
+Start time: 2025-12-17 08:37:11 PST
+Server startup: 157.72s
+Trial 1: PASS [OK] (Accuracy: 0.924, Time: 38.04s)
+Early exit: Passed on trial 1, skipped 2 trial(s)
+Server shutdown: 0.52s
+Final result: PASS [OK]
+Accuracy: 0.924 (Required: 0.915)
+Total time: 196.30s
+End time: 2025-12-17 08:40:27 PST
+==================================================
+
+=== llama4 on mi30x ===
+Start time: 2025-12-17 08:41:21 PST
+Server startup: FAILED after 180.75s
+Error: Code bug - AttributeError: 'CustomAllreduce' object has no attribute 'original_disabled'
+💡 Suggestion: Check server log for full traceback - this is a SGLang code bug
+
+OVERALL SUMMARY
+==================================================
+End time: 2025-12-17 08:44:23 PST
+Total execution time: 1685.93s (28.1 minutes)
+Average time per model: 240.85s
+Models tested: 7/7
+Models passed: 6/7
+Models failed: 1/7
+Models skipped: 0/7
+  GPT-OSS-120B: PASS
+  GPT-OSS-20B: PASS
+  QWEN-30B: PASS
+  GROK1-IN4: PASS
+  GROK1-FP8: PASS
+  GROK2.5: PASS
+  llama4: FAIL
