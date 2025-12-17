@@ -43,7 +43,7 @@
 #   --tokenizer-path=PATH Custom tokenizer path (for grok2, overrides default tokenizer)
 #   --work-dir=PATH      Custom work directory (overrides default work directory)
 #   --mode=MODE          Benchmark mode: online, offline, all, sanity [default: all]
-#   --hardware=HW        Hardware type: mi30x, mi35x [default: mi30x]
+#   --hardware=HW        Hardware type: mi30x, mi35x [default: mi35x]
 #   --download-model=REPO  Download model from HuggingFace if not exists (no default)
 #   --continue-run-days=N    Run benchmarks for last N days' images [default: 1]
 #   --teams-webhook-url=URL  Enable Teams notifications with webhook URL
@@ -54,10 +54,11 @@
 #   --help, -h           Show detailed help message
 #
 # EXAMPLES:
-#   perf_nightly.sh                                    # Grok online+offline (mi30x)
-#   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi30x)
-#   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi30x)
-#   perf_nightly.sh --model=grok2 --mode=online        # Grok 2 online only (mi30x)
+#   perf_nightly.sh                                   # Grok online+offline (default: mi35x)
+#   perf_nightly.sh --hardware=mi30x                  # Grok online+offline (mi30x)
+#   perf_nightly.sh --model=deepseek --mode=online     # DeepSeek online only (mi35x)
+#   perf_nightly.sh --model=DeepSeek-V3 --mode=online  # DeepSeek-V3 online only (mi35x)
+#   perf_nightly.sh --model=grok2 --mode=online        # Grok 2 online only (mi35x)
 #   perf_nightly.sh --model=grok2 --model-path=/path/to/grok2 \   # Grok 2 with custom paths
 #     --tokenizer-path=/path/to/tokenizer --mode=online
 #   perf_nightly.sh --hardware=mi35x --mode=all        # Grok on mi35x hardware
