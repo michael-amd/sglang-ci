@@ -2,11 +2,10 @@
 TZ=America/Chicago
 # machine is at CT time
 #
-# RETRY MECHANISM FOR DOCKER IMAGE UNAVAILABILITY:
-# If Docker images are not available during scheduled runs, tests will fail.
-# The retry job (8:25 PM CT, 5 min after daily summary) checks if images became available
-# and automatically re-runs failed tests, replacing original logs and updating database.
-# Individual test alerts are sent, and after retries, an updated daily summary is sent to Teams.
+# DOCKER IMAGE FALLBACK MECHANISM:
+# If today's Docker image is not available, perf_nightly.sh automatically uses yesterday's
+# image as fallback, but ONLY for tasks that failed or didn't run yesterday.
+# Tasks that completed successfully yesterday will be skipped (no need to re-run).
 #
 # REQUIRED ENVIRONMENT VARIABLES - Set these before installing cron jobs:
 # - SGL_BENCHMARK_CI_DIR: Path to sgl_benchmark_ci directory (e.g., /home/user/sgl_benchmark_ci)
