@@ -81,6 +81,7 @@ git fetch origin log
 git checkout -q log
 
 # Rebase to avoid merge commits, with automatic conflict resolution
+CONFLICT_RESOLVED=false
 if ! git pull --rebase --quiet 2>&1; then
   echo "[github_database_upload] Rebase conflict detected – auto-resolving…"
 
@@ -98,26 +99,74 @@ if ! git pull --rebase --quiet 2>&1; then
       git rebase --abort 2>/dev/null || true
     else
       echo "[github_database_upload] ✅ Conflict auto-resolved (accepted remote database)"
+      CONFLICT_RESOLVED=true
     fi
   fi
 fi
 
 ###########################################################################
-# 4. Copy database file
+# 3a. If conflict was resolved, re-ingest local data to recover any lost data
+###########################################################################
+
+if [[ "$CONFLICT_RESOLVED" == "true" ]]; then
+  echo "[github_database_upload] Re-ingesting local data after conflict resolution..."
+
+  # Detect hardware type from environment or hostname
+  HARDWARE="${HARDWARE_TYPE:-}"
+  if [[ -z "$HARDWARE" ]]; then
+    HOSTNAME=$(hostname)
+    if [[ "$HOSTNAME" == *"t10-23"* ]]; then
+      HARDWARE="mi30x"
+    elif [[ "$HOSTNAME" == *"t12-38"* ]]; then
+      HARDWARE="mi35x"
+    else
+      # Default based on common machine patterns
+      HARDWARE="mi30x"
+    fi
+  fi
+
+  # Re-ingest last 7 days of local data to recover any lost entries
+  # (With symlink setup, this writes directly to the repo database)
+  echo "[github_database_upload] Backfilling last 7 days for $HARDWARE..."
+  cd "$SGL_CI_DIR"
+  if python3 database/ingest_data.py --backfill 7 --hardware "$HARDWARE" --quiet 2>&1; then
+    echo "[github_database_upload] ✅ Backfill complete - local data recovered"
+  else
+    echo "[github_database_upload] ⚠️  Backfill had issues (non-fatal)"
+  fi
+  cd "$WORK_CLONE_DIR"
+fi
+
+###########################################################################
+# 4. Stage database file (handles both symlink and regular file cases)
 ###########################################################################
 
 readonly DEST_PATH="database"
+readonly DEST_FILE="$DEST_PATH/ci_dashboard.db"
 
 mkdir -p "$DEST_PATH"
 
-echo "[github_database_upload] Uploading database from: $DB_FILE"
-echo "[github_database_upload] Destination in repo: $DEST_PATH/ci_dashboard.db"
+echo "[github_database_upload] Database source: $DB_FILE"
+echo "[github_database_upload] Destination in repo: $DEST_FILE"
 
-# Copy database file
-cp "$DB_FILE" "$DEST_PATH/ci_dashboard.db"
+# Check if source is a symlink pointing to the repo database
+if [[ -L "$DB_FILE" ]]; then
+  LINK_TARGET=$(readlink -f "$DB_FILE")
+  REPO_DB=$(readlink -f "$DEST_FILE")
+
+  if [[ "$LINK_TARGET" == "$REPO_DB" ]]; then
+    echo "[github_database_upload] Source is symlink to repo database – no copy needed"
+  else
+    # Symlink points elsewhere, copy the resolved file
+    cp "$(readlink -f "$DB_FILE")" "$DEST_FILE"
+  fi
+else
+  # Regular file – copy to repo
+  cp "$DB_FILE" "$DEST_FILE"
+fi
 
 # Stage the file
-git add "$DEST_PATH/ci_dashboard.db"
+git add "$DEST_FILE"
 
 # Abort early if nothing changed
 if git diff --cached --quiet; then

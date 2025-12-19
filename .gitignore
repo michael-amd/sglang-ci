@@ -19,6 +19,7 @@ gpucore.*
 *.md
 !upstream_ci/**/README*.md
 !cron/README*.md
+!cron/RETRY_MECHANISM.md
 tmp_output_srt.txt
 upstream_ci/compare_pr/comparison_results/*
 comparison_results/*
@@ -34,3 +35,4 @@ cron/crontab_rules.txt
 cron/crontab_rules.txt.backup
 upstream_ci/upstream_test_log/*
 dashboard/setup_https.sh
+michael/sglang-ci/test/manual_sanity_log*

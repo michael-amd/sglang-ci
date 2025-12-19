@@ -548,7 +548,6 @@ class DailySummaryReporter:
 
             for model_name, result in model_results.items():
                 accuracy = result["accuracy"]
-                accuracy_percent = accuracy * 100
                 status = result["status"]
 
                 # Get threshold from model criteria
@@ -560,13 +559,16 @@ class DailySummaryReporter:
                 task_icon = "✅" if status == "pass" else "❌"
                 task_color = "Good" if status == "pass" else "Attention"
 
-                if threshold is not None:
-                    threshold_percent = threshold * 100
-                    task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                # Handle None accuracy (model may have failed before accuracy was measured)
+                if accuracy is not None:
+                    accuracy_percent = accuracy * 100
+                    if threshold is not None:
+                        threshold_percent = threshold * 100
+                        task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                    else:
+                        task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
                 else:
-                    task_line = (
-                        f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
-                    )
+                    task_line = f"{task_icon} {display_name} - GSM8K: N/A"
 
                 body_elements.append(
                     {
@@ -867,7 +869,6 @@ class DailySummaryReporter:
 
             for model_name, result in model_results.items():
                 accuracy = result["accuracy"]
-                accuracy_percent = accuracy * 100
                 status = result["status"]
 
                 # Get threshold from model criteria
@@ -878,13 +879,16 @@ class DailySummaryReporter:
 
                 task_icon = "✅" if status == "pass" else "❌"
 
-                if threshold is not None:
-                    threshold_percent = threshold * 100
-                    task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                # Handle None accuracy (model may have failed before accuracy was measured)
+                if accuracy is not None:
+                    accuracy_percent = accuracy * 100
+                    if threshold is not None:
+                        threshold_percent = threshold * 100
+                        task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}% (threshold ≥ {threshold_percent:.1f}%)"
+                    else:
+                        task_line = f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
                 else:
-                    task_line = (
-                        f"{task_icon} {display_name} - GSM8K: {accuracy_percent:.1f}%"
-                    )
+                    task_line = f"{task_icon} {display_name} - GSM8K: N/A"
 
                 print(f"  {task_line}")
 

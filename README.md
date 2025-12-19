@@ -1,41 +1,65 @@
 # SGLang CI, Dashboard and Toolkit
 
 SGLang ([github.com/sgl-project/sglang](https://github.com/sgl-project/sglang)) is an open-source serving engine for large language models.
-This repository provides a comprehensive benchmarking and continuous integration toolkit for SGLang, designed for rigorous performance evaluation and accuracy testing of large language models. The toolkit combines automated benchmark execution with a live observability dashboard for end-to-end performance analysis, comparison, and reporting.
+This repository provides a comprehensive benchmarking and continuous integration toolkit for SGLang on AMD MI30X/MI35X hardware. The toolkit combines automated benchmark execution with a web dashboard and database backend for performance analysis, trend tracking, and Teams-integrated alerting.
 
 ## Key Features
 
-- **Wide Test Coverage:** Covers a variety of nightly validations (unit, PD disaggregation, accuracy (GSM8K), MTP, DP, torch compile, etc.) across MI30X and MI35X hardware targets.
-- **Automated Benchmarking Pipelines:** Run offline throughput tests and online serving benchmarks that capture latency, concurrency, and throughput across batch sizes and context lengths.
-- **Interactive Observability Dashboard:** Monitor nightly CI results, performance plots, task health, and hardware comparisons through a centralized web dashboard.
-- **Extensive Model Support:** Supports a wide range of generative models (Llama, Qwen, Grok, DeepSeek, GPT, etc.) with ready-to-run presets and quantization options (FP8/INT8/INT4/MXFP4).
-- **Production-Ready Automation:** Leverage Docker-based workflows, scheduled nightly jobs, and intelligent GPU resource checks to keep benchmarks running reliably.
-- **Deep Analytics & Reporting:** Capture prefill/decode latency, TTFT, ITL, and GSM8K accuracy; consolidate runs with automated trend analysis, interactive plots, and markdown report generation.
-- **Flexible Execution Controls:** Configure every run via CLI flags, automatically select optimal backends (aiter/triton), and customize pipelines without manual script edits.
-- **Upstream SGLang CI Toolkit:** Analyze upstream SGLang CI coverage and run targeted AMD tests using dedicated tools for suite comparison, benchmark CSV analysis, and on-demand upstream test execution.
+- **Wide Test Coverage:** Validation & checks (unit tests, PD disaggregation, Docker image), performance benchmarks (DeepSeek/Grok online), integration tests (DP attention, MTP, torch compile), and per-model sanity checks across MI30X and MI35X hardware.
+- **Extensive Model Support:** DeepSeek, Grok, GPT, Qwen, Llama and more with ready-to-run presets and quantization options (FP8/INT8/INT4/MXFP4).
+- **Dashboard & Database:** Centralized web dashboard for CI results, performance plots, and hardware comparisons; SQLite backend with 50-300x faster queries and automatic GitHub sync.
+- **Benchmarking & Analytics:** Offline and online serving benchmarks capturing latency (prefill/decode, TTFT, ITL), throughput, and GSM8K accuracy with automated trend analysis and interactive plots.
+- **Production-Ready Automation:** Docker-based workflows, scheduled nightly jobs, intelligent GPU resource checks, Teams alerts (accuracy monitoring, regression detection, daily summaries), and flexible CLI configuration with automatic backend selection (aiter/triton).
+- **Upstream SGLang CI Toolkit:** AMD vs NVIDIA test coverage analysis, benchmark CSV comparison, and on-demand upstream test execution.
 
-The toolkit is designed for both development teams conducting regular performance validation and researchers requiring detailed model performance analysis across different configurations and deployment scenarios.
+---
+
+## Table of Contents
+
+- [Interactive Dashboard](#-interactive-dashboard)
+- [Database System](#️-database-system)
+- [Supported Docker Images](#supported-docker-images)
+- [Benchmark CI](#benchmark-ci)
+  - [Offline Mode](#offline-mode)
+  - [Online Mode](#online-mode)
+  - [Data Processing and Visualization](#data-processing-and-visualization)
+- [Nightly CI](#nightly-ci)
+  - [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
+  - [Nightly Unit Test](#nightly-unit-test)
+  - [Nightly PD (Prefill-Decode Disaggregation) Test](#nightly-pd-prefill-decode-disaggregation-test)
+  - [Nightly Sanity Check](#nightly-sanity-check)
+  - [Nightly Benchmarking](#nightly-benchmarking)
+- [Teams Integration](#teams-integration)
+- [Upstream SGLang Tool](#upstream-sglang-tool)
+  - [Compare CI Suites](#compare-ci-suites)
+  - [Run AMD upstream tests](#run-amd-upstream-tests)
+  - [Benchmark Comparison](#benchmark-comparison)
+- [Utility Scripts](#utility-scripts)
+  - [Model Download](#model-download)
+  - [Docker Image Management](#docker-image-management)
+  - [Dashboard Management](#dashboard-management)
+  - [System Maintenance](#system-maintenance)
+  - [Database Management](#database-management)
+- [Requirements](#requirements)
+- [Additional Notes](#additional-notes)
+- [Cron Schedule](#cron-schedule)
+- [Contribution Guide](#contribution-guide)
 
 ---
 
 ## 📊 Interactive Dashboard
-
-**🚀 Live CI Dashboard Available!**
-
-A comprehensive web dashboard is now available for viewing and analyzing all CI results, performance plots, and test coverage data.
 
 **Access:** http://10.194.129.138:5000 (Internal Network Only)
 
 ### Dashboard Features
 
 - **📈 Daily Summaries**: Real-time status for MI30X and MI35X platforms with pass/fail statistics
-- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics (via Database Explorer)
-- **📊 Performance Plots**: Interactive visualization of benchmark results with direct GitHub links
+- **📉 Historical Trends**: Pass rates, GSM8K accuracy trends, runtime analytics via Database Explorer
+- **📊 Performance Plots**: Interactive visualization of benchmark results with GitHub links
 - **🔍 Task Details**: Detailed status for each CI task (benchmarks, integration tests, validation)
 - **⚖️ Hardware Comparison**: Side-by-side comparison charts for MI30X vs MI35X platforms
 - **🧪 Upstream CI Coverage**: AMD vs NVIDIA test coverage tracking with interactive charts
-- **📅 Date Selector**: Browse historical results with smart calendar (greys out unavailable dates)
-- **📱 Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **📅 Date Selector**: Browse historical results with smart calendar
 
 ### Dashboard Pages
 
@@ -179,51 +203,6 @@ python database/sync_database.py push  # Upload local changes
 
 ---
 
-## Table of Contents
-
-- [Interactive Dashboard](#-interactive-dashboard)
-- [Database System](#️-database-system)
-- [Supported Docker Images](#supported-docker-images)
-- [Benchmark CI](#benchmark-ci)
-  - [Offline Mode](#offline-mode)
-    - [grok_perf_offline_csv.sh](#grok_perf_offline_csvsh)
-    - [deepseek_perf_offline_csv.sh](#deepseek_perf_offline_csvsh)
-  - [Online Mode](#online-mode)
-    - [grok_perf_online_csv.sh](#grok_perf_online_csvsh)
-    - [deepseek_perf_online_csv.sh](#deepseek_perf_online_csvsh)
-  - [Data Processing and Visualization](#data-processing-and-visualization)
-    - [Processing and Plotting Scripts](#processing-and-plotting-scripts)
-    - [Plot Server](#plot-server)
-- [Nightly CI](#nightly-ci)
-  - [Nightly Docker Image Monitoring](#nightly-docker-image-monitoring)
-    - [nightly_image_check.sh](#nightly_image_checksh)
-  - [Nightly Unit Test](#nightly-unit-test)
-    - [test_nightly.sh](#test_nightlysh)
-  - [Nightly PD (Prefill-Decode Disaggregation) Test](#nightly-pd-prefill-decode-disaggregation-test)
-    - [test_nightly.sh --test-type=pd](#test_nightlysh---test-typepd)
-    - [run_pd_docker.sh](#run_pd_dockersh)
-  - [Nightly Sanity Check](#nightly-sanity-check)
-    - [sanity_check.py](#sanity_checkpy)
-  - [Nightly Benchmarking](#nightly-benchmarking)
-    - [perf_nightly.sh](#perf_nightlysh)
-- [Teams Integration](#teams-integration)
-- [Upstream SGLang Tool](#upstream-sglang-tool)
-  - [Compare CI Suites](#compare-ci-suites)
-  - [Run AMD upstream tests](#run-amd-upstream-tests)
-  - [Benchmark Comparison](#benchmark-comparison)
-- [Utility Scripts](#utility-scripts)
-  - [Model Download](#model-download)
-  - [Docker Image Management](#docker-image-management)
-  - [Dashboard Management](#dashboard-management)
-  - [System Maintenance](#system-maintenance)
-  - [Database Management](#database-management)
-- [Requirements](#requirements)
-- [Additional Notes](#additional-notes)
-- [Cron Schedule](#cron-schedule)
-- [Contribution Guide](#contribution-guide)
-
----
-
 ## Supported Docker Images
 
 The benchmark scripts support Docker images from multiple sources:
@@ -239,10 +218,10 @@ The benchmark scripts support Docker images from multiple sources:
 
    ```bash
    # Pull latest image (main branch)
-   bash ./build_sglang_docker.sh
+   bash upstream_ci/build_sglang_docker.sh
 
    # Pull specific version
-   bash ./build_sglang_docker.sh --branch=v0.4.9
+   bash upstream_ci/build_sglang_docker.sh --branch=v0.4.9
    ```
 
    **Important Limitations:**
@@ -389,14 +368,6 @@ python3 scripts/process_and_generate_offline_plots.py --model grok|deepseek
 
 # Online plots
 python3 scripts/process_and_generate_online_plots.py --model grok|deepseek
-```
-
-#### Plot Server
-
-```bash
-# Start HTTP server for viewing plots
-bash server/plots_server.sh
-# Access at http://<server-ip>:8000/
 ```
 
 ---
@@ -566,9 +537,13 @@ bash scripts/perf_nightly.sh --teams-webhook-url="https://..." --teams-skip-anal
 - `TEAMS_WEBHOOK_URL`: Teams webhook URL (required to enable)
 - `TEAMS_SKIP_ANALYSIS`: Skip intelligent analysis (default: false)
 - `TEAMS_ANALYSIS_DAYS`: Days to look back for comparison (default: 7)
-- `PLOT_SERVER_HOST`: Plot server hostname (auto-detected)
-- `PLOT_SERVER_PORT`: Plot server port (default: 8000)
+- `GITHUB_REPO`: GitHub repository for log/plot links (default: ROCm/sglang-ci)
+- `GITHUB_TOKEN`: GitHub personal access token (required for `--github-upload` mode)
 - `BENCHMARK_BASE_DIR`: Base directory for benchmark data (default: ~/sglang-ci)
+
+**Plot Hosting Options:**
+- **GitHub (recommended)**: Use `--github-upload` flag to upload plots to GitHub log branch and embed public links in Teams messages
+- **Dashboard**: Plots are also viewable at http://10.194.129.138:5000/plots/mi30x
 
 **Setting Up Webhook URLs:**
 
@@ -609,10 +584,10 @@ Compares NVIDIA vs AMD test suites from SGLang's CI to analyze test coverage and
 
 ```bash
 # CSV coverage report (default)
-python3 compare_suites.py
+python3 upstream_ci/compare_suites.py
 
 # Detailed markdown report
-python3 compare_suites.py --details
+python3 upstream_ci/compare_suites.py --details
 ```
 
 **Output:** CSV with coverage percentages or markdown with detailed test breakdowns
@@ -634,7 +609,7 @@ python3 compare_suites.py --details
 
 Compares CSV benchmark results between runs with automatic GSM8K extraction and performance regression detection.
 
-**Script:** `compare_csv_results.py`
+**Script:** `upstream_ci/compare_csv_results.py`
 
 **Key Parameters:** `--csv1`, `--csv2`, `--mode` (offline/online/auto), `--model`, `--gsm8k-threshold`, `--performance-threshold`
 
@@ -642,10 +617,10 @@ Compares CSV benchmark results between runs with automatic GSM8K extraction and 
 
 ```bash
 # Compare offline results
-python3 compare_csv_results.py --csv1 offline/GROK1/run1 --csv2 offline/GROK1/run2 --mode offline --model grok1
+python3 upstream_ci/compare_csv_results.py --csv1 offline/GROK1/run1 --csv2 offline/GROK1/run2 --mode offline --model grok1
 
 # Compare online results
-python3 compare_csv_results.py --csv1 online/DeepSeek-V3/run1 --csv2 online/DeepSeek-V3/run2 --mode online
+python3 upstream_ci/compare_csv_results.py --csv1 online/DeepSeek-V3/run1 --csv2 online/DeepSeek-V3/run2 --mode online
 ```
 
 **Output:** Timestamped folders with markdown reports showing color-coded performance changes (🟢 improvements, 🔴 regressions)

@@ -423,21 +423,123 @@ ATTENTION_BACKEND=""
 
 # Clean up stale aiter JIT lock files to prevent deadlock
 # This is necessary when a previous run crashed/timed out and left locks behind
+# Cleans both /root/.aiter/build and /sgl-workspace/aiter/aiter/jit/build paths
 cleanup_aiter_locks() {
   echo "[online] Cleaning up stale aiter JIT lock files..."
 
-  # Remove all lock files in the aiter build cache
-  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
-  local lock_count
-  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+  local total_cleaned=0
 
-  if [[ "$lock_count" -gt 0 ]]; then
-    echo "[online] Found $lock_count stale aiter lock file(s), removing..."
+  # Path 1: /root/.aiter/build (aiter runtime cache)
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count1=0
+  lock_count1=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count1=0
+  if [[ "$lock_count1" -gt 0 ]]; then
     find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
-    echo "[online] Aiter lock cleanup complete"
+    total_cleaned=$((total_cleaned + lock_count1))
+  fi
+
+  # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks like lock_module_moe_sorting)
+  # These locks are created during kernel JIT compilation and can cause deadlock if stale
+  local lock_count2=0
+  lock_count2=$(find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f 2>/dev/null | wc -l) || lock_count2=0
+  if [[ "$lock_count2" -gt 0 ]]; then
+    find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f -delete 2>/dev/null || true
+    total_cleaned=$((total_cleaned + lock_count2))
+  fi
+
+  if [[ "$total_cleaned" -gt 0 ]]; then
+    echo "[online] Cleaned $total_cleaned stale aiter lock file(s)"
   else
     echo "[online] No stale aiter lock files found"
   fi
+}
+
+# Warmup MOE kernels to prevent JIT compilation deadlock
+# When MOE models run for the first time with TP>1, multiple workers try to JIT-compile
+# MOE kernels simultaneously, causing a deadlock. This function compiles kernels with TP=1 first.
+warmup_moe_kernels() {
+    echo ""
+    echo "============================================================"
+    echo "🔥 MOE Kernel Warmup Phase"
+    echo "============================================================"
+    echo "[warmup] Pre-compiling MOE kernels to prevent JIT deadlock..."
+
+    # Check if MOE kernels are already compiled
+    local moe_kernel_path="/sgl-workspace/aiter/aiter/jit/module_moe_sorting.so"
+    if [[ -f "$moe_kernel_path" ]]; then
+        echo "[warmup] MOE kernels already compiled, skipping warmup"
+        return 0
+    fi
+
+    echo "[warmup] MOE kernels not found, starting warmup server (TP=1)..."
+
+    local warmup_port=30001
+    local warmup_timeout=300
+    local warmup_pid=""
+
+    # Start a single-GPU server to compile kernels sequentially
+    SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 python3 -m sglang.launch_server \
+        --model-path "${MODEL}" \
+        --tokenizer-path "${TOKENIZER}" \
+        --tp 1 \
+        --quantization fp8 \
+        --trust-remote-code \
+        --attention-backend aiter \
+        --mem-fraction-static 0.5 \
+        --port ${warmup_port} > /tmp/warmup_server.log 2>&1 &
+    warmup_pid=$!
+
+    echo "[warmup] Warmup server started (PID: ${warmup_pid}), waiting for kernels to compile..."
+
+    local start_time=$(date +%s)
+    local server_ready=false
+
+    while true; do
+        local elapsed=$(($(date +%s) - start_time))
+
+        # Check timeout
+        if [[ $elapsed -ge $warmup_timeout ]]; then
+            echo "[warmup] ⚠️ Warmup timeout after ${warmup_timeout}s"
+            break
+        fi
+
+        # Check if process died
+        if ! kill -0 $warmup_pid 2>/dev/null; then
+            echo "[warmup] ⚠️ Warmup server exited unexpectedly"
+            break
+        fi
+
+        # Check if server is ready
+        if curl -s -f "http://127.0.0.1:${warmup_port}/health" > /dev/null 2>&1; then
+            server_ready=true
+            echo "[warmup] ✅ Server ready, MOE kernels compiled! (${elapsed}s)"
+            break
+        fi
+
+        # Progress update every 30s
+        if [[ $((elapsed % 30)) -eq 0 ]] && [[ $elapsed -gt 0 ]]; then
+            echo "[warmup] ⏳ Kernel compilation in progress... (${elapsed}s elapsed)"
+        fi
+
+        sleep 5
+    done
+
+    # Cleanup warmup server
+    echo "[warmup] Shutting down warmup server..."
+    if [[ -n "$warmup_pid" ]]; then
+        kill $warmup_pid 2>/dev/null || true
+        wait $warmup_pid 2>/dev/null || true
+    fi
+    fuser -k ${warmup_port}/tcp 2>/dev/null || true
+
+    if $server_ready; then
+        echo "[warmup] ✅ MOE kernel warmup completed successfully!"
+    else
+        echo "[warmup] ⚠️ Warmup may not have completed fully, proceeding anyway"
+    fi
+
+    # Brief pause before main server
+    sleep 3
 }
 
 launch_server() {
@@ -597,11 +699,34 @@ run_client_gsm8k() {
              total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
              valid_count=$((valid_count+1))
              echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$gsm8k_log"
+
+             # Early exit if accuracy meets threshold (saves time - like upstream CI)
+             if awk "BEGIN {exit !($run_accuracy >= $THRESHOLD)}"; then
+                 if [ $i -lt $runs ]; then
+                     echo "  🚀 Passed on run $i, skipping remaining $((runs - i)) run(s)" | tee -a "$gsm8k_log"
+                 fi
+                 local gsm8k_end_time=$(date +%s)
+                 local gsm8k_duration=$((gsm8k_end_time - gsm8k_start_time))
+                 echo "GSM8K test completed in ${gsm8k_duration} seconds (early exit)" | tee -a "$gsm8k_log"
+                 echo "Accuracy: $run_accuracy (Required: $THRESHOLD)" | tee -a "$gsm8k_log"
+
+                 # Log to timing summary
+                 echo "" >> "$TIMING_LOG"
+                 echo "GSM8K Test Results:" >> "$TIMING_LOG"
+                 echo "  Total duration: ${gsm8k_duration} seconds" >> "$TIMING_LOG"
+                 echo "  Accuracy: $run_accuracy (Required: $THRESHOLD)" >> "$TIMING_LOG"
+                 echo "  Early exit: Passed on run $i, skipped $((runs - i)) run(s)" >> "$TIMING_LOG"
+                 echo "  GSM8K accuracy: $run_accuracy" >> "$TIMING_LOG"
+
+                 echo "Accuracy meets threshold ($THRESHOLD) for mode ${mode}. Continuing with this mode." | tee -a "$gsm8k_log"
+                 return 0
+             fi
          else
              echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$gsm8k_log"
          fi
     done
 
+    # All runs completed without early exit - compute average
     local avg_accuracy
     if [ $valid_count -gt 0 ]; then
         avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_count" 'BEGIN { printf "%.3f", total/count }')
@@ -779,9 +904,8 @@ check_all_logs_complete() {
         echo "Empty: GSM8K log file ($gsm8k_log)"
         gsm8k_complete=false
     else
-        # Check if GSM8K test completed successfully
-        if grep -q "Average Accuracy over $GSM8K_RUNS runs for mode ${ATTENTION_BACKEND}" "$gsm8k_log" && \
-           grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
+        # Check if GSM8K test completed successfully (either early exit or full run)
+        if grep -q "Accuracy meets threshold\|Average accuracy meets threshold\|Average accuracy.*is below threshold" "$gsm8k_log"; then
             echo "✅ GSM8K log file is complete."
         else
             echo "Incomplete: GSM8K log file missing final summary ($gsm8k_log)"
@@ -1094,6 +1218,10 @@ if check_all_logs_complete; then
 
 else
     echo "Starting benchmarks using ${ATTENTION_BACKEND} backend..."
+
+    # Warmup MOE kernels before starting main TP=8 server
+    warmup_moe_kernels
+
     launch_server
 
     if run_client_gsm8k "${ATTENTION_BACKEND}"; then

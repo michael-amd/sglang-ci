@@ -31,8 +31,8 @@
 #   • Teams notifications require --teams-webhook-url
 #   • Plot images are automatically uploaded to GitHub when GITHUB_REPO and GITHUB_TOKEN
 #     environment variables are set (plots appear as GitHub URLs in Teams)
-#   • If GitHub credentials are not set, falls back to local plot server URLs
 #   • Set GITHUB_REPO=owner/repo and GITHUB_TOKEN=ghp_xxx for auto-upload
+#   • Plots are also viewable via dashboard at http://10.194.129.138:5000/plots/
 #
 # USAGE:
 #   perf_nightly.sh [OPTIONS]
@@ -145,13 +145,9 @@ TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
 # Teams configuration (disabled by default - requires explicit webhook URL)
 TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL:-}"  # Empty by default - set via --teams-webhook-url or environment
 ENABLE_TEAMS_NOTIFICATIONS="${ENABLE_TEAMS_NOTIFICATIONS:-true}"  # Enabled if webhook URL is provided
-TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES:-false}"  # Set to true for text-only notifications (when plot server is not public)
+TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES:-false}"  # Set to true for text-only notifications
 TEAMS_SKIP_ANALYSIS="${TEAMS_SKIP_ANALYSIS:-false}"  # Set to true to skip GSM8K accuracy and performance analysis
 TEAMS_ANALYSIS_DAYS="${TEAMS_ANALYSIS_DAYS:-7}"  # Number of days to look back for performance comparison
-# Plot server configuration (only used when GITHUB_REPO/GITHUB_TOKEN are not set for auto-upload)
-PLOT_SERVER_HOST="${PLOT_SERVER_HOST:-}"
-PLOT_SERVER_PORT="${PLOT_SERVER_PORT:-8000}"
-PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL:-}"
 
 # Output directories
 OFFLINE_OUTPUT_DIR="${OFFLINE_OUTPUT_DIR:-${BENCHMARK_CI_DIR}/offline}"
@@ -454,8 +450,9 @@ send_teams_notification() {
     echo "[nightly] Using GitHub upload for plot images (repo: ${GITHUB_REPO})"
     echo "[nightly] Images will be stored in main branch with structure: plot/${HARDWARE_TYPE}/model/mode/filename.png"
   else
-    echo "[nightly] GitHub credentials not provided via environment - using plot server links only"
+    echo "[nightly] GitHub credentials not provided - plots won't be embedded in Teams messages"
     echo "[nightly] To enable GitHub upload, set GITHUB_REPO and GITHUB_TOKEN environment variables"
+    echo "[nightly] Plots are still viewable via dashboard at http://10.194.129.138:5000/plots/"
   fi
 
   # Add analysis parameters
@@ -491,28 +488,15 @@ send_teams_notification() {
     echo "[nightly] Adding --enable-mtp-test flag for Teams notification"
   fi
 
-  # Build docker exec command with appropriate environment variables
-  # When using GitHub upload, don't set PLOT_SERVER_* to avoid fallback to local URLs
-  if [[ "$USE_GITHUB_UPLOAD" == "true" ]]; then
-    "${DOCKER_CMD[@]}" exec \
-      -e INSIDE_CONTAINER=1 \
-      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
-      -e GITHUB_REPO="${GITHUB_REPO:-}" \
-      -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
-      "${CONTAINER_NAME}" \
-      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
-  else
-    "${DOCKER_CMD[@]}" exec \
-      -e INSIDE_CONTAINER=1 \
-      -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
-      -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
-      -e PLOT_SERVER_HOST="${PLOT_SERVER_HOST}" \
-      -e PLOT_SERVER_PORT="${PLOT_SERVER_PORT}" \
-      -e PLOT_SERVER_BASE_URL="${PLOT_SERVER_BASE_URL}" \
-      "${CONTAINER_NAME}" \
-      bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
-  fi
+  # Build docker exec command with environment variables
+  "${DOCKER_CMD[@]}" exec \
+    -e INSIDE_CONTAINER=1 \
+    -e TEAMS_WEBHOOK_URL="${TEAMS_WEBHOOK_URL}" \
+    -e TEAMS_NO_IMAGES="${TEAMS_NO_IMAGES}" \
+    -e GITHUB_REPO="${GITHUB_REPO:-}" \
+    -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
+    "${CONTAINER_NAME}" \
+    bash -c "${TEAMS_CMD}" || TEAMS_EXIT_CODE=$?
 
   if [ $TEAMS_EXIT_CODE -eq 0 ]; then
     echo "[nightly] Teams notification sent successfully for ${model} ${mode}"
@@ -1060,20 +1044,45 @@ check_yesterday_run_status() {
 
   # If log doesn't exist, yesterday didn't run
   if [[ ! -f "$yesterday_log" ]]; then
-    echo "[nightly] Yesterday's run log not found - yesterday did not run"
+    echo "[nightly] Yesterday's run log not found at $yesterday_log - yesterday did not run"
+    return 0  # Allow fallback
+  fi
+
+  echo "[nightly] Checking yesterday's log: $yesterday_log"
+
+  # Check for critical errors that indicate the run failed
+  if grep -qE "(Memory access fault|Fatal Python error|Lock File Conflict|ERROR:.*Another instance)" "$yesterday_log"; then
+    echo "[nightly] Yesterday's run had critical errors - allowing fallback"
     return 0  # Allow fallback
   fi
 
   # Check if yesterday's run completed successfully
-  if grep -q "OVERALL SCRIPT SUMMARY" "$yesterday_log" && grep -q "Total execution time:" "$yesterday_log"; then
+  # Look for the completion markers used by perf_nightly.sh
+  if grep -q "\[nightly\] All benchmarks completed" "$yesterday_log"; then
+    # Yesterday's run completed - check if it was actually successful (no server crashes, no failed benchmarks)
+    if grep -qE "(Server.*critical errors|SGLang server encountered critical errors|server process.*terminated|BENCHMARK_FAILED)" "$yesterday_log"; then
+      echo "[nightly] Yesterday's run completed but had benchmark failures - allowing fallback"
+      return 0  # Allow fallback
+    fi
     # Yesterday's run was successful
-    echo "[nightly] Yesterday's run completed successfully"
+    echo "[nightly] Yesterday's run completed successfully - skipping fallback (no need to re-run)"
     return 1  # Don't allow fallback - yesterday was successful
-  else
-    # Yesterday's run failed or didn't complete
-    echo "[nightly] Yesterday's run failed or did not complete"
+  fi
+
+  # Also check for sanity check specific completion
+  if [[ "$MODE" == "sanity" ]] && grep -q "All tests completed" "$yesterday_log"; then
+    # For sanity check, also verify pass rate
+    if grep -qE "Overall:.*100\.0%|Overall:.*[89][0-9]\.[0-9]%" "$yesterday_log"; then
+      echo "[nightly] Yesterday's sanity check completed with good pass rate - skipping fallback"
+      return 1  # Don't allow fallback
+    fi
+    echo "[nightly] Yesterday's sanity check completed but with poor pass rate - allowing fallback"
     return 0  # Allow fallback
   fi
+
+  # Yesterday's run didn't complete
+  echo "[nightly] Yesterday's run did not complete - allowing fallback"
+  return 0  # Allow fallback
 }
 
 ###############################################################################
@@ -1190,8 +1199,17 @@ if [[ ${#SELECTED_TAGS[@]} -eq 0 && "$CONTINUE_RUN_DAYS" -eq 1 ]]; then
       echo "[nightly] No fallback image found for yesterday either."
     fi
   else
-    echo "[nightly] Skipping yesterday's image fallback - yesterday's run was successful"
-    echo "[nightly] Status: SKIPPED (prerequisites not met)"
+    # Yesterday's run was successful - no need to re-run with yesterday's image
+    echo "[nightly] =========================================="
+    echo "[nightly] SKIPPING: Yesterday's run completed successfully"
+    echo "[nightly] =========================================="
+    echo "[nightly] Today's Docker image is not available, but yesterday's run"
+    echo "[nightly] for this task ($MODEL $MODE) completed successfully."
+    echo "[nightly] No need to re-run with yesterday's image."
+    echo "[nightly] Status: SKIPPED (yesterday's run was successful)"
+    echo "[nightly] =========================================="
+    # Exit gracefully - this is not an error, just nothing to do
+    exit 0
   fi
 fi
 

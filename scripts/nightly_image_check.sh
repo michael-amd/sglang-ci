@@ -8,10 +8,10 @@
 #   links to GitHub workflow for troubleshooting build issues.
 #
 # IMAGE FORMAT:
-#   • mi30x: v0.5.5-rocm700-mi30x-YYYYMMDD (ROCM version auto-detected)
-#   • mi35x: v0.5.5-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)
+#   • mi30x-rocm700: v0.5.x-rocm700-mi30x-YYYYMMDD
+#   • mi35x-rocm700: v0.5.x-rocm700-mi35x-YYYYMMDD
 #   • Automatically excludes SRT variants (ends with -srt)
-#   • ROCM versions are dynamically discovered from available Docker images
+#   • Total: 2 images checked per day (both required)
 #
 # USAGE:
 #   nightly_image_check.sh [OPTIONS]
@@ -41,7 +41,13 @@ IMAGE_REPO="${IMAGE_REPO:-rocm/sgl-dev}"
 # Hardware types to check
 HARDWARE_TYPES=("mi30x" "mi35x")
 
-# ROCM versions will be dynamically discovered from Docker Hub
+# ROCM versions to check for each hardware type
+# Format: "required:version" or "optional:version"
+# - mi30x: rocm700 REQUIRED, rocm630 optional (still check but not required to pass)
+# - mi35x: rocm700 REQUIRED
+declare -A ROCM_VERSIONS_TO_CHECK
+ROCM_VERSIONS_TO_CHECK["mi30x"]="required:rocm700 optional:rocm630"
+ROCM_VERSIONS_TO_CHECK["mi35x"]="required:rocm700"
 
 # Timezone for date calculations (San Francisco time)
 TIME_ZONE="${TIME_ZONE:-America/Los_Angeles}"
@@ -92,9 +98,12 @@ for arg in "$@"; do
       echo "  $0 --days=3                   # Check last 3 days"
       echo "  $0 --teams-webhook=\"https://...\" # Check images with Teams alerts"
       echo ""
-      echo "Hardware Types Checked:"
-      echo "  mi30x: Images like v0.5.5-rocm700-mi30x-YYYYMMDD (ROCM version auto-detected)"
-      echo "  mi35x: Images like v0.5.5-rocm700-mi35x-YYYYMMDD (ROCM version auto-detected)"
+      echo "Hardware Types and ROCM Versions Checked (3 images per day):"
+      echo "  REQUIRED (must be available for pass):"
+      echo "    mi30x-rocm700: v0.5.x-rocm700-mi30x-YYYYMMDD (for GROK2.5, better FP8)"
+      echo "    mi35x-rocm700: v0.5.x-rocm700-mi35x-YYYYMMDD"
+      echo "  OPTIONAL (reported but not a failure if missing):"
+      echo "    mi30x-rocm630: v0.5.x-rocm630-mi30x-YYYYMMDD (fallback)"
       echo ""
       echo "Teams Notifications:"
       echo "  Automatically sends Teams alerts when --teams-webhook is provided"
@@ -170,6 +179,43 @@ find_image_for_date_and_hardware() {
       [[ -z "$next_url" || "$next_url" == "null" ]] && break
     done
   done <<< "$available_rocm_versions"
+
+  return 1
+}
+
+# Find Docker image for a specific date, hardware type, and ROCM version
+find_image_for_specific_rocm() {
+  local repo="$1" target_date="$2" hardware_type="$3" rocm_version="$4"
+
+  local next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
+  local use_jq=$(command -v jq &> /dev/null && echo "true" || echo "false")
+  local search_pattern="-${rocm_version}-${hardware_type}-${target_date}"
+
+  while [[ -n "$next_url" && "$next_url" != "null" ]]; do
+    local response=$(curl -s --max-time 15 "$next_url")
+
+    [[ -z "$response" || "$response" == *"not found"* || "$response" == *"error"* ]] && break
+
+    # Extract and filter tags based on available tools
+    local found_tag=""
+    if [[ "$use_jq" == "true" ]]; then
+      found_tag=$(echo "$response" | jq -r '.results[].name' | grep -- "${search_pattern}" | grep -v -- "-srt$" | head -1)
+      next_url=$(echo "$response" | jq -r '.next // empty')
+    else
+      found_tag=$(echo "$response" | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | grep -- "${search_pattern}" | grep -v -- "-srt$" | head -1)
+      next_url=$(echo "$response" | grep -o '"next":"[^"]*"' | cut -d'"' -f4)
+      # If next_url is "null", set to empty string
+      if [[ "$next_url" == "null" ]]; then
+        next_url=""
+      fi
+    fi
+
+    if [[ -n "$found_tag" ]]; then
+      echo "$found_tag"
+      return 0
+    fi
+    [[ -z "$next_url" || "$next_url" == "null" ]] && break
+  done
 
   return 1
 }
@@ -341,7 +387,8 @@ fi
 # Track overall results
 TOTAL_IMAGES_CHECKED=0
 TOTAL_IMAGES_FOUND=0
-MISSING_IMAGES=()
+MISSING_REQUIRED_IMAGES=()
+MISSING_OPTIONAL_IMAGES=()
 AVAILABLE_IMAGES=()
 
 # Check images for the specified number of days
@@ -363,38 +410,54 @@ for offset in $(seq 0 $((CHECK_DAYS - 1))); do
     echo ""
   fi
 
-  # Check each hardware type
+  # Check each hardware type and its ROCM versions
   for hardware in "${HARDWARE_TYPES[@]}"; do
-    TOTAL_IMAGES_CHECKED=$((TOTAL_IMAGES_CHECKED + 1))
+    # Get ROCM versions to check for this hardware type
+    versions_config="${ROCM_VERSIONS_TO_CHECK[$hardware]}"
 
-    echo -n "[check] Searching for $hardware image (discovering ROCM version)... "
+    for version_entry in $versions_config; do
+      # Parse "required:rocm700" or "optional:rocm630" format
+      requirement_type="${version_entry%%:*}"
+      rocm_version="${version_entry##*:}"
 
-    # Find the image tag
-    if candidate_tag=$(find_image_for_date_and_hardware "$IMAGE_REPO" "$date_suffix" "$hardware"); then
-      full_image="${IMAGE_REPO}:${candidate_tag}"
+      TOTAL_IMAGES_CHECKED=$((TOTAL_IMAGES_CHECKED + 1))
 
-      # Verify the image is actually pullable
-      echo -n "found, verifying... "
-      if verify_image_pullable "$full_image"; then
-        echo "✓ AVAILABLE"
-        echo "[check]   Image: $full_image"
-        TOTAL_IMAGES_FOUND=$((TOTAL_IMAGES_FOUND + 1))
-        # Extract ROCM version from the found tag for better Teams notification
-        if [[ "$candidate_tag" =~ -rocm([0-9]+)- ]]; then
-          discovered_rocm="rocm${BASH_REMATCH[1]}"
-          AVAILABLE_IMAGES+=("$hardware ($discovered_rocm): $candidate_tag")
+      if [[ "$requirement_type" == "optional" ]]; then
+        echo -n "[check] Searching for $hardware image ($rocm_version) [optional]... "
+      else
+        echo -n "[check] Searching for $hardware image ($rocm_version)... "
+      fi
+
+      # Find the image tag for this specific ROCM version
+      if candidate_tag=$(find_image_for_specific_rocm "$IMAGE_REPO" "$date_suffix" "$hardware" "$rocm_version"); then
+        full_image="${IMAGE_REPO}:${candidate_tag}"
+
+        # Verify the image is actually pullable
+        echo -n "found, verifying... "
+        if verify_image_pullable "$full_image"; then
+          echo "✓ AVAILABLE"
+          echo "[check]   Image: $full_image"
+          TOTAL_IMAGES_FOUND=$((TOTAL_IMAGES_FOUND + 1))
+          AVAILABLE_IMAGES+=("$hardware ($rocm_version): $candidate_tag")
         else
-          AVAILABLE_IMAGES+=("$hardware: $candidate_tag")
+          echo "✗ FOUND BUT NOT PULLABLE"
+          echo "[check]   Image: $full_image (manifest check failed)"
+          if [[ "$requirement_type" == "optional" ]]; then
+            MISSING_OPTIONAL_IMAGES+=("$hardware-$rocm_version ($date_suffix): not pullable [optional]")
+          else
+            MISSING_REQUIRED_IMAGES+=("$hardware-$rocm_version ($date_suffix): not pullable")
+          fi
         fi
       else
-        echo "✗ FOUND BUT NOT PULLABLE"
-        echo "[check]   Image: $full_image (manifest check failed)"
-        MISSING_IMAGES+=("$hardware ($date_suffix): $full_image - not pullable")
+        if [[ "$requirement_type" == "optional" ]]; then
+          echo "✗ NOT FOUND [optional]"
+          MISSING_OPTIONAL_IMAGES+=("$hardware-$rocm_version ($date_suffix): no image found [optional]")
+        else
+          echo "✗ NOT FOUND"
+          MISSING_REQUIRED_IMAGES+=("$hardware-$rocm_version ($date_suffix): no image found")
+        fi
       fi
-    else
-      echo "✗ NOT FOUND"
-      MISSING_IMAGES+=("$hardware ($date_suffix): no image found for any available ROCM version")
-    fi
+    done
   done
 done
 
@@ -404,7 +467,8 @@ echo "[check] Summary"
 echo "[check] =========================================="
 echo "[check] Total images checked: $TOTAL_IMAGES_CHECKED"
 echo "[check] Available images: $TOTAL_IMAGES_FOUND"
-echo "[check] Missing images: ${#MISSING_IMAGES[@]}"
+echo "[check] Missing required images: ${#MISSING_REQUIRED_IMAGES[@]}"
+echo "[check] Missing optional images: ${#MISSING_OPTIONAL_IMAGES[@]}"
 
 # Determine date suffix for Teams notification (use the first date checked)
 TEAMS_DATE_SUFFIX=""
@@ -414,28 +478,53 @@ else
   TEAMS_DATE_SUFFIX=$(date_pst 0)
 fi
 
-if [[ ${#MISSING_IMAGES[@]} -eq 0 ]]; then
-  echo ""
-  echo "[check] ✓ All expected images are available!"
+# Combine all missing images for details (required first, then optional)
+ALL_MISSING_IMAGES=("${MISSING_REQUIRED_IMAGES[@]}" "${MISSING_OPTIONAL_IMAGES[@]}")
 
-  # Send Teams notification for success
-  send_teams_notification "success" "All expected Docker images are available" \
-    "$TOTAL_IMAGES_CHECKED" "$TOTAL_IMAGES_FOUND" "$TEAMS_DATE_SUFFIX" \
-    "${AVAILABLE_IMAGES[@]}" "--details-start"
+# Success is determined by having NO missing REQUIRED images
+if [[ ${#MISSING_REQUIRED_IMAGES[@]} -eq 0 ]]; then
+  echo ""
+  if [[ ${#MISSING_OPTIONAL_IMAGES[@]} -gt 0 ]]; then
+    echo "[check] ✓ All REQUIRED images are available!"
+    echo "[check] ⚠ Some optional images are missing (not a failure):"
+    for missing in "${MISSING_OPTIONAL_IMAGES[@]}"; do
+      echo "[check]   - $missing"
+    done
+
+    # Send Teams notification for success with warning about optional
+    send_teams_notification "success" "All required Docker images available (some optional missing)" \
+      "$TOTAL_IMAGES_CHECKED" "$TOTAL_IMAGES_FOUND" "$TEAMS_DATE_SUFFIX" \
+      "${AVAILABLE_IMAGES[@]}" "--details-start" "${MISSING_OPTIONAL_IMAGES[@]}"
+  else
+    echo "[check] ✓ All expected images are available!"
+
+    # Send Teams notification for full success
+    send_teams_notification "success" "All expected Docker images are available" \
+      "$TOTAL_IMAGES_CHECKED" "$TOTAL_IMAGES_FOUND" "$TEAMS_DATE_SUFFIX" \
+      "${AVAILABLE_IMAGES[@]}" "--details-start"
+  fi
 
   exit 0
 else
   echo ""
-  echo "[check] ✗ Missing or problematic images:"
-  for missing in "${MISSING_IMAGES[@]}"; do
+  echo "[check] ✗ Missing REQUIRED images:"
+  for missing in "${MISSING_REQUIRED_IMAGES[@]}"; do
     echo "[check]   - $missing"
   done
+
+  if [[ ${#MISSING_OPTIONAL_IMAGES[@]} -gt 0 ]]; then
+    echo ""
+    echo "[check] ⚠ Missing optional images:"
+    for missing in "${MISSING_OPTIONAL_IMAGES[@]}"; do
+      echo "[check]   - $missing"
+    done
+  fi
 
   echo ""
   echo "[check] =========================================="
   echo "[check] Troubleshooting"
   echo "[check] =========================================="
-  echo "[check] Some images are missing or not accessible."
+  echo "[check] REQUIRED images are missing - this will cause sanity check failures!"
   echo "[check] This could indicate build failures in the nightly pipeline."
   echo ""
   echo "[check] To investigate build errors, check the GitHub workflow:"
@@ -448,24 +537,24 @@ else
   echo "[check]   - Resource or timeout issues"
   echo "[check]   - AMD-specific build problems"
 
-  # Send Teams notification for missing images
-  missing_count=${#MISSING_IMAGES[@]}
+  # Send Teams notification for missing required images
+  missing_count=${#MISSING_REQUIRED_IMAGES[@]}
   if [[ $missing_count -eq 1 ]]; then
-    status_message="1 Docker image is missing or not accessible"
+    status_message="1 REQUIRED Docker image is missing"
   else
-    status_message="$missing_count Docker images are missing or not accessible"
+    status_message="$missing_count REQUIRED Docker images are missing"
   fi
 
-  # Determine status level
-  if [[ $TOTAL_IMAGES_FOUND -eq 0 ]]; then
-    teams_status="error"
+  # Determine status level based on how many required are missing
+  if [[ $missing_count -ge 2 ]]; then
+    teams_status="error"  # Multiple required images missing
   else
-    teams_status="warning"
+    teams_status="warning"  # One required image missing
   fi
 
   send_teams_notification "$teams_status" "$status_message" \
     "$TOTAL_IMAGES_CHECKED" "$TOTAL_IMAGES_FOUND" "$TEAMS_DATE_SUFFIX" \
-    "${AVAILABLE_IMAGES[@]}" "--details-start" "${MISSING_IMAGES[@]}"
+    "${AVAILABLE_IMAGES[@]}" "--details-start" "${ALL_MISSING_IMAGES[@]}"
 
   exit 1
 fi

@@ -58,12 +58,84 @@ class DashboardDatabase:
         finally:
             conn.close()
 
+    def _migrate_unique_constraint(self, cursor):
+        """
+        Migrate test_runs table to use (run_date, hardware, machine_name) unique constraint
+        instead of (run_date, hardware) to support multiple machines per date.
+        """
+        # Check current unique constraint by examining the table schema
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='test_runs'")
+        result = cursor.fetchone()
+        if not result:
+            return  # Table doesn't exist yet, will be created with correct constraint
+
+        create_sql = result[0]
+
+        # Check if we need to migrate (old constraint doesn't include machine_name)
+        if "UNIQUE(run_date, hardware)" in create_sql and "UNIQUE(run_date, hardware, machine_name)" not in create_sql:
+            print("🔄 Migrating test_runs table to support multiple machines per date...")
+
+            # SQLite doesn't support ALTER CONSTRAINT, so we need to recreate the table
+            # Step 1: Create new table with correct constraint
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS test_runs_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    run_date TEXT NOT NULL,
+                    hardware TEXT NOT NULL,
+                    docker_image TEXT,
+                    overall_status TEXT,
+                    total_tasks INTEGER DEFAULT 0,
+                    passed_tasks INTEGER DEFAULT 0,
+                    failed_tasks INTEGER DEFAULT 0,
+                    unknown_tasks INTEGER DEFAULT 0,
+                    not_run INTEGER DEFAULT 0,
+                    run_datetime_pt TEXT,
+                    machine_name TEXT,
+                    github_log_url TEXT,
+                    github_cron_log_url TEXT,
+                    github_detail_log_url TEXT,
+                    plot_github_url TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(run_date, hardware, machine_name)
+                )
+            """
+            )
+
+            # Step 2: Copy data from old table to new table
+            cursor.execute(
+                """
+                INSERT INTO test_runs_new (
+                    id, run_date, hardware, docker_image, overall_status,
+                    total_tasks, passed_tasks, failed_tasks, unknown_tasks, not_run,
+                    run_datetime_pt, machine_name, github_log_url, github_cron_log_url,
+                    github_detail_log_url, plot_github_url, created_at, updated_at
+                )
+                SELECT
+                    id, run_date, hardware, docker_image, overall_status,
+                    total_tasks, passed_tasks, failed_tasks, unknown_tasks, not_run,
+                    run_datetime_pt, machine_name, github_log_url, github_cron_log_url,
+                    github_detail_log_url, plot_github_url, created_at, updated_at
+                FROM test_runs
+            """
+            )
+
+            # Step 3: Drop old table
+            cursor.execute("DROP TABLE test_runs")
+
+            # Step 4: Rename new table to original name
+            cursor.execute("ALTER TABLE test_runs_new RENAME TO test_runs")
+
+            print("✅ Migration complete: test_runs now supports multiple machines per date")
+
     def _init_schema(self):
         """Initialize database schema"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
 
             # Test Runs table - main tracking table
+            # UNIQUE constraint includes machine_name to support multiple machines per date
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS test_runs (
@@ -85,16 +157,14 @@ class DashboardDatabase:
                     plot_github_url TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(run_date, hardware)
+                    UNIQUE(run_date, hardware, machine_name)
                 )
             """
             )
 
-            # Add machine_name column if it doesn't exist (migration for existing databases)
-            try:
-                cursor.execute("ALTER TABLE test_runs ADD COLUMN machine_name TEXT")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            # Migration: Update unique constraint for existing databases
+            # SQLite doesn't support ALTER CONSTRAINT, so we need to check and recreate
+            self._migrate_unique_constraint(cursor)
 
             # Benchmark Results table
             cursor.execute(
@@ -176,6 +246,13 @@ class DashboardDatabase:
 
             cursor.execute(
                 """
+                CREATE INDEX IF NOT EXISTS idx_test_runs_date_hw_machine
+                ON test_runs(run_date, hardware, machine_name)
+            """
+            )
+
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_benchmark_results_run
                 ON benchmark_results(test_run_id)
             """
@@ -229,6 +306,8 @@ class DashboardDatabase:
         with self.get_connection() as conn:
             cursor = conn.cursor()
 
+            # Use (run_date, hardware, machine_name) as unique key to support
+            # multiple machines running tests on the same date
             cursor.execute(
                 """
                 INSERT INTO test_runs (
@@ -239,7 +318,7 @@ class DashboardDatabase:
                     updated_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(run_date, hardware) DO UPDATE SET
+                ON CONFLICT(run_date, hardware, machine_name) DO UPDATE SET
                     docker_image = excluded.docker_image,
                     overall_status = excluded.overall_status,
                     total_tasks = excluded.total_tasks,
@@ -248,7 +327,6 @@ class DashboardDatabase:
                     unknown_tasks = excluded.unknown_tasks,
                     not_run = excluded.not_run,
                     run_datetime_pt = excluded.run_datetime_pt,
-                    machine_name = excluded.machine_name,
                     github_log_url = excluded.github_log_url,
                     github_cron_log_url = excluded.github_cron_log_url,
                     github_detail_log_url = excluded.github_detail_log_url,
@@ -274,14 +352,26 @@ class DashboardDatabase:
                 ),
             )
 
-            # Get the ID of inserted/updated record
+            # Get the ID of inserted/updated record using the full unique key
             cursor.execute(
                 """
-                SELECT id FROM test_runs WHERE run_date = ? AND hardware = ?
+                SELECT id FROM test_runs WHERE run_date = ? AND hardware = ? AND machine_name = ?
+            """,
+                (run_date, hardware, machine_name),
+            )
+            result = cursor.fetchone()
+            if result:
+                return result[0]
+
+            # Fallback for records with NULL machine_name (legacy data)
+            cursor.execute(
+                """
+                SELECT id FROM test_runs WHERE run_date = ? AND hardware = ? AND machine_name IS NULL
             """,
                 (run_date, hardware),
             )
-            return cursor.fetchone()[0]
+            result = cursor.fetchone()
+            return result[0] if result else None
 
     def upsert_benchmark_result(
         self,
@@ -436,16 +526,58 @@ class DashboardDatabase:
                 (test_run_id, benchmark_name, plot_suffix, local_path, github_url),
             )
 
-    def get_test_run(self, run_date: str, hardware: str) -> Optional[Dict]:
+    def get_test_run(
+        self, run_date: str, hardware: str, machine_name: Optional[str] = None
+    ) -> Optional[Dict]:
         """
         Get test run record
 
         Args:
             run_date: Date in YYYYMMDD format
             hardware: Hardware type
+            machine_name: Optional machine name filter
 
         Returns:
             Test run record as dictionary or None
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+
+            if machine_name:
+                cursor.execute(
+                    """
+                    SELECT * FROM test_runs
+                    WHERE run_date = ? AND hardware = ? AND machine_name = ?
+                """,
+                    (run_date, hardware, machine_name),
+                )
+            else:
+                # Return first matching record (for backward compatibility)
+                cursor.execute(
+                    """
+                    SELECT * FROM test_runs
+                    WHERE run_date = ? AND hardware = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """,
+                    (run_date, hardware),
+                )
+
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def get_test_runs_for_date(
+        self, run_date: str, hardware: str
+    ) -> List[Dict]:
+        """
+        Get all test run records for a date (from all machines)
+
+        Args:
+            run_date: Date in YYYYMMDD format
+            hardware: Hardware type
+
+        Returns:
+            List of test run records as dictionaries
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -454,12 +586,12 @@ class DashboardDatabase:
                 """
                 SELECT * FROM test_runs
                 WHERE run_date = ? AND hardware = ?
+                ORDER BY machine_name, created_at DESC
             """,
                 (run_date, hardware),
             )
 
-            row = cursor.fetchone()
-            return dict(row) if row else None
+            return [dict(row) for row in cursor.fetchall()]
 
     def get_benchmark_results(self, test_run_id: int) -> List[Dict]:
         """

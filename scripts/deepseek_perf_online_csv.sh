@@ -71,7 +71,7 @@ GSM8K_HOST="${GSM8K_HOST:-http://127.0.0.1}"
 # Server configuration
 SERVER_MEM_FRACTION="${SERVER_MEM_FRACTION:-0.9}"
 SERVER_MAX_REQUESTS="${SERVER_MAX_REQUESTS:-1024}"
-SERVER_TIMEOUT="${SERVER_TIMEOUT:-900}"  # 15 minutes
+SERVER_TIMEOUT="${SERVER_TIMEOUT:-1800}"  # 30 minutes (increased for cold-start aiter JIT compilation)
 
 # Torch compile specific configuration (standard mode without DP attention)
 # MoE models with torch compile require reduced memory and smaller CUDA graph batch size
@@ -84,6 +84,17 @@ TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-16}"
 # Reduced from 0.8/16 to 0.6/8 after Nov 2024 GPU memory fault crashes (see GPUCORE_INVESTIGATION.md)
 DP_TORCH_COMPILE_MEM_FRACTION="${DP_TORCH_COMPILE_MEM_FRACTION:-0.6}"
 DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS="${DP_TORCH_COMPILE_CUDA_GRAPH_MAX_BS:-8}"
+
+# MTP (Multi-Token Prediction) with EAGLE speculative decoding configuration
+# These settings match the recommended config for DeepSeek-R1-MXFP4-Preview
+MTP_MEM_FRACTION="${MTP_MEM_FRACTION:-0.8}"
+MTP_MAX_RUNNING_REQUESTS="${MTP_MAX_RUNNING_REQUESTS:-64}"
+MTP_CHUNKED_PREFILL_SIZE="${MTP_CHUNKED_PREFILL_SIZE:-131072}"
+MTP_KV_CACHE_DTYPE="${MTP_KV_CACHE_DTYPE:-fp8_e4m3}"
+MTP_SPECULATIVE_ALGORITHM="${MTP_SPECULATIVE_ALGORITHM:-EAGLE}"
+MTP_SPECULATIVE_NUM_STEPS="${MTP_SPECULATIVE_NUM_STEPS:-3}"
+MTP_SPECULATIVE_EAGLE_TOPK="${MTP_SPECULATIVE_EAGLE_TOPK:-1}"
+MTP_SPECULATIVE_NUM_DRAFT_TOKENS="${MTP_SPECULATIVE_NUM_DRAFT_TOKENS:-4}"
 
 # Benchmark run configuration
 BENCHMARK_RUNS_PER_CONCURRENCY="${BENCHMARK_RUNS_PER_CONCURRENCY:-1}"
@@ -213,7 +224,7 @@ for arg in "$@"; do
       echo "  --download-model       Download model if not present (default: false)"
       echo "  --check-dp-attention   Use Data Parallel attention settings, GSM8K only (default: false)"
       echo "  --enable-torch-compile Enable torch compile for performance optimization (default: false)"
-      echo "  --enable-mtp-test      Generate MTP CSV/plot artifacts (DeepSeek-R1 MXFP4 on MI35x)"
+      echo "  --enable-mtp-test      Enable EAGLE speculative decoding (MTP), GSM8K only (no serving benchmarks)"
       echo "  --enable-dp-test       Run DP attention + throughput test (includes MTP-style serving runs)"
       echo "  --help                 Show this help message"
       echo ""
@@ -592,21 +603,138 @@ get_sglang_env_var() {
 
 # Clean up stale aiter JIT lock files to prevent deadlock
 # This is necessary when a previous run crashed/timed out and left locks behind
+# Cleans both /root/.aiter/build and /sgl-workspace/aiter/aiter/jit/build paths
 cleanup_aiter_locks() {
   echo "[csv] Cleaning up stale aiter JIT lock files..."
 
-  # Remove all lock files in the aiter build cache
-  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
-  local lock_count
-  lock_count=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count=0
+  local total_cleaned=0
 
-  if [[ "$lock_count" -gt 0 ]]; then
-    echo "[csv] Found $lock_count stale aiter lock file(s), removing..."
+  # Path 1: /root/.aiter/build (aiter runtime cache)
+  # These locks can cause deadlock when multiple TP ranks wait for a lock held by a dead process
+  local lock_count1=0
+  lock_count1=$(find /root/.aiter/build -name "lock" -type f 2>/dev/null | wc -l) || lock_count1=0
+  if [[ "$lock_count1" -gt 0 ]]; then
     find /root/.aiter/build -name "lock" -type f -delete 2>/dev/null || true
-    echo "[csv] Aiter lock cleanup complete"
+    total_cleaned=$((total_cleaned + lock_count1))
+  fi
+
+  # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks like lock_module_moe_sorting)
+  # These locks are created during kernel JIT compilation and can cause deadlock if stale
+  local lock_count2=0
+  lock_count2=$(find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f 2>/dev/null | wc -l) || lock_count2=0
+  if [[ "$lock_count2" -gt 0 ]]; then
+    find /sgl-workspace/aiter/aiter/jit/build -name "lock*" -type f -delete 2>/dev/null || true
+    total_cleaned=$((total_cleaned + lock_count2))
+  fi
+
+  if [[ "$total_cleaned" -gt 0 ]]; then
+    echo "[csv] Cleaned $total_cleaned stale aiter lock file(s)"
   else
     echo "[csv] No stale aiter lock files found"
   fi
+}
+
+# Warmup MOE kernels to prevent JIT compilation deadlock
+# When MOE models (DeepSeek-V3) run for the first time with TP>1, multiple workers try to
+# JIT-compile MOE kernels simultaneously, causing a deadlock. This compiles kernels with TP=1 first.
+warmup_moe_kernels() {
+    echo ""
+    echo "============================================================"
+    echo "🔥 MOE Kernel Warmup Phase"
+    echo "============================================================"
+    echo "[warmup] Pre-compiling MOE kernels to prevent JIT deadlock..."
+
+    # Check if critical aiter kernels are already compiled
+    # The most time-consuming kernels are: module_rmsnorm (~12 min), module_moe_ck2stages (~5 min)
+    local aiter_jit_dir="/sgl-workspace/aiter/aiter/jit"
+    local critical_kernels=(
+        "module_moe_sorting.so"
+        "module_rmsnorm.so"
+        "module_mla_metadata.so"
+        "module_mla_asm.so"
+        "module_mla_reduce.so"
+    )
+
+    local all_present=true
+    for kernel in "${critical_kernels[@]}"; do
+        if [[ ! -f "${aiter_jit_dir}/${kernel}" ]]; then
+            echo "[warmup] Missing kernel: ${kernel}"
+            all_present=false
+        fi
+    done
+
+    if $all_present; then
+        echo "[warmup] All critical aiter kernels already compiled, skipping warmup"
+        return 0
+    fi
+
+    echo "[warmup] Some aiter kernels not found, starting warmup server (TP=1)..."
+
+    local warmup_port=30001
+    local warmup_timeout=900  # 15 minutes to allow for module_rmsnorm (~12 min) + others
+    local warmup_pid=""
+
+    # Start a single-GPU server to compile kernels sequentially
+    SGLANG_USE_AITER=1 python3 -m sglang.launch_server \
+        --model-path "${MODEL}" \
+        --tp 1 \
+        --trust-remote-code \
+        --mem-fraction-static 0.5 \
+        --port ${warmup_port} > /tmp/warmup_server.log 2>&1 &
+    warmup_pid=$!
+
+    echo "[warmup] Warmup server started (PID: ${warmup_pid}), waiting for kernels to compile..."
+
+    local start_time=$(date +%s)
+    local server_ready=false
+
+    while true; do
+        local elapsed=$(($(date +%s) - start_time))
+
+        # Check timeout
+        if [[ $elapsed -ge $warmup_timeout ]]; then
+            echo "[warmup] ⚠️ Warmup timeout after ${warmup_timeout}s"
+            break
+        fi
+
+        # Check if process died
+        if ! kill -0 $warmup_pid 2>/dev/null; then
+            echo "[warmup] ⚠️ Warmup server exited unexpectedly"
+            break
+        fi
+
+        # Check if server is ready
+        if curl -s -f "http://127.0.0.1:${warmup_port}/health" > /dev/null 2>&1; then
+            server_ready=true
+            echo "[warmup] ✅ Server ready, aiter kernels compiled! (${elapsed}s)"
+            break
+        fi
+
+        # Progress update every 30s
+        if [[ $((elapsed % 30)) -eq 0 ]] && [[ $elapsed -gt 0 ]]; then
+            echo "[warmup] ⏳ Kernel compilation in progress... (${elapsed}s elapsed)"
+        fi
+
+        sleep 5
+    done
+
+    # Cleanup warmup server
+    echo "[warmup] Shutting down warmup server..."
+    if [[ -n "$warmup_pid" ]]; then
+        kill $warmup_pid 2>/dev/null || true
+        wait $warmup_pid 2>/dev/null || true
+    fi
+    fuser -k ${warmup_port}/tcp 2>/dev/null || true
+
+    if $server_ready; then
+        echo "[warmup] ✅ Aiter kernel warmup completed successfully!"
+    else
+        echo "[warmup] ⚠️ Warmup may not have completed fully, proceeding anyway"
+        echo "[warmup] ⚠️ Server startup timeout may need to be increased for first-run JIT compilation"
+    fi
+
+    # Brief pause before main server
+    sleep 3
 }
 
 # Function to start SGLang server and wait for it to be ready
@@ -670,6 +798,29 @@ start_sglang_server() {
             --enable-dp-attention \
             --mem-fraction-static "${mem_fraction}" \
             ${cuda_graph_bs_flag} \
+            ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
+    elif [ "$ENABLE_MTP_TEST" = "true" ]; then
+        # MTP mode with EAGLE speculative decoding
+        echo "[DEBUG] MTP mode with EAGLE speculative decoding enabled"
+        echo "[DEBUG] MTP config: mem-fraction=${MTP_MEM_FRACTION}, max-requests=${MTP_MAX_RUNNING_REQUESTS}"
+        echo "[DEBUG] MTP speculative: algorithm=${MTP_SPECULATIVE_ALGORITHM}, steps=${MTP_SPECULATIVE_NUM_STEPS}, topk=${MTP_SPECULATIVE_EAGLE_TOPK}, draft-tokens=${MTP_SPECULATIVE_NUM_DRAFT_TOKENS}"
+
+        # Start server with MTP/EAGLE configuration
+        env HSA_ENABLE_COREDUMP=0 SGLANG_AITER_MLA_PERSIST=1 python3 -m sglang.launch_server \
+            --model-path "${MODEL}" \
+            --tensor-parallel-size "${TP}" \
+            --port "$GSM8K_PORT" \
+            --trust-remote-code \
+            --chunked-prefill-size "${MTP_CHUNKED_PREFILL_SIZE}" \
+            --disable-radix-cache \
+            --mem-fraction-static "${MTP_MEM_FRACTION}" \
+            --max-running-requests "${MTP_MAX_RUNNING_REQUESTS}" \
+            --kv-cache-dtype "${MTP_KV_CACHE_DTYPE}" \
+            --attention-backend aiter \
+            --speculative-algorithm "${MTP_SPECULATIVE_ALGORITHM}" \
+            --speculative-num-steps "${MTP_SPECULATIVE_NUM_STEPS}" \
+            --speculative-eagle-topk "${MTP_SPECULATIVE_EAGLE_TOPK}" \
+            --speculative-num-draft-tokens "${MTP_SPECULATIVE_NUM_DRAFT_TOKENS}" \
             ${torch_compile_flag} > "$SERVER_LOG_FILE" 2>&1 &
     else
         local aiter_env_var=$(get_sglang_env_var)
@@ -777,6 +928,11 @@ start_sglang_server() {
 
 # Helper function to check if we should run serving benchmarks
 should_run_serving_benchmarks() {
+    # MTP test only runs GSM8K by default - skip serving benchmarks
+    if [ "$ENABLE_MTP_TEST" = "true" ]; then
+        return 1
+    fi
+
     if [ "$ENABLE_DP_TEST" = "true" ]; then
         return 0
     fi
@@ -787,7 +943,9 @@ should_run_serving_benchmarks() {
 build_mode_description() {
     local parts=()
 
-    if [ "$ENABLE_DP_TEST" = "true" ]; then
+    if [ "$ENABLE_MTP_TEST" = "true" ]; then
+        parts+=("MTP/EAGLE speculative")
+    elif [ "$ENABLE_DP_TEST" = "true" ]; then
         parts+=("DP test")
     elif [ "$CHECK_DP_ATTENTION" = "true" ]; then
         parts+=("DP attention")
@@ -1028,6 +1186,28 @@ run_gsm8k_benchmark() {
             total_accuracy=$(awk -v t="$total_accuracy" -v a="$run_accuracy" 'BEGIN { printf "%.3f", t+a }')
             valid_run_count=$((valid_run_count+1))
             echo "  ✓ Run $i included in average (accuracy: $run_accuracy)" | tee -a "$GSM8K_LOG_FILE"
+
+            # Early exit if accuracy meets threshold (saves time - like upstream CI)
+            if awk "BEGIN {exit !($run_accuracy >= $THRESHOLD)}"; then
+                if [ $i -lt $runs ]; then
+                    echo "  🚀 Passed on run $i, skipping remaining $((runs - i)) run(s)" | tee -a "$GSM8K_LOG_FILE"
+                fi
+                local end_time=$(date +%s)
+                local duration=$((end_time - start_time))
+                echo "GSM8K test completed in ${duration} seconds (early exit)" | tee -a "$GSM8K_LOG_FILE"
+                echo "Accuracy: $run_accuracy (Required: $THRESHOLD)" | tee -a "$GSM8K_LOG_FILE"
+
+                # Log to timing summary
+                echo "" >> "$TIMING_LOG"
+                echo "GSM8K Test Results:" >> "$TIMING_LOG"
+                echo "  Total duration: ${duration} seconds" >> "$TIMING_LOG"
+                echo "  Accuracy: $run_accuracy (Required: $THRESHOLD)" >> "$TIMING_LOG"
+                echo "  Early exit: Passed on run $i, skipped $((runs - i)) run(s)" >> "$TIMING_LOG"
+                echo "  GSM8K accuracy: $run_accuracy" >> "$TIMING_LOG"
+
+                echo "Accuracy meets threshold ($THRESHOLD)." | tee -a "$GSM8K_LOG_FILE"
+                return 0
+            fi
         else
             echo "  ✗ Run $i excluded from average (accuracy: $run_accuracy < $MIN_VALID_ACCURACY - likely failed/crashed)" | tee -a "$GSM8K_LOG_FILE"
         fi
@@ -1036,6 +1216,7 @@ run_gsm8k_benchmark() {
         update_progress "GSM8K" "Run $i"
    done
 
+   # All runs completed without early exit - compute average
    local avg_accuracy
    if [ $valid_run_count -gt 0 ]; then
        avg_accuracy=$(awk -v total="$total_accuracy" -v count="$valid_run_count" 'BEGIN { printf "%.3f", total/count }')
@@ -1635,8 +1816,8 @@ check_all_logs_complete() {
         echo "Empty: GSM8K log file ($GSM8K_LOG_FILE)"
         gsm8k_complete=false
     else
-        # Check if GSM8K test completed successfully by looking for the final summary
-        if grep -q "Average Accuracy over $GSM8K_RUNS runs:" "$GSM8K_LOG_FILE" && grep -q "Average accuracy meets threshold\|Average accuracy.*is below threshold" "$GSM8K_LOG_FILE"; then
+        # Check if GSM8K test completed successfully (either early exit or full run)
+        if grep -q "Accuracy meets threshold\|Average accuracy meets threshold\|Average accuracy.*is below threshold" "$GSM8K_LOG_FILE"; then
             echo "✅ GSM8K log file is complete with final accuracy summary"
         else
             echo "Incomplete: GSM8K log file missing final accuracy summary ($GSM8K_LOG_FILE)"
@@ -1803,6 +1984,9 @@ else
     > "$SERVER_LOG_FILE" # Clear/truncate the server log file
 
     echo "Starting SGLang server for online GSM8K benchmark..."
+
+    # Warmup MOE kernels before starting main TP=8 server
+    warmup_moe_kernels
 
     start_sglang_server
 

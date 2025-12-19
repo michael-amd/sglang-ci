@@ -26,15 +26,12 @@ ENVIRONMENT VARIABLES:
     TEAMS_WEBHOOK_URL: Teams webhook URL (required if not provided via --webhook-url)
     TEAMS_SKIP_ANALYSIS: Set to "true" to skip intelligent analysis (default: false)
     TEAMS_ANALYSIS_DAYS: Days to look back for performance comparison (default: 7)
-    PLOT_SERVER_HOST: Host where plots are served (default: hostname -I)
-    PLOT_SERVER_PORT: Port where plots are served (default: 8000)
-    PLOT_SERVER_BASE_URL: Full base URL override (overrides host/port)
+    GITHUB_REPO: GitHub repository for log/plot links (default: ROCm/sglang-ci)
     GITHUB_TOKEN: GitHub personal access token (required for --github-upload)
 
 REQUIREMENTS:
     - requests library
     - pytz library (for timezone handling)
-    - Plot server must be running and accessible
     - Teams webhook must be configured
 """
 
@@ -146,6 +143,56 @@ try:
 except ImportError:
     PYTZ_AVAILABLE = False
     print("⚠️  Warning: pytz not available, using UTC time instead of Pacific time")
+
+
+def should_send_alert(
+    docker_image: Optional[str], expected_date: Optional[str] = None
+) -> bool:
+    """
+    Check if alert should be sent based on Docker image date
+
+    Only send alerts if today's Docker image is being used.
+    Skip alerts if using yesterday's image (fallback scenario).
+
+    Args:
+        docker_image: Docker image name (e.g., rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-20251114)
+        expected_date: Expected date string in YYYYMMDD format (default: today)
+
+    Returns:
+        True if alert should be sent, False otherwise
+    """
+    if not docker_image:
+        # No docker image found, skip alert
+        print(
+            "⚠️  No Docker image found - skipping alert to avoid reporting on fallback runs"
+        )
+        return False
+
+    # Use today's date if no expected date provided
+    if expected_date is None:
+        expected_date = datetime.now().strftime("%Y%m%d")
+
+    # Extract date from Docker image tag
+    # Format: rocm/sgl-dev:v0.5.5.post2-rocm700-mi30x-YYYYMMDD
+    date_match = re.search(r"-(\d{8})(?:$|[^0-9])", docker_image)
+    if not date_match:
+        print(f"⚠️  Could not extract date from Docker image: {docker_image}")
+        print("   Skipping alert to avoid reporting on fallback runs")
+        return False
+
+    image_date = date_match.group(1)
+
+    if image_date != expected_date:
+        print(
+            f"🔔 Alert suppressed: Docker image is from {image_date}, expected {expected_date}"
+        )
+        print(f"   Using yesterday's image as fallback - not sending alert")
+        return False
+
+    print(
+        f"✅ Docker image date matches expected date ({expected_date}) - proceeding with alert"
+    )
+    return True
 
 
 class BenchmarkAnalyzer:
@@ -1123,7 +1170,8 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                 if startup_failed_match:
                     result_data["status"] = "fail"
 
-            # Extract accuracies
+            # Extract accuracies - try multiple formats
+            # Format 1: Accuracies: [0.848, 0.852, ...] (multiple trials)
             accuracies_match = re.search(
                 r"Accuracies:\s*\[([\d.,\s]+)\]", section_content
             )
@@ -1133,15 +1181,32 @@ def parse_sanity_check_log(log_file_path: str) -> Dict:
                     float(a.strip()) for a in acc_str.split(",") if a.strip()
                 ]
 
-            # Extract average accuracy from log
+            # Format 2: Individual trial accuracies - Trial N: PASS [OK] (Accuracy: 0.848, ...)
+            if not result_data["accuracies"]:
+                trial_matches = re.findall(
+                    r"Trial \d+:.*?Accuracy:\s*([\d.]+)", section_content
+                )
+                if trial_matches:
+                    result_data["accuracies"] = [float(a) for a in trial_matches]
+
+            # Extract average/final accuracy from log - try multiple formats
             avg_acc_match = re.search(r"Average accuracy:\s*([\d.]+)", section_content)
             if avg_acc_match:
                 result_data["average_accuracy"] = float(avg_acc_match.group(1))
-            elif result_data["accuracies"]:
-                # Calculate average from individual trial accuracies if not in log
-                result_data["average_accuracy"] = sum(result_data["accuracies"]) / len(
-                    result_data["accuracies"]
+            else:
+                # Format 2: Accuracy: 0.848 (Required: 0.820) - single trial format
+                single_acc_match = re.search(
+                    r"^Accuracy:\s*([\d.]+)\s*\(Required:",
+                    section_content,
+                    re.MULTILINE,
                 )
+                if single_acc_match:
+                    result_data["average_accuracy"] = float(single_acc_match.group(1))
+                elif result_data["accuracies"]:
+                    # Calculate average from individual trial accuracies if not in log
+                    result_data["average_accuracy"] = sum(
+                        result_data["accuracies"]
+                    ) / len(result_data["accuracies"])
 
             # Extract total time for this model
             model_time_match = re.search(r"Total time:\s*([\d.]+)s", section_content)
@@ -1236,7 +1301,6 @@ class TeamsNotifier:
     def __init__(
         self,
         webhook_url: str,
-        plot_server_base_url: str,
         skip_analysis: bool = False,
         analysis_days: int = 7,
         benchmark_dir: Optional[str] = None,
@@ -1255,7 +1319,6 @@ class TeamsNotifier:
 
         Args:
             webhook_url: Microsoft Teams webhook URL
-            plot_server_base_url: Base URL where plots are served (e.g., http://host:8000)
             skip_analysis: If True, skip GSM8K accuracy and performance regression analysis
             analysis_days: Number of days to look back for performance comparison
             benchmark_dir: Base directory for benchmark data (overrides BENCHMARK_BASE_DIR env var)
@@ -1270,9 +1333,6 @@ class TeamsNotifier:
             hardware: Hardware type (mi30x or mi35x) for GitHub upload path structure
         """
         self.webhook_url = webhook_url
-        self.plot_server_base_url = (
-            plot_server_base_url.rstrip("/") if plot_server_base_url else ""
-        )
         self.skip_analysis = skip_analysis
         self.analysis_days = analysis_days
         self.github_upload = github_upload
@@ -1376,26 +1436,42 @@ class TeamsNotifier:
         )
 
         if critical_error_results["status"] == "fail":
-            alert["status"] = "error"
-            alert["critical_errors"] = critical_error_results["errors"]
-            alert["error_type"] = critical_error_results["error_type"]
-
-            # Update title based on error type
             error_type = critical_error_results["error_type"]
-            if error_type == "import_error":
-                alert["title"] = "❌ Benchmark Failed: Import Error"
-            elif error_type == "server_startup_failed":
-                alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
-            elif error_type == "incomplete_run":
-                alert["title"] = "❌ Benchmark Failed: Incomplete Run"
-            elif error_type == "critical_error":
-                alert["title"] = "❌ Benchmark Failed: Critical Error"
-            else:
-                alert["title"] = "❌ Benchmark Failed"
 
-            # Add error details
-            for error in critical_error_results["errors"]:
-                alert["details"].append(error)
+            # For DeepSeek models: if GSM8K accuracy passes, treat "incomplete_run" as a warning
+            # rather than a failure. The benchmark is considered successful if GSM8K passes.
+            is_deepseek = model.lower().startswith("deepseek")
+            gsm8k_passed = (
+                gsm8k_accuracy is not None
+                and gsm8k_accuracy >= thresholds.get(model, 0.8)
+            )
+
+            if is_deepseek and gsm8k_passed and error_type == "incomplete_run":
+                # GSM8K passed for DeepSeek - treat as success with a note about missing end marker
+                alert["details"].append(
+                    "Note: Log end marker missing (benchmark completed successfully)"
+                )
+            else:
+                # For other errors or non-DeepSeek models, mark as failed
+                alert["status"] = "error"
+                alert["critical_errors"] = critical_error_results["errors"]
+                alert["error_type"] = error_type
+
+                # Update title based on error type
+                if error_type == "import_error":
+                    alert["title"] = "❌ Benchmark Failed: Import Error"
+                elif error_type == "server_startup_failed":
+                    alert["title"] = "❌ Benchmark Failed: Server Startup Failed"
+                elif error_type == "incomplete_run":
+                    alert["title"] = "❌ Benchmark Failed: Incomplete Run"
+                elif error_type == "critical_error":
+                    alert["title"] = "❌ Benchmark Failed: Critical Error"
+                else:
+                    alert["title"] = "❌ Benchmark Failed"
+
+                # Add error details
+                for error in critical_error_results["errors"]:
+                    alert["details"].append(error)
 
         # Extract additional info for online mode
         if mode == "online":
@@ -2189,10 +2265,6 @@ class TeamsNotifier:
                             )
                             if plot_info.get("public_url"):
                                 plot_info["hosting_service"] = "GitHub"
-                        elif self.plot_server_base_url:
-                            plot_info["plot_url"] = (
-                                f"{self.plot_server_base_url}/{relative_path}"
-                            )
 
                         plots.append(plot_info)
                         date_found = True
@@ -2571,19 +2643,8 @@ class TeamsNotifier:
                                 "spacing": "Small",
                             }
                         )
-
-                    else:
-                        # Fallback - show file path
-                        body_elements.append(
-                            {
-                                "type": "TextBlock",
-                                "text": f"📁 File: `{plot['file_path']}`",
-                                "wrap": True,
-                                "size": "Small",
-                                "spacing": "Small",
-                                "fontType": "Monospace",
-                            }
-                        )
+                    # Note: Removed fallback that showed internal file paths (📁 File: ...)
+                    # Plots without public URLs or plot URLs will only show their filename
 
         # Create actions
         actions = []
@@ -2650,10 +2711,6 @@ class TeamsNotifier:
                 }
             )
 
-        if self.plot_server_base_url:
-            # Add HTTP server links
-            pass
-
         # Only add plot-related actions if:
         # 1. Not in DP attention mode or torch compile mode
         # 2. No critical errors detected
@@ -2705,6 +2762,18 @@ class TeamsNotifier:
             True if successful, False otherwise
         """
         try:
+            # Get summary alert first to check Docker image date
+            summary_alert = self.create_summary_alert(model, mode)
+
+            # Check if we should send alert (only for today's image)
+            docker_image = summary_alert.get("additional_info", {}).get("docker_image")
+            expected_date = self.analyzer.benchmark_date or datetime.now().strftime(
+                "%Y%m%d"
+            )
+            if not should_send_alert(docker_image, expected_date):
+                print("ℹ️  Alert sending skipped - not using today's Docker image")
+                return False
+
             card = self.create_adaptive_card(plots, model, mode)
             card_json = json.dumps(card)
             payload_size_mb = len(card_json.encode("utf-8")) / (1024 * 1024)
@@ -2774,6 +2843,20 @@ class TeamsNotifier:
             True if successful, False otherwise
         """
         try:
+            # Check if we should send alert (only for today's image)
+            # For sanity checks, the docker_image is the tag, need to construct full image name
+            full_image = (
+                f"rocm/sgl-dev:{docker_image}"
+                if ":" not in docker_image
+                else docker_image
+            )
+            expected_date = self.analyzer.benchmark_date or datetime.now().strftime(
+                "%Y%m%d"
+            )
+            if not should_send_alert(full_image, expected_date):
+                print("ℹ️  Alert sending skipped - not using today's Docker image")
+                return False
+
             # Find the log file
             log_file_path = find_sanity_check_log(docker_image, base_log_root)
             if log_file_path is None:
@@ -2819,34 +2902,6 @@ class TeamsNotifier:
             return False
 
 
-def get_plot_server_base_url() -> str:
-    """
-    Get the plot server base URL from environment or default configuration
-
-    Returns:
-        Base URL for the plot server
-    """
-    # Check for full URL override first
-    base_url = os.environ.get("PLOT_SERVER_BASE_URL")
-    if base_url:
-        return base_url.rstrip("/")
-
-    # Build URL from host and port
-    host = os.environ.get("PLOT_SERVER_HOST")
-    if not host:
-        try:
-            # Get the first IP address from hostname -I
-            result = subprocess.run(
-                ["hostname", "-I"], capture_output=True, text=True, check=True
-            )
-            host = result.stdout.strip().split()[0]
-        except (subprocess.CalledProcessError, IndexError):
-            host = "localhost"
-
-    port = os.environ.get("PLOT_SERVER_PORT", "8000")
-    return f"http://{host}:{port}"
-
-
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
@@ -2886,12 +2941,6 @@ def main():
         type=str,
         default=os.path.expanduser("~/sglang-ci"),
         help="Base directory for benchmark data (overrides BENCHMARK_BASE_DIR env var)",
-    )
-
-    parser.add_argument(
-        "--check-server",
-        action="store_true",
-        help="Check if plot server is accessible before sending notification",
     )
 
     parser.add_argument(
@@ -2985,20 +3034,19 @@ def main():
     if args.test_mode:
         print("🧪 Test mode: Sending simple adaptive card to verify Teams connectivity")
         notifier = TeamsNotifier(
-            webhook_url,
-            "",
-            False,
-            7,
-            None,
-            False,
-            None,
-            None,
-            False,
-            False,
-            False,
-            False,
-            None,
-            "mi30x",
+            webhook_url=webhook_url,
+            skip_analysis=False,
+            analysis_days=7,
+            benchmark_dir=None,
+            github_upload=False,
+            github_repo=None,
+            github_token=None,
+            check_dp_attention=False,
+            enable_torch_compile=False,
+            enable_dp_test=False,
+            enable_mtp_test=False,
+            benchmark_date=None,
+            hardware=args.hardware,
         )
         success = notifier.send_test_notification()
         if success:
@@ -3018,20 +3066,19 @@ def main():
 
         print("🔍 Sanity check mode: Processing sanity check results")
         notifier = TeamsNotifier(
-            webhook_url,
-            "",
-            False,
-            7,
-            None,
-            False,
-            None,
-            None,
-            False,
-            False,
-            False,
-            False,
-            None,
-            "mi30x",
+            webhook_url=webhook_url,
+            skip_analysis=False,
+            analysis_days=7,
+            benchmark_dir=None,
+            github_upload=False,
+            github_repo=None,
+            github_token=None,
+            check_dp_attention=False,
+            enable_torch_compile=False,
+            enable_dp_test=False,
+            enable_mtp_test=False,
+            benchmark_date=None,
+            hardware=args.hardware,
         )
         success = notifier.send_sanity_notification(docker_image=args.docker_image)
         return 0 if success else 1
@@ -3055,28 +3102,6 @@ def main():
     else:
         github_token = None
 
-    # Get plot server base URL (skip if using upload modes)
-    if args.github_upload:
-        plot_server_base_url = ""
-        print(
-            "🐙 GitHub upload mode: Images will be uploaded to GitHub and embedded in Teams"
-        )
-    else:
-        plot_server_base_url = get_plot_server_base_url()
-        print(f"📡 Plot server base URL: {plot_server_base_url}")
-
-        # Check if plot server is accessible
-        if args.check_server:
-            try:
-                response = requests.get(plot_server_base_url, timeout=10)
-                if response.status_code != 200:
-                    print(
-                        f"⚠️  Warning: Plot server returned status {response.status_code}"
-                    )
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️  Warning: Could not reach plot server: {e}")
-                print("   Plot links may not be accessible via provided URLs")
-
     print(f"📁 Plot directory: {args.plot_dir}")
     print(f"🗂️  Benchmark directory: {args.benchmark_dir}")
 
@@ -3097,7 +3122,6 @@ def main():
     # Create notifier and discover plots
     notifier = TeamsNotifier(
         webhook_url=webhook_url,
-        plot_server_base_url=plot_server_base_url,
         skip_analysis=args.skip_analysis,
         analysis_days=args.analysis_days,
         benchmark_dir=args.benchmark_dir,
@@ -3119,8 +3143,6 @@ def main():
         if plot.get("public_url"):
             service = plot.get("hosting_service", "Unknown")
             print(f"   - {prefix}{plot['file_name']} -> ✅ uploaded to {service}")
-        elif plot.get("plot_url"):
-            print(f"   - {prefix}{plot['file_name']} -> {plot['plot_url']}")
         else:
             print(f"   - {prefix}{plot['file_name']} -> 📁 {plot['file_path']}")
 

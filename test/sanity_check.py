@@ -306,13 +306,17 @@ def cleanup_sglang_processes():
     print("[sanity] Checking for existing SGLang processes and port conflicts...")
 
     # Kill processes using port 30000 (default SGLang port)
+    # Try multiple methods: lsof, fuser, ss+kill
+    port_cleaned = False
+
+    # Method 1: lsof
     try:
         result = subprocess.run(
             ["lsof", "-ti:30000"], capture_output=True, text=True, timeout=10
         )
         if result.returncode == 0 and result.stdout.strip():
             pids = result.stdout.strip().split("\n")
-            print(f"[sanity] Found processes using port 30000: {' '.join(pids)}")
+            print(f"[sanity] Found processes using port 30000 (lsof): {' '.join(pids)}")
             for pid in pids:
                 if pid:
                     try:
@@ -320,12 +324,54 @@ def cleanup_sglang_processes():
                             ["kill", "-9", pid], capture_output=True, timeout=5
                         )
                         print(f"[sanity] Killed process {pid} using port 30000")
+                        port_cleaned = True
                     except (subprocess.SubprocessError, subprocess.TimeoutExpired):
                         pass
-        else:
-            print("[sanity] No processes found using port 30000")
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        print("[sanity] lsof not available or timed out, skipping port check")
+        pass  # Try other methods
+
+    # Method 2: fuser (fallback)
+    if not port_cleaned:
+        try:
+            result = subprocess.run(
+                ["fuser", "-k", "30000/tcp"], capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                print("[sanity] Killed processes using port 30000 (fuser)")
+                port_cleaned = True
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass  # Try other methods
+
+    # Method 3: ss + kill (last resort)
+    if not port_cleaned:
+        try:
+            result = subprocess.run(
+                ["ss", "-tlnp", "sport", "=", ":30000"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                # Parse PIDs from ss output
+                pids = re.findall(r"pid=(\d+)", result.stdout)
+                if pids:
+                    print(
+                        f"[sanity] Found processes using port 30000 (ss): {' '.join(pids)}"
+                    )
+                    for pid in pids:
+                        try:
+                            subprocess.run(
+                                ["kill", "-9", pid], capture_output=True, timeout=5
+                            )
+                            print(f"[sanity] Killed process {pid}")
+                            port_cleaned = True
+                        except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+                            pass  # Process may already be dead; continue cleanup
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass  # ss command not available or timed out; port cleanup best-effort
+
+    if not port_cleaned:
+        print("[sanity] No processes found using port 30000 (or tools unavailable)")
 
     # Kill any sglang.launch_server processes
     try:
@@ -395,6 +441,434 @@ def cleanup_sglang_processes():
         pass  # Optional cleanup, don't warn if not available
 
 
+def is_port_free(port=30000):
+    """Check if a port is free (not in use).
+
+    Args:
+        port: Port number to check (default: 30000)
+
+    Returns:
+        True if port is free, False if in use
+    """
+    import socket as sock
+
+    try:
+        with sock.socket(sock.AF_INET, sock.SOCK_STREAM) as s:
+            s.settimeout(1)
+            result = s.connect_ex(("127.0.0.1", port))
+            # If connect_ex returns 0, the port is in use (connection succeeded)
+            return result != 0
+    except Exception:
+        return True  # Assume free on error
+
+
+def wait_for_port_free(port=30000, timeout=30):
+    """Wait for a port to become free after killing processes.
+
+    Args:
+        port: Port number to check
+        timeout: Maximum seconds to wait
+
+    Returns:
+        True if port is free within timeout, False otherwise
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if is_port_free(port):
+            print(f"[sanity] Port {port} is now free")
+            return True
+        print(
+            f"[sanity] Waiting for port {port} to be freed... ({int(time.time() - start_time)}s)"
+        )
+        time.sleep(2)
+
+    print(f"[sanity] WARNING: Port {port} still in use after {timeout}s timeout")
+    return False
+
+
+def wait_for_gpu_memory_free(timeout=60, threshold_percent=10):
+    """Wait for GPU memory to be freed after killing server processes.
+
+    Args:
+        timeout: Maximum seconds to wait for GPU memory to be freed
+        threshold_percent: Consider GPU "free" if all GPUs have less than this % used
+
+    Returns:
+        True if GPU memory freed within timeout, False otherwise
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            result = subprocess.run(
+                ["rocm-smi", "--showmemuse"], capture_output=True, text=True, timeout=15
+            )
+            if result.returncode == 0:
+                # Parse memory usage percentages
+                mem_percentages = re.findall(
+                    r"GPU Memory Allocated \(VRAM%\):\s*(\d+)", result.stdout
+                )
+                if mem_percentages:
+                    max_usage = max(int(p) for p in mem_percentages)
+                    if max_usage < threshold_percent:
+                        print(f"[sanity] GPU memory freed (max usage: {max_usage}%)")
+                        return True
+                    else:
+                        print(
+                            f"[sanity] Waiting for GPU memory to free... (current max: {max_usage}%)"
+                        )
+        except (
+            subprocess.SubprocessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
+            pass  # rocm-smi unavailable or failed; retry after delay
+        time.sleep(3)
+
+    print(f"[sanity] WARNING: GPU memory not fully freed after {timeout}s timeout")
+    return False
+
+
+def aggressive_cleanup_between_models():
+    """Perform aggressive cleanup between model tests to prevent resource conflicts.
+
+    This function ensures:
+    1. All SGLang processes are killed (including child processes)
+    2. Port 30000 is freed
+    3. Aiter JIT lock files are cleaned
+    4. GPU memory is freed (with timeout)
+    """
+    print("\n[sanity] === Performing aggressive cleanup between models ===")
+
+    # Step 1: Kill all SGLang-related processes aggressively
+    cleanup_sglang_processes()
+
+    # Step 2: Kill any torch distributed processes that might be holding GPU memory
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "torch.distributed|multiprocessing.spawn"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            pids = result.stdout.strip().split("\n")
+            current_pid = str(os.getpid())
+            for pid in pids:
+                if pid and pid != current_pid:
+                    try:
+                        subprocess.run(
+                            ["kill", "-9", pid], capture_output=True, timeout=5
+                        )
+                        print(f"[sanity] Killed torch distributed process {pid}")
+                    except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+                        pass  # Process may already be dead; continue cleanup
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass  # pgrep unavailable; torch cleanup best-effort
+
+    # Step 3: Clean aiter locks
+    cleanup_aiter_locks()
+
+    # Step 4: Wait for port 30000 to be freed (critical for next server start)
+    if not wait_for_port_free(port=30000, timeout=30):
+        # If port still not free, try more aggressive cleanup
+        print("[sanity] Port still in use, attempting more aggressive cleanup...")
+        cleanup_sglang_processes()
+        time.sleep(5)
+        if not wait_for_port_free(port=30000, timeout=15):
+            print("[sanity] WARNING: Port 30000 may still be in use!")
+
+    # Step 5: Wait for GPU memory to be freed (give processes time to release resources)
+    time.sleep(3)  # Brief pause after killing processes
+    wait_for_gpu_memory_free(timeout=30, threshold_percent=15)
+
+    print("[sanity] === Cleanup complete ===\n")
+
+
+def cleanup_aiter_locks():
+    """Clean up stale aiter JIT lock files to prevent kernel compilation deadlock.
+
+    This is necessary when a previous run crashed/timed out and left locks behind.
+    Cleans both /root/.aiter/build and /sgl-workspace/aiter/aiter/jit/build paths.
+    """
+    print("[sanity] Cleaning up stale aiter JIT lock files...")
+    total_cleaned = 0
+
+    # Path 1: /root/.aiter/build (aiter runtime cache)
+    aiter_build_path = "/root/.aiter/build"
+    try:
+        result = subprocess.run(
+            ["find", aiter_build_path, "-name", "lock", "-type", "f"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            lock_files = [f for f in result.stdout.strip().split("\n") if f]
+            if lock_files:
+                for lock_file in lock_files:
+                    try:
+                        os.remove(lock_file)
+                        total_cleaned += 1
+                    except OSError:
+                        pass  # Lock file already removed or inaccessible
+    except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass  # find command failed; aiter cleanup best-effort
+
+    # Path 2: /sgl-workspace/aiter/aiter/jit/build (aiter JIT module locks)
+    jit_build_path = "/sgl-workspace/aiter/aiter/jit/build"
+    try:
+        result = subprocess.run(
+            ["find", jit_build_path, "-name", "lock*", "-type", "f"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            lock_files = [f for f in result.stdout.strip().split("\n") if f]
+            if lock_files:
+                for lock_file in lock_files:
+                    try:
+                        os.remove(lock_file)
+                        total_cleaned += 1
+                    except OSError:
+                        pass  # Lock file already removed or inaccessible
+    except (subprocess.SubprocessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass  # find command failed; JIT lock cleanup best-effort
+
+    if total_cleaned > 0:
+        print(f"[sanity] Cleaned {total_cleaned} stale aiter lock file(s)")
+    else:
+        print("[sanity] No stale aiter lock files found")
+
+
+# List of models that require MOE kernels (prone to JIT compilation deadlock)
+MOE_MODELS = ["GROK1-IN4", "GROK1-FP8", "GROK2.5"]
+
+# Models that use aiter kernels (module_rmsnorm, etc.) - need warmup on mi35x
+AITER_MODELS = ["GPT-OSS-120B", "GPT-OSS-20B", "QWEN-30B"]
+
+
+def warmup_single_model(model_name, platform, models_dir, timeout=300, port=30001):
+    """Pre-compile kernels for a single model using TP=1 to avoid deadlock.
+
+    Args:
+        model_name: Name of the model to warm up
+        platform: Hardware platform (mi30x, mi35x)
+        models_dir: Directory containing model files
+        timeout: Maximum seconds to wait for kernel compilation
+        port: Port to use for warmup server
+
+    Returns:
+        True if warmup succeeded, False otherwise
+    """
+    if model_name not in DEFAULT_MODELS:
+        print(f"[warmup] {model_name} config not found, skipping")
+        return False
+
+    config = DEFAULT_MODELS[model_name]
+    model_path_template = config.get("model_path", {}).get(platform)
+
+    if not model_path_template:
+        print(f"[warmup] No model path for {model_name} on {platform}, skipping")
+        return False
+
+    # Build full model path
+    model_path = os.path.join(models_dir, model_path_template)
+
+    if not os.path.exists(model_path):
+        print(f"[warmup] Model not found at {model_path}, skipping")
+        return False
+
+    # Build warmup command based on model type
+    # Use TP=1 to avoid multi-worker JIT deadlock
+    if model_name in MOE_MODELS:
+        # MOE models need specific settings
+        tokenizer_path_template = config.get("tokenizer_path", {}).get(platform)
+        tokenizer_path = os.path.join(models_dir, tokenizer_path_template)
+        warmup_cmd = (
+            f"RCCL_MSCCL_ENABLE=0 SGLANG_USE_AITER=1 SGLANG_INT4_WEIGHT=1 "
+            f"python3 -m sglang.launch_server "
+            f"--model-path {model_path} "
+            f"--tokenizer-path {tokenizer_path} "
+            f"--tp 1 "
+            f"--quantization fp8 "
+            f"--trust-remote-code "
+            f"--attention-backend aiter "
+            f"--mem-fraction-static 0.3 "
+            f"--port {port}"
+        )
+    else:
+        # GPT-OSS and other models
+        warmup_cmd = (
+            f"SGLANG_USE_AITER=1 "
+            f"python3 -m sglang.launch_server "
+            f"--model-path {model_path} "
+            f"--tp 1 "
+            f"--trust-remote-code "
+            f"--attention-backend triton "
+            f"--mem-fraction-static 0.3 "
+            f"--port {port}"
+        )
+
+    print(f"[warmup] Starting {model_name} warmup (TP=1)...")
+
+    # Create log file for warmup output
+    warmup_log = f"/tmp/warmup_{model_name}_{platform}.log"
+
+    # Start server process with output capture
+    with open(warmup_log, "w") as log_file:
+        server_process = subprocess.Popen(
+            warmup_cmd,
+            shell=True,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        # Wait for server to be ready or timeout
+        start_time = time.time()
+        kernels_compiled = False
+
+        while time.time() - start_time < timeout:
+            # Check if process is still running
+            if server_process.poll() is not None:
+                # Process exited - check why
+                try:
+                    with open(warmup_log, "r") as f:
+                        log_content = f.read()
+                    if "The server is fired up and ready to roll!" in log_content:
+                        kernels_compiled = True
+                        print(f"[warmup] ✅ {model_name} kernels compiled!")
+                    elif "waiting for baton" in log_content:
+                        print(
+                            f"[warmup] ❌ {model_name} hit JIT deadlock even with TP=1"
+                        )
+                    elif "Error" in log_content or "Exception" in log_content:
+                        # Extract last few lines of error
+                        lines = log_content.strip().split("\n")
+                        last_lines = lines[-5:] if len(lines) > 5 else lines
+                        print(f"[warmup] ❌ {model_name} server error:")
+                        for line in last_lines:
+                            if "Error" in line or "Exception" in line:
+                                print(f"         {line[:100]}")
+                    else:
+                        print(f"[warmup] ❌ {model_name} server exited unexpectedly")
+                except Exception as e:
+                    print(f"[warmup] ❌ {model_name} failed to read log: {e}")
+                break
+
+            # Check server readiness
+            try:
+                import urllib.request
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/health")
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    if response.status == 200:
+                        kernels_compiled = True
+                        print(
+                            f"[warmup] ✅ {model_name} server ready, kernels compiled!"
+                        )
+                        break
+            except Exception:
+                pass
+
+            # Progress update
+            elapsed = int(time.time() - start_time)
+            if elapsed % 60 == 0 and elapsed > 0:
+                print(
+                    f"[warmup] ⏳ {model_name} compilation in progress... ({elapsed}s)"
+                )
+
+            time.sleep(5)
+
+        # Cleanup: kill the warmup server
+        try:
+            server_process.terminate()
+            server_process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server_process.kill()
+            server_process.wait()
+
+    # Kill any remaining processes on warmup port
+    try:
+        subprocess.run(["fuser", "-k", f"{port}/tcp"], capture_output=True, timeout=10)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Brief pause for cleanup
+    time.sleep(3)
+
+    return kernels_compiled
+
+
+def warmup_kernels(platform, models_to_test, models_dir=None, timeout=300):
+    """Pre-compile kernels for all model types to prevent JIT compilation deadlock.
+
+    When models run for the first time in a container with TP>1, multiple workers
+    try to JIT-compile kernels simultaneously, causing a deadlock. This function
+    starts single-GPU warmup servers to trigger kernel compilation sequentially.
+
+    Args:
+        platform: Hardware platform (mi30x, mi35x)
+        models_to_test: Dict of models that will be tested
+        models_dir: Directory containing model files
+        timeout: Maximum seconds to wait for each model's kernel compilation
+
+    Returns:
+        Number of successful warmups
+    """
+    print("\n" + "=" * 60)
+    print("🔥 Kernel Warmup Phase (Preventing JIT Deadlock)")
+    print("=" * 60)
+
+    if models_dir is None:
+        models_dir = DEFAULT_MODELS_DIR
+
+    # Determine which warmup models we need based on what's being tested
+    warmup_needed = set()
+
+    for model_name in models_to_test.keys():
+        if model_name in MOE_MODELS:
+            warmup_needed.add("GROK1-IN4")  # Use smallest GROK for MOE kernels
+        if model_name in AITER_MODELS and platform == "mi35x":
+            warmup_needed.add("GPT-OSS-20B")  # Use smaller GPT for aiter kernels
+
+    if not warmup_needed:
+        print("[warmup] No kernel warmup needed for selected models")
+        return 0
+
+    print(f"[warmup] Will warm up kernels using: {', '.join(warmup_needed)}")
+    print(
+        "[warmup] This pre-compiles kernels with TP=1 to avoid multi-worker deadlock\n"
+    )
+
+    successful = 0
+    for model_name in warmup_needed:
+        if warmup_single_model(model_name, platform, models_dir, timeout=timeout):
+            successful += 1
+        # Clean up between warmups
+        cleanup_aiter_locks()
+        time.sleep(5)
+
+    print(f"\n[warmup] Warmup complete: {successful}/{len(warmup_needed)} succeeded")
+
+    if successful < len(warmup_needed):
+        print("[warmup] ⚠️ Some warmups failed - tests may still hit JIT deadlock")
+        print("[warmup] Will proceed with tests anyway")
+
+    return successful
+
+
+def warmup_moe_kernels(platform, models_dir=None, timeout=300):
+    """Legacy wrapper - calls new warmup_kernels with MOE models only.
+
+    Kept for backwards compatibility.
+    """
+    # Create a fake models_to_test dict with just MOE models
+    moe_test = {m: {} for m in MOE_MODELS}
+    return warmup_kernels(platform, moe_test, models_dir, timeout) > 0
+
+
 def ensure_gpu_idle():
     """Ensure GPU is idle by stopping running Docker containers, similar to perf_nightly.sh."""
     # GPU idle wait time
@@ -402,6 +876,9 @@ def ensure_gpu_idle():
 
     # First, clean up any existing SGLang processes and port conflicts
     cleanup_sglang_processes()
+
+    # Clean up stale aiter JIT locks to prevent kernel compilation deadlock
+    cleanup_aiter_locks()
 
     if not check_gpu_idle():
         print("[sanity] GPU is busy. Attempting to stop running Docker containers...")
@@ -991,6 +1468,10 @@ def sanity_check(
 
     overall_start = time.time()
 
+    # Clean up stale aiter locks before starting each model's server
+    # This prevents deadlock from locks left by previous model tests
+    cleanup_aiter_locks()
+
     # 1. Start server
     server_log = os.path.join(log_dir, f"{model_name}_{platform}_server.log")
     with open(server_log, "w") as f:
@@ -1162,8 +1643,8 @@ def sanity_check(
         timing_log.write(f"Server startup: {server_ready_time:.2f}s\n")
         timing_log.flush()
 
-    # 3. Run multiple client trials
-    print(f"🧪 Running {trials} benchmark trials...")
+    # 3. Run multiple client trials (exit early if pass, like upstream CI)
+    print(f"🧪 Running up to {trials} benchmark trials (early exit on pass)...")
     accuracies = []
     for i in range(1, trials + 1):
         client_log = os.path.join(log_dir, f"{model_name}_{platform}_client_try{i}.log")
@@ -1233,7 +1714,8 @@ def sanity_check(
             try:
                 acc = parse_accuracy(client_log)
                 accuracies.append(acc)
-                status = PASS_MARK if acc >= criteria["accuracy"] else FAIL_MARK
+                passed = acc >= criteria["accuracy"]
+                status = PASS_MARK if passed else FAIL_MARK
                 print(
                     f"  ✅ Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)"
                 )
@@ -1242,6 +1724,18 @@ def sanity_check(
                         f"Trial {i}: {status} (Accuracy: {acc:.3f}, Time: {elapsed:.2f}s)\n"
                     )
                     timing_log.flush()
+                # Early exit if passed (like upstream CI - saves time)
+                if passed:
+                    if i < trials:
+                        print(
+                            f"  🚀 Passed on trial {i}, skipping remaining {trials - i} trial(s)"
+                        )
+                        if timing_log:
+                            timing_log.write(
+                                f"Early exit: Passed on trial {i}, skipped {trials - i} trial(s)\n"
+                            )
+                            timing_log.flush()
+                    break
             except ValueError as e:
                 print(f"  ❌ Trial {i}: {FAIL_MARK} ({e}, Time: {elapsed:.2f}s)")
                 if timing_log:
@@ -1251,7 +1745,7 @@ def sanity_check(
                     timing_log.flush()
                 accuracies.append(0.0)
 
-    # 4. Kill server after all trials
+    # 4. Kill server after all trials - use aggressive shutdown
     print(f"🛑 Stopping server...")
     shutdown_start = time.time()
 
@@ -1259,16 +1753,38 @@ def sanity_check(
         # Send SIGTERM first for graceful shutdown
         os.killpg(os.getpgid(server_proc.pid), signal.SIGTERM)
 
-        # Wait up to 10 seconds for graceful shutdown
-        timeout = 10
+        # Wait up to 5 seconds for graceful shutdown (reduced from 10)
+        timeout = 5
         elapsed = 0
         while server_proc.poll() is None and elapsed < timeout:
             time.sleep(0.5)
             elapsed += 0.5
 
-        # If still running, force kill
+        # If still running, force kill immediately
         if server_proc.poll() is None:
-            print(f"🔥 Server didn't stop gracefully, force killing...")
+            print(
+                f"🔥 Server didn't stop gracefully after {timeout}s, force killing..."
+            )
+            os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+            time.sleep(1)
+
+        # Double-check and kill any remaining child processes
+        if server_proc.poll() is None:
+            print(f"🔥 Server still running, using SIGKILL on all children...")
+            try:
+                # Kill the entire process tree
+                subprocess.run(
+                    ["pkill", "-9", "-P", str(server_proc.pid)],
+                    capture_output=True,
+                    timeout=5,
+                )
+            except (
+                subprocess.SubprocessError,
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+            ):
+                pass  # pkill failed; fall through to final SIGKILL
+            # Final SIGKILL after killing children to ensure process group is terminated
             os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
             time.sleep(1)
 
@@ -1279,29 +1795,34 @@ def sanity_check(
     if server_proc in ACTIVE_SERVER_PROCESSES:
         ACTIVE_SERVER_PROCESSES.remove(server_proc)
 
+    # Additional cleanup to ensure port 30000 is freed and no zombie processes
+    cleanup_sglang_processes()
+
     shutdown_time = time.time() - shutdown_start
 
-    # 5. Determine final result based on highest accuracy
-    max_accuracy = max(accuracies) if accuracies else 0.0
-
+    # 5. Determine final result (with early exit, first passing accuracy is sufficient)
     required_accuracy = criteria["accuracy"]
-    any_pass = max_accuracy >= required_accuracy
+    any_pass = (
+        any(acc >= required_accuracy for acc in accuracies) if accuracies else False
+    )
     final_status = PASS_MARK if any_pass else FAIL_MARK
     total_time = time.time() - overall_start
 
     print(f"📋 Result for {model_name} on {platform}: {final_status}")
-    print(f"   Accuracies: {accuracies}")
     print(
-        f"   Highest Accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})"
+        f"   Accuracy: {accuracies[0]:.3f} (Required: {required_accuracy:.3f})"
+        if accuracies
+        else "   No accuracy recorded"
     )
     print(f"   Total Time: {total_time:.2f}s")
 
     if timing_log:
         timing_log.write(f"Server shutdown: {shutdown_time:.2f}s\n")
         timing_log.write(f"Final result: {final_status}\n")
-        timing_log.write(f"Accuracies: {accuracies}\n")
         timing_log.write(
-            f"Highest accuracy: {max_accuracy:.3f} (Required: {required_accuracy:.3f})\n"
+            f"Accuracy: {accuracies[0]:.3f} (Required: {required_accuracy:.3f})\n"
+            if accuracies
+            else "No accuracy recorded\n"
         )
         timing_log.write(f"Total time: {total_time:.2f}s\n")
         timing_log.write(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}\n")
@@ -1450,6 +1971,33 @@ if __name__ == "__main__":
     print("\n🔍 Checking GPU status and cleaning up running containers...")
     ensure_gpu_idle()
 
+    # Check which models need kernel warmup to prevent JIT deadlock
+    moe_models_to_test = [m for m in models_to_test.keys() if m in MOE_MODELS]
+    aiter_models_to_test = [m for m in models_to_test.keys() if m in AITER_MODELS]
+
+    needs_warmup = False
+    if moe_models_to_test:
+        print(f"\n🔥 MOE models detected: {', '.join(moe_models_to_test)}")
+        print(
+            "   These models require MOE kernel pre-compilation to avoid JIT deadlock"
+        )
+        needs_warmup = True
+    if aiter_models_to_test and platform == "mi35x":
+        print(f"\n🔥 Aiter models detected: {', '.join(aiter_models_to_test)}")
+        print(
+            "   These models require aiter kernel pre-compilation on mi35x to avoid JIT deadlock"
+        )
+        needs_warmup = True
+
+    if needs_warmup:
+        warmup_kernels(
+            platform, models_to_test, models_dir=args.models_dir, timeout=300
+        )
+        # Clean up after warmup
+        cleanup_sglang_processes()
+        cleanup_aiter_locks()
+        time.sleep(5)  # Brief pause before starting actual tests
+
     # Create timing log with Docker image subfolder
     if args.log_dir:
         base_log_dir = os.path.abspath(args.log_dir)
@@ -1544,6 +2092,11 @@ if __name__ == "__main__":
             print(
                 f"Progress: [{progress_bar}] {current_model}/{total_models} ({current_model/total_models*100:.1f}%) {status_emoji} {model_name} {status_text} in {model_duration:.1f}s"
             )
+
+            # Aggressive cleanup between models to prevent resource conflicts
+            # Skip cleanup after the last model to save time
+            if current_model < total_models:
+                aggressive_cleanup_between_models()
 
         # Final timing summary
         script_end_time = time.time()

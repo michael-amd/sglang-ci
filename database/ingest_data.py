@@ -67,6 +67,51 @@ class DataIngester:
             "mi35x": DashboardDataCollector(hardware="mi35x", base_dir=base_dir),
         }
 
+    def _extract_machine_name_from_logs(
+        self, date_str: str, hardware: str
+    ) -> Optional[str]:
+        """
+        Extract machine name from log files.
+
+        Looks for patterns like "[nightly] Machine: dell300x-pla-t10-23" in cron logs.
+
+        Args:
+            date_str: Date in YYYYMMDD format
+            hardware: Hardware type
+
+        Returns:
+            Machine name or None if not found
+        """
+        # List of log files to check for machine name
+        cron_log_files = [
+            "sanity_check_nightly.log",
+            "deepseek_nightly_online.log",
+            "grok2_nightly_online.log",
+            "grok_nightly.log",
+            "test_nightly.log",
+        ]
+
+        cron_log_dir = os.path.join(
+            self.base_dir, "cron", "cron_log", hardware, date_str
+        )
+
+        for log_name in cron_log_files:
+            log_path = os.path.join(cron_log_dir, log_name)
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                        # Read first 2KB to find machine name (should be near the top)
+                        content = f.read(2000)
+
+                        # Pattern: [nightly] Machine: dell300x-pla-t10-23
+                        match = re.search(r"\[nightly\]\s*Machine:\s*(\S+)", content)
+                        if match:
+                            return match.group(1)
+                except Exception:
+                    continue
+
+        return None
+
     def get_docker_image(self, date_str: str, hardware: str) -> Optional[str]:
         """
         Extract docker image from logs
@@ -313,7 +358,13 @@ class DataIngester:
 
         return local_path, github_url
 
-    def ingest_date(self, date_str: str, hardware: str, verbose: bool = True):
+    def ingest_date(
+        self,
+        date_str: str,
+        hardware: str,
+        verbose: bool = True,
+        machine_name_override: Optional[str] = None,
+    ):
         """
         Ingest data for a specific date and hardware
 
@@ -321,6 +372,7 @@ class DataIngester:
             date_str: Date in YYYYMMDD format
             hardware: Hardware type (mi30x, mi35x)
             verbose: Print progress messages
+            machine_name_override: Override machine name (useful for re-ingesting)
         """
         if verbose:
             print(f"Ingesting data for {date_str} ({hardware})...")
@@ -473,11 +525,16 @@ class DataIngester:
             plot_filename = f"{date_str}_{model_dir}_online_{suffix}.png"
             plot_github_url = f"https://github.com/{self.github_repo}/blob/log/plot/{hardware}/{model_dir}/online/{plot_filename}"
 
-            # Get the machine hostname
-            try:
-                machine_name = socket.gethostname()
-            except Exception:
-                machine_name = None
+            # Get the machine hostname: override > log file > current hostname
+            if machine_name_override:
+                machine_name = machine_name_override
+            else:
+                machine_name = self._extract_machine_name_from_logs(date_str, hardware)
+                if not machine_name:
+                    try:
+                        machine_name = socket.gethostname()
+                    except Exception:
+                        machine_name = None
 
             # Create or update test run
             test_run_id = self.db.upsert_test_run(
@@ -634,6 +691,7 @@ class DataIngester:
         days: int = 30,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        machine_name_override: Optional[str] = None,
     ):
         """
         Backfill data for multiple dates
@@ -667,7 +725,9 @@ class DataIngester:
         print(f"Backfilling {len(dates)} dates for {hardware}...")
 
         for date_str in dates:
-            self.ingest_date(date_str, hardware)
+            self.ingest_date(
+                date_str, hardware, machine_name_override=machine_name_override
+            )
 
         print(f"✅ Backfill complete for {hardware}")
 
@@ -732,6 +792,12 @@ def main():
         help="Suppress progress messages",
     )
 
+    parser.add_argument(
+        "--machine-name",
+        type=str,
+        help="Override machine name (useful for re-ingesting data from a specific machine)",
+    )
+
     args = parser.parse_args()
 
     # Initialize ingester
@@ -752,13 +818,19 @@ def main():
                 days=args.backfill or 30,
                 from_date=args.from_date,
                 to_date=args.to_date or datetime.now().strftime("%Y%m%d"),
+                machine_name_override=args.machine_name,
             )
     else:
         # Single date mode
         date_str = args.date or datetime.now().strftime("%Y%m%d")
 
         for hardware in hardware_types:
-            ingester.ingest_date(date_str, hardware, verbose=not args.quiet)
+            ingester.ingest_date(
+                date_str,
+                hardware,
+                verbose=not args.quiet,
+                machine_name_override=args.machine_name,
+            )
 
     # Vacuum database to optimize
     if not args.quiet:
