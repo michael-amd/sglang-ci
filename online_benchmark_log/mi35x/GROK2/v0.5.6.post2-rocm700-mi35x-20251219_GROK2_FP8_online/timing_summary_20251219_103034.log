@@ -1,0 +1,76 @@
+TIMING SUMMARY LOG
+==================
+Script started at: 2025-12-19 10:30:34 PST
+Timezone: PST (-0800)
+Command: scripts/perf_nightly.sh --model=grok2 --model-path=/data/grok-2 --tokenizer-path=/data/alvarobartt--grok-2-tokenizer --mode=online --hardware=mi35x --teams-webhook-url=https://prod-99.westus.logic.azure.com/workflows/44b23afb37e74288b6b006c60bbe65b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ucbP9AJ9WeZtxe95Wmi8TfLUjiEo0AZSZP4Y_cNgWS0
+Hardware: mi35x
+ROCM Version: rocm700
+Docker image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251219
+Model: /data/grok-2
+Hostname: smci355-ccs-aus-m12-33
+Mode: online
+Model type: grok2
+Attention backend: unknown
+
+Attention backend: aiter (grok2)
+Server startup time: 174 seconds
+
+GSM8K Test Results:
+  Total duration: 64 seconds
+  Accuracy: 0.926 (Required: 0.8)
+  Early exit: Passed on run 1, skipped 4 run(s)
+  GSM8K accuracy: 0.926
+
+Client Benchmark Results:
+  Start time: 2025-12-19 10:34:32 PST
+  Rate 1, Run 1: 343 seconds
+Completed rate 1 - Total time: 343 seconds
+  Rate 2, Run 1: 337 seconds
+Completed rate 2 - Total time: 337 seconds
+  Rate 4, Run 1: 378 seconds
+Completed rate 4 - Total time: 378 seconds
+  Rate 8, Run 1: 494 seconds
+Completed rate 8 - Total time: 494 seconds
+Rate 16 skipped on MI355 hardware
+  End time: 2025-12-19 11:00:36 PST
+  Total duration: 1564 seconds
+
+Server Error Check:
+  RuntimeError count: 0
+  Server error status: PASS
+  Critical error count: 0
+Server shutdown time: 2 seconds
+
+Performance Summary:
+===================
+Request Rate 1:
+  E2E Latency: 25652.48 ms
+  TTFT: 232.07 ms
+  ITL: 39.56 ms
+  Throughput: N/A requests/s
+
+Request Rate 2:
+  E2E Latency: 27163.01 ms
+  TTFT: 155.95 ms
+  ITL: 43.16 ms
+  Throughput: N/A requests/s
+
+Request Rate 4:
+  E2E Latency: 52378.92 ms
+  TTFT: 210.23 ms
+  ITL: 79.22 ms
+  Throughput: N/A requests/s
+
+Request Rate 8:
+  E2E Latency: 182340.93 ms
+  TTFT: 404.61 ms
+  ITL: 251.97 ms
+  Throughput: N/A requests/s
+
+
+========================================
+OVERALL SCRIPT SUMMARY
+========================================
+Script ended at: 2025-12-19 11:00:38 PST
+Total execution time: 1804 seconds (30 minutes)
+========================================
