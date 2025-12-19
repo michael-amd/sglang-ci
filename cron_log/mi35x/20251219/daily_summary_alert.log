@@ -1,0 +1,54 @@
+📊 Using database for data collection
+📅 Generating daily summary report for 20251219
+🖥️  Hardware: mi35x
+📁 Base directory: /mnt/raid/michael/sglang-ci
+📊 Collecting task results for 20251219...
+✅ Docker image date matches expected date (20251219) - proceeding with alert
+
+================================================================================
+Alert sent: 2025-12-19 Daily CI Summary Report
+================================================================================
+
+Generated on 2025-12-19 at 13:50:01 PST
+Hostname: smci355-ccs-aus-m12-33
+Hardware: mi35x
+Docker Image: rocm/sgl-dev:v0.5.6.post2-rocm700-mi35x-20251219
+
+Overall Status:
+• Tasks run: 18/18
+• Passed: 8, Failed: 8, Unknown: 2
+
+Task Results:
+
+Validation & Checks:
+  ❌ Unit Tests: Failed
+  ❌ PD Disaggregation Tests: Failed
+    Error: Health check failed after 60 attempts
+  ✅ Docker Image Check: Pass
+
+Performance Benchmarks:
+  ✅ Grok Online Benchmark: Pass (GSM8K: 81.0%) [27m]
+  ✅ Grok 2 Online Benchmark: Pass (GSM8K: 92.6%) [30m]
+  ✅ DeepSeek Online Benchmark: Pass (GSM8K: 94.1%) [1h 27m]
+
+Integration Tests:
+  ✅ DeepSeek DP Attention Test: Pass (GSM8K: 84.8%)
+  ❌ DeepSeek Torch Compile Test: Failed
+    Error: Test failed or did not complete
+  ✅ DeepSeek MTP Test: Pass (GSM8K: 94.2%) [5m]
+  ❓ DeepSeek DP+MTP Test: Unknown
+
+Sanity Check (Accuracy): ✅ Pass
+  ✅ gpt-oss-120b-bf16 - GSM8K: 85.2% (threshold ≥ 82.0%)
+  ✅ gpt-oss-20b-bf16 - GSM8K: 54.7% (threshold ≥ 50.0%)
+  ❌ GROK1-FP8 - GSM8K: N/A
+  ❌ GROK1-IN4 - GSM8K: N/A
+  ❌ GROK2.5 - GSM8K: N/A
+  ❌ Qwen3-30B-A3B-Thinking-2507 - GSM8K: N/A
+  ❌ Llama-4-Maverick-17B-128E-Instruct-FP8 - GSM8K: N/A
+
+================================================================================
+
+💾 Alert message saved to: /mnt/raid/michael/sglang-ci/team_alert/alert_log/daily_summary_20251219_mi35x_20251219_135001.json
+✅ Successfully sent daily summary report to Teams
+   (Power Automate flow accepted - message processing asynchronously)
